@@ -18,8 +18,8 @@ echo ">>> Setting up frontend for: http://$PUBLIC_IP"
 cd "$FRONTEND_DIR"
 
 # Create production env
-echo "NEXT_PUBLIC_API_URL=http://$PUBLIC_IP/api/v1" > .env.production
-echo ">>> Created .env.production with API URL: http://$PUBLIC_IP/api/v1"
+echo "NEXT_PUBLIC_API_URL=http://$PUBLIC_IP" > .env.production
+echo ">>> Created .env.production with API URL: http://$PUBLIC_IP"
 
 echo ">>> Installing Node dependencies..."
 npm install --silent

@@ -1,0 +1,48 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          timeout: 300s
+          script: |
+            cd ~/einvoicing
+
+            echo ">>> Pulling latest code..."
+            git pull origin main
+
+            echo ">>> Updating Python dependencies..."
+            source venv/bin/activate
+            export DJANGO_SETTINGS_MODULE=config.settings.production
+            pip install -r requirements.txt -q
+
+            echo ">>> Running migrations..."
+            python manage.py migrate --noinput
+
+            echo ">>> Collecting static files..."
+            python manage.py collectstatic --noinput
+
+            echo ">>> Restarting backend..."
+            sudo systemctl restart einvoicing-backend
+
+            echo ">>> Building frontend..."
+            cd frontend
+            npm install --silent
+            npm run build
+
+            echo ">>> Restarting frontend..."
+            pm2 restart einvoicing-frontend
+
+            echo ">>> Done!"
