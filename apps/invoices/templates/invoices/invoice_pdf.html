@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Invoice</title>
+<style>
+* { margin: 0; padding: 0; }
+body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; color: #1f2937; }
+
+.bold  { font-weight: bold; }
+.right { text-align: right; }
+.mono  { font-family: Courier, monospace; }
+.upper { text-transform: uppercase; }
+.gap   { height: 10px; }
+.gap-s { height: 5px; }
+
+/* Header */
+.hdr { background-color: #1e3a5f; width: 100%; }
+.hdr td { padding: 11px 14px; vertical-align: middle; }
+.hdr-title  { font-size: 20pt; font-weight: bold; color: #fff; letter-spacing: 2px; }
+.hdr-sub    { font-size: 8pt; color: #93c5fd; margin-top: 3px; }
+.hdr-badge  { background: #2563eb; color: #fff; font-size: 7pt; font-weight: bold; padding: 2px 8px; border-radius: 3px; }
+.hdr-num    { font-size: 15pt; font-weight: bold; color: #fff; margin-top: 4px; }
+.hdr-status { font-size: 7.5pt; color: #bfdbfe; margin-top: 2px; }
+
+/* Section label */
+.sec { font-size: 6.5pt; font-weight: bold; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; margin-bottom: 5px; }
+
+/* Party cards */
+.party { width: 100%; }
+.party td.card { width: 49%; background: #f8fafc; border: 1px solid #e2e8f0; padding: 9px 12px; vertical-align: top; }
+.party td.gap  { width: 2%; }
+.p-name { font-size: 10.5pt; font-weight: bold; color: #0f172a; }
+.p-leg  { font-size: 7.5pt; color: #64748b; margin-top: 1px; }
+.p-trn  { font-size: 8pt; color: #334155; margin-top: 3px; }
+.p-addr { font-size: 8pt; color: #64748b; margin-top: 4px; line-height: 1.6; }
+
+/* Meta strip */
+.meta { width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; border-collapse: collapse; }
+.meta td { padding: 7px 10px; border-right: 1px solid #e2e8f0; vertical-align: top; }
+.m-lbl { font-size: 6.5pt; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
+.m-val { font-size: 9pt; font-weight: bold; color: #0f172a; margin-top: 2px; }
+
+/* Credit banner */
+.cr { background: #fff7ed; border: 1px solid #fed7aa; padding: 6px 11px; font-size: 8pt; color: #c2410c; }
+
+/* Line items */
+.items { width: 100%; border-collapse: collapse; font-size: 8pt; }
+.items thead tr { background: #1e3a5f; }
+.items thead th { padding: 6px 7px; text-align: left; color: #fff; font-size: 7.5pt; font-weight: bold; }
+.items thead th.r { text-align: right; }
+.items tbody td  { padding: 5px 7px; border-bottom: 1px solid #f1f5f9; color: #374151; vertical-align: top; }
+.items tbody td.r { text-align: right; }
+.items .alt td   { background: #f8fafc; }
+
+/* Totals */
+.tot-wrap { width: 100%; }
+.tot-wrap td.sp { width: 56%; }
+.tot-wrap td.tt { width: 44%; vertical-align: top; }
+.tot-inner { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+.tot-inner tr { border-top: 1px solid #e2e8f0; }
+.tot-inner td { padding: 5px 9px; }
+.tot-inner .lbl { color: #6b7280; }
+.tot-inner .amt { text-align: right; font-weight: bold; color: #1e293b; }
+.tot-grand td { background: #1e3a5f; color: #fff; font-size: 10pt; font-weight: bold; padding: 7px 9px; }
+
+/* Refs */
+.refs { width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; border-collapse: collapse; font-size: 8pt; }
+.refs td { padding: 5px 10px; border-bottom: 1px solid #f1f5f9; }
+.rk { width: 36%; color: #9ca3af; }
+.rv { font-weight: bold; word-break: break-all; }
+
+/* Notes */
+.notes { border-left: 3px solid #3b82f6; padding: 7px 12px; background: #eff6ff; }
+.nl    { font-weight: bold; font-size: 7.5pt; color: #1d4ed8; margin-bottom: 3px; }
+.nt    { font-size: 8.5pt; color: #1e40af; }
+
+/* Footer */
+.footer { border-top: 2px solid #1e3a5f; padding-top: 7px; font-size: 7pt; color: #9ca3af; text-align: center; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<table class="hdr" cellspacing="0" cellpadding="0">
+  <tr>
+    <td>
+      <div class="hdr-title">UAE E-INVOICE</div>
+      <div class="hdr-sub">PEPPOL 5-Corner Platform &bull; {{ invoice.company.name }}</div>
+    </td>
+    <td style="text-align:right;">
+      <div class="hdr-badge">{{ invoice.get_invoice_type_display|upper }}</div>
+      <div class="hdr-num">{{ invoice.invoice_number }}</div>
+      <div class="hdr-status">{{ invoice.get_status_display|upper }}</div>
+    </td>
+  </tr>
+</table>
+<div class="gap"></div>
+
+{% if invoice.invoice_type == "credit_note" and invoice.reference_number %}
+<div class="cr">
+  <span class="bold">Credit Note</span> &mdash; Reduces value of original invoice <span class="bold">{{ invoice.reference_number }}</span>.
+</div>
+<div class="gap-s"></div>
+{% endif %}
+
+<!-- SUPPLIER / BUYER -->
+<table class="party" cellspacing="0" cellpadding="0">
+  <tr>
+    <td class="card">
+      <div class="sec">Supplier &bull; Corner 1</div>
+      <div class="p-name">{{ invoice.company.name }}</div>
+      {% if invoice.company.legal_name and invoice.company.legal_name != invoice.company.name %}
+      <div class="p-leg">{{ invoice.company.legal_name }}</div>{% endif %}
+      <div class="p-trn">TRN: <span class="bold mono">{{ invoice.company.trn }}</span></div>
+      <div class="p-addr">
+        {{ invoice.company.street_address }}<br/>
+        {{ invoice.company.city }}{% if invoice.company.emirate %}, {{ invoice.company.get_emirate_display }}{% endif %}<br/>
+        {% if invoice.company.po_box %}P.O. Box {{ invoice.company.po_box }}<br/>{% endif %}
+        {{ invoice.company.country }}
+      </div>
+      {% if invoice.company.phone %}<div class="p-addr">Tel: {{ invoice.company.phone }}</div>{% endif %}
+      {% if invoice.company.email %}<div class="p-addr">{{ invoice.company.email }}</div>{% endif %}
+    </td>
+    <td class="gap"></td>
+    <td class="card">
+      <div class="sec">Buyer &bull; Corner 4</div>
+      <div class="p-name">{{ invoice.customer.name }}</div>
+      {% if invoice.customer.legal_name and invoice.customer.legal_name != invoice.customer.name %}
+      <div class="p-leg">{{ invoice.customer.legal_name }}</div>{% endif %}
+      {% if invoice.customer.trn %}
+      <div class="p-trn">TRN: <span class="bold mono">{{ invoice.customer.trn }}</span></div>
+      {% elif invoice.customer.vat_number %}
+      <div class="p-trn">VAT: <span class="bold mono">{{ invoice.customer.vat_number }}</span></div>{% endif %}
+      <div class="p-addr">
+        {% if invoice.customer.street_address %}{{ invoice.customer.street_address }}<br/>{% endif %}
+        {% if invoice.customer.city %}{{ invoice.customer.city }}{% if invoice.customer.state_province %}, {{ invoice.customer.state_province }}{% endif %}<br/>{% endif %}
+        {{ invoice.customer.country }}
+      </div>
+      {% if invoice.customer.phone %}<div class="p-addr">Tel: {{ invoice.customer.phone }}</div>{% endif %}
+      {% if invoice.customer.email %}<div class="p-addr">{{ invoice.customer.email }}</div>{% endif %}
+    </td>
+  </tr>
+</table>
+<div class="gap"></div>
+
+<!-- META STRIP -->
+<table class="meta" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><div class="m-lbl">Issue Date</div><div class="m-val">{{ invoice.issue_date|date:"d M Y" }}</div></td>
+    <td><div class="m-lbl">Due Date</div><div class="m-val">{% if invoice.due_date %}{{ invoice.due_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</div></td>
+    {% if invoice.invoice_type == 'continuous_supply' %}
+    <td><div class="m-lbl">Period Start</div><div class="m-val">{% if invoice.supply_date %}{{ invoice.supply_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</div></td>
+    <td><div class="m-lbl">Period End</div><div class="m-val">{% if invoice.supply_date_end %}{{ invoice.supply_date_end|date:"d M Y" }}{% else %}&mdash;{% endif %}</div></td>
+    {% if invoice.contract_reference %}<td><div class="m-lbl">Contract Ref</div><div class="m-val">{{ invoice.contract_reference }}</div></td>{% endif %}
+    {% else %}
+    <td><div class="m-lbl">Supply Date</div><div class="m-val">{% if invoice.supply_date %}{{ invoice.supply_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</div></td>
+    {% endif %}
+    <td><div class="m-lbl">Transaction</div><div class="m-val upper">{{ invoice.transaction_type }}</div></td>
+    <td><div class="m-lbl">Currency</div><div class="m-val">{{ invoice.currency }}</div></td>
+    {% if invoice.purchase_order_number %}<td><div class="m-lbl">PO Number</div><div class="m-val">{{ invoice.purchase_order_number }}</div></td>{% endif %}
+  </tr>
+</table>
+<div class="gap"></div>
+
+<!-- LINE ITEMS -->
+<div class="sec">Line Items</div>
+<table class="items" cellspacing="0" cellpadding="0">
+  <thead>
+    <tr>
+      <th style="width:4%;">#</th>
+      <th style="width:36%;">Description</th>
+      <th class="r" style="width:8%;">Qty</th>
+      <th style="width:8%;">Unit</th>
+      <th class="r" style="width:13%;">Unit Price</th>
+      <th style="width:13%;">VAT Type</th>
+      <th class="r" style="width:9%;">VAT Amt</th>
+      <th class="r" style="width:9%;">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr{% if forloop.counter|divisibleby:2 %} class="alt"{% endif %}>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ item.description }}</td>
+      <td class="r">{{ item.quantity }}</td>
+      <td>{{ item.unit|default:"&mdash;" }}</td>
+      <td class="r">{{ item.unit_price }}</td>
+      <td>{{ item.get_vat_rate_type_display }}</td>
+      <td class="r">{{ item.vat_amount }}</td>
+      <td class="r bold">{{ item.total_amount }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<div class="gap-s"></div>
+
+<!-- TOTALS -->
+<table class="tot-wrap" cellspacing="0" cellpadding="0">
+  <tr>
+    <td class="sp"></td>
+    <td class="tt">
+      <table class="tot-inner" cellspacing="0" cellpadding="0">
+        <tr><td class="lbl">Subtotal</td><td class="amt">{{ invoice.currency }} {{ invoice.subtotal }}</td></tr>
+        {% if invoice.discount_amount and invoice.discount_amount != "0.00" %}
+        <tr><td class="lbl" style="color:#dc2626;">Discount</td><td class="amt" style="color:#dc2626;">&minus; {{ invoice.currency }} {{ invoice.discount_amount }}</td></tr>
+        {% endif %}
+        <tr><td class="lbl">VAT (5%)</td><td class="amt">{{ invoice.currency }} {{ invoice.total_vat }}</td></tr>
+        <tr class="tot-grand"><td>Total Due</td><td class="amt">{{ invoice.currency }} {{ invoice.total_amount }}</td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+{% if invoice.asp_submission_id or invoice.fta_reference %}
+<div class="gap"></div>
+<div class="sec">Electronic Submission References</div>
+<table class="refs" cellspacing="0" cellpadding="0">
+  {% if invoice.asp_submission_id %}<tr><td class="rk">ASP Submission ID (Corner 2)</td><td class="rv mono">{{ invoice.asp_submission_id }}</td></tr>{% endif %}
+  {% if invoice.asp_submitted_at %}<tr><td class="rk">Submitted At</td><td class="rv">{{ invoice.asp_submitted_at|date:"d M Y H:i:s" }} UTC</td></tr>{% endif %}
+  {% if invoice.fta_reference %}<tr><td class="rk">FTA Reference (Corner 5)</td><td class="rv mono">{{ invoice.fta_reference }}</td></tr>{% endif %}
+  {% if invoice.fta_reported_at %}<tr><td class="rk">Reported to FTA At</td><td class="rv">{{ invoice.fta_reported_at|date:"d M Y H:i:s" }} UTC</td></tr>{% endif %}
+</table>
+{% endif %}
+
+{% if invoice.notes %}
+<div class="gap"></div>
+<div class="notes">
+  <div class="nl">Notes</div>
+  <div class="nt">{{ invoice.notes }}</div>
+</div>
+{% endif %}
+
+<div class="gap"></div>
+<div class="footer">
+  Computer-generated tax invoice &bull; UAE Federal Decree-Law No. 8 of 2017 on Value Added Tax<br/>
+  Issuer TRN: {{ invoice.company.trn }} &nbsp;&bull;&nbsp; Taxable Amount: {{ invoice.currency }} {{ invoice.taxable_amount }}
+</div>
+
+</body>
+</html>

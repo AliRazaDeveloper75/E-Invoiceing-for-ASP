@@ -1,0 +1,147 @@
+version: '3.9'
+
+# ─── UAE E-Invoicing Platform — Docker Compose ────────────────────────────────
+#
+# Services:
+#   db           — PostgreSQL 15 (persisted volume)
+#   rabbitmq     — RabbitMQ 3.12 + management UI at http://localhost:15672
+#   backend      — Django 5 / DRF (gunicorn, runs migrations on start)
+#   celery-worker — Celery worker processing invoice_processing + celery queues
+#   celery-beat  — Celery Beat for periodic tasks (retry/poll)
+#   frontend     — Next.js 14 (standalone build)
+#
+# Usage:
+#   cp ../.env.docker ../.env.docker   # already exists, edit secrets
+#   docker compose up --build
+#   docker compose down -v             # also removes volumes (data loss!)
+
+services:
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-einvoicing_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-einvoicing_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  # ── RabbitMQ ──────────────────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"    # Management UI: http://localhost:15672  guest/guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # ── Django Backend ────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    command: >
+      gunicorn config.wsgi:application
+      --bind 0.0.0.0:8000
+      --workers 4
+      --timeout 120
+      --access-logfile -
+      --error-logfile -
+    env_file:
+      - ../.env.docker
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+    volumes:
+      - media_files:/app/media
+      - static_files:/app/static
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # ── Celery Worker ─────────────────────────────────────────────────────────────
+  celery-worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    command: >
+      celery -A config worker
+      --loglevel=info
+      --queues=invoice_processing,celery
+      --concurrency=2
+      --max-tasks-per-child=100
+    env_file:
+      - ../.env.docker
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+    volumes:
+      - media_files:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # ── Celery Beat (periodic tasks) ──────────────────────────────────────────────
+  celery-beat:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    command: >
+      celery -A config beat
+      --loglevel=info
+    env_file:
+      - ../.env.docker
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # ── Next.js Frontend ──────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../docker/Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+# ─── Volumes ──────────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+    driver: local
+  media_files:
+    driver: local
+  static_files:
+    driver: local
