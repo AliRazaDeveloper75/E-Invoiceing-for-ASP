@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { FileText, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
@@ -8,7 +8,7 @@ import { AxiosError } from 'axios';
 
 type Step = 'loading' | 'form' | 'success' | 'invalid';
 
-export default function ActivatePage() {
+function ActivateForm() {
   const params     = useSearchParams();
   const router     = useRouter();
   const token      = params.get('token') ?? '';
@@ -231,5 +231,13 @@ export default function ActivatePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ActivatePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-500">Loading…</div>}>
+      <ActivateForm />
+    </Suspense>
   );
 }
