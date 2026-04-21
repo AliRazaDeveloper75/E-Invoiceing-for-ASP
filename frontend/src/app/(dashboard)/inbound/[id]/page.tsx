@@ -1,5 +1,7 @@
 'use client';
 
+export function generateStaticParams() { return []; }
+
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import useSWR from 'swr';
