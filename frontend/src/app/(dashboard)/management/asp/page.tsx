@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import {
   ShieldCheck, Landmark, Send, RefreshCw, Search,
-  CheckCircle2, XCircle, Clock, FileText, Building2,
-  ChevronLeft, ChevronRight, AlertTriangle,
+  CheckCircle2, ChevronLeft, ChevronRight, AlertTriangle,
 } from 'lucide-react';
 
 function fetcher(url: string) {
@@ -281,7 +280,7 @@ function QueueTable({ tab }: { tab: string }) {
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
-export default function AspPage() {
+function AspPageInner() {
   const searchParams = useSearchParams();
   const router       = useRouter();
   const activeTab    = searchParams.get('tab') ?? 'asp';
@@ -325,5 +324,13 @@ export default function AspPage() {
       {/* Active tab content */}
       <QueueTable tab={activeTab} />
     </div>
+  );
+}
+
+export default function AspPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-20 text-gray-400"><RefreshCw className="h-5 w-5 animate-spin mr-2" /> Loading…</div>}>
+      <AspPageInner />
+    </Suspense>
   );
 }
