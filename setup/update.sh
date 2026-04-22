@@ -37,7 +37,7 @@ npm install --silent
 npm run build
 
 echo ">>> Restarting frontend..."
-pm2 restart einvoicing-frontend
+pm2 restart frontend || pm2 start npm --name "frontend" -- start
 
 echo ""
 echo "✅ Update complete!"
