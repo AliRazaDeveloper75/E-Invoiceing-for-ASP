@@ -9,8 +9,22 @@ import type { InvoiceTimeline } from '@/types';
 import {
   ArrowLeft, RefreshCw, Send, ShieldCheck, ShieldX,
   Landmark, CheckCircle2, XCircle, Clock, FileText,
-  Building2, User, Calendar, Hash, AlertTriangle,
+  Building2, User, Calendar, Hash, AlertTriangle, Download,
 } from 'lucide-react';
+
+async function downloadFile(url: string, filename: string, mimeType: string) {
+  try {
+    const response = await api.get(url, { responseType: 'blob' });
+    const objectUrl = URL.createObjectURL(new Blob([response.data], { type: mimeType }));
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(objectUrl);
+  } catch {
+    alert('File could not be downloaded.');
+  }
+}
 
 async function fetcher(url: string) {
   const r = await api.get(url);
@@ -34,6 +48,7 @@ interface AdminInvoice {
   total_amount: string;
   fta_status: string | null;
   asp_submission_id: string | null;
+  xml_file: string | null;
   created_by_name: string;
   created_at: string;
 }
@@ -193,12 +208,38 @@ export default function AdminInvoiceDetailPage() {
             </span>
           )}
         </div>
-        <button
-          onClick={() => { mutateInv(); mutateTl(); }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
-        >
-          <RefreshCw className="h-3.5 w-3.5" /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          {invoice && (
+            <button
+              onClick={() => downloadFile(
+                `/invoices/${invoice.id}/download-pdf/`,
+                `${invoice.invoice_number}.pdf`,
+                'application/pdf',
+              )}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+            >
+              <FileText className="h-3.5 w-3.5" /> PDF
+            </button>
+          )}
+          {invoice?.xml_file && (
+            <button
+              onClick={() => downloadFile(
+                `/invoices/${invoice.id}/download-xml/`,
+                `${invoice.invoice_number}.xml`,
+                'application/xml',
+              )}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+            >
+              <Download className="h-3.5 w-3.5" /> XML
+            </button>
+          )}
+          <button
+            onClick={() => { mutateInv(); mutateTl(); }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Refresh
+          </button>
+        </div>
       </div>
 
       {isLoading ? (

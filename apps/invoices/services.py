@@ -198,6 +198,7 @@ class InvoiceItemService:
 
         item = InvoiceItem(
             invoice=invoice,
+            item_name=data.get('item_name', '').strip(),
             description=data['description'].strip(),
             quantity=Decimal(str(data['quantity'])),
             unit=data.get('unit', '').strip(),
@@ -232,7 +233,7 @@ class InvoiceItemService:
         if membership.role not in ('admin', 'accountant'):
             raise PermissionDenied('Admin or Accountant role required to update invoice items.')
 
-        updatable = ['description', 'quantity', 'unit', 'unit_price', 'vat_rate_type', 'sort_order']
+        updatable = ['item_name', 'description', 'quantity', 'unit', 'unit_price', 'vat_rate_type', 'sort_order']
         for field in updatable:
             if field in data:
                 value = data[field]
@@ -329,6 +330,7 @@ class InvoiceService:
             contract_reference=data.get('contract_reference', ''),
             currency=data.get('currency', 'AED'),
             discount_amount=Decimal(str(data.get('discount_amount', '0.00'))),
+            payment_means_code=data.get('payment_means_code', '30'),
             reference_number=data.get('reference_number', ''),
             purchase_order_number=data.get('purchase_order_number', ''),
             notes=data.get('notes', ''),
@@ -381,7 +383,7 @@ class InvoiceService:
         updatable = [
             'invoice_type', 'transaction_type', 'issue_date', 'due_date',
             'supply_date', 'supply_date_end', 'contract_reference',
-            'currency', 'discount_amount',
+            'currency', 'discount_amount', 'payment_means_code',
             'reference_number', 'purchase_order_number', 'notes',
         ]
         changed = []

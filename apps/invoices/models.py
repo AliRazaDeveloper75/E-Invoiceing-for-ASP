@@ -23,9 +23,9 @@ from django.utils import timezone
 from apps.common.models import BaseModel
 from apps.common.constants import (
     INVOICE_STATUS_CHOICES, INVOICE_TYPE_CHOICES, TRANSACTION_TYPE_CHOICES,
-    CURRENCY_CHOICES, VAT_RATE_CHOICES,
+    CURRENCY_CHOICES, VAT_RATE_CHOICES, PAYMENT_MEANS_CHOICES,
     INVOICE_STATUS_DRAFT, INVOICE_TYPE_TAX, TRANSACTION_B2B, CURRENCY_AED,
-    UAE_VAT_RATE, FTA_STATUS_CHOICES,
+    UAE_VAT_RATE, FTA_STATUS_CHOICES, PAYMENT_MEANS_CREDIT_TRANSFER,
 )
 
 
@@ -215,6 +215,15 @@ class Invoice(BaseModel):
         help_text='Timestamp when invoice data was reported to FTA data platform.'
     )
 
+    # ── Payment ────────────────────────────────────────────────────────────────
+    payment_means_code = models.CharField(
+        max_length=5,
+        choices=PAYMENT_MEANS_CHOICES,
+        default=PAYMENT_MEANS_CREDIT_TRANSFER,
+        help_text='UN/ECE UNCL 4461 payment means code (e.g. 30=Credit Transfer, 10=Cash). '
+                  'Mandatory in UBL PaymentMeans element.',
+    )
+
     # ── Notes ──────────────────────────────────────────────────────────────────
     notes = models.TextField(blank=True, default='')
 
@@ -271,6 +280,13 @@ class InvoiceItem(BaseModel):
     )
 
     # ── Line Item Details ──────────────────────────────────────────────────────
+    item_name = models.CharField(
+        max_length=150,
+        blank=True,
+        default='',
+        help_text='Short product/service name (UBL Item/Name, max 150 chars). '
+                  'If blank, falls back to the first 80 chars of description in XML.',
+    )
     description = models.CharField(max_length=500)
     quantity = models.DecimalField(
         max_digits=12,

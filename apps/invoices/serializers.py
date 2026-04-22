@@ -10,6 +10,7 @@ from apps.common.constants import (
     INVOICE_TYPE_CHOICES, TRANSACTION_TYPE_CHOICES,
     INVOICE_STATUS_CHOICES, CURRENCY_CHOICES, VAT_RATE_CHOICES,
     INVOICE_TYPE_CREDIT_NOTE, INVOICE_TYPE_CONTINUOUS,
+    PAYMENT_MEANS_CHOICES,
 )
 from .models import Invoice, InvoiceItem
 
@@ -26,7 +27,7 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = InvoiceItem
         fields = [
-            'id', 'description', 'quantity', 'unit', 'unit_price',
+            'id', 'item_name', 'description', 'quantity', 'unit', 'unit_price',
             'vat_rate_type', 'vat_rate_type_display',
             'vat_rate', 'subtotal', 'vat_amount', 'total_amount',
             'sort_order', 'is_active',
@@ -37,6 +38,8 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
 class InvoiceItemCreateSerializer(serializers.Serializer):
     """Input for adding a new line item."""
 
+    item_name = serializers.CharField(max_length=150, required=False, default='',
+                                      help_text='Short product/service name (UBL Item/Name).')
     description = serializers.CharField(max_length=500)
     quantity = serializers.DecimalField(
         max_digits=12, decimal_places=4,
@@ -57,6 +60,7 @@ class InvoiceItemCreateSerializer(serializers.Serializer):
 class InvoiceItemUpdateSerializer(serializers.Serializer):
     """All fields optional for partial item updates."""
 
+    item_name = serializers.CharField(max_length=150, required=False)
     description = serializers.CharField(max_length=500, required=False)
     quantity = serializers.DecimalField(
         max_digits=12, decimal_places=4,
@@ -111,6 +115,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
             # Financial
             'currency', 'exchange_rate',
             'subtotal', 'discount_amount', 'taxable_amount', 'total_vat', 'total_amount',
+            # Payment
+            'payment_means_code',
             # References
             'reference_number', 'purchase_order_number',
             # XML / ASP
@@ -195,6 +201,12 @@ class InvoiceCreateSerializer(serializers.Serializer):
         default=Decimal('0.00'),
         required=False
     )
+    payment_means_code     = serializers.ChoiceField(
+        choices=[c[0] for c in PAYMENT_MEANS_CHOICES],
+        default='30',
+        required=False,
+        help_text='UN/ECE UNCL 4461 payment means code (30=Credit Transfer, 10=Cash, etc.).'
+    )
     reference_number       = serializers.CharField(max_length=100, required=False, default='')
     purchase_order_number  = serializers.CharField(max_length=100, required=False, default='')
     notes                  = serializers.CharField(required=False, default='')
@@ -249,6 +261,10 @@ class InvoiceUpdateSerializer(serializers.Serializer):
     discount_amount        = serializers.DecimalField(
         max_digits=15, decimal_places=2,
         min_value=Decimal('0.00'), required=False
+    )
+    payment_means_code     = serializers.ChoiceField(
+        choices=[c[0] for c in PAYMENT_MEANS_CHOICES],
+        required=False
     )
     reference_number       = serializers.CharField(max_length=100, required=False)
     purchase_order_number  = serializers.CharField(max_length=100, required=False)

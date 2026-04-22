@@ -6,7 +6,7 @@ Input validation only. No business logic.
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from apps.common.constants import USER_ROLE_CHOICES
+from apps.common.constants import USER_ROLE_CHOICES, LEGAL_REG_TYPE_CHOICES
 from .models import Company, CompanyMember, EMIRATE_CHOICES
 
 User = get_user_model()
@@ -28,6 +28,7 @@ class CompanySerializer(serializers.ModelSerializer):
             'street_address', 'city', 'emirate', 'po_box', 'country',
             'formatted_address',
             'phone', 'email', 'website',
+            'legal_registration_id', 'legal_registration_type',
             'peppol_endpoint',
             'is_active', 'member_count',
             'created_at', 'updated_at',
@@ -68,6 +69,15 @@ class CompanyCreateSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, default='')
     website = serializers.URLField(required=False, default='')
 
+    # Legal registration
+    legal_registration_id   = serializers.CharField(max_length=100, required=False, default='')
+    legal_registration_type = serializers.ChoiceField(
+        choices=[c[0] for c in LEGAL_REG_TYPE_CHOICES],
+        required=False,
+        default='',
+        allow_blank=True,
+    )
+
     def validate_trn(self, value: str) -> str:
         if not value.isdigit():
             raise serializers.ValidationError('TRN must contain digits only.')
@@ -96,6 +106,12 @@ class CompanyUpdateSerializer(serializers.Serializer):
     phone = serializers.CharField(max_length=20, required=False)
     email = serializers.EmailField(required=False)
     website = serializers.URLField(required=False)
+    legal_registration_id   = serializers.CharField(max_length=100, required=False)
+    legal_registration_type = serializers.ChoiceField(
+        choices=[c[0] for c in LEGAL_REG_TYPE_CHOICES],
+        required=False,
+        allow_blank=True,
+    )
     peppol_endpoint = serializers.CharField(max_length=255, required=False)
 
     def validate(self, attrs):

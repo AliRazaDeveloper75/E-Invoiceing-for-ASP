@@ -58,6 +58,48 @@ VAT_CATEGORY_CODE = {
     'out_of_scope': 'O',  # Out of scope
 }
 
+# ─── UN/ECE Unit Code Map (PEPPOL Rec 20) ─────────────────────────────────────
+# Maps common human-readable unit strings → UN/ECE Rec 20 unit codes.
+# 'C62' is the fallback (piece/unit — the most generic code).
+_UNIT_CODE_MAP = {
+    '':        'C62',
+    'pcs':     'C62', 'pc':      'C62', 'piece':   'C62', 'pieces':  'C62',
+    'unit':    'C62', 'units':   'C62', 'ea':      'C62', 'each':    'C62',
+    'hr':      'HUR', 'hrs':     'HUR', 'hour':    'HUR', 'hours':   'HUR',
+    'day':     'DAY', 'days':    'DAY',
+    'month':   'MON', 'months':  'MON', 'mon':     'MON',
+    'year':    'ANN', 'years':   'ANN', 'ann':     'ANN',
+    'kg':      'KGM', 'kgs':     'KGM', 'kgm':     'KGM',
+    'g':       'GRM', 'gm':      'GRM', 'gram':    'GRM', 'grams':   'GRM',
+    'lb':      'LBR', 'lbs':     'LBR', 'pound':   'LBR',
+    'm':       'MTR', 'mtr':     'MTR', 'meter':   'MTR', 'metre':   'MTR',
+    'km':      'KMT', 'kmt':     'KMT',
+    'cm':      'CMT', 'cmt':     'CMT',
+    'l':       'LTR', 'ltr':     'LTR', 'litre':   'LTR', 'liter':   'LTR', 'lt': 'LTR',
+    'ml':      'MLT', 'mlt':     'MLT',
+    'm2':      'MTK', 'sqm':     'MTK', 'sq.m':    'MTK',
+    'm3':      'MTQ', 'cbm':     'MTQ',
+    'set':     'SET', 'sets':    'SET',
+    'lot':     'LO',  'lots':    'LO',
+    'box':     'BX',  'boxes':   'BX',
+    'pack':    'PK',  'packs':   'PK', 'pkg':     'PK',
+    'roll':    'RO',  'rolls':   'RO',
+}
+
+
+def _resolve_unit_code(unit: str) -> str:
+    """Return a valid UN/ECE Rec 20 unit code from a human-readable unit string."""
+    if not unit:
+        return 'C62'
+    lower = unit.lower().strip()
+    if lower in _UNIT_CODE_MAP:
+        return _UNIT_CODE_MAP[lower]
+    # If the value is already a known 2–3-char uppercase code, pass it through
+    upper = unit.upper().strip()
+    if 2 <= len(upper) <= 3 and upper.isalpha():
+        return upper
+    return 'C62'
+
 
 class UAEInvoiceXMLGenerator:
     """
@@ -82,6 +124,7 @@ class UAEInvoiceXMLGenerator:
         self._add_header(root, invoice)
         self._add_accounting_supplier_party(root, invoice.company)
         self._add_accounting_customer_party(root, invoice.customer)
+        self._add_payment_means(root, invoice)
         self._add_payment_terms(root, invoice)
         self._add_tax_total(root, invoice)
         self._add_legal_monetary_total(root, invoice)
@@ -179,10 +222,19 @@ class UAEInvoiceXMLGenerator:
         party_root = etree.SubElement(root, _cac('AccountingSupplierParty'))
         party = etree.SubElement(party_root, _cac('Party'))
 
-        # PEPPOL endpoint (if registered)
+        # PEPPOL endpoint — UAE scheme 0235 for TIN-based identification
         if company.peppol_endpoint:
             ep = etree.SubElement(party, _cbc('EndpointID'), schemeID='0088')
             ep.text = company.peppol_endpoint
+        else:
+            # Fallback: use TIN with UAE PEPPOL scheme 0235
+            ep = etree.SubElement(party, _cbc('EndpointID'), schemeID='0235')
+            ep.text = company.tin or company.trn[:10]
+
+        # Party identifier (TIN with UAE scheme 0235)
+        party_id = etree.SubElement(party, _cac('PartyIdentification'))
+        id_el = etree.SubElement(party_id, _cbc('ID'), schemeID='0235')
+        id_el.text = company.tin or company.trn[:10]
 
         # Party name
         party_name = etree.SubElement(party, _cac('PartyName'))
@@ -196,8 +248,13 @@ class UAEInvoiceXMLGenerator:
         # TRN (Tax Registration Number)
         _add_party_tax_scheme(party, company.trn, UAE_COUNTRY_CODE)
 
-        # Legal entity
-        _add_legal_entity(party, company.legal_name or company.name)
+        # Legal entity — with optional legal registration ID (trade license etc.)
+        _add_legal_entity(
+            party,
+            company.legal_name or company.name,
+            registration_id=company.legal_registration_id or '',
+            registration_scheme=company.legal_registration_type or '',
+        )
 
     # ── Customer Party ─────────────────────────────────────────────────────────
 
@@ -231,6 +288,20 @@ class UAEInvoiceXMLGenerator:
             _add_party_tax_scheme(party, tax_id, customer.country)
 
         _add_legal_entity(party, customer.legal_name or customer.name)
+
+    # ── Payment Means ─────────────────────────────────────────────────────────
+
+    def _add_payment_means(self, root, invoice) -> None:
+        """
+        PaymentMeans — mandatory PEPPOL BIS 3.0 element (UAE FTA field #9).
+        PaymentMeansCode is a UN/ECE UNCL 4461 code (e.g. 30 = credit transfer).
+        """
+        pm = etree.SubElement(root, _cac('PaymentMeans'))
+        code_el = etree.SubElement(pm, _cbc('PaymentMeansCode'))
+        code_el.text = invoice.payment_means_code or '30'
+        if invoice.due_date:
+            pay_due = etree.SubElement(pm, _cbc('PaymentDueDate'))
+            pay_due.text = _fmt_date(invoice.due_date)
 
     # ── Payment Terms ──────────────────────────────────────────────────────────
 
@@ -308,7 +379,8 @@ class UAEInvoiceXMLGenerator:
             id_el = etree.SubElement(line, _cbc('ID'))
             id_el.text = str(item.sort_order + 1)
 
-            qty = etree.SubElement(line, _cbc('InvoicedQuantity'), unitCode='C62')
+            unit_code = _resolve_unit_code(item.unit)
+            qty = etree.SubElement(line, _cbc('InvoicedQuantity'), unitCode=unit_code)
             qty.text = str(item.quantity.normalize())
 
             line_ext = etree.SubElement(line, _cbc('LineExtensionAmount'),
@@ -321,13 +393,14 @@ class UAEInvoiceXMLGenerator:
                                             currencyID=invoice.currency)
             line_tax_amt.text = _fmt_amount(item.vat_amount)
 
-            # Item description
+            # Item description and name
             item_el = etree.SubElement(line, _cac('Item'))
             desc = etree.SubElement(item_el, _cbc('Description'))
             desc.text = item.description
 
+            # Name: use dedicated item_name if set, else fall back to first 80 chars of description
             name_el = etree.SubElement(item_el, _cbc('Name'))
-            name_el.text = item.description[:80]
+            name_el.text = (item.item_name.strip() or item.description[:80]) if item.item_name else item.description[:80]
 
             # VAT category for this line
             classified_tax = etree.SubElement(item_el, _cac('ClassifiedTaxCategory'))
@@ -389,7 +462,13 @@ def _add_party_tax_scheme(party, tax_id: str, country: str) -> None:
     scheme_id.text = 'VAT'
 
 
-def _add_legal_entity(party, name: str) -> None:
+def _add_legal_entity(party, name: str, registration_id: str = '', registration_scheme: str = '') -> None:
     legal = etree.SubElement(party, _cac('PartyLegalEntity'))
     reg_name = etree.SubElement(legal, _cbc('RegistrationName'))
     reg_name.text = name
+    if registration_id:
+        attrs = {}
+        if registration_scheme:
+            attrs['schemeID'] = registration_scheme
+        company_id = etree.SubElement(legal, _cbc('CompanyID'), **attrs)
+        company_id.text = registration_id

@@ -58,12 +58,16 @@ def _resolve_invoice(request, invoice_id: str):
     except Invoice.DoesNotExist:
         return None, None, error_response('Invoice not found.', status_code=status.HTTP_404_NOT_FOUND)
 
+    # Admin users bypass company membership — they can access any invoice
+    if request.user.role == 'admin':
+        return invoice, None, None
+
     company, membership = get_company_and_membership(request.user, invoice.company.id)
     if not company:
         return None, None, error_response('Invoice not found.', status_code=status.HTTP_404_NOT_FOUND)
 
     # Non-admin users can only access invoices they personally created
-    if request.user.role != 'admin' and invoice.created_by_id != request.user.id:
+    if invoice.created_by_id != request.user.id:
         return None, None, error_response('Invoice not found.', status_code=status.HTTP_404_NOT_FOUND)
 
     return invoice, membership, None

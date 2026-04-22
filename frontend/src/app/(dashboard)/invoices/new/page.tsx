@@ -203,6 +203,7 @@ const PURCHASE_TYPES: CardType[] = [
 // ─── Form types ───────────────────────────────────────────────────────────────
 
 interface LineItem {
+  item_name: string;
   description: string;
   product_reference: string;
   quantity: string;
@@ -217,6 +218,7 @@ interface LineItem {
 interface InvoiceForm {
   customer_id: string;
   transaction_type: string;
+  payment_means_code: string;
   accounts_type: string;
   supplier_location: string;
   customer_location: string;
@@ -372,19 +374,28 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove }: {
         )}
       </div>
 
-      {/* Description + Product Reference */}
+      {/* Item Name + Product Reference */}
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Description of Goods / Services" faf error={errors.items?.[idx]?.description?.message}>
+        <Field label="Item / Service Name" faf hint="Short name for this product or service (UBL Item/Name)">
           <input
-            placeholder="e.g. IT consulting services, Office supplies…"
-            className={inputCls(errors.items?.[idx]?.description?.message)}
-            {...register(`items.${idx}.description`, { required: 'Required' })}
+            placeholder="e.g. IT Consulting, Office Chair…"
+            className={inputCls()}
+            {...register(`items.${idx}.item_name`)}
           />
         </Field>
         <Field label="Product / Service Reference" faf>
           <input placeholder="e.g. SKU-001 or SVC-REF" className={inputCls()} {...register(`items.${idx}.product_reference`)} />
         </Field>
       </div>
+
+      {/* Description */}
+      <Field label="Description of Goods / Services" faf error={errors.items?.[idx]?.description?.message}>
+        <input
+          placeholder="Full description of goods or services supplied…"
+          className={inputCls(errors.items?.[idx]?.description?.message)}
+          {...register(`items.${idx}.description`, { required: 'Required' })}
+        />
+      </Field>
 
       {/* Qty, Unit, Price */}
       <div className="grid grid-cols-4 gap-3">
@@ -451,10 +462,10 @@ export default function NewInvoicePage() {
   const { register, control, handleSubmit, reset, watch,
     formState: { errors, isSubmitting } } = useForm<InvoiceForm>({
     defaultValues: {
-      transaction_type: 'b2b', issue_date: today,
+      transaction_type: 'b2b', payment_means_code: '30', issue_date: today,
       currency: 'AED', exchange_rate: '1.000000', discount_amount: '0.00',
       is_reverse_charge: false, accounts_type: '', import_subtype: '',
-      items: [{ description: '', product_reference: '', quantity: '1', unit: '',
+      items: [{ item_name: '', description: '', product_reference: '', quantity: '1', unit: '',
                 unit_price: '', vat_rate_type: 'standard', tax_code: '',
                 debit_amount: '', credit_amount: '' }],
     },
@@ -473,10 +484,10 @@ export default function NewInvoicePage() {
   function pickCard(card: CardType) {
     setSelected(card);
     reset({
-      transaction_type: 'b2b', issue_date: today,
+      transaction_type: 'b2b', payment_means_code: '30', issue_date: today,
       currency: 'AED', exchange_rate: '1.000000', discount_amount: '0.00',
       is_reverse_charge: !!card.isReverseCharge, accounts_type: '', import_subtype: '',
-      items: [{ description: '', product_reference: '', quantity: '1', unit: '',
+      items: [{ item_name: '', description: '', product_reference: '', quantity: '1', unit: '',
                 unit_price: '', vat_rate_type: card.vatRate, tax_code: '',
                 debit_amount: '', credit_amount: '' }],
     });
@@ -507,11 +518,13 @@ export default function NewInvoicePage() {
         customer_id: data.customer_id,
         invoice_type: selected.docType,
         transaction_type: data.transaction_type,
+        payment_means_code: data.payment_means_code || '30',
         issue_date: data.issue_date,
         currency: data.currency,
         exchange_rate: data.exchange_rate || '1.000000',
         notes,
         items: data.items.map((it) => ({
+          item_name: it.item_name || '',
           description: it.description,
           quantity: parseFloat(it.quantity),
           unit: it.unit || '',
@@ -639,6 +652,17 @@ export default function NewInvoicePage() {
               <select className={selectCls} {...register('transaction_type')}>
                 <option value="b2b">B2B — Business to Business</option>
                 <option value="b2g">B2G — Business to Government</option>
+              </select>
+            </Field>
+            <Field label="Payment Method" faf hint="UN/ECE UNCL 4461 — mandatory for UBL PaymentMeans element">
+              <select className={selectCls} {...register('payment_means_code')}>
+                <option value="30">30 — Credit Transfer</option>
+                <option value="10">10 — Cash</option>
+                <option value="20">20 — Cheque</option>
+                <option value="48">48 — Bank Card</option>
+                <option value="49">49 — Direct Debit</option>
+                <option value="57">57 — Standing Order</option>
+                <option value="58">58 — SEPA Credit Transfer</option>
               </select>
             </Field>
             <Field label="Accounts Receivable / Payable" faf>
@@ -782,7 +806,7 @@ export default function NewInvoicePage() {
             ))}
           </div>
           <button type="button"
-            onClick={() => append({ description: '', product_reference: '', quantity: '1', unit: '',
+            onClick={() => append({ item_name: '', description: '', product_reference: '', quantity: '1', unit: '',
               unit_price: '', vat_rate_type: vatLocked ? 'out_of_scope' : (selected.vatRate ?? 'standard'),
               tax_code: '', debit_amount: '', credit_amount: '' })}
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-gray-300

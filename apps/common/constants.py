@@ -130,6 +130,40 @@ FTA_STATUS_CHOICES = [
     (FTA_STATUS_ERROR,    'Reporting Error'),
 ]
 
+# ─── Payment Means (PEPPOL BIS 3.0 / UN/ECE UNCL 4461) ───────────────────────
+PAYMENT_MEANS_CASH            = '10'
+PAYMENT_MEANS_CHEQUE          = '20'
+PAYMENT_MEANS_CREDIT_TRANSFER = '30'
+PAYMENT_MEANS_BANK_CARD       = '48'
+PAYMENT_MEANS_DIRECT_DEBIT    = '49'
+PAYMENT_MEANS_STANDING_ORDER  = '57'
+PAYMENT_MEANS_SEPA_TRANSFER   = '58'
+
+PAYMENT_MEANS_CHOICES = [
+    (PAYMENT_MEANS_CASH,            'Cash (10)'),
+    (PAYMENT_MEANS_CHEQUE,          'Cheque (20)'),
+    (PAYMENT_MEANS_CREDIT_TRANSFER, 'Credit Transfer (30)'),
+    (PAYMENT_MEANS_BANK_CARD,       'Bank Card (48)'),
+    (PAYMENT_MEANS_DIRECT_DEBIT,    'Direct Debit (49)'),
+    (PAYMENT_MEANS_STANDING_ORDER,  'Standing Order (57)'),
+    (PAYMENT_MEANS_SEPA_TRANSFER,   'SEPA Credit Transfer (58)'),
+]
+
+# ─── Legal Registration Type (UAE — trade license / Emirates ID / etc.) ───────
+LEGAL_REG_TL  = 'TL'    # Trade License
+LEGAL_REG_CRN = 'CRN'   # Commercial Registration Number
+LEGAL_REG_EID = 'EID'   # Emirates ID
+LEGAL_REG_PAS = 'PAS'   # Passport
+LEGAL_REG_CD  = 'CD'    # Commercial Document
+
+LEGAL_REG_TYPE_CHOICES = [
+    (LEGAL_REG_TL,  'Trade License (TL)'),
+    (LEGAL_REG_CRN, 'Commercial Registration Number (CRN)'),
+    (LEGAL_REG_EID, 'Emirates ID (EID)'),
+    (LEGAL_REG_PAS, 'Passport (PAS)'),
+    (LEGAL_REG_CD,  'Commercial Document (CD)'),
+]
+
 # ─── Pagination ───────────────────────────────────────────────────────────────
 DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100

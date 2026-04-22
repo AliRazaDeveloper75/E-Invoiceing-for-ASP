@@ -16,7 +16,7 @@ from django.core.exceptions import ValidationError
 from django.conf import settings
 
 from apps.common.models import BaseModel
-from apps.common.constants import USER_ROLE_CHOICES, ROLE_ADMIN, TRN_LENGTH, TIN_LENGTH
+from apps.common.constants import USER_ROLE_CHOICES, ROLE_ADMIN, TRN_LENGTH, TIN_LENGTH, LEGAL_REG_TYPE_CHOICES
 
 
 # ─── UAE Emirate Choices ──────────────────────────────────────────────────────
@@ -105,6 +105,23 @@ class Company(BaseModel):
     phone = models.CharField(max_length=20, blank=True, default='')
     email = models.EmailField(blank=True, default='')
     website = models.URLField(blank=True, default='')
+
+    # ── Legal Registration (UAE FTA mandatory — Seller fields #13/#14) ─────────
+    legal_registration_id = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text='Legal entity registration number (e.g. trade license number, CR number). '
+                  'Used in UBL PartyLegalEntity/CompanyID.',
+    )
+    legal_registration_type = models.CharField(
+        max_length=5,
+        choices=LEGAL_REG_TYPE_CHOICES,
+        blank=True,
+        default='',
+        help_text='Type of legal registration document (TL=Trade License, CRN=CR Number, etc.). '
+                  'Used as schemeID attribute on PartyLegalEntity/CompanyID.',
+    )
 
     # ── PEPPOL / ASP ──────────────────────────────────────────────────────────
     peppol_endpoint = models.CharField(
