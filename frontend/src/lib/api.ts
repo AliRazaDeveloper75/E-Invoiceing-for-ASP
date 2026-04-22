@@ -96,7 +96,8 @@ api.interceptors.response.use(
 );
 
 export function setTokens(access: string, refresh: string) {
-  const opts = { secure: true, sameSite: 'strict' as const };
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const opts = { secure: isHttps, sameSite: 'strict' as const };
   Cookies.set('access_token', access, { ...opts, expires: 1 / 24 });   // 1 hour
   Cookies.set('refresh_token', refresh, { ...opts, expires: 7 });       // 7 days
 }
