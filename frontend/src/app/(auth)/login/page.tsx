@@ -167,14 +167,24 @@ export default function LoginPage() {
                 })}
               />
 
-              <Input
-                label="Password"
-                type="password"
-                autoComplete="current-password"
-                placeholder="••••••••"
-                error={errors.password?.message}
-                {...register('password', { required: 'Password is required' })}
-              />
+              <div>
+                <Input
+                  label="Password"
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  error={errors.password?.message}
+                  {...register('password', { required: 'Password is required' })}
+                />
+                <div className="mt-1.5 text-right">
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs text-brand-600 hover:underline font-medium"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+              </div>
 
               {unverified && (
                 <div className="rounded-lg bg-amber-50 border border-amber-300 px-4 py-3 text-sm text-amber-800">

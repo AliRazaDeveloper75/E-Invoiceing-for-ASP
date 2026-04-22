@@ -170,3 +170,31 @@ class EmailVerificationToken(models.Model):
     @property
     def is_expired(self):
         return timezone.now() > self.expires_at
+
+
+class PasswordResetToken(models.Model):
+    """Single-use UUID token emailed to users to reset their password."""
+
+    id         = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user       = models.ForeignKey(
+        'accounts.User', on_delete=models.CASCADE, related_name='password_reset_tokens'
+    )
+    token      = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True)
+    expires_at = models.DateTimeField()
+    used       = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'accounts_password_reset_tokens'
+
+    @classmethod
+    def create_for_user(cls, user):
+        cls.objects.filter(user=user, used=False).delete()
+        return cls.objects.create(
+            user=user,
+            expires_at=timezone.now() + timedelta(minutes=30),
+        )
+
+    @property
+    def is_expired(self):
+        return timezone.now() > self.expires_at

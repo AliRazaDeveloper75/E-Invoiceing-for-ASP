@@ -216,3 +216,34 @@ class ResendVerificationView(APIView):
         return success_response(
             message='If that email is registered and unverified, a new link has been sent.'
         )
+
+
+class ForgotPasswordView(APIView):
+    """POST /api/v1/auth/forgot-password/  { email: str }"""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').strip()
+        if not email:
+            return error_response('Email is required.', status_code=400)
+        AuthService.send_password_reset_email(email)
+        return success_response(
+            message='If that email is registered, a password reset link has been sent.'
+        )
+
+
+class ResetPasswordView(APIView):
+    """POST /api/v1/auth/reset-password/  { token: str, new_password: str }"""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        token = request.data.get('token', '').strip()
+        new_password = request.data.get('new_password', '')
+        if not token or not new_password:
+            return error_response('Token and new password are required.', status_code=400)
+        try:
+            AuthService.reset_password(token, new_password)
+        except DRFValidationError as exc:
+            msg = exc.detail[0] if isinstance(exc.detail, list) else str(exc.detail)
+            return error_response(str(msg), status_code=400)
+        return success_response(message='Password reset successful. You can now sign in.')
