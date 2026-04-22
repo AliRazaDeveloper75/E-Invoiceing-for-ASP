@@ -13,7 +13,7 @@ import type { Company } from '@/types';
 function fetcher() {
   return api.get<{ success: boolean; data: Company[] }>('/companies/').then((r) => r.data.data);
 }
-
+ 
 interface CreateForm {
   name: string;
   legal_name: string;
