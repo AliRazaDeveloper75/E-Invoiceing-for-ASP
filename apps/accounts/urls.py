@@ -14,6 +14,11 @@ from .views import (
     ResendVerificationView,
     ForgotPasswordView,
     ResetPasswordView,
+    MFAVerifyLoginView,
+    MFASetupView,
+    MFAEnableView,
+    MFADisableView,
+    MFAStatusView,
 )
 
 app_name = 'accounts'
@@ -36,4 +41,11 @@ urlpatterns = [
     # ── Password Reset ────────────────────────────────────────────────────────
     path('forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
     path('reset-password/',  ResetPasswordView.as_view(),  name='reset-password'),
+
+    # ── MFA (TOTP / Google Authenticator) ─────────────────────────────────────
+    path('mfa/verify-login/', MFAVerifyLoginView.as_view(), name='mfa-verify-login'),
+    path('mfa/setup/',        MFASetupView.as_view(),        name='mfa-setup'),
+    path('mfa/enable/',       MFAEnableView.as_view(),       name='mfa-enable'),
+    path('mfa/disable/',      MFADisableView.as_view(),      name='mfa-disable'),
+    path('mfa/status/',       MFAStatusView.as_view(),       name='mfa-status'),
 ]

@@ -89,6 +89,18 @@ class User(AbstractBaseUser, PermissionsMixin):
         help_text='True once the user has clicked the email verification link.'
     )
 
+    # ── MFA (Google Authenticator TOTP) ───────────────────────────────────────
+    mfa_enabled = models.BooleanField(
+        default=False,
+        help_text='True when TOTP-based MFA is active for this account.'
+    )
+    mfa_secret = models.CharField(
+        max_length=64,
+        blank=True,
+        default='',
+        help_text='Base32 TOTP secret. Populated during MFA setup, retained after enable.'
+    )
+
     # Django internals
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(
@@ -136,6 +148,42 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_inbound_supplier(self) -> bool:
         return self.role == ROLE_INBOUND_SUPPLIER
+
+
+class MFALoginToken(models.Model):
+    """
+    Short-lived token issued after password-correct login when MFA is enabled.
+    The user must submit a valid TOTP code against this token to receive JWT tokens.
+    Expires in 5 minutes; locked after 5 failed attempts.
+    """
+    id         = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user       = models.ForeignKey(
+        'accounts.User', on_delete=models.CASCADE, related_name='mfa_login_tokens'
+    )
+    token      = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True)
+    expires_at = models.DateTimeField()
+    attempts   = models.PositiveSmallIntegerField(default=0)
+    used       = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'accounts_mfa_login_tokens'
+
+    @classmethod
+    def create_for_user(cls, user):
+        cls.objects.filter(user=user, used=False).delete()
+        return cls.objects.create(
+            user=user,
+            expires_at=timezone.now() + timedelta(minutes=5),
+        )
+
+    @property
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    @property
+    def is_locked(self):
+        return self.attempts >= 5
 
 
 class EmailVerificationToken(models.Model):

@@ -94,9 +94,10 @@ class UserSerializer(serializers.ModelSerializer):
             'role',
             'is_active',
             'email_verified',
+            'mfa_enabled',
             'date_joined',
         ]
-        read_only_fields = ['id', 'email', 'is_active', 'email_verified', 'date_joined']
+        read_only_fields = ['id', 'email', 'is_active', 'email_verified', 'mfa_enabled', 'date_joined']
 
     def get_full_name(self, obj) -> str:
         return obj.full_name
@@ -136,3 +137,22 @@ class ChangePasswordSerializer(serializers.Serializer):
                 {'confirm_new_password': 'New passwords do not match.'}
             )
         return attrs
+
+
+# ─── MFA / Login ──────────────────────────────────────────────────────────────
+
+class LoginSerializer(serializers.Serializer):
+    """Credentials for the custom login endpoint."""
+    email    = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+
+class MFAVerifyLoginSerializer(serializers.Serializer):
+    """Token + TOTP code submitted on the MFA challenge page."""
+    mfa_token = serializers.UUIDField()
+    code      = serializers.CharField(min_length=6, max_length=6)
+
+
+class MFACodeSerializer(serializers.Serializer):
+    """Single TOTP code — used to enable or disable MFA."""
+    code = serializers.CharField(min_length=6, max_length=6)

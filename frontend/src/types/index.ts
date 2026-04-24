@@ -9,6 +9,7 @@ export interface User {
   role: 'admin' | 'supplier' | 'accountant' | 'viewer' | 'inbound_supplier';
   is_active: boolean;
   email_verified: boolean;
+  mfa_enabled: boolean;
   date_joined: string;
 }
 

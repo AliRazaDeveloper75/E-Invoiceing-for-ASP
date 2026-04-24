@@ -3,8 +3,9 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
+import { AxiosError } from 'axios';
 import { api, setTokens, clearTokens } from '@/lib/api';
-import type { User } from '@/types';
+import type { User, APISuccess } from '@/types';
 
 interface AuthState {
   user: User | null;
@@ -14,9 +15,16 @@ interface AuthState {
 
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
+  completeMfaLogin: (mfaToken: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
+
+type LoginPayload =
+  | { mfa_required: true;  mfa_token: string }
+  | { mfa_required: false; access: string; refresh: string; user: User };
+
+type MFAVerifyPayload = { access: string; refresh: string; user: User };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -30,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      const { data } = await api.get<{ success: boolean; data: User }>('/auth/me/');
+      const { data } = await api.get<APISuccess<User>>('/auth/me/');
       setState({ user: data.data, isLoading: false, isAuthenticated: true });
     } catch {
       setState({ user: null, isLoading: false, isAuthenticated: false });
@@ -38,8 +46,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Skip the API call if there's no token — avoids a 401 → redirect loop
-    // on the login/register pages.
     if (Cookies.get('access_token')) {
       refreshUser();
     } else {
@@ -48,16 +54,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refreshUser]);
 
   const login = async (email: string, password: string) => {
-    const { data } = await api.post('/auth/login/', { email, password });
-    setTokens(data.access, data.refresh);
-    const { data: meRes } = await api.get<{ success: boolean; data: User }>('/auth/me/');
-    const user = meRes.data;
-    setState({ user, isLoading: false, isAuthenticated: true });
-    if (!user.email_verified) {
-      const err = new Error('EMAIL_NOT_VERIFIED') as Error & { code: string };
-      err.code = 'EMAIL_NOT_VERIFIED';
+    try {
+      const { data } = await api.post<APISuccess<LoginPayload>>('/auth/login/', { email, password });
+      const payload = data.data;
+
+      if (payload.mfa_required) {
+        sessionStorage.setItem('mfa_token', payload.mfa_token);
+        router.push('/mfa-verify');
+        return;
+      }
+
+      setTokens(payload.access, payload.refresh);
+      const user = payload.user;
+      setState({ user, isLoading: false, isAuthenticated: true });
+      router.push(user.role === 'inbound_supplier' ? '/supplier-portal' : '/dashboard');
+    } catch (err) {
+      const axiosErr = err as AxiosError<{ error?: { details?: { code?: string } } }>;
+      if (axiosErr.response?.data?.error?.details?.code === 'EMAIL_NOT_VERIFIED') {
+        const e = new Error('EMAIL_NOT_VERIFIED') as Error & { code: string };
+        e.code = 'EMAIL_NOT_VERIFIED';
+        throw e;
+      }
       throw err;
     }
+  };
+
+  const completeMfaLogin = async (mfaToken: string, code: string) => {
+    const { data } = await api.post<APISuccess<MFAVerifyPayload>>(
+      '/auth/mfa/verify-login/',
+      { mfa_token: mfaToken, code },
+    );
+    const { access, refresh, user } = data.data;
+    setTokens(access, refresh);
+    setState({ user, isLoading: false, isAuthenticated: true });
+    sessionStorage.removeItem('mfa_token');
     router.push(user.role === 'inbound_supplier' ? '/supplier-portal' : '/dashboard');
   };
 
@@ -77,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ ...state, login, completeMfaLogin, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

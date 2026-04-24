@@ -8,23 +8,35 @@ Rules followed:
 """
 import logging
 from rest_framework import status
-from rest_framework.exceptions import ValidationError as DRFValidationError
+from rest_framework.exceptions import ValidationError as DRFValidationError, PermissionDenied
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.common.utils import success_response, error_response
 from .serializers import (
     UserRegistrationSerializer,
-    CustomTokenObtainPairSerializer,
     UserSerializer,
     UserUpdateSerializer,
     ChangePasswordSerializer,
+    LoginSerializer,
+    MFAVerifyLoginSerializer,
+    MFACodeSerializer,
 )
-from .services import AuthService
+from .services import AuthService, MFAService
 
 logger = logging.getLogger(__name__)
+
+
+def _issue_tokens(user):
+    """Create a JWT pair with custom claims for the given user."""
+    refresh = RefreshToken.for_user(user)
+    refresh['email']          = user.email
+    refresh['full_name']      = user.full_name
+    refresh['role']           = user.role
+    refresh['email_verified'] = user.email_verified
+    return str(refresh.access_token), str(refresh)
 
 
 # ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -64,32 +76,77 @@ class RegisterView(APIView):
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Send verification email (non-blocking — failure doesn't abort registration)
         AuthService.send_verification_email(user)
 
-        # Issue JWT tokens immediately after registration
-        refresh = RefreshToken.for_user(user)
+        access, refresh = _issue_tokens(user)
         return success_response(
             data={
                 'user': UserSerializer(user).data,
-                'tokens': {
-                    'access': str(refresh.access_token),
-                    'refresh': str(refresh),
-                },
+                'tokens': {'access': access, 'refresh': refresh},
             },
             message='Registration successful.',
             status_code=status.HTTP_201_CREATED
         )
 
 
-class LoginView(TokenObtainPairView):
+class LoginView(APIView):
     """
     POST /api/v1/auth/login/
 
-    Returns access + refresh JWT tokens with custom claims (role, full_name).
-    Uses CustomTokenObtainPairSerializer configured in settings.SIMPLE_JWT.
+    Step 1 of the login flow.
+    - If MFA is disabled: returns JWT tokens directly.
+    - If MFA is enabled:  returns mfa_required=true + a short-lived mfa_token.
+      The client must then POST to /auth/mfa/verify-login/ to get JWT tokens.
     """
-    serializer_class = CustomTokenObtainPairSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from django.contrib.auth import authenticate
+        from apps.accounts.models import MFALoginToken
+
+        serializer = LoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return error_response(
+                'Invalid input.',
+                details=serializer.errors,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = authenticate(
+            request,
+            email=serializer.validated_data['email'],
+            password=serializer.validated_data['password'],
+        )
+        if user is None:
+            return error_response(
+                'No active account found with the given credentials.',
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if not user.email_verified:
+            return error_response(
+                'Email not verified. Please verify your email before signing in.',
+                details={'code': 'EMAIL_NOT_VERIFIED'},
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if user.mfa_enabled:
+            mfa_record = MFALoginToken.create_for_user(user)
+            return success_response(
+                data={'mfa_required': True, 'mfa_token': str(mfa_record.token)},
+                message='MFA verification required.',
+            )
+
+        access, refresh = _issue_tokens(user)
+        return success_response(
+            data={
+                'mfa_required': False,
+                'access': access,
+                'refresh': refresh,
+                'user': UserSerializer(user).data,
+            },
+            message='Login successful.',
+        )
 
 
 class LogoutView(APIView):
@@ -113,7 +170,6 @@ class LogoutView(APIView):
             token = RefreshToken(refresh_token)
             token.blacklist()
         except Exception:
-            # Token already invalid or expired — treat as already logged out
             pass
 
         return success_response(message='Logged out successfully.')
@@ -177,16 +233,20 @@ class ChangePasswordView(APIView):
             )
 
         data = serializer.validated_data
-        AuthService.change_password(
-            user=request.user,
-            old_password=data['old_password'],
-            new_password=data['new_password'],
-        )
+        try:
+            AuthService.change_password(
+                user=request.user,
+                old_password=data['old_password'],
+                new_password=data['new_password'],
+            )
+        except (DRFValidationError, PermissionDenied) as exc:
+            msg = exc.detail[0] if isinstance(exc.detail, list) else str(exc.detail)
+            return error_response(str(msg), status_code=400)
         return success_response(message='Password changed successfully.')
 
 
 class VerifyEmailView(APIView):
-    """POST /api/v1/auth/verify-email/  { token: uuid }"""
+    """POST /api/v1/auth/verify-email/  { code: str }"""
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -247,3 +307,105 @@ class ResetPasswordView(APIView):
             msg = exc.detail[0] if isinstance(exc.detail, list) else str(exc.detail)
             return error_response(str(msg), status_code=400)
         return success_response(message='Password reset successful. You can now sign in.')
+
+
+# ─── MFA ──────────────────────────────────────────────────────────────────────
+
+class MFAVerifyLoginView(APIView):
+    """
+    POST /api/v1/auth/mfa/verify-login/  { mfa_token: uuid, code: str }
+
+    Step 2 of MFA login. Verifies the TOTP code against the pending
+    MFALoginToken and, on success, returns JWT tokens.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = MFAVerifyLoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return error_response('Invalid input.', details=serializer.errors, status_code=400)
+
+        try:
+            user = MFAService.verify_login(
+                mfa_token_str=str(serializer.validated_data['mfa_token']),
+                code=serializer.validated_data['code'],
+            )
+        except DRFValidationError as exc:
+            msg = exc.detail[0] if isinstance(exc.detail, list) else str(exc.detail)
+            return error_response(str(msg), status_code=400)
+
+        access, refresh = _issue_tokens(user)
+        return success_response(
+            data={
+                'access': access,
+                'refresh': refresh,
+                'user': UserSerializer(user).data,
+            },
+            message='Login successful.',
+        )
+
+
+class MFASetupView(APIView):
+    """
+    POST /api/v1/auth/mfa/setup/
+
+    Generates a new TOTP secret and returns a QR provisioning URI.
+    MFA is NOT active yet — the user must call /mfa/enable/ to confirm.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        result = MFAService.setup(request.user)
+        return success_response(data=result)
+
+
+class MFAEnableView(APIView):
+    """
+    POST /api/v1/auth/mfa/enable/  { code: str }
+
+    Verifies the TOTP code against the pending secret and activates MFA.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MFACodeSerializer(data=request.data)
+        if not serializer.is_valid():
+            return error_response('Invalid input.', details=serializer.errors, status_code=400)
+
+        try:
+            MFAService.enable(request.user, serializer.validated_data['code'])
+        except DRFValidationError as exc:
+            msg = exc.detail[0] if isinstance(exc.detail, list) else str(exc.detail)
+            return error_response(str(msg), status_code=400)
+
+        return success_response(message='Two-factor authentication enabled.')
+
+
+class MFADisableView(APIView):
+    """
+    POST /api/v1/auth/mfa/disable/  { code: str }
+
+    Verifies the current TOTP code then deactivates MFA and wipes the secret.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MFACodeSerializer(data=request.data)
+        if not serializer.is_valid():
+            return error_response('Invalid input.', details=serializer.errors, status_code=400)
+
+        try:
+            MFAService.disable(request.user, serializer.validated_data['code'])
+        except DRFValidationError as exc:
+            msg = exc.detail[0] if isinstance(exc.detail, list) else str(exc.detail)
+            return error_response(str(msg), status_code=400)
+
+        return success_response(message='Two-factor authentication disabled.')
+
+
+class MFAStatusView(APIView):
+    """GET /api/v1/auth/mfa/status/  — returns whether MFA is enabled for the current user."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return success_response(data={'mfa_enabled': request.user.mfa_enabled})

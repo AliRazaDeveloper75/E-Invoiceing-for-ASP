@@ -436,3 +436,99 @@ class AuthService:
         target_user.is_active = False
         target_user.save(update_fields=['is_active'])
         logger.warning('User deactivated: %s (by %s)', target_user.email, requesting_user.email)
+
+
+class MFAService:
+    """TOTP-based MFA (Google Authenticator) management."""
+
+    ISSUER = 'UAE E-Invoicing'
+
+    @staticmethod
+    def generate_secret() -> str:
+        import pyotp
+        return pyotp.random_base32()
+
+    @staticmethod
+    def get_provisioning_uri(user, secret: str) -> str:
+        import pyotp
+        return pyotp.TOTP(secret).provisioning_uri(
+            name=user.email, issuer_name=MFAService.ISSUER
+        )
+
+    @staticmethod
+    def verify_code(secret: str, code: str) -> bool:
+        """Verify a 6-digit TOTP code. Allows ±1 window (30s drift)."""
+        import pyotp
+        if not secret or not code:
+            return False
+        return pyotp.TOTP(secret).verify(code.strip(), valid_window=1)
+
+    @staticmethod
+    def setup(user) -> dict:
+        """
+        Generate a new TOTP secret and store it temporarily on the user.
+        MFA is NOT yet enabled — user must verify a code first via enable().
+        """
+        secret = MFAService.generate_secret()
+        user.mfa_secret = secret
+        user.save(update_fields=['mfa_secret'])
+        return {
+            'secret': secret,
+            'qr_uri': MFAService.get_provisioning_uri(user, secret),
+        }
+
+    @staticmethod
+    def enable(user, code: str) -> None:
+        """Verify code against stored secret and activate MFA."""
+        if not user.mfa_secret:
+            raise ValidationError('MFA setup not started. Call /mfa/setup/ first.')
+        if not MFAService.verify_code(user.mfa_secret, code):
+            raise ValidationError('Invalid authenticator code. Please try again.')
+        user.mfa_enabled = True
+        user.save(update_fields=['mfa_enabled'])
+        logger.info('MFA enabled for user: %s', user.email)
+
+    @staticmethod
+    def disable(user, code: str) -> None:
+        """Verify current TOTP code then disable MFA and wipe the secret."""
+        if not user.mfa_enabled:
+            raise ValidationError('MFA is not currently enabled.')
+        if not MFAService.verify_code(user.mfa_secret, code):
+            raise ValidationError('Invalid authenticator code. Please try again.')
+        user.mfa_enabled = False
+        user.mfa_secret = ''
+        user.save(update_fields=['mfa_enabled', 'mfa_secret'])
+        logger.info('MFA disabled for user: %s', user.email)
+
+    @staticmethod
+    def verify_login(mfa_token_str: str, code: str):
+        """
+        Verify TOTP code during the MFA login step.
+        Returns the User on success, raises ValidationError on failure.
+        """
+        from apps.accounts.models import MFALoginToken
+        try:
+            record = MFALoginToken.objects.select_related('user').get(
+                token=mfa_token_str, used=False
+            )
+        except (MFALoginToken.DoesNotExist, ValueError):
+            raise ValidationError('Invalid or expired MFA session. Please log in again.')
+
+        if record.is_expired:
+            raise ValidationError('MFA session expired (5 min). Please log in again.')
+
+        if record.is_locked:
+            raise ValidationError('Too many failed attempts. Please log in again.')
+
+        if not MFAService.verify_code(record.user.mfa_secret, code):
+            record.attempts += 1
+            record.save(update_fields=['attempts'])
+            remaining = max(0, 5 - record.attempts)
+            raise ValidationError(
+                f'Invalid code. {remaining} attempt{"s" if remaining != 1 else ""} remaining.'
+            )
+
+        record.used = True
+        record.save(update_fields=['used'])
+        logger.info('MFA login verified for user: %s', record.user.email)
+        return record.user
