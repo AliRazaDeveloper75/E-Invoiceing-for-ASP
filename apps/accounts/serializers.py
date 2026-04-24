@@ -154,5 +154,16 @@ class MFAVerifyLoginSerializer(serializers.Serializer):
 
 
 class MFACodeSerializer(serializers.Serializer):
-    """Single TOTP code — used to enable or disable MFA."""
+    """Single TOTP code — used to enable or disable MFA from settings."""
     code = serializers.CharField(min_length=6, max_length=6)
+
+
+class MFASetupLoginSerializer(serializers.Serializer):
+    """setup_token proves the user passed password auth and needs to set up MFA."""
+    setup_token = serializers.UUIDField()
+
+
+class MFAEnableLoginSerializer(serializers.Serializer):
+    """Confirm TOTP code during forced setup, then receive JWT tokens."""
+    setup_token = serializers.UUIDField()
+    code        = serializers.CharField(min_length=6, max_length=6)

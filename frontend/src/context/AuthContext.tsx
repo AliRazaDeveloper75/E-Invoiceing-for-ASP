@@ -16,15 +16,17 @@ interface AuthState {
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   completeMfaLogin: (mfaToken: string, code: string) => Promise<void>;
+  completeMfaSetup: (setupToken: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
+// Login always returns one of these two shapes — never tokens directly
 type LoginPayload =
-  | { mfa_required: true;  mfa_token: string }
-  | { mfa_required: false; access: string; refresh: string; user: User };
+  | { mfa_required: true;       mfa_token:   string }
+  | { mfa_setup_required: true; setup_token: string };
 
-type MFAVerifyPayload = { access: string; refresh: string; user: User };
+type TokenPayload = { access: string; refresh: string; user: User };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -53,21 +55,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [refreshUser]);
 
+  // ── Step 1: password check ─────────────────────────────────────────────────
   const login = async (email: string, password: string) => {
     try {
       const { data } = await api.post<APISuccess<LoginPayload>>('/auth/login/', { email, password });
       const payload = data.data;
 
-      if (payload.mfa_required) {
+      if ('mfa_required' in payload) {
         sessionStorage.setItem('mfa_token', payload.mfa_token);
         router.push('/mfa-verify');
         return;
       }
 
-      setTokens(payload.access, payload.refresh);
-      const user = payload.user;
-      setState({ user, isLoading: false, isAuthenticated: true });
-      router.push(user.role === 'inbound_supplier' ? '/supplier-portal' : '/dashboard');
+      // mfa_setup_required — first-time setup
+      sessionStorage.setItem('setup_token', payload.setup_token);
+      router.push('/mfa-setup');
     } catch (err) {
       const axiosErr = err as AxiosError<{ error?: { details?: { code?: string } } }>;
       if (axiosErr.response?.data?.error?.details?.code === 'EMAIL_NOT_VERIFIED') {
@@ -79,18 +81,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // ── Step 2a: verify existing TOTP ─────────────────────────────────────────
   const completeMfaLogin = async (mfaToken: string, code: string) => {
-    const { data } = await api.post<APISuccess<MFAVerifyPayload>>(
+    const { data } = await api.post<APISuccess<TokenPayload>>(
       '/auth/mfa/verify-login/',
       { mfa_token: mfaToken, code },
     );
-    const { access, refresh, user } = data.data;
+    _finishLogin(data.data);
+    sessionStorage.removeItem('mfa_token');
+  };
+
+  // ── Step 2b: first-time MFA setup → enable → get tokens ──────────────────
+  const completeMfaSetup = async (setupToken: string, code: string) => {
+    const { data } = await api.post<APISuccess<TokenPayload>>(
+      '/auth/mfa/enable-login/',
+      { setup_token: setupToken, code },
+    );
+    _finishLogin(data.data);
+    sessionStorage.removeItem('setup_token');
+  };
+
+  const _finishLogin = ({ access, refresh, user }: TokenPayload) => {
     setTokens(access, refresh);
     setState({ user, isLoading: false, isAuthenticated: true });
-    sessionStorage.removeItem('mfa_token');
     router.push(user.role === 'inbound_supplier' ? '/supplier-portal' : '/dashboard');
   };
 
+  // ── Logout ─────────────────────────────────────────────────────────────────
   const logout = async () => {
     try {
       const refresh = document.cookie
@@ -102,12 +119,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // ignore — clear tokens regardless
     }
     clearTokens();
+    sessionStorage.removeItem('mfa_token');
+    sessionStorage.removeItem('setup_token');
     setState({ user: null, isLoading: false, isAuthenticated: false });
     router.push('/login');
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, completeMfaLogin, logout, refreshUser }}>
+    <AuthContext.Provider
+      value={{ ...state, login, completeMfaLogin, completeMfaSetup, logout, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

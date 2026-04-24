@@ -7,7 +7,7 @@ const PUBLIC_EXACT = new Set(['/', '/about', '/peppol', '/services', '/contact']
 const ALWAYS_PUBLIC = ['/activate', '/verify-email'];
 
 // Public for unauthenticated users — authenticated users get bounced to dashboard
-const GUEST_ONLY = ['/login', '/register'];
+const GUEST_ONLY = ['/login', '/register', '/mfa-verify', '/mfa-setup', '/forgot-password', '/reset-password'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

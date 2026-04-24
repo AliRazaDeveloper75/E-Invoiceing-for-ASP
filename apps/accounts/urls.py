@@ -15,6 +15,8 @@ from .views import (
     ForgotPasswordView,
     ResetPasswordView,
     MFAVerifyLoginView,
+    MFASetupLoginView,
+    MFAEnableLoginView,
     MFASetupView,
     MFAEnableView,
     MFADisableView,
@@ -42,10 +44,14 @@ urlpatterns = [
     path('forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
     path('reset-password/',  ResetPasswordView.as_view(),  name='reset-password'),
 
-    # ── MFA (TOTP / Google Authenticator) ─────────────────────────────────────
-    path('mfa/verify-login/', MFAVerifyLoginView.as_view(), name='mfa-verify-login'),
-    path('mfa/setup/',        MFASetupView.as_view(),        name='mfa-setup'),
-    path('mfa/enable/',       MFAEnableView.as_view(),       name='mfa-enable'),
-    path('mfa/disable/',      MFADisableView.as_view(),      name='mfa-disable'),
-    path('mfa/status/',       MFAStatusView.as_view(),       name='mfa-status'),
+    # ── MFA — login-time flows ────────────────────────────────────────────────
+    path('mfa/verify-login/',  MFAVerifyLoginView.as_view(),  name='mfa-verify-login'),
+    path('mfa/setup-login/',   MFASetupLoginView.as_view(),   name='mfa-setup-login'),
+    path('mfa/enable-login/',  MFAEnableLoginView.as_view(),  name='mfa-enable-login'),
+
+    # ── MFA — account settings ────────────────────────────────────────────────
+    path('mfa/setup/',   MFASetupView.as_view(),   name='mfa-setup'),
+    path('mfa/enable/',  MFAEnableView.as_view(),  name='mfa-enable'),
+    path('mfa/disable/', MFADisableView.as_view(), name='mfa-disable'),
+    path('mfa/status/',  MFAStatusView.as_view(),  name='mfa-status'),
 ]
