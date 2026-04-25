@@ -110,8 +110,8 @@ export default function RegisterPage() {
 
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
-            <h1 className="text-2xl font-bold text-brand-900">UAE E-Invoicing</h1>
-            <p className="text-gray-500 mt-1 text-sm">PEPPOL 5-Corner Platform</p>
+            <h1 className="text-2xl font-bold text-brand-900">E-Numerak</h1>
+            <p className="text-gray-500 mt-1 text-sm">E-Invoicing Platform</p>
           </div>
 
           <div className="mb-8">
@@ -253,9 +253,9 @@ export default function RegisterPage() {
             <div className="h-9 w-9 rounded-xl bg-white/15 flex items-center justify-center">
               <FileText className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold tracking-tight">UAE E-Invoicing</span>
+            <span className="text-xl font-bold tracking-tight">E-Numerak</span>
           </div>
-          <p className="text-white/50 text-sm ml-12">PEPPOL 5-Corner Platform</p>
+          <p className="text-white/50 text-sm ml-12">E-Invoicing Platform</p>
         </div>
 
         {/* Hero text */}

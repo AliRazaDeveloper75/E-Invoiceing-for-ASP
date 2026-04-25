@@ -10,7 +10,7 @@ export function Footer() {
 
         {/* Left — copyright */}
         <p className="text-xs text-gray-400">
-          &copy; {year} UAE E-Invoicing Platform &bull; PEPPOL 5-Corner
+          &copy; {year} E-Numerak &bull; E-Invoicing Platform
         </p>
 
         {/* Center — compliance badges */}

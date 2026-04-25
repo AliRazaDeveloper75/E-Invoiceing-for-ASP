@@ -1,6 +1,29 @@
 // Home page is rendered here via the (landing) route group.
 // app/page.tsx re-exports this component so both resolve to the same route "/".
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'UAE FTA-Compliant E-Invoicing Platform',
+  description:
+    'E-Numerak — Generate, validate & submit UAE FTA-compliant tax invoices. PEPPOL BIS 3.0, UBL 2.1, VAT & Excise ready. Start issuing e-invoices today.',
+  keywords: [
+    'UAE e-invoicing platform',
+    'FTA compliant e-invoice',
+    'PEPPOL BIS 3.0 UAE',
+    'UBL 2.1 invoice UAE',
+    'tax invoice generator UAE',
+    'VAT invoice software UAE',
+    'e-invoicing Federal Decree-Law 16',
+  ],
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: 'E-Numerak | UAE FTA-Compliant E-Invoicing Platform',
+    description:
+      'The complete PEPPOL-compliant e-invoicing platform for UAE businesses. Issue, validate, and report tax invoices — all in one place.',
+    url: '/',
+  },
+};
 import {
   ArrowRight, CheckCircle2, FileText, Shield, Zap,
   Globe, BarChart3, Lock, ChevronRight,
@@ -77,10 +100,10 @@ export default function HomePage() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-semibold text-blue-200 mb-8">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              UAE FTA Certified &bull; PEPPOL 5-Corner Platform
+              UAE FTA Certified &bull; E-Invoicing Platform
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6">
-              UAE E-Invoicing,{' '}
+              E-Numerak,{' '}
               <span className="text-blue-300">Done Right.</span>
             </h1>
             <p className="text-lg sm:text-xl text-blue-100 leading-relaxed mb-10 max-w-2xl">
@@ -134,7 +157,7 @@ export default function HomePage() {
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything for UAE E-Invoicing</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything for E-Numerak</h2>
             <p className="text-gray-500 max-w-2xl mx-auto">
               Built specifically for the UAE regulatory landscape — covering VAT, Excise, PEPPOL, and FTA requirements.
             </p>

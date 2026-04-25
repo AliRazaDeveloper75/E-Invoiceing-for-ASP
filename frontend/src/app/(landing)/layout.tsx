@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { FileText, Menu, X, ArrowRight, ExternalLink } from 'lucide-react';
+import { FileText, Menu, X, ArrowRight } from 'lucide-react';
 
 const NAV_LINKS = [
   { label: 'Home',     href: '/' },
@@ -28,8 +28,8 @@ function Navbar() {
               <FileText className="h-4 w-4 text-white" />
             </div>
             <div className="leading-tight">
-              <span className="text-white font-bold text-sm tracking-wide">UAE E-Invoicing</span>
-              <span className="block text-blue-300 text-[10px] font-medium tracking-widest uppercase">PEPPOL Platform</span>
+              <span className="text-white font-bold text-sm tracking-wide">E-Numerak</span>
+              <span className="block text-blue-300 text-[10px] font-medium tracking-widest uppercase">E-Invoicing Platform</span>
             </div>
           </Link>
 
@@ -138,7 +138,7 @@ function Footer() {
               <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-500">
                 <FileText className="h-3.5 w-3.5 text-white" />
               </div>
-              <span className="text-white font-bold text-sm">UAE E-Invoicing Platform</span>
+              <span className="text-white font-bold text-sm">E-Numerak</span>
             </div>
             <p className="text-xs leading-relaxed text-blue-300 max-w-xs">
               PEPPOL 5-Corner compliant e-invoicing solution for UAE businesses.
@@ -163,7 +163,7 @@ function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-blue-400">
-          <span>&copy; {new Date().getFullYear()} UAE E-Invoicing Platform. All rights reserved.</span>
+          <span>&copy; {new Date().getFullYear()} E-Numerak. All rights reserved.</span>
           <span>Federal Decree-Law No. 16 of 2024 &bull; PEPPOL BIS 3.0 &bull; UAE FTA Certified</span>
         </div>
       </div>

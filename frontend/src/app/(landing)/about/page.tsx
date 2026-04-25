@@ -1,5 +1,27 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Target, Users, Shield, Award } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'About E-Numerak | UAE E-Invoicing for FTA Compliance',
+  description:
+    'E-Numerak simplifies UAE e-invoicing under Federal Decree-Law No. 16 of 2024. FTA-certified, PEPPOL BIS 3.0, multi-company, role-based access — built for the UAE digital economy.',
+  keywords: [
+    'about E-Numerak',
+    'UAE e-invoicing compliance',
+    'FTA certified platform',
+    'Federal Decree-Law 16 2024',
+    'UAE VAT invoicing',
+    'PEPPOL UAE platform',
+  ],
+  alternates: { canonical: '/about' },
+  openGraph: {
+    title: 'About E-Numerak | UAE E-Invoicing for FTA Compliance',
+    description:
+      'Built for the UAE digital economy — FTA-certified, PEPPOL BIS 3.0, VAT & Excise compliant e-invoicing platform.',
+    url: '/about',
+  },
+};
 
 const TEAM_VALUES = [
   { icon: <Target className="h-5 w-5" />,  title: 'Mission',    desc: 'Simplify UAE e-invoicing compliance for businesses of all sizes through modern, developer-friendly tooling.' },
@@ -26,7 +48,7 @@ export default function AboutPage() {
             <p className="text-blue-300 text-sm font-semibold uppercase tracking-widest mb-3">About Us</p>
             <h1 className="text-4xl font-bold mb-4">Built for the UAE Digital Economy</h1>
             <p className="text-blue-100 text-lg leading-relaxed">
-              We built the UAE E-Invoicing Platform to make FTA compliance straightforward —
+              We built the E-Numerak to make FTA compliance straightforward —
               removing the complexity so businesses can focus on growth, not paperwork.
             </p>
           </div>
@@ -53,7 +75,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* UAE E-Invoicing Timeline */}
+      {/* E-Numerak Timeline */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-10">UAE Tax & E-Invoicing Timeline</h2>

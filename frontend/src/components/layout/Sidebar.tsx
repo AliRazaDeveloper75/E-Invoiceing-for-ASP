@@ -52,8 +52,8 @@ export function Sidebar() {
     <aside className="flex flex-col w-64 h-screen bg-brand-900 text-white fixed left-0 top-0">
       {/* Logo */}
       <div className="px-6 py-5 border-b border-white/10">
-        <h1 className="text-lg font-bold tracking-tight">UAE E-Invoicing</h1>
-        <p className="text-xs text-white/50 mt-0.5">PEPPOL 5-Corner Platform</p>
+        <h1 className="text-lg font-bold tracking-tight">E-Numerak</h1>
+        <p className="text-xs text-white/50 mt-0.5">E-Invoicing Platform</p>
       </div>
 
       {/* Company selector */}

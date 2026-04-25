@@ -1,5 +1,29 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, FileText, BarChart3, Shield, Download, Zap, Users } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'E-Invoicing Services | Tax Invoice, FTA Audit Files & PEPPOL',
+  description:
+    'E-Numerak services: tax invoice generation (UBL 380/381/480), FTA audit files (21 VAT FAF + 32 Excise fields), real-time validation, PDF/XML export, VAT reporting, and multi-company access.',
+  keywords: [
+    'UAE tax invoice generation',
+    'FTA audit file software',
+    'VAT FAF UAE',
+    'Excise FAF UAE',
+    'PEPPOL UBL 2.1 XML',
+    'e-invoice PDF export UAE',
+    'VAT reporting UAE software',
+    'multi-company invoicing UAE',
+  ],
+  alternates: { canonical: '/services' },
+  openGraph: {
+    title: 'E-Numerak Services | UAE Tax Invoice & FTA Compliance',
+    description:
+      'Tax invoice generation, FTA audit files, PEPPOL validation, PDF/XML export, and VAT reporting — fully FTA-compliant.',
+    url: '/services',
+  },
+};
 
 const SERVICES = [
   {
@@ -72,7 +96,7 @@ export default function ServicesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
             <p className="text-blue-300 text-sm font-semibold uppercase tracking-widest mb-3">Our Services</p>
-            <h1 className="text-4xl font-bold mb-4">Everything for UAE E-Invoicing Compliance</h1>
+            <h1 className="text-4xl font-bold mb-4">Everything for E-Numerak Compliance</h1>
             <p className="text-blue-100 text-lg leading-relaxed">
               A complete stack for generating, validating, and submitting invoices —
               covering all UAE FTA requirements without the complexity.

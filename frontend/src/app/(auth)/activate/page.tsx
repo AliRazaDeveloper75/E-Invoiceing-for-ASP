@@ -64,7 +64,7 @@ function ActivateForm() {
         <div className="w-full max-w-md">
 
           <div className="lg:hidden text-center mb-8">
-            <h1 className="text-2xl font-bold text-brand-900">UAE E-Invoicing</h1>
+            <h1 className="text-2xl font-bold text-brand-900">E-Numerak</h1>
             <p className="text-gray-500 mt-1 text-sm">Supplier Portal</p>
           </div>
 
@@ -190,7 +190,7 @@ function ActivateForm() {
             <div className="h-9 w-9 rounded-xl bg-white/15 flex items-center justify-center">
               <FileText className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold tracking-tight">UAE E-Invoicing</span>
+            <span className="text-xl font-bold tracking-tight">E-Numerak</span>
           </div>
           <p className="text-white/50 text-sm ml-12">Supplier Portal</p>
         </div>

@@ -204,7 +204,7 @@ export default function MFASetupPage() {
                 <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
                 <p className="text-xs text-emerald-700 leading-relaxed">
                   Open <strong>Google Authenticator</strong> and enter the
-                  6-digit code shown for <strong>UAE E-Invoicing</strong>.
+                  6-digit code shown for <strong>E-Numerak</strong>.
                 </p>
               </div>
 

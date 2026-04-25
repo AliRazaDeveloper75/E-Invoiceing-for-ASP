@@ -105,7 +105,7 @@ export default function MFAVerifyPage() {
             <Smartphone className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
             <p className="text-xs text-blue-700 leading-relaxed">
               Open <strong>Google Authenticator</strong> (or any TOTP app) and enter the
-              current 6-digit code for <strong>UAE E-Invoicing</strong>.
+              current 6-digit code for <strong>E-Numerak</strong>.
             </p>
           </div>
 
