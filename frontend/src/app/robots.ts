@@ -1,14 +1,29 @@
 import type { MetadataRoute } from 'next';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://e-numerak.ae';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://e-numerak.com';
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
+        // All crawlers: index public pages + login/register (brand searches)
         userAgent: '*',
-        allow: ['/', '/about', '/services', '/peppol', '/contact'],
+        allow: [
+          '/',
+          '/about',
+          '/services',
+          '/peppol',
+          '/contact',
+          '/login',
+          '/register',
+        ],
         disallow: [
+          '/forgot-password',
+          '/reset-password',
+          '/verify-email',
+          '/activate',
+          '/mfa-verify',
+          '/mfa-setup',
           '/dashboard',
           '/invoices',
           '/customers',
@@ -17,12 +32,7 @@ export default function robots(): MetadataRoute.Robots {
           '/management',
           '/inbound',
           '/supplier-portal',
-          '/login',
-          '/register',
-          '/forgot-password',
-          '/reset-password',
-          '/mfa-verify',
-          '/mfa-setup',
+          '/buyer/',
           '/api/',
         ],
       },
