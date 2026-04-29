@@ -114,15 +114,15 @@ class MockASPClient:
                 }
             )
 
-        # Normal acceptance
+        # Invoice queued at ASP — awaiting async validation (not immediately accepted)
         submission_id = f'ASP-{invoice_number}-{_timestamp()}'
         return ASPResponse(
-            status='accepted',
+            status='pending',
             submission_id=submission_id,
-            message='Invoice accepted and queued for FTA reporting.',
+            message='Invoice received and queued for ASP validation.',
             errors=[],
             raw={
-                'status': 'ACCEPTED',
+                'status': 'PENDING',
                 'submissionId': submission_id,
                 'invoiceNumber': invoice_number,
                 'timestamp': _timestamp(),
@@ -132,19 +132,21 @@ class MockASPClient:
 
     def check_status(self, submission_id: str) -> ASPResponse:
         """
-        Poll ASP for the status of a previously submitted invoice.
+        Poll ASP for the current status of a previously submitted invoice.
         In production: call GET /api/v1/submissions/{submission_id}
+
+        Mock returns 'pending' — validation must be done manually by admin.
         """
         logger.info('[MOCK ASP] Checking status for submission: %s', submission_id)
 
         return ASPResponse(
-            status='accepted',
+            status='pending',
             submission_id=submission_id,
-            message='Invoice validated and reported to FTA.',
+            message='Invoice is awaiting ASP validation.',
             raw={
-                'status': 'VALIDATED',
+                'status': 'PENDING',
                 'submissionId': submission_id,
-                'ftaReportingStatus': 'REPORTED',
+                'ftaReportingStatus': 'QUEUED',
                 'timestamp': _timestamp(),
             }
         )

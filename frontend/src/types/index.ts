@@ -6,7 +6,7 @@ export interface User {
   first_name: string;
   last_name: string;
   full_name: string;
-  role: 'admin' | 'supplier' | 'accountant' | 'viewer' | 'inbound_supplier';
+  role: 'admin' | 'supplier' | 'accountant' | 'viewer' | 'inbound_supplier' | 'buyer';
   is_active: boolean;
   email_verified: boolean;
   mfa_enabled: boolean;
@@ -55,7 +55,7 @@ export interface CompanyMember {
   user_id: string;
   user_email: string;
   user_full_name: string;
-  role: 'admin' | 'supplier' | 'accountant' | 'viewer' | 'inbound_supplier';
+  role: 'admin' | 'supplier' | 'accountant' | 'viewer' | 'inbound_supplier' | 'buyer';
   is_active: boolean;
   created_at: string;
 }
@@ -90,7 +90,8 @@ export type InvoiceStatus =
   | 'validated'
   | 'rejected'
   | 'cancelled'
-  | 'paid';
+  | 'paid'
+  | 'partially_paid';
 
 export type InvoiceType = 'tax_invoice' | 'simplified' | 'credit_note' | 'commercial_invoice' | 'continuous_supply';
 export type TransactionType = 'b2b' | 'b2g' | 'b2c';
@@ -170,6 +171,7 @@ export interface InvoiceListItem {
   total_amount: string;
   item_count: number;
   has_xml: boolean;
+  buyer_viewed_at: string | null;
   created_at: string;
 }
 
@@ -242,4 +244,61 @@ export interface APIError {
     message: string;
     details?: Record<string, string[]>;
   };
+}
+
+// ─── Buyer Portal ─────────────────────────────────────────────────────────────
+
+export interface BuyerProfile {
+  id: string;
+  email: string;
+  full_name: string;
+  customer_id: string;
+  customer_name: string;
+  created_at: string;
+}
+
+export interface BuyerDashboard {
+  total_invoices: number;
+  total_amount: string;
+  paid_count: number;
+  paid_amount: string;
+  unpaid_count: number;
+  unpaid_amount: string;
+  overdue_count: number;
+  company_name: string;
+  customer_name: string;
+  recent_invoices: InvoiceListItem[];
+}
+
+// ─── Payments ─────────────────────────────────────────────────────────────────
+
+export type PaymentMethod = 'bank_transfer' | 'cash' | 'cheque' | 'card' | 'online' | 'other' | 'stripe' | 'paypal';
+
+export interface Payment {
+  id: string;
+  amount: string;
+  method: PaymentMethod;
+  method_display: string;
+  payment_date: string;
+  reference: string;
+  notes: string;
+  recorded_by_name: string;
+  created_at: string;
+}
+
+export interface PaymentSummary {
+  payments: Payment[];
+  total_paid: string;
+  amount_due: string;
+  invoice_status: InvoiceStatus;
+}
+
+// ─── Payment Gateway Config ───────────────────────────────────────────────────
+
+export interface PaymentConfig {
+  stripe_enabled: boolean;
+  stripe_publishable_key: string;
+  paypal_enabled: boolean;
+  paypal_client_id: string;
+  paypal_sandbox: boolean;
 }

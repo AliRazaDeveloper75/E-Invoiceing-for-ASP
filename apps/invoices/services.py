@@ -443,12 +443,12 @@ class InvoiceService:
                 queue='invoice_processing',
             )
         except Exception:
-            # Celery/broker unavailable (development) — run synchronously
+            # Celery/broker unavailable — invoice stays in PENDING.
+            # Do NOT run synchronously; the retry task will re-queue it.
             logger.warning(
-                'Celery unavailable for invoice %s — running pipeline synchronously.',
+                'Celery unavailable for invoice %s — invoice left in PENDING status for retry.',
                 invoice.invoice_number,
             )
-            process_invoice.apply(args=[str(invoice.id)])
 
         logger.info('Invoice submitted for processing: %s', invoice.invoice_number)
         return invoice

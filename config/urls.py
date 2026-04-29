@@ -20,6 +20,10 @@ urlpatterns = [
     path('api/v1/integrations/', include('apps.integrations.urls', namespace='integrations')),
     path('api/v1/inbound/',      include('apps.inbound.urls',      namespace='inbound')),
     path('api/v1/admin/',        include('apps.admin_panel.urls',  namespace='admin_panel')),
+    path('api/v1/chat/',         include('apps.chat.urls',         namespace='chat')),
+    # Buyer Portal
+    path('api/v1/buyers/',       include('apps.buyers.urls_invite', namespace='buyers')),
+    path('api/v1/buyer/',        include('apps.buyers.urls_portal', namespace='buyer')),
 ]
 
 # Serve media files in development only

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -43,6 +43,8 @@ const FEATURES = [
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const mfaExpired = searchParams.get('reason') === 'mfa_expired';
   const [serverError, setServerError] = useState('');
   const [unverified, setUnverified] = useState(false);
 
@@ -185,6 +187,20 @@ export default function LoginPage() {
                   </Link>
                 </div>
               </div>
+
+              {mfaExpired && (
+                <div className="rounded-lg bg-amber-50 border border-amber-300 px-4 py-3 text-sm text-amber-800">
+                  <div className="flex items-start gap-2">
+                    <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
+                    <div>
+                      <p className="font-semibold">MFA session expired</p>
+                      <p className="mt-0.5 text-amber-700">
+                        Your 24-hour authenticator session has expired. Please sign in and verify your code again.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {unverified && (
                 <div className="rounded-lg bg-amber-50 border border-amber-300 px-4 py-3 text-sm text-amber-800">

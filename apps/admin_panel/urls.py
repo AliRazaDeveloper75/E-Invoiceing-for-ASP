@@ -17,13 +17,15 @@ from .views import (
     AdminInvoiceRejectASPView,
     AdminInvoiceReportFTAView,
     AdminInvoiceTimelineView,
+    AdminPaymentListView,
+    AdminPaymentVoidView,
 )
 
 app_name = 'admin_panel'
 
 urlpatterns = [
     # ── Stats ─────────────────────────────────────────────────────────────────
-    path('stats/',                                  AdminStatsView.as_view(),           name='stats'),
+    path('stats/',                                  AdminStatsView.as_view(),            name='stats'),
 
     # ── User Management ───────────────────────────────────────────────────────
     path('users/',                                  AdminUserListView.as_view(),         name='user-list'),
@@ -39,4 +41,8 @@ urlpatterns = [
     path('invoices/<uuid:pk>/reject-asp/',          AdminInvoiceRejectASPView.as_view(), name='invoice-reject-asp'),
     path('invoices/<uuid:pk>/report-fta/',          AdminInvoiceReportFTAView.as_view(), name='invoice-report-fta'),
     path('invoices/<uuid:pk>/timeline/',            AdminInvoiceTimelineView.as_view(),  name='invoice-timeline'),
+
+    # ── Payment Management ────────────────────────────────────────────────────
+    path('payments/',                               AdminPaymentListView.as_view(),      name='payment-list'),
+    path('payments/<uuid:pk>/',                     AdminPaymentVoidView.as_view(),      name='payment-void'),
 ]

@@ -375,25 +375,37 @@ class InvoicePDFDownloadView(APIView):
 
         items = invoice.items.filter(is_active=True).order_by('sort_order', 'created_at')
 
-        html = render_to_string('invoices/invoice_pdf.html', {
-            'invoice': invoice,
-            'items': items,
-        })
+        try:
+            html = render_to_string('invoices/invoice_pdf.html', {
+                'invoice': invoice,
+                'items': items,
+            })
+        except Exception as exc:
+            logger.exception('Template rendering failed for invoice %s', invoice_id)
+            return error_response(f'PDF template error: {exc}', status_code=500)
 
         buffer = io.BytesIO()
-        pdf_result = pisa.CreatePDF(
-            html,
-            dest=buffer,
-            page_size='A4',
-            margin_top='12mm',
-            margin_right='14mm',
-            margin_bottom='14mm',
-            margin_left='14mm',
-        )
+        err_buffer = io.StringIO()
+
+        try:
+            pdf_result = pisa.CreatePDF(
+                html,
+                dest=buffer,
+                encoding='utf-8',
+            )
+        except Exception as exc:
+            logger.exception('pisa.CreatePDF raised an exception for invoice %s', invoice_id)
+            return error_response(f'PDF engine error: {exc}', status_code=500)
 
         if pdf_result.err:
-            logger.error('PDF generation failed for invoice %s', invoice.invoice_number)
-            return error_response('PDF could not be generated.', status_code=500)
+            logger.error(
+                'PDF generation failed for invoice %s (pisa err=%s)',
+                invoice.invoice_number, pdf_result.err,
+            )
+            return error_response(
+                f'PDF could not be generated (err={pdf_result.err}).',
+                status_code=500,
+            )
 
         buffer.seek(0)
         filename = f'{invoice.invoice_number}.pdf'

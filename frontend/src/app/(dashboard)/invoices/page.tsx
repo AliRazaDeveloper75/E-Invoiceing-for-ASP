@@ -9,7 +9,7 @@ import { useCompany } from '@/hooks/useCompany';
 import { Button } from '@/components/ui/Button';
 import { InvoiceStatusBadge } from '@/components/ui/Badge';
 import { Select } from '@/components/ui/Input';
-import { Plus, Download, FileText, Building2 } from 'lucide-react';
+import { Plus, Download, FileText, Building2, Eye } from 'lucide-react';
 import type { InvoiceListItem, InvoiceStatus } from '@/types';
 
 async function downloadFile(
@@ -121,11 +121,18 @@ export default function InvoicesPage() {
           )}
         </div>
         {!isAdmin && (
-          <Link href="/invoices/new">
-            <Button>
-              <Plus className="h-4 w-4" /> New Invoice
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/invoices/new">
+              <Button variant="secondary">
+                <Plus className="h-4 w-4" /> Standard
+              </Button>
+            </Link>
+            <Link href="/invoices/pint-create">
+              <Button>
+                <Plus className="h-4 w-4" /> PINT Invoice
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
 
@@ -200,7 +207,15 @@ export default function InvoicesPage() {
                     })}
                   </td>
                   <td className="px-5 py-3.5">
-                    <InvoiceStatusBadge status={inv.status as InvoiceStatus} />
+                    <div className="flex flex-col gap-1.5">
+                      <InvoiceStatusBadge status={inv.status as InvoiceStatus} />
+                      {!isAdmin && (inv as InvoiceListItem).buyer_viewed_at && (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-teal-600 bg-teal-50 border border-teal-100 px-1.5 py-0.5 rounded-full w-fit">
+                          <Eye className="w-3 h-3" />
+                          Buyer Viewed
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-5 py-3.5 text-right">
                     {!isAdmin && (

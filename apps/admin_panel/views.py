@@ -31,12 +31,14 @@ from apps.accounts.services import AuthService
 from apps.invoices.models import Invoice
 from apps.invoices.serializers import InvoiceListSerializer
 from apps.companies.models import Company
+from apps.payments.models import Payment
 from apps.common.constants import (
     INVOICE_STATUS_DRAFT, INVOICE_STATUS_PENDING, INVOICE_STATUS_SUBMITTED,
     INVOICE_STATUS_VALIDATED, INVOICE_STATUS_REJECTED, INVOICE_STATUS_CANCELLED,
     USER_ROLE_CHOICES,
 )
 from django.utils import timezone  # noqa: E402  (used in views below)
+from decimal import Decimal
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -79,6 +81,13 @@ class AdminStatsView(APIView):
             fta_status__isnull=True,
         ).count()
 
+        # Payment stats
+        from django.db.models import Sum as DbSum
+        pay_qs = Payment.objects.filter(is_active=True)
+        payment_total = pay_qs.aggregate(total=DbSum('amount'))['total'] or Decimal('0.00')
+        payment_count = pay_qs.count()
+        buyer_viewed  = inv_qs.filter(buyer_viewed_at__isnull=False).count()
+
         return success_response(data={
             'users': {
                 'total':    total_users,
@@ -90,10 +99,15 @@ class AdminStatsView(APIView):
                 'total': total_companies,
             },
             'invoices': {
-                'total':      inv_qs.count(),
-                'by_status':  invoice_counts,
-                'asp_pending': asp_pending,
-                'fta_pending': fta_pending,
+                'total':         inv_qs.count(),
+                'by_status':     invoice_counts,
+                'asp_pending':   asp_pending,
+                'fta_pending':   fta_pending,
+                'buyer_viewed':  buyer_viewed,
+            },
+            'payments': {
+                'total_count':  payment_count,
+                'total_amount': str(payment_total),
             },
         })
 
@@ -521,3 +535,129 @@ class AdminInvoiceSerializer(serializers.ModelSerializer):
         if obj.created_by:
             return obj.created_by.full_name
         return ''
+
+
+# ─── Payment Management ───────────────────────────────────────────────────────
+
+class AdminPaymentListView(APIView):
+    """
+    GET /api/v1/admin/payments/
+    List all payments across all companies — with filters and totals.
+    """
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        from django.db.models import Sum as DbSum
+
+        qs = Payment.objects.select_related(
+            'invoice', 'invoice__company', 'invoice__customer', 'recorded_by'
+        ).filter(is_active=True).order_by('-payment_date', '-created_at')
+
+        # Filters
+        method     = request.query_params.get('method', '').strip()
+        company_id = request.query_params.get('company_id', '').strip()
+        search     = request.query_params.get('search', '').strip()
+        date_from  = request.query_params.get('date_from', '').strip()
+        date_to    = request.query_params.get('date_to', '').strip()
+
+        if method:
+            qs = qs.filter(method=method)
+        if company_id:
+            qs = qs.filter(invoice__company_id=company_id)
+        if search:
+            qs = qs.filter(
+                Q(invoice__invoice_number__icontains=search) |
+                Q(invoice__customer__name__icontains=search) |
+                Q(invoice__company__name__icontains=search) |
+                Q(reference__icontains=search)
+            )
+        if date_from:
+            qs = qs.filter(payment_date__gte=date_from)
+        if date_to:
+            qs = qs.filter(payment_date__lte=date_to)
+
+        total_amount = qs.aggregate(total=DbSum('amount'))['total'] or Decimal('0.00')
+        total_count  = qs.count()
+
+        paginator = StandardResultsPagination()
+        page = paginator.paginate_queryset(qs, request)
+
+        data = []
+        for p in page:
+            data.append({
+                'id':             str(p.id),
+                'invoice_id':     str(p.invoice_id),
+                'invoice_number': p.invoice.invoice_number,
+                'invoice_status': p.invoice.status,
+                'company_name':   p.invoice.company.name,
+                'customer_name':  p.invoice.customer.name,
+                'amount':         str(p.amount),
+                'method':         p.method,
+                'method_display': p.get_method_display(),
+                'payment_date':   str(p.payment_date),
+                'reference':      p.reference,
+                'notes':          p.notes,
+                'recorded_by':    p.recorded_by.full_name if p.recorded_by else '—',
+                'created_at':     p.created_at.isoformat(),
+            })
+
+        return success_response(data={
+            'results': data,
+            'summary': {
+                'total_count':  total_count,
+                'total_amount': str(total_amount),
+            },
+            'pagination': {
+                'count':    paginator.page.paginator.count,
+                'next':     paginator.get_next_link(),
+                'previous': paginator.get_previous_link(),
+            },
+        })
+
+
+class AdminPaymentVoidView(APIView):
+    """
+    DELETE /api/v1/admin/payments/<uuid>/
+    Void (soft-delete) a payment and recalculate invoice status.
+    """
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def delete(self, request, pk):
+        from django.db.models import Sum as DbSum
+
+        try:
+            payment = Payment.objects.select_related('invoice').get(id=pk, is_active=True)
+        except Payment.DoesNotExist:
+            return error_response('Payment not found.', status_code=404)
+
+        invoice = payment.invoice
+        payment.is_active = False
+        payment.save(update_fields=['is_active', 'updated_at'])
+
+        # Recalculate invoice payment status
+        total_paid = invoice.payments.filter(is_active=True).aggregate(
+            total=DbSum('amount')
+        )['total'] or Decimal('0.00')
+
+        if total_paid >= invoice.total_amount:
+            new_status = 'paid'
+        elif total_paid > Decimal('0.00'):
+            new_status = 'partially_paid'
+        else:
+            # Revert to pre-payment status based on ASP submission history
+            if invoice.status in ('paid', 'partially_paid'):
+                new_status = 'validated' if invoice.asp_submitted_at else 'pending'
+            else:
+                new_status = invoice.status
+
+        invoice.status = new_status
+        invoice.save(update_fields=['status', 'updated_at'])
+
+        logger.info(
+            'Admin %s voided payment %s (invoice %s → %s)',
+            request.user.email, pk, invoice.invoice_number, new_status
+        )
+        return success_response(
+            message=f'Payment voided. Invoice {invoice.invoice_number} status updated to {new_status}.',
+            data={'invoice_status': new_status},
+        )

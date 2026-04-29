@@ -22,7 +22,11 @@ export default function VerifyEmailPage() {
   // If already verified, bounce to the right home page
   useEffect(() => {
     if (user?.email_verified) {
-      router.replace(user.role === 'inbound_supplier' ? '/supplier-portal' : '/dashboard');
+      router.replace(
+        user.role === 'inbound_supplier' ? '/supplier-portal'
+        : user.role === 'buyer' ? '/buyer/dashboard'
+        : '/dashboard'
+      );
     }
   }, [user, router]);
 

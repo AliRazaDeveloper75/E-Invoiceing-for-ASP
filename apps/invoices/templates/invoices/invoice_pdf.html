@@ -4,133 +4,106 @@
 <meta charset="UTF-8"/>
 <title>{{ invoice.invoice_number }}</title>
 <style>
-/* ── Reset ──────────────────────────────────────────────────── */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; color: #1f2937; background: #fff; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 9pt;
+  color: #111827;
+  background: #ffffff;
+}
 
-/* ── Utilities ──────────────────────────────────────────────── */
-.bold  { font-weight: bold; }
-.right { text-align: right; }
-.center{ text-align: center; }
-.mono  { font-family: Courier, monospace; }
-.upper { text-transform: uppercase; }
-.sp4   { height: 4px; }
-.sp8   { height: 8px; }
-.sp12  { height: 12px; }
-.sp16  { height: 16px; }
-.w100  { width: 100%; }
+/* ── TOP ACCENT ──────────────────────────────────────────────── */
+.top-accent {
+  height: 4px;
+  background: #2563eb;
+  width: 100%;
+  margin-bottom: 28px;
+}
 
-/* ── PAGE HEADER ────────────────────────────────────────────── */
-.page-header { width: 100%; border-collapse: collapse; }
-.page-header td { vertical-align: middle; }
+/* ── HEADER ──────────────────────────────────────────────────── */
+.hdr { width:100%; border-collapse:collapse; }
+.hdr td { vertical-align:top; }
 
-.brand-block { }
-.brand-title {
-  font-size: 22pt;
+.company-name {
+  font-size: 13pt;
   font-weight: bold;
-  color: #1e3a5f;
-  letter-spacing: 2px;
+  color: #111827;
+  letter-spacing: 0.3px;
+}
+.company-sub {
+  font-size: 7.5pt;
+  color: #9ca3af;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+.inv-heading {
+  font-size: 24pt;
+  font-weight: bold;
+  color: #111827;
+  letter-spacing: 0;
   line-height: 1;
 }
-.brand-sub {
-  font-size: 8pt;
+.inv-number {
+  font-size: 9pt;
   color: #6b7280;
-  margin-top: 3px;
-}
-
-.doc-block { text-align: right; }
-.doc-type-badge {
-  display: inline-block;
-  background: #1e3a5f;
-  color: #fff;
-  font-size: 7pt;
-  font-weight: bold;
-  letter-spacing: 1px;
-  padding: 3px 10px;
-  border-radius: 3px;
-}
-.doc-number {
-  font-size: 14pt;
-  font-weight: bold;
-  color: #1e3a5f;
   margin-top: 5px;
 }
-.doc-status {
+.inv-number strong { color: #111827; font-family: Courier, monospace; }
+
+.status-pill {
   display: inline-block;
   font-size: 7pt;
   font-weight: bold;
-  letter-spacing: 0.8px;
-  padding: 2px 8px;
+  letter-spacing: 0.5px;
+  padding: 3px 10px;
   border-radius: 3px;
-  margin-top: 4px;
+  text-transform: uppercase;
+  margin-top: 7px;
 }
-.status-draft    { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
-.status-pending  { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
-.status-validated{ background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
-.status-reported { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
-.status-cancelled{ background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.s-draft     { background:#f1f5f9; color:#64748b; }
+.s-pending   { background:#fef3c7; color:#92400e; }
+.s-submitted { background:#dbeafe; color:#1e40af; }
+.s-validated { background:#d1fae5; color:#065f46; }
+.s-rejected  { background:#fee2e2; color:#991b1b; }
+.s-cancelled { background:#f3f4f6; color:#6b7280; }
 
-/* Divider under header */
-.hdr-rule { border: none; border-top: 2px solid #1e3a5f; margin: 0; }
-
-/* ── CREDIT NOTE BANNER ─────────────────────────────────────── */
-.cr-banner {
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  border-left: 4px solid #f97316;
-  padding: 7px 12px;
-  font-size: 8.5pt;
-  color: #9a3412;
+.inv-meta-line {
+  font-size: 7.5pt;
+  color: #9ca3af;
+  margin-top: 6px;
 }
 
-/* ── SECTION HEADING ────────────────────────────────────────── */
-.sec-heading {
+/* ── DIVIDER ─────────────────────────────────────────────────── */
+.rule  { border:none; border-top:1px solid #e5e7eb; margin:18px 0; }
+.rule2 { border:none; border-top:1px solid #f3f4f6; margin:10px 0; }
+
+/* ── SECTION LABEL ───────────────────────────────────────────── */
+.sec-lbl {
   font-size: 6.5pt;
   font-weight: bold;
-  color: #6b7280;
+  color: #9ca3af;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 4px;
-  margin-bottom: 0;
+  letter-spacing: 1.5px;
+  margin-bottom: 9px;
 }
 
-/* ── PARTY CARDS ────────────────────────────────────────────── */
-.parties { width: 100%; border-collapse: separate; border-spacing: 0; }
-.party-card {
-  width: 49%;
-  border: 1px solid #e2e8f0;
-  padding: 11px 13px;
-  vertical-align: top;
-  border-radius: 4px;
-}
-.party-gap { width: 2%; }
-.party-role {
-  font-size: 6.5pt;
-  font-weight: bold;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 6px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid #e5e7eb;
-}
-.party-name {
+/* ── PARTIES ─────────────────────────────────────────────────── */
+.parties { width:100%; border-collapse:collapse; }
+.party-col { width:48%; vertical-align:top; padding:0; }
+.party-gap { width:4%; }
+
+.party-name-lg {
   font-size: 11pt;
   font-weight: bold;
-  color: #0f172a;
-  line-height: 1.2;
+  color: #111827;
+  line-height: 1.3;
 }
 .party-legal {
-  font-size: 7.5pt;
-  color: #64748b;
-  margin-top: 2px;
-  font-style: italic;
-}
-.party-trn {
   font-size: 8pt;
-  color: #374151;
-  margin-top: 6px;
+  color: #6b7280;
+  font-style: italic;
+  margin-top: 2px;
 }
 .party-addr {
   font-size: 8pt;
@@ -138,459 +111,448 @@ body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; color: #1f2937
   margin-top: 6px;
   line-height: 1.7;
 }
-.party-contact {
-  font-size: 7.5pt;
-  color: #6b7280;
-  margin-top: 4px;
-}
-
-/* ── META STRIP ─────────────────────────────────────────────── */
-.meta-strip {
-  width: 100%;
-  border-collapse: collapse;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-}
-.meta-strip td {
-  padding: 8px 12px;
-  border-right: 1px solid #e2e8f0;
-  vertical-align: top;
-  background: #f8fafc;
-}
-.meta-strip td:last-child { border-right: none; }
-.meta-lbl {
+.party-trn-lbl {
   font-size: 6.5pt;
   color: #9ca3af;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  margin-bottom: 3px;
-}
-.meta-val {
-  font-size: 9pt;
-  font-weight: bold;
-  color: #0f172a;
-}
-
-/* ── LINE ITEMS TABLE ───────────────────────────────────────── */
-.items-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 8.5pt;
-}
-.items-table thead tr {
-  background: #1e3a5f;
-}
-.items-table thead th {
-  padding: 7px 8px;
-  color: #e0e7ef;
-  font-size: 7pt;
-  font-weight: bold;
-  text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin-top: 8px;
 }
-.items-table thead th.th-r { text-align: right; }
-.items-table thead th.th-c { text-align: center; }
-
-.items-table tbody tr { border-bottom: 1px solid #f1f5f9; }
-.items-table tbody tr.row-alt { background: #f8fafc; }
-.items-table tbody td {
-  padding: 7px 8px;
-  vertical-align: top;
+.party-trn-val {
+  font-size: 8.5pt;
+  font-weight: bold;
   color: #374151;
-  line-height: 1.4;
+  font-family: Courier, monospace;
+  margin-top: 1px;
 }
-.items-table tbody td.td-r  { text-align: right; }
-.items-table tbody td.td-c  { text-align: center; }
-.items-table tbody td.td-num { color: #1f2937; font-weight: bold; }
-.item-desc { font-weight: bold; color: #111827; }
-.item-code { font-size: 7pt; color: #9ca3af; margin-top: 1px; }
-.vat-badge {
-  display: inline-block;
-  font-size: 7pt;
-  padding: 1px 5px;
-  border-radius: 2px;
-  font-weight: bold;
+.party-contact {
+  font-size: 7.5pt;
+  color: #9ca3af;
+  margin-top: 3px;
 }
-.vat-std  { background: #dbeafe; color: #1e40af; }
-.vat-zero { background: #d1fae5; color: #065f46; }
-.vat-ex   { background: #f3f4f6; color: #6b7280; }
 
-/* ── TOTALS BOX ─────────────────────────────────────────────── */
-.totals-wrap { width: 100%; border-collapse: collapse; }
-.totals-spacer { width: 52%; }
-.totals-box-cell { width: 48%; vertical-align: top; }
-.totals-box {
-  width: 100%;
-  border-collapse: collapse;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  overflow: hidden;
+/* ── META STRIP ──────────────────────────────────────────────── */
+.meta-strip { width:100%; border-collapse:collapse; }
+.meta-cell {
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  padding: 10px 14px;
+  vertical-align: top;
 }
-.totals-box tr { border-bottom: 1px solid #f1f5f9; }
-.totals-box td { padding: 7px 12px; font-size: 8.5pt; vertical-align: middle; }
-.tot-lbl { color: #6b7280; }
-.tot-amt { text-align: right; font-weight: bold; color: #1e293b; }
-.tot-discount td { background: #fff7f7; }
-.tot-discount .tot-lbl { color: #dc2626; }
-.tot-discount .tot-amt { color: #dc2626; }
-.tot-grand td {
-  background: #1e3a5f;
-  color: #ffffff;
-  font-size: 10pt;
+.meta-lbl {
+  font-size: 6.5pt;
   font-weight: bold;
-  padding: 10px 12px;
-  border-bottom: none;
-  vertical-align: middle;
-}
-.tot-grand .tot-amt { color: #ffffff; }
-
-/* ── REFERENCES TABLE ───────────────────────────────────────── */
-.refs-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 8pt;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-}
-.refs-table tr { border-bottom: 1px solid #f1f5f9; }
-.refs-table tr:last-child { border-bottom: none; }
-.refs-table td { padding: 6px 11px; vertical-align: top; }
-.ref-key { width: 38%; color: #9ca3af; font-weight: bold; font-size: 7.5pt; }
-.ref-val { color: #1f2937; word-break: break-all; }
-
-/* ── NOTES BOX ──────────────────────────────────────────────── */
-.notes-box {
-  border: 1px solid #bfdbfe;
-  border-left: 4px solid #3b82f6;
-  background: #eff6ff;
-  padding: 9px 13px;
-  border-radius: 0 4px 4px 0;
-}
-.notes-label {
-  font-size: 7pt;
-  font-weight: bold;
-  color: #1d4ed8;
+  color: #9ca3af;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 4px;
 }
-.notes-text {
-  font-size: 8.5pt;
-  color: #1e40af;
-  line-height: 1.6;
-  word-wrap: break-word;
+.meta-val {
+  font-size: 9pt;
+  font-weight: bold;
+  color: #111827;
 }
 
-/* ── COMPLIANCE FOOTER ──────────────────────────────────────── */
-.footer-rule { border: none; border-top: 1px solid #e5e7eb; }
-.footer-wrap { width: 100%; border-collapse: collapse; }
-.footer-left { vertical-align: middle; }
-.footer-right { text-align: right; vertical-align: middle; }
-.footer-text {
-  font-size: 7pt;
-  color: #9ca3af;
-  line-height: 1.7;
+/* ── CREDIT NOTE BANNER ──────────────────────────────────────── */
+.cr-banner {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-left: 3px solid #f97316;
+  padding: 8px 14px;
+  font-size: 8pt;
+  color: #9a3412;
 }
+
+/* ── ITEMS TABLE ─────────────────────────────────────────────── */
+.items-tbl { width:100%; border-collapse:collapse; font-size:8.5pt; }
+.items-tbl thead tr { border-bottom: 2px solid #e5e7eb; }
+.items-tbl thead th {
+  padding: 8px 10px;
+  color: #6b7280;
+  font-size: 7pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+.items-tbl thead th.th-r { text-align:right; }
+.items-tbl thead th.th-c { text-align:center; }
+
+.items-tbl tbody tr { border-bottom: 1px solid #f3f4f6; }
+.items-tbl tbody td {
+  padding: 11px 10px;
+  vertical-align: middle;
+  color: #374151;
+}
+.items-tbl tbody td.td-r { text-align:right; }
+.items-tbl tbody td.td-c { text-align:center; }
+
+.item-name { font-weight: bold; color:#111827; font-size:8.5pt; }
+.item-desc { font-size:7.5pt; color:#9ca3af; margin-top:2px; }
+.item-code { font-size:7pt;   color:#d1d5db; margin-top:1px; }
+
+.vat-pill {
+  display: inline-block;
+  font-size: 6pt;
+  font-weight: bold;
+  padding: 2px 7px;
+  border-radius: 3px;
+  letter-spacing: 0.2px;
+}
+.vp-std  { background:#eff6ff; color:#2563eb; }
+.vp-zero { background:#f0fdf4; color:#16a34a; }
+.vp-ex   { background:#f9fafb; color:#6b7280; }
+
+.items-tbl tfoot tr { background: #f9fafb; border-top: 1px solid #e5e7eb; }
+.items-tbl tfoot td {
+  padding: 7px 10px;
+  font-size: 7.5pt;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* ── TOTALS ──────────────────────────────────────────────────── */
+.tot-outer { width:100%; border-collapse:collapse; }
+.tot-space { width:55%; }
+.tot-box-cell { width:45%; vertical-align:top; }
+
+.tot-inner { width:100%; border-collapse:collapse; }
+.tot-inner tr { border-bottom:1px solid #f3f4f6; }
+.tot-inner td { padding:9px 0; font-size:9pt; vertical-align:middle; }
+.tot-lbl { color:#6b7280; }
+.tot-amt { text-align:right; font-weight:bold; color:#111827; }
+
+.tot-disc .tot-lbl { color:#dc2626; }
+.tot-disc .tot-amt { color:#dc2626; }
+.tot-vat  .tot-lbl { color:#2563eb; }
+.tot-vat  .tot-amt { color:#2563eb; }
+
+.tot-grand td {
+  padding-top: 14px;
+  font-size: 12pt;
+  font-weight: bold;
+  border-top: 2px solid #111827;
+  border-bottom: none;
+}
+.tot-grand .tot-lbl { color:#111827; }
+.tot-grand .tot-amt { color:#111827; }
+
+/* ── REFERENCES ──────────────────────────────────────────────── */
+.refs-tbl { width:100%; border-collapse:collapse; font-size:8pt; }
+.refs-tbl tr { border-bottom:1px solid #f3f4f6; }
+.refs-tbl tr:last-child { border-bottom:none; }
+.refs-tbl td { padding:7px 0; vertical-align:top; }
+.ref-key { width:40%; color:#9ca3af; font-size:7.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; }
+.ref-val { color:#374151; font-family:Courier,monospace; font-size:7.5pt; word-break:break-all; }
+
+/* ── NOTES ───────────────────────────────────────────────────── */
+.notes-box {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-left: 3px solid #2563eb;
+  padding: 10px 14px;
+}
+.notes-lbl { font-size:7pt; font-weight:bold; color:#2563eb; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+.notes-txt { font-size:8pt; color:#374151; line-height:1.7; }
+
+/* ── FOOTER ──────────────────────────────────────────────────── */
+.footer-rule  { border:none; border-top:1px solid #e5e7eb; margin:20px 0 12px; }
+.footer-tbl   { width:100%; border-collapse:collapse; }
+.footer-left  { vertical-align:middle; }
+.footer-right { text-align:right; vertical-align:middle; width:38%; }
+.footer-txt   { font-size:7pt; color:#9ca3af; line-height:1.8; }
 .footer-badge {
   display: inline-block;
-  font-size: 6.5pt;
+  font-size: 6pt;
   font-weight: bold;
-  color: #9ca3af;
+  color: #6b7280;
   border: 1px solid #e5e7eb;
-  padding: 2px 6px;
+  background: #f9fafb;
+  padding: 2px 7px;
   border-radius: 3px;
-  margin-top: 4px;
+  margin-left: 3px;
 }
+
+/* ── SPACERS ─────────────────────────────────────────────────── */
+.sp4  { height:4px; }
+.sp8  { height:8px; }
+.sp12 { height:12px; }
+.sp16 { height:16px; }
+.sp20 { height:20px; }
+.sp24 { height:24px; }
+.w100 { width:100%; }
 </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════════════════ -->
-<!-- HEADER                                                      -->
-<!-- ══════════════════════════════════════════════════════════ -->
-<table class="page-header w100" cellspacing="0" cellpadding="0">
+<!-- TOP ACCENT BAR -->
+<div class="top-accent"></div>
+
+<!-- ── HEADER ──────────────────────────────────────────────────── -->
+<table class="hdr w100" cellspacing="0" cellpadding="0">
   <tr>
-    <td class="brand-block" style="width:55%;">
-      <div class="brand-title">UAE E-INVOICE</div>
-      <div class="brand-sub">PEPPOL 5-Corner Platform &nbsp;&bull;&nbsp; {{ invoice.company.name }}</div>
+    <!-- Left: Company branding -->
+    <td style="width:55%; vertical-align:top;">
+      <div class="company-name">{{ invoice.company.name }}</div>
+      <div class="company-sub">
+        TRN: {{ invoice.company.trn }} &nbsp;&bull;&nbsp; {{ invoice.company.country }}<br/>
+        {% if invoice.company.street_address %}{{ invoice.company.street_address }}{% if invoice.company.city %}, {{ invoice.company.city }}{% endif %}<br/>{% endif %}
+        {% if invoice.company.email %}{{ invoice.company.email }}{% endif %}{% if invoice.company.phone %} &nbsp;&bull;&nbsp; {{ invoice.company.phone }}{% endif %}
+      </div>
     </td>
-    <td class="doc-block" style="width:45%;">
-      <div><span class="doc-type-badge">{{ invoice.get_invoice_type_display|upper }}</span></div>
-      <div class="doc-number">{{ invoice.invoice_number }}</div>
+
+    <!-- Right: Invoice info -->
+    <td style="width:45%; vertical-align:top; text-align:right;">
+      <div class="inv-heading">INVOICE</div>
+      <div class="inv-number">No. <strong>{{ invoice.invoice_number }}</strong></div>
       <div>
         {% with s=invoice.status %}
-        <span class="doc-status
-          {% if s == 'draft' %}status-draft
-          {% elif s == 'pending' or s == 'submitted' %}status-pending
-          {% elif s == 'validated' %}status-validated
-          {% elif s == 'reported' %}status-reported
-          {% elif s == 'cancelled' %}status-cancelled
-          {% else %}status-draft{% endif %}">
-          {{ invoice.get_status_display|upper }}
+        <span class="status-pill
+          {% if s == 'draft' %}s-draft
+          {% elif s == 'pending' %}s-pending
+          {% elif s == 'submitted' %}s-submitted
+          {% elif s == 'validated' %}s-validated
+          {% elif s == 'rejected' %}s-rejected
+          {% elif s == 'cancelled' %}s-cancelled
+          {% else %}s-draft{% endif %}">
+          {{ invoice.get_status_display }}
         </span>
         {% endwith %}
+      </div>
+      <div class="inv-meta-line">
+        {{ invoice.get_invoice_type_display|upper }}
+        &nbsp;&bull;&nbsp; {{ invoice.transaction_type|upper }}
+        &nbsp;&bull;&nbsp; {{ invoice.currency }}
       </div>
     </td>
   </tr>
 </table>
 
-<div class="sp8"></div>
-<hr class="hdr-rule"/>
-<div class="sp12"></div>
+<hr class="rule"/>
 
 {% if invoice.invoice_type == "credit_note" and invoice.reference_number %}
 <div class="cr-banner">
-  <span class="bold">Credit Note</span> &mdash; Reduces value of original invoice
-  <span class="bold">{{ invoice.reference_number }}</span>.
+  <strong>Credit Note</strong> &mdash; References original invoice <strong>{{ invoice.reference_number }}</strong>
 </div>
 <div class="sp12"></div>
 {% endif %}
 
-<!-- ══════════════════════════════════════════════════════════ -->
-<!-- SUPPLIER & BUYER                                           -->
-<!-- ══════════════════════════════════════════════════════════ -->
+<!-- ── PARTIES ──────────────────────────────────────────────────── -->
 <table class="parties" cellspacing="0" cellpadding="0">
   <tr>
-    <!-- Supplier (Corner 1) -->
-    <td class="party-card">
-      <div class="party-role">&#9679; Supplier &nbsp;/&nbsp; Corner 1</div>
-      <div class="party-name">{{ invoice.company.name }}</div>
+    <!-- Supplier -->
+    <td class="party-col">
+      <div class="sec-lbl">From (Supplier &middot; Corner 1)</div>
+      <div class="party-name-lg">{{ invoice.company.name }}</div>
       {% if invoice.company.legal_name and invoice.company.legal_name != invoice.company.name %}
       <div class="party-legal">{{ invoice.company.legal_name }}</div>
       {% endif %}
-      <div class="party-trn">TRN: <span class="bold mono">{{ invoice.company.trn }}</span></div>
       <div class="party-addr">
         {% if invoice.company.street_address %}{{ invoice.company.street_address }}<br/>{% endif %}
         {% if invoice.company.city %}{{ invoice.company.city }}{% if invoice.company.emirate %}, {{ invoice.company.get_emirate_display }}{% endif %}<br/>{% endif %}
         {% if invoice.company.po_box %}P.O. Box {{ invoice.company.po_box }}<br/>{% endif %}
         {{ invoice.company.country }}
       </div>
-      {% if invoice.company.phone %}<div class="party-contact">Tel: {{ invoice.company.phone }}</div>{% endif %}
+      <div class="party-trn-lbl">Tax Registration Number</div>
+      <div class="party-trn-val">{{ invoice.company.trn }}</div>
+      {% if invoice.company.phone %}<div class="party-contact">{{ invoice.company.phone }}</div>{% endif %}
       {% if invoice.company.email %}<div class="party-contact">{{ invoice.company.email }}</div>{% endif %}
     </td>
 
     <td class="party-gap"></td>
 
-    <!-- Buyer (Corner 4) -->
-    <td class="party-card">
-      <div class="party-role">&#9679; Buyer &nbsp;/&nbsp; Corner 4</div>
-      <div class="party-name">{{ invoice.customer.name }}</div>
+    <!-- Buyer -->
+    <td class="party-col">
+      <div class="sec-lbl">Bill To (Buyer &middot; Corner 4)</div>
+      <div class="party-name-lg">{{ invoice.customer.name }}</div>
       {% if invoice.customer.legal_name and invoice.customer.legal_name != invoice.customer.name %}
       <div class="party-legal">{{ invoice.customer.legal_name }}</div>
-      {% endif %}
-      {% if invoice.customer.trn %}
-      <div class="party-trn">TRN: <span class="bold mono">{{ invoice.customer.trn }}</span></div>
-      {% elif invoice.customer.vat_number %}
-      <div class="party-trn">VAT: <span class="bold mono">{{ invoice.customer.vat_number }}</span></div>
       {% endif %}
       <div class="party-addr">
         {% if invoice.customer.street_address %}{{ invoice.customer.street_address }}<br/>{% endif %}
         {% if invoice.customer.city %}{{ invoice.customer.city }}{% if invoice.customer.state_province %}, {{ invoice.customer.state_province }}{% endif %}<br/>{% endif %}
         {{ invoice.customer.country }}
       </div>
-      {% if invoice.customer.phone %}<div class="party-contact">Tel: {{ invoice.customer.phone }}</div>{% endif %}
+      {% if invoice.customer.trn %}
+      <div class="party-trn-lbl">Tax Registration Number</div>
+      <div class="party-trn-val">{{ invoice.customer.trn }}</div>
+      {% elif invoice.customer.vat_number %}
+      <div class="party-trn-lbl">VAT Number</div>
+      <div class="party-trn-val">{{ invoice.customer.vat_number }}</div>
+      {% endif %}
+      {% if invoice.customer.phone %}<div class="party-contact">{{ invoice.customer.phone }}</div>{% endif %}
       {% if invoice.customer.email %}<div class="party-contact">{{ invoice.customer.email }}</div>{% endif %}
     </td>
   </tr>
 </table>
 
-<div class="sp12"></div>
+<div class="sp20"></div>
 
-<!-- ══════════════════════════════════════════════════════════ -->
-<!-- META STRIP — Dates & References                            -->
-<!-- ══════════════════════════════════════════════════════════ -->
-<table class="meta-strip" cellspacing="0" cellpadding="0">
+<!-- ── META STRIP ───────────────────────────────────────────────── -->
+<table class="meta-strip w100" cellspacing="0" cellpadding="0">
   <tr>
-    <td>
+    <td class="meta-cell">
       <div class="meta-lbl">Issue Date</div>
       <div class="meta-val">{{ invoice.issue_date|date:"d M Y" }}</div>
     </td>
-    <td>
+    <td class="meta-cell">
       <div class="meta-lbl">Due Date</div>
       <div class="meta-val">{% if invoice.due_date %}{{ invoice.due_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</div>
     </td>
     {% if invoice.invoice_type == 'continuous_supply' %}
-    <td>
+    <td class="meta-cell">
       <div class="meta-lbl">Period Start</div>
       <div class="meta-val">{% if invoice.supply_date %}{{ invoice.supply_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</div>
     </td>
-    <td>
+    <td class="meta-cell">
       <div class="meta-lbl">Period End</div>
       <div class="meta-val">{% if invoice.supply_date_end %}{{ invoice.supply_date_end|date:"d M Y" }}{% else %}&mdash;{% endif %}</div>
     </td>
-    {% if invoice.contract_reference %}
-    <td>
-      <div class="meta-lbl">Contract Ref</div>
-      <div class="meta-val">{{ invoice.contract_reference }}</div>
-    </td>
-    {% endif %}
     {% else %}
-    <td>
+    <td class="meta-cell">
       <div class="meta-lbl">Supply Date</div>
       <div class="meta-val">{% if invoice.supply_date %}{{ invoice.supply_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</div>
     </td>
     {% endif %}
-    <td>
-      <div class="meta-lbl">Transaction</div>
-      <div class="meta-val upper">{{ invoice.transaction_type }}</div>
-    </td>
-    <td>
+    <td class="meta-cell">
       <div class="meta-lbl">Currency</div>
       <div class="meta-val">{{ invoice.currency }}</div>
     </td>
     {% if invoice.purchase_order_number %}
-    <td>
+    <td class="meta-cell">
       <div class="meta-lbl">PO Number</div>
       <div class="meta-val">{{ invoice.purchase_order_number }}</div>
+    </td>
+    {% endif %}
+    {% if invoice.payment_means_code %}
+    <td class="meta-cell">
+      <div class="meta-lbl">Payment Code</div>
+      <div class="meta-val">{{ invoice.payment_means_code }}</div>
     </td>
     {% endif %}
   </tr>
 </table>
 
-<div class="sp16"></div>
+<div class="sp24"></div>
 
-<!-- ══════════════════════════════════════════════════════════ -->
-<!-- LINE ITEMS                                                 -->
-<!-- ══════════════════════════════════════════════════════════ -->
-<div class="sec-heading">Line Items</div>
-<div class="sp4"></div>
-<table class="items-table" cellspacing="0" cellpadding="0">
+<!-- ── LINE ITEMS ───────────────────────────────────────────────── -->
+<div class="sec-lbl">Items</div>
+<table class="items-tbl" cellspacing="0" cellpadding="0">
   <thead>
     <tr>
-      <th style="width:4%;text-align:center;">#</th>
-      <th style="width:38%;">Description</th>
-      <th class="th-r" style="width:7%;">Qty</th>
+      <th style="width:4%; text-align:center;">#</th>
+      <th style="width:37%; text-align:left;">Description</th>
+      <th class="th-r" style="width:8%;">Qty</th>
       <th class="th-c" style="width:7%;">Unit</th>
       <th class="th-r" style="width:12%;">Unit Price</th>
-      <th class="th-c" style="width:14%;">VAT Type</th>
+      <th class="th-c" style="width:12%;">VAT Type</th>
       <th class="th-r" style="width:9%;">VAT Amt</th>
-      <th class="th-r" style="width:9%;">Total</th>
+      <th class="th-r" style="width:11%;">Total</th>
     </tr>
   </thead>
   <tbody>
     {% for item in items %}
-    <tr{% if forloop.counter|divisibleby:2 %} class="row-alt"{% endif %}>
-      <td class="td-c" style="color:#9ca3af;">{{ forloop.counter }}</td>
+    <tr>
+      <td style="text-align:center; color:#d1d5db; font-size:8pt; font-weight:bold;">{{ forloop.counter }}</td>
       <td>
-        <div class="item-desc">{{ item.description }}</div>
+        {% if item.item_name %}<div class="item-name">{{ item.item_name }}</div>{% endif %}
+        <div class="item-desc{% if not item.item_name %} item-name{% endif %}">{{ item.description }}</div>
         {% if item.item_code %}<div class="item-code">SKU: {{ item.item_code }}</div>{% endif %}
       </td>
-      <td class="td-r">{{ item.quantity }}</td>
-      <td class="td-c" style="color:#6b7280;">{{ item.unit|default:"&mdash;" }}</td>
-      <td class="td-r">{{ item.unit_price|floatformat:2 }}</td>
+      <td class="td-r" style="color:#374151;">{{ item.quantity }}</td>
+      <td class="td-c" style="color:#9ca3af;">{{ item.unit|default:"&mdash;" }}</td>
+      <td class="td-r" style="font-weight:bold; color:#111827;">{{ item.unit_price|floatformat:2 }}</td>
       <td class="td-c">
         {% with v=item.vat_rate_type %}
-        <span class="vat-badge
-          {% if v == 'standard' %}vat-std
-          {% elif v == 'zero' %}vat-zero
-          {% else %}vat-ex{% endif %}">
+        <span class="vat-pill {% if v == 'standard' %}vp-std{% elif v == 'zero' %}vp-zero{% else %}vp-ex{% endif %}">
           {{ item.get_vat_rate_type_display }}
         </span>
         {% endwith %}
       </td>
-      <td class="td-r">{{ item.vat_amount|floatformat:2 }}</td>
-      <td class="td-r td-num">{{ item.total_amount|floatformat:2 }}</td>
+      <td class="td-r" style="color:#9ca3af;">{{ item.vat_amount|floatformat:2 }}</td>
+      <td class="td-r" style="font-weight:bold; color:#111827;">{{ item.total_amount|floatformat:2 }}</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 
-<div class="sp12"></div>
+<div class="sp24"></div>
 
-<!-- ══════════════════════════════════════════════════════════ -->
-<!-- TOTALS                                                     -->
-<!-- ══════════════════════════════════════════════════════════ -->
-<table class="totals-wrap" cellspacing="0" cellpadding="0">
+<!-- ── TOTALS ────────────────────────────────────────────────────── -->
+<table class="tot-outer" cellspacing="0" cellpadding="0">
   <tr>
-    <td class="totals-spacer"></td>
-    <td class="totals-box-cell">
-      <table class="totals-box" cellspacing="0" cellpadding="0" width="100%">
+    <td class="tot-space"></td>
+    <td class="tot-box-cell">
+      <table class="tot-inner" cellspacing="0" cellpadding="0">
         <tr>
-          <td class="tot-lbl" width="55%">Subtotal</td>
-          <td class="tot-amt" width="45%">{{ invoice.currency }} {{ invoice.subtotal|floatformat:2 }}</td>
+          <td class="tot-lbl">Subtotal</td>
+          <td class="tot-amt">{{ invoice.currency }}&nbsp;{{ invoice.subtotal|floatformat:2 }}</td>
         </tr>
         {% if invoice.discount_amount and invoice.discount_amount != "0.00" %}
-        <tr class="tot-discount">
-          <td class="tot-lbl" width="55%">Discount</td>
-          <td class="tot-amt" width="45%">&minus; {{ invoice.currency }} {{ invoice.discount_amount|floatformat:2 }}</td>
+        <tr class="tot-disc">
+          <td class="tot-lbl">Discount</td>
+          <td class="tot-amt">&minus;&nbsp;{{ invoice.currency }}&nbsp;{{ invoice.discount_amount|floatformat:2 }}</td>
+        </tr>
+        <tr>
+          <td class="tot-lbl">Taxable Amount</td>
+          <td class="tot-amt">{{ invoice.currency }}&nbsp;{{ invoice.taxable_amount|floatformat:2 }}</td>
         </tr>
         {% endif %}
-        <tr>
-          <td class="tot-lbl" width="55%">VAT (5%)</td>
-          <td class="tot-amt" width="45%">{{ invoice.currency }} {{ invoice.total_vat|floatformat:2 }}</td>
+        <tr class="tot-vat">
+          <td class="tot-lbl">VAT</td>
+          <td class="tot-amt">{{ invoice.currency }}&nbsp;{{ invoice.total_vat|floatformat:2 }}</td>
         </tr>
         <tr class="tot-grand">
-          <td width="55%">Total Due</td>
-          <td width="45%" class="tot-amt">{{ invoice.currency }} {{ invoice.total_amount|floatformat:2 }}</td>
+          <td class="tot-lbl">Total Due</td>
+          <td class="tot-amt">{{ invoice.currency }}&nbsp;{{ invoice.total_amount|floatformat:2 }}</td>
         </tr>
       </table>
     </td>
   </tr>
 </table>
 
-<!-- ══════════════════════════════════════════════════════════ -->
-<!-- ELECTRONIC REFERENCES (if submitted)                       -->
-<!-- ══════════════════════════════════════════════════════════ -->
-{% if invoice.asp_submission_id or invoice.fta_reference %}
-<div class="sp16"></div>
-<div class="sec-heading">Electronic Submission References</div>
-<div class="sp4"></div>
-<table class="refs-table" cellspacing="0" cellpadding="0">
-  {% if invoice.asp_submission_id %}
+<!-- ── ELECTRONIC REFERENCES ────────────────────────────────────── -->
+{% if invoice.asp_submission_id %}
+<div class="sp20"></div>
+<div class="sec-lbl">Electronic Submission References</div>
+<table class="refs-tbl" cellspacing="0" cellpadding="0">
   <tr>
     <td class="ref-key">ASP Submission ID (Corner 2)</td>
-    <td class="ref-val mono">{{ invoice.asp_submission_id }}</td>
+    <td class="ref-val">{{ invoice.asp_submission_id }}</td>
   </tr>
-  {% endif %}
   {% if invoice.asp_submitted_at %}
   <tr>
     <td class="ref-key">Submitted At</td>
     <td class="ref-val">{{ invoice.asp_submitted_at|date:"d M Y, H:i" }} UTC</td>
   </tr>
   {% endif %}
-  {% if invoice.fta_reference %}
-  <tr>
-    <td class="ref-key">FTA Reference (Corner 5)</td>
-    <td class="ref-val mono">{{ invoice.fta_reference }}</td>
-  </tr>
-  {% endif %}
-  {% if invoice.fta_reported_at %}
-  <tr>
-    <td class="ref-key">Reported to FTA At</td>
-    <td class="ref-val">{{ invoice.fta_reported_at|date:"d M Y, H:i" }} UTC</td>
-  </tr>
-  {% endif %}
 </table>
 {% endif %}
 
-<!-- ══════════════════════════════════════════════════════════ -->
-<!-- NOTES                                                      -->
-<!-- ══════════════════════════════════════════════════════════ -->
+<!-- ── NOTES ─────────────────────────────────────────────────────── -->
 {% if invoice.notes %}
-<div class="sp12"></div>
+<div class="sp16"></div>
 <div class="notes-box">
-  <div class="notes-label">Notes</div>
-  <div class="notes-text">{{ invoice.notes }}</div>
+  <div class="notes-lbl">Notes</div>
+  <div class="notes-txt">{{ invoice.notes }}</div>
 </div>
 {% endif %}
 
-<!-- ══════════════════════════════════════════════════════════ -->
-<!-- COMPLIANCE FOOTER                                          -->
-<!-- ══════════════════════════════════════════════════════════ -->
-<div class="sp16"></div>
+<!-- ── COMPLIANCE FOOTER ─────────────────────────────────────────── -->
+<div class="sp20"></div>
 <hr class="footer-rule"/>
-<div class="sp8"></div>
-<table class="footer-wrap" cellspacing="0" cellpadding="0">
+<table class="footer-tbl" cellspacing="0" cellpadding="0">
   <tr>
     <td class="footer-left">
-      <div class="footer-text">
+      <div class="footer-txt">
         Computer-generated tax invoice &bull; UAE Federal Decree-Law No. 8 of 2017 on Value Added Tax<br/>
         Issuer TRN: <strong>{{ invoice.company.trn }}</strong>
-        &nbsp;&bull;&nbsp;
-        Taxable Amount: {{ invoice.currency }} {{ invoice.taxable_amount|floatformat:2 }}
+        &nbsp;&bull;&nbsp; Taxable Amount: {{ invoice.currency }} {{ invoice.taxable_amount|floatformat:2 }}
+        &nbsp;&bull;&nbsp; Generated: {{ invoice.created_at|date:"d M Y" }}
       </div>
     </td>
-    <td class="footer-right" style="width:30%;">
+    <td class="footer-right">
       <span class="footer-badge">PEPPOL BIS 3.0</span>
       <span class="footer-badge">UBL 2.1</span>
       <span class="footer-badge">FTA Certified</span>

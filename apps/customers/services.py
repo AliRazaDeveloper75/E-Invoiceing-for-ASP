@@ -5,7 +5,7 @@ All business logic lives here. Views are thin wrappers around services.
 """
 import logging
 from django.db import models as django_models
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from django.core.exceptions import ValidationError, PermissionDenied
 
 from apps.companies.models import Company, CompanyMember
 from .models import Customer

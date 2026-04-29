@@ -84,7 +84,12 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         clearTokens();
-        if (typeof window !== 'undefined') window.location.href = '/login';
+        if (typeof window !== 'undefined') {
+          const errData = (refreshError as AxiosError<{ error?: { details?: { mfa_expired?: boolean } } }>)
+            ?.response?.data;
+          const mfaExpired = errData?.error?.details?.mfa_expired === true;
+          window.location.href = mfaExpired ? '/login?reason=mfa_expired' : '/login';
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

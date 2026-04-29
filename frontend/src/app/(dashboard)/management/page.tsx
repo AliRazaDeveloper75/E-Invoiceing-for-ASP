@@ -6,7 +6,7 @@ import { api } from '@/lib/api';
 import {
   Users, FileText, Building2, CheckCircle2,
   XCircle, Clock, RefreshCw,
-  Send, Landmark, ShieldCheck, ArrowRight,
+  Send, Landmark, ShieldCheck, ArrowRight, CreditCard, Eye,
 } from 'lucide-react';
 
 function fetcher(url: string) {
@@ -24,6 +24,11 @@ interface AdminStats {
     by_status: Record<string, number>;
     asp_pending: number;
     fta_pending: number;
+    buyer_viewed: number;
+  };
+  payments: {
+    total_count: number;
+    total_amount: string;
   };
 }
 
@@ -123,10 +128,46 @@ export default function ManagementPage() {
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Platform Overview</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <StatCard label="Total Users"    value={usr?.total ?? 0}             sub={`${usr?.active ?? 0} active`}         icon={Users}      color="bg-blue-100 text-blue-600"    href="/management/users" />
-              <StatCard label="Companies"      value={stats?.companies.total ?? 0}  sub="registered"                           icon={Building2}  color="bg-violet-100 text-violet-600" />
-              <StatCard label="Total Invoices" value={inv?.total ?? 0}              sub="across all companies"                  icon={FileText}   color="bg-indigo-100 text-indigo-600" href="/management/invoices" />
-              <StatCard label="Validated"      value={inv?.by_status?.validated ?? 0} sub="accepted by ASP"                   icon={CheckCircle2} color="bg-emerald-100 text-emerald-600" />
+              <StatCard label="Total Users"      value={usr?.total ?? 0}               sub={`${usr?.active ?? 0} active`}    icon={Users}        color="bg-blue-100 text-blue-600"     href="/management/users" />
+              <StatCard label="Companies"        value={stats?.companies.total ?? 0}    sub="registered"                      icon={Building2}    color="bg-violet-100 text-violet-600" />
+              <StatCard label="Total Invoices"   value={inv?.total ?? 0}                sub="across all companies"            icon={FileText}     color="bg-indigo-100 text-indigo-600" href="/management/invoices" />
+              <StatCard label="Validated"        value={inv?.by_status?.validated ?? 0} sub="accepted by ASP"                icon={CheckCircle2} color="bg-emerald-100 text-emerald-600" />
+            </div>
+          </div>
+
+          {/* ── Payment & engagement stats ───────────────────────────────── */}
+          <div>
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Payments & Buyer Engagement</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <StatCard
+                label="Total Payments"
+                value={stats?.payments.total_count ?? 0}
+                sub="all methods"
+                icon={CreditCard}
+                color="bg-teal-100 text-teal-600"
+                href="/management/payments"
+              />
+              <StatCard
+                label="Total Collected"
+                value={`AED ${parseFloat(stats?.payments.total_amount ?? '0').toLocaleString('en-AE', { minimumFractionDigits: 2 })}`}
+                sub="sum of all payments"
+                icon={CheckCircle2}
+                color="bg-emerald-100 text-emerald-600"
+              />
+              <StatCard
+                label="Buyer Viewed"
+                value={inv?.buyer_viewed ?? 0}
+                sub="invoices opened by buyer"
+                icon={Eye}
+                color="bg-cyan-100 text-cyan-600"
+              />
+              <StatCard
+                label="Paid Invoices"
+                value={(inv?.by_status?.paid ?? 0) + (inv?.by_status?.partially_paid ?? 0)}
+                sub="paid or partially paid"
+                icon={CheckCircle2}
+                color="bg-green-100 text-green-600"
+              />
             </div>
           </div>
 
@@ -190,6 +231,14 @@ export default function ManagementPage() {
                 href="/management/asp?tab=fta"
                 icon={Landmark}
                 color="bg-teal-100 text-teal-600"
+              />
+              <QueueCard
+                title="Payment Management"
+                subtitle="View, audit and void buyer payments across all companies"
+                count={stats?.payments.total_count ?? 0}
+                href="/management/payments"
+                icon={CreditCard}
+                color="bg-green-100 text-green-600"
               />
             </div>
           </div>

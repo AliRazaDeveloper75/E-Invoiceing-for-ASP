@@ -44,6 +44,9 @@ LOCAL_APPS = [
     'apps.common',
     'apps.inbound',
     'apps.admin_panel',
+    'apps.chat',
+    'apps.buyers',
+    'apps.payments',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -221,3 +224,14 @@ ASP_TIMEOUT_SECONDS = env.int('ASP_TIMEOUT_SECONDS', default=30)
 UAE_VAT_RATE = 0.05          # 5% standard rate
 UAE_VAT_ZERO_RATE = 0.00     # 0% for eligible exports
 UAE_VAT_EXEMPT = None        # None = exempt (no VAT)
+
+# ─── Frontend URL ─────────────────────────────────────────────────────────────
+FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
+
+# ─── Payment Gateways ─────────────────────────────────────────────────────────
+STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY', default='')
+STRIPE_PUBLISHABLE_KEY = env('STRIPE_PUBLISHABLE_KEY', default='')
+STRIPE_WEBHOOK_SECRET = env('STRIPE_WEBHOOK_SECRET', default='')
+PAYPAL_CLIENT_ID = env('PAYPAL_CLIENT_ID', default='')
+PAYPAL_CLIENT_SECRET = env('PAYPAL_CLIENT_SECRET', default='')
+PAYPAL_SANDBOX = env.bool('PAYPAL_SANDBOX', default=True)

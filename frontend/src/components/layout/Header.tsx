@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, ChevronRight, User, Settings, LogOut, ExternalLink } from 'lucide-react';
+import { Bell, ChevronRight, User, Settings, LogOut, ExternalLink, Menu } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/hooks/useCompany';
+import { useSidebar } from '@/context/SidebarContext';
 import { useState, useRef, useEffect } from 'react';
 
 // ─── Breadcrumb map ───────────────────────────────────────────────────────────
@@ -133,9 +134,19 @@ function UserMenu() {
 
 export function Header() {
   const { activeCompany } = useCompany();
+  const { toggle } = useSidebar();
 
   return (
-    <header className="sticky top-0 z-40 h-14 bg-white border-b border-gray-200 flex items-center px-6 gap-4 shadow-sm">
+    <header className="sticky top-0 z-40 h-14 bg-white border-b border-gray-200 flex items-center px-4 gap-3 shadow-sm">
+
+      {/* Sidebar toggle */}
+      <button
+        onClick={toggle}
+        className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors shrink-0"
+        title="Toggle sidebar"
+      >
+        <Menu className="h-[18px] w-[18px]" />
+      </button>
 
       {/* Breadcrumbs */}
       <div className="flex-1 min-w-0">

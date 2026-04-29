@@ -7,12 +7,14 @@ Rules followed:
 - All responses use the standard success/error envelope from common.utils
 """
 import logging
+import time
 from rest_framework import status
 from rest_framework.exceptions import ValidationError as DRFValidationError, PermissionDenied
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils import timezone
 
 from apps.common.utils import success_response, error_response
 from .serializers import (
@@ -33,13 +35,19 @@ logger = logging.getLogger(__name__)
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
-def _issue_tokens(user):
-    """Create a JWT pair with custom claims for the given user."""
+def _issue_tokens(user, mfa_verified_at=None):
+    """Create a JWT pair with custom claims for the given user.
+
+    mfa_verified_at: datetime of successful MFA verification. Stored as a Unix
+    timestamp in the token so TokenRefreshAPIView can enforce the 24-hour window.
+    """
     refresh = RefreshToken.for_user(user)
-    refresh['email']          = user.email
-    refresh['full_name']      = user.full_name
-    refresh['role']           = user.role
-    refresh['email_verified'] = user.email_verified
+    refresh['email']           = user.email
+    refresh['full_name']       = user.full_name
+    refresh['role']            = user.role
+    refresh['email_verified']  = user.email_verified
+    ts = mfa_verified_at or timezone.now()
+    refresh['mfa_verified_at'] = int(ts.timestamp())
     return str(refresh.access_token), str(refresh)
 
 
@@ -201,8 +209,31 @@ class LogoutView(APIView):
 
 
 class TokenRefreshAPIView(TokenRefreshView):
-    """POST /api/v1/auth/token/refresh/"""
-    pass
+    """POST /api/v1/auth/token/refresh/
+
+    Extends SimpleJWT's refresh with a 24-hour MFA session check.
+    If the refresh token's mfa_verified_at claim is older than MFA_SESSION_HOURS,
+    the refresh is rejected and the client must re-authenticate with MFA.
+    """
+    MFA_SESSION_HOURS = 24
+
+    def post(self, request, *args, **kwargs):
+        refresh_str = request.data.get('refresh', '').strip()
+        if refresh_str:
+            try:
+                token = RefreshToken(refresh_str)
+                mfa_ts = token.payload.get('mfa_verified_at')
+                if mfa_ts is not None:
+                    age_hours = (time.time() - mfa_ts) / 3600
+                    if age_hours >= self.MFA_SESSION_HOURS:
+                        return error_response(
+                            'Your MFA session has expired. Please sign in again.',
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            details={'mfa_expired': True},
+                        )
+            except Exception:
+                pass
+        return super().post(request, *args, **kwargs)
 
 
 # ─── Profile ──────────────────────────────────────────────────────────────────
@@ -348,7 +379,8 @@ class MFAVerifyLoginView(APIView):
             msg = exc.detail[0] if isinstance(exc.detail, list) else str(exc.detail)
             return error_response(str(msg), status_code=400)
 
-        access, refresh = _issue_tokens(user)
+        now = timezone.now()
+        access, refresh = _issue_tokens(user, mfa_verified_at=now)
         return success_response(
             data={
                 'access': access,
@@ -424,7 +456,8 @@ class MFAEnableLoginView(APIView):
         record.save(update_fields=['used'])
         logger.info('MFA setup completed and login issued for: %s', user.email)
 
-        access, refresh = _issue_tokens(user)
+        now = timezone.now()
+        access, refresh = _issue_tokens(user, mfa_verified_at=now)
         return success_response(
             data={
                 'access': access,

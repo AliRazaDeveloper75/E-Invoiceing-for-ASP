@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const PUBLIC_EXACT = new Set(['/', '/about', '/peppol', '/services', '/contact']);
 
 // Always public — accessible whether logged in or not (no redirect either way)
-const ALWAYS_PUBLIC = ['/activate', '/verify-email'];
+const ALWAYS_PUBLIC = ['/activate', '/verify-email', '/buyer/accept-invite'];
 
 // Public for unauthenticated users — authenticated users get bounced to dashboard
 const GUEST_ONLY = ['/login', '/register', '/mfa-verify', '/mfa-setup', '/forgot-password', '/reset-password'];

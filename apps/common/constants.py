@@ -23,6 +23,7 @@ ROLE_SUPPLIER         = 'supplier'         # Supplier — creates & submits own 
 ROLE_ACCOUNTANT       = 'accountant'       # Accountant — create/edit invoices (legacy, same as supplier)
 ROLE_VIEWER           = 'viewer'           # Read-only access
 ROLE_INBOUND_SUPPLIER = 'inbound_supplier' # External supplier — submits inbound invoices, sees own portal
+ROLE_BUYER            = 'buyer'            # Buyer — views/pays invoices issued to them
 
 USER_ROLE_CHOICES = [
     (ROLE_ADMIN,            'Admin'),
@@ -30,26 +31,29 @@ USER_ROLE_CHOICES = [
     (ROLE_ACCOUNTANT,       'Accountant'),
     (ROLE_VIEWER,           'Viewer'),
     (ROLE_INBOUND_SUPPLIER, 'Inbound Supplier'),
+    (ROLE_BUYER,            'Buyer'),
 ]
 
 # ─── Invoice Status ───────────────────────────────────────────────────────────
 # Internal lifecycle status
-INVOICE_STATUS_DRAFT = 'draft'
-INVOICE_STATUS_PENDING = 'pending'          # Queued for ASP submission
-INVOICE_STATUS_SUBMITTED = 'submitted'      # Sent to ASP
-INVOICE_STATUS_VALIDATED = 'validated'      # ASP accepted & validated
-INVOICE_STATUS_REJECTED = 'rejected'        # ASP rejected
-INVOICE_STATUS_CANCELLED = 'cancelled'      # Cancelled by user
-INVOICE_STATUS_PAID = 'paid'
+INVOICE_STATUS_DRAFT           = 'draft'
+INVOICE_STATUS_PENDING         = 'pending'          # Queued for ASP submission
+INVOICE_STATUS_SUBMITTED       = 'submitted'        # Sent to ASP
+INVOICE_STATUS_VALIDATED       = 'validated'        # ASP accepted & validated
+INVOICE_STATUS_REJECTED        = 'rejected'         # ASP rejected
+INVOICE_STATUS_CANCELLED       = 'cancelled'        # Cancelled by user
+INVOICE_STATUS_PAID            = 'paid'             # Fully paid by buyer
+INVOICE_STATUS_PARTIALLY_PAID  = 'partially_paid'   # Partially paid by buyer
 
 INVOICE_STATUS_CHOICES = [
-    (INVOICE_STATUS_DRAFT,     'Draft'),
-    (INVOICE_STATUS_PENDING,   'Pending Submission'),
-    (INVOICE_STATUS_SUBMITTED, 'Submitted to ASP'),
-    (INVOICE_STATUS_VALIDATED, 'Validated by ASP'),
-    (INVOICE_STATUS_REJECTED,  'Rejected'),
-    (INVOICE_STATUS_CANCELLED, 'Cancelled'),
-    (INVOICE_STATUS_PAID,      'Paid'),
+    (INVOICE_STATUS_DRAFT,          'Draft'),
+    (INVOICE_STATUS_PENDING,        'Pending Submission'),
+    (INVOICE_STATUS_SUBMITTED,      'Submitted to ASP'),
+    (INVOICE_STATUS_VALIDATED,      'Validated by ASP'),
+    (INVOICE_STATUS_REJECTED,       'Rejected'),
+    (INVOICE_STATUS_CANCELLED,      'Cancelled'),
+    (INVOICE_STATUS_PAID,           'Paid'),
+    (INVOICE_STATUS_PARTIALLY_PAID, 'Partially Paid'),
 ]
 
 # ─── Invoice Types (per UAE VAT law + PEPPOL PINT AE) ────────────────────────

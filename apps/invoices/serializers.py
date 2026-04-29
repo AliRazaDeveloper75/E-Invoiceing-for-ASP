@@ -126,6 +126,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'items', 'item_count',
             # Flags
             'is_editable', 'is_submittable', 'is_cancellable',
+            # Buyer engagement
+            'buyer_viewed_at',
             # Meta
             'notes', 'created_at', 'updated_at',
         ]
@@ -161,7 +163,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
             'status', 'status_display', 'customer', 'customer_name',
             'issue_date', 'due_date', 'currency',
             'subtotal', 'total_vat', 'total_amount',
-            'item_count', 'has_xml', 'created_at',
+            'item_count', 'has_xml', 'buyer_viewed_at', 'created_at',
         ]
 
     def get_item_count(self, obj) -> int:

@@ -15,6 +15,7 @@ from .views import (
     InvoiceItemDetailView,
     InvoiceDashboardView,
 )
+from apps.payments.views import SupplierPaymentListView
 
 app_name = 'invoices'
 
@@ -65,4 +66,9 @@ urlpatterns = [
     path('<uuid:invoice_id>/items/<uuid:item_id>/',
          InvoiceItemDetailView.as_view(),
          name='invoice-item-detail'),
+
+    # ── Payments (supplier view) ──────────────────────────────────────────────
+    path('<uuid:invoice_id>/payments/',
+         SupplierPaymentListView.as_view(),
+         name='invoice-payments'),
 ]

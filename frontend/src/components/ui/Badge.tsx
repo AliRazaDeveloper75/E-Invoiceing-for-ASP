@@ -2,23 +2,25 @@ import { clsx } from 'clsx';
 import type { InvoiceStatus } from '@/types';
 
 const STATUS_STYLES: Record<InvoiceStatus, string> = {
-  draft:      'bg-gray-100 text-gray-700',
-  pending:    'bg-yellow-100 text-yellow-800',
-  submitted:  'bg-blue-100 text-blue-800',
-  validated:  'bg-green-100 text-green-800',
-  rejected:   'bg-red-100 text-red-800',
-  cancelled:  'bg-gray-200 text-gray-600',
-  paid:       'bg-emerald-100 text-emerald-800',
+  draft:          'bg-gray-100 text-gray-700',
+  pending:        'bg-yellow-100 text-yellow-800',
+  submitted:      'bg-blue-100 text-blue-800',
+  validated:      'bg-green-100 text-green-800',
+  rejected:       'bg-red-100 text-red-800',
+  cancelled:      'bg-gray-200 text-gray-600',
+  paid:           'bg-emerald-100 text-emerald-800',
+  partially_paid: 'bg-orange-100 text-orange-800',
 };
 
 const STATUS_LABELS: Record<InvoiceStatus, string> = {
-  draft:      'Draft',
-  pending:    'Pending',
-  submitted:  'Submitted',
-  validated:  'Validated',
-  rejected:   'Rejected',
-  cancelled:  'Cancelled',
-  paid:       'Paid',
+  draft:          'Draft',
+  pending:        'Pending',
+  submitted:      'Submitted',
+  validated:      'Validated',
+  rejected:       'Rejected',
+  cancelled:      'Cancelled',
+  paid:           'Paid',
+  partially_paid: 'Partially Paid',
 };
 
 export function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {

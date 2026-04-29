@@ -224,6 +224,18 @@ class Invoice(BaseModel):
                   'Mandatory in UBL PaymentMeans element.',
     )
 
+    # ── Payment Tracking ───────────────────────────────────────────────────────
+    amount_paid = models.DecimalField(
+        max_digits=15, decimal_places=2, default=Decimal('0.00'),
+        help_text='Total amount paid by the buyer (sum of all Payment records).'
+    )
+
+    # ── Buyer Engagement ───────────────────────────────────────────────────────
+    buyer_viewed_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Timestamp when a buyer first opened this invoice via the Buyer Portal.'
+    )
+
     # ── Notes ──────────────────────────────────────────────────────────────────
     notes = models.TextField(blank=True, default='')
 

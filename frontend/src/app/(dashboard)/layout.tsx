@@ -6,6 +6,31 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/context/AuthContext';
+import { SidebarProvider, useSidebar } from '@/context/SidebarContext';
+import { ChatWidget } from '@/components/chat/ChatWidget';
+
+function DashboardShell({ children }: { children: React.ReactNode }) {
+  const { collapsed } = useSidebar();
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-gray-50/80">
+      <Sidebar />
+      <div
+        className="flex flex-col flex-1 min-h-screen overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ marginLeft: collapsed ? 68 : 256 }}
+      >
+        <Header />
+        <main className="flex-1 overflow-y-auto pt-14">
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            {children}
+          </div>
+        </main>
+        <Footer />
+      </div>
+      <ChatWidget />
+    </div>
+  );
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -19,6 +44,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.replace('/verify-email');
     } else if (user?.role === 'inbound_supplier' && window.location.pathname === '/dashboard') {
       router.replace('/supplier-portal');
+    } else if (user?.role === 'buyer') {
+      router.replace('/buyer/dashboard');
     }
   }, [isAuthenticated, isLoading, user, router]);
 
@@ -33,25 +60,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!isAuthenticated || (user && !user.email_verified)) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Fixed sidebar */}
-      <Sidebar />
-
-      {/* Right column: header + scrollable content + footer */}
-      <div className="flex flex-col flex-1 ml-64 min-h-screen overflow-hidden">
-        {/* Top header bar */}
-        <Header />
-
-        {/* Page content — scrollable, pushed below the fixed header (h-14) */}
-        <main className="flex-1 overflow-y-auto pt-14">
-          <div className="max-w-7xl mx-auto px-6 py-8">
-            {children}
-          </div>
-        </main>
-
-        {/* Footer — always visible at the bottom */}
-        <Footer />
-      </div>
-    </div>
+    <SidebarProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </SidebarProvider>
   );
 }

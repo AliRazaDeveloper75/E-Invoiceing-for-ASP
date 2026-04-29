@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { FileText, Menu, X, ArrowRight } from 'lucide-react';
+import { ChatWidget } from '@/components/chat/ChatWidget';
 
 const NAV_LINKS = [
   { label: 'Home',     href: '/' },
@@ -179,6 +180,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
         {children}
       </main>
       <Footer />
+      <ChatWidget publicMode />
     </div>
   );
 }

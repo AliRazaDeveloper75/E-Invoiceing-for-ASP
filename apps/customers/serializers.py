@@ -51,7 +51,7 @@ class CustomerCreateSerializer(serializers.Serializer):
     """Validates input for creating a new customer."""
 
     name = serializers.CharField(max_length=255)
-    legal_name = serializers.CharField(max_length=255, required=False, default='')
+    legal_name = serializers.CharField(max_length=255, required=False, default='', allow_blank=True)
     customer_type = serializers.ChoiceField(
         choices=[c[0] for c in TRANSACTION_TYPE_CHOICES],
         default='b2b'
@@ -62,34 +62,37 @@ class CustomerCreateSerializer(serializers.Serializer):
         max_length=15,
         required=False,
         default='',
+        allow_blank=True,
         help_text='15-digit UAE TRN. Required for UAE B2B/B2G customers.'
     )
     vat_number = serializers.CharField(
         max_length=20,
         required=False,
         default='',
+        allow_blank=True,
         help_text='VAT number for non-UAE (international) customers.'
     )
 
     # PEPPOL
-    peppol_endpoint = serializers.CharField(max_length=255, required=False, default='')
+    peppol_endpoint = serializers.CharField(max_length=255, required=False, default='', allow_blank=True)
 
     # Address
-    street_address = serializers.CharField(max_length=500, required=False, default='')
-    city = serializers.CharField(max_length=100, required=False, default='')
-    state_province = serializers.CharField(max_length=100, required=False, default='')
-    postal_code = serializers.CharField(max_length=20, required=False, default='')
+    street_address = serializers.CharField(max_length=500, required=False, default='', allow_blank=True)
+    city = serializers.CharField(max_length=100, required=False, default='', allow_blank=True)
+    state_province = serializers.CharField(max_length=100, required=False, default='', allow_blank=True)
+    postal_code = serializers.CharField(max_length=20, required=False, default='', allow_blank=True)
     country = serializers.CharField(
         max_length=2,
         default='AE',
         required=False,
+        allow_blank=False,
         help_text='ISO 3166-1 alpha-2 country code (e.g. AE, US, GB).'
     )
 
     # Contact
-    email = serializers.EmailField(required=False, default='')
-    phone = serializers.CharField(max_length=20, required=False, default='')
-    notes = serializers.CharField(required=False, default='')
+    email = serializers.EmailField(required=False, default='', allow_blank=True)
+    phone = serializers.CharField(max_length=20, required=False, default='', allow_blank=True)
+    notes = serializers.CharField(required=False, default='', allow_blank=True)
 
     def validate_trn(self, value: str) -> str:
         if value and (not value.isdigit() or len(value) != 15):
@@ -130,22 +133,22 @@ class CustomerUpdateSerializer(serializers.Serializer):
     """All fields optional for partial updates. TIN remains auto-derived."""
 
     name = serializers.CharField(max_length=255, required=False)
-    legal_name = serializers.CharField(max_length=255, required=False)
+    legal_name = serializers.CharField(max_length=255, required=False, allow_blank=True)
     customer_type = serializers.ChoiceField(
         choices=[c[0] for c in TRANSACTION_TYPE_CHOICES],
         required=False
     )
-    trn = serializers.CharField(max_length=15, required=False)
-    vat_number = serializers.CharField(max_length=20, required=False)
-    peppol_endpoint = serializers.CharField(max_length=255, required=False)
-    street_address = serializers.CharField(max_length=500, required=False)
-    city = serializers.CharField(max_length=100, required=False)
-    state_province = serializers.CharField(max_length=100, required=False)
-    postal_code = serializers.CharField(max_length=20, required=False)
+    trn = serializers.CharField(max_length=15, required=False, allow_blank=True)
+    vat_number = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    peppol_endpoint = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    street_address = serializers.CharField(max_length=500, required=False, allow_blank=True)
+    city = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    state_province = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    postal_code = serializers.CharField(max_length=20, required=False, allow_blank=True)
     country = serializers.CharField(max_length=2, required=False)
-    email = serializers.EmailField(required=False)
-    phone = serializers.CharField(max_length=20, required=False)
-    notes = serializers.CharField(required=False)
+    email = serializers.EmailField(required=False, allow_blank=True)
+    phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    notes = serializers.CharField(required=False, allow_blank=True)
 
     def validate_trn(self, value: str) -> str:
         if value and (not value.isdigit() or len(value) != 15):
