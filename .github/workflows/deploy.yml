@@ -22,12 +22,44 @@ jobs:
           timeout: 60s
           command_timeout: 10m
           script: |
+            set -e
+
+            # ── Disk cleanup (prevent 502s from full disk) ─────────────────
+            pip cache purge 2>/dev/null || true
+            sudo journalctl --vacuum-size=50M
+            sudo apt-get clean -y
+            find ~/einvoicing -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+            find ~/einvoicing -name "*.pyc" -delete 2>/dev/null || true
+            echo "Disk after cleanup: $(df -h / | tail -1 | awk '{print $5}') used"
+
+            # ── Pull latest code ────────────────────────────────────────────
             cd ~/einvoicing
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
+
+            # ── Python environment ──────────────────────────────────────────
             source venv/bin/activate
             export DJANGO_SETTINGS_MODULE=config.settings.production
-            pip install -r requirements.txt -q
+            pip install -r requirements.txt -q --no-cache-dir
+
+            # ── Django management ───────────────────────────────────────────
             python manage.py migrate --noinput
-            python manage.py collectstatic --noinput
+            python manage.py collectstatic --noinput --clear
+
+            # ── Restart backend ─────────────────────────────────────────────
             sudo systemctl restart einvoicing-backend
-            echo "✅ Backend deployed"
+            sleep 3
+            sudo systemctl is-active --quiet einvoicing-backend && echo "✅ Backend is running" || (sudo journalctl -u einvoicing-backend -n 30 && exit 1)
+
+            echo "✅ Backend deployed successfully"
+
+            # ── Frontend: rebuild Next.js ───────────────────────────────────
+            cd ~/einvoicing/frontend
+            npm install --prefer-offline
+            npm run build
+
+            # ── Restart frontend ────────────────────────────────────────────
+            pm2 restart einvoicing-frontend || pm2 start npm --name einvoicing-frontend -- start
+            pm2 save
+
+            echo "✅ Frontend deployed successfully"
