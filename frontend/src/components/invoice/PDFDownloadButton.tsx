@@ -12,8 +12,9 @@ async function generateAndDownload(invoice: Invoice, company: Company | null) {
     import('react'),
   ]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const blob = await pdf(
-    createElement(InvoicePDF, { invoice, company })
+    createElement(InvoicePDF, { invoice, company }) as any
   ).toBlob();
 
   const url = URL.createObjectURL(blob);
