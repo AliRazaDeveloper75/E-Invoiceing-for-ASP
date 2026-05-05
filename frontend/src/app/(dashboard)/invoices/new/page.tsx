@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import useSWR from 'swr';
@@ -14,9 +14,11 @@ import {
   PackageOpen, BarChart2, FileCheck, FileX,
   ArrowUpRight, ArrowDownRight, ShoppingBag, Minus,
   Building2, Package, CreditCard,
+  Upload, Download, FileSpreadsheet, X,
 } from 'lucide-react';
 import { AxiosError } from 'axios';
 import type { Customer } from '@/types';
+import * as XLSX from 'xlsx';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -324,6 +326,210 @@ const inputCls = (err?: string) =>
   `w-full text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${err ? 'border-red-400' : 'border-gray-300'}`;
 
 const selectCls = 'w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500';
+
+// ─── Excel columns (order matters — matches sample template) ──────────────────
+
+const EXCEL_COLS = [
+  { key: 'item_name',          header: 'Item / Service Name *' },
+  { key: 'description',        header: 'Description *'         },
+  { key: 'product_reference',  header: 'Product Reference'      },
+  { key: 'quantity',           header: 'Quantity *'             },
+  { key: 'unit',               header: 'Unit (pcs/hr/kg)'       },
+  { key: 'unit_price',         header: 'Unit Price (excl. VAT) *' },
+  { key: 'vat_rate_type',      header: 'VAT Rate (standard/zero/exempt/out_of_scope)' },
+  { key: 'tax_code',           header: 'Tax Code (S/Z/E/O)'     },
+];
+
+const EXCEL_SAMPLE_ROWS = [
+  ['IT Consulting Services', 'Monthly IT support and consulting', 'SVC-001', '1', 'hr',  '1000.00', 'standard', 'S'],
+  ['Office Chair',           'Ergonomic high-back office chair',  'SKU-002', '5', 'pcs', '500.00',  'standard', 'S'],
+  ['Software License',       'Annual SaaS subscription fee',      'LIC-003', '1', 'yr',  '2500.00', 'standard', 'S'],
+];
+
+function downloadSampleExcel() {
+  const ws = XLSX.utils.aoa_to_sheet([
+    EXCEL_COLS.map(c => c.header),
+    ...EXCEL_SAMPLE_ROWS,
+  ]);
+
+  // Column widths for readability
+  ws['!cols'] = [28, 35, 20, 10, 14, 22, 42, 20].map(w => ({ wch: w }));
+
+  // Style header row (bold) — xlsx community edition doesn't support cell styles,
+  // but the width hints still improve usability.
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Line Items');
+  XLSX.writeFile(wb, 'e-numerak-items-template.xlsx');
+}
+
+type ItemField = {
+  item_name: string; description: string; product_reference: string;
+  quantity: string; unit: string; unit_price: string;
+  vat_rate_type: string; tax_code: string;
+  debit_amount: string; credit_amount: string;
+};
+
+function parseExcelToItems(file: File): Promise<{ items: ItemField[]; errors: string[] }> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target!.result as ArrayBuffer);
+        const wb   = XLSX.read(data, { type: 'array' });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+        const rows: string[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+        if (rows.length < 2) {
+          resolve({ items: [], errors: ['The file has no data rows. Add at least one row below the header.'] });
+          return;
+        }
+
+        const header = (rows[0] as string[]).map(h => String(h).trim());
+        const colMap: Record<string, number> = {};
+        EXCEL_COLS.forEach(({ key, header: label }) => {
+          const idx = header.findIndex(h =>
+            h.toLowerCase().startsWith(key.replace(/_/g, ' ')) ||
+            h.toLowerCase().includes(key.replace(/_/g, ' '))
+          );
+          if (idx !== -1) colMap[key] = idx;
+        });
+
+        const items: ItemField[] = [];
+        const errors: string[] = [];
+
+        rows.slice(1).forEach((row, i) => {
+          const get = (key: string) => String(row[colMap[key]] ?? '').trim();
+          const rowNum = i + 2;
+
+          const name  = get('item_name');
+          const desc  = get('description');
+          const price = get('unit_price');
+
+          if (!name && !desc) return; // skip blank rows silently
+
+          if (!price || isNaN(parseFloat(price))) {
+            errors.push(`Row ${rowNum}: Unit Price is missing or invalid.`);
+            return;
+          }
+
+          const vat = get('vat_rate_type').toLowerCase() || 'standard';
+          const validVat = ['standard', 'zero', 'exempt', 'out_of_scope'];
+
+          items.push({
+            item_name:         name,
+            description:       desc || name,
+            product_reference: get('product_reference'),
+            quantity:          get('quantity') || '1',
+            unit:              get('unit'),
+            unit_price:        parseFloat(price).toFixed(2),
+            vat_rate_type:     validVat.includes(vat) ? vat : 'standard',
+            tax_code:          get('tax_code'),
+            debit_amount:      '',
+            credit_amount:     '',
+          });
+        });
+
+        resolve({ items, errors });
+      } catch {
+        resolve({ items: [], errors: ['Could not read the file. Make sure it is a valid .xlsx or .csv file.'] });
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function ExcelUploadButton({
+  onItems, defaultVat,
+}: {
+  onItems: (items: ItemField[], mode: 'replace' | 'append') => void;
+  defaultVat: string;
+}) {
+  const [status, setStatus] = useState<'idle' | 'parsing' | 'done' | 'error'>('idle');
+  const [msg,    setMsg]    = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setStatus('parsing');
+    setMsg('');
+
+    const { items, errors } = await parseExcelToItems(file);
+    e.target.value = '';
+
+    if (errors.length && !items.length) {
+      setStatus('error');
+      setMsg(errors.join(' · '));
+      return;
+    }
+
+    if (!items.length) {
+      setStatus('error');
+      setMsg('No valid rows found in the file.');
+      return;
+    }
+
+    const itemsWithVat = items.map(it => ({
+      ...it,
+      vat_rate_type: it.vat_rate_type || defaultVat,
+    }));
+
+    onItems(itemsWithVat, 'replace');
+    setStatus('done');
+    setMsg(`${items.length} item${items.length > 1 ? 's' : ''} imported.${errors.length ? ` (${errors.length} rows skipped)` : ''}`);
+    setTimeout(() => setStatus('idle'), 4000);
+  }
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      {/* Download sample */}
+      <button
+        type="button"
+        onClick={downloadSampleExcel}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+      >
+        <Download className="h-3.5 w-3.5" />
+        Download Template
+      </button>
+
+      {/* Upload */}
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={status === 'parsing'}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-300 bg-blue-50 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50"
+      >
+        {status === 'parsing'
+          ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+          : <Upload className="h-3.5 w-3.5" />}
+        {status === 'parsing' ? 'Reading…' : 'Upload Excel / CSV'}
+      </button>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".xlsx,.xls,.csv"
+        className="hidden"
+        onChange={handleFile}
+      />
+
+      {/* Status badge */}
+      {status === 'done' && (
+        <span className="flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full">
+          <CheckCircle2 className="h-3 w-3" /> {msg}
+        </span>
+      )}
+      {status === 'error' && (
+        <span className="flex items-center gap-1 text-xs font-medium text-red-700 bg-red-50 border border-red-200 px-2 py-1 rounded-full max-w-xs">
+          <AlertTriangle className="h-3 w-3 shrink-0" />
+          <span className="truncate">{msg}</span>
+          <button type="button" onClick={() => setStatus('idle')}><X className="h-3 w-3" /></button>
+        </span>
+      )}
+    </div>
+  );
+}
 
 // ─── Line item row ────────────────────────────────────────────────────────────
 
@@ -1156,6 +1362,28 @@ export default function NewInvoicePage() {
 
           {/* Line Items */}
           <Section title="Line Items" subtitle="FAF: Description, product/service references, tax codes, debit/credit amounts, VAT amounts">
+
+            {/* Excel toolbar */}
+            <div className="flex items-center justify-between gap-3 pb-2 border-b border-gray-100">
+              <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                <FileSpreadsheet className="h-3.5 w-3.5" />
+                {fields.length} item{fields.length !== 1 ? 's' : ''}
+              </div>
+              <ExcelUploadButton
+                defaultVat={vatLocked ? 'out_of_scope' : (selected?.vatRate ?? 'standard')}
+                onItems={(items, mode) => {
+                  if (mode === 'replace') {
+                    // Remove all existing then append new
+                    const count = fields.length;
+                    for (let i = count - 1; i >= 0; i--) remove(i);
+                    items.forEach(it => append(it));
+                  } else {
+                    items.forEach(it => append(it));
+                  }
+                }}
+              />
+            </div>
+
             <div className="space-y-3">
               {fields.map((f, idx) => (
                 <ItemRow key={f.id} idx={idx} register={register} errors={errors}

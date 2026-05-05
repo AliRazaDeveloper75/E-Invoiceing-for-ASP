@@ -397,6 +397,10 @@ class AdminInvoiceApproveASPView(APIView):
         invoice.save(update_fields=['status', 'asp_submission_id', 'asp_submitted_at', 'updated_at'])
 
         logger.info('Admin %s approved invoice %s via ASP', request.user.email, invoice.invoice_number)
+
+        from apps.invoices.services import _send_buyer_invoice_email
+        _send_buyer_invoice_email(invoice)
+
         return success_response(
             message=f'Invoice {invoice.invoice_number} approved — marked as validated.',
         )

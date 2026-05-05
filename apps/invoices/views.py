@@ -385,27 +385,15 @@ class InvoicePDFDownloadView(APIView):
             return error_response(f'PDF template error: {exc}', status_code=500)
 
         buffer = io.BytesIO()
-        err_buffer = io.StringIO()
-
         try:
-            pdf_result = pisa.CreatePDF(
-                html,
-                dest=buffer,
-                encoding='utf-8',
-            )
+            result = pisa.CreatePDF(html, dest=buffer, encoding='utf-8')
         except Exception as exc:
             logger.exception('pisa.CreatePDF raised an exception for invoice %s', invoice_id)
             return error_response(f'PDF engine error: {exc}', status_code=500)
 
-        if pdf_result.err:
-            logger.error(
-                'PDF generation failed for invoice %s (pisa err=%s)',
-                invoice.invoice_number, pdf_result.err,
-            )
-            return error_response(
-                f'PDF could not be generated (err={pdf_result.err}).',
-                status_code=500,
-            )
+        if result.err:
+            logger.error('PDF generation failed for invoice %s (err=%s)', invoice.invoice_number, result.err)
+            return error_response(f'PDF could not be generated (err={result.err}).', status_code=500)
 
         buffer.seek(0)
         filename = f'{invoice.invoice_number}.pdf'

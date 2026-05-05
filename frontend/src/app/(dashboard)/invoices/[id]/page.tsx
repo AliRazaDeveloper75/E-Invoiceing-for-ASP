@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/Button';
 import { InvoiceStatusBadge } from '@/components/ui/Badge';
 import { FlowTracker } from '@/components/invoice/FlowTracker';
 import { InvoiceTimeline } from '@/components/invoice/InvoiceTimeline';
-import { Download, FileText, Send, XCircle, ArrowLeft, RefreshCw } from 'lucide-react';
+import { PDFDownloadButton } from '@/components/invoice/PDFDownloadButton';
+import { useCompany } from '@/hooks/useCompany';
+import { Download, Send, XCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import { AxiosError } from 'axios';
 import type { Invoice, InvoiceTimeline as InvoiceTimelineType } from '@/types';
 
@@ -112,6 +114,7 @@ function LineItemsTable({ invoice }: { invoice: Invoice }) {
 
 export default function InvoiceDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const { activeCompany } = useCompany();
   const [actionError, setActionError] = useState('');
   const [isActing, setIsActing] = useState(false);
 
@@ -205,18 +208,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
         </div>
 
         <div className="flex gap-2 flex-wrap justify-end">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => downloadFile(
-              `/invoices/${invoice.id}/download-pdf/`,
-              `${invoice.invoice_number}.pdf`,
-              'application/pdf',
-              'PDF could not be generated.',
-            )}
-          >
-            <FileText className="h-4 w-4" /> PDF
-          </Button>
+          <PDFDownloadButton invoice={invoice} company={activeCompany} />
           {invoice.xml_file && (
             <Button
               variant="secondary"

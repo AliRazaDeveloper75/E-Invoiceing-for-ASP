@@ -492,6 +492,7 @@ class InvoiceService:
         invoice.asp_response = asp_response
         invoice.save(update_fields=['status', 'asp_response', 'updated_at'])
         logger.info('Invoice validated by ASP: %s', invoice.invoice_number)
+        _send_buyer_invoice_email(invoice)
         return invoice
 
     @staticmethod
@@ -593,3 +594,116 @@ class InvoiceService:
             'total_revenue':    revenue['total_revenue'] or Decimal('0.00'),
             'total_vat':        revenue['total_vat']     or Decimal('0.00'),
         }
+
+
+# ─── Buyer Email Helper ───────────────────────────────────────────────────────
+
+def _send_buyer_invoice_email(invoice: 'Invoice') -> None:
+    """
+    Send the validated invoice PDF to the buyer via email.
+    Non-fatal — any failure is logged and swallowed so it never breaks the pipeline.
+    """
+    import io
+    from django.conf import settings
+    from django.core.mail import EmailMultiAlternatives
+    from django.template.loader import render_to_string
+
+    buyer_email = getattr(invoice.customer, 'email', None)
+    if not buyer_email:
+        logger.info(
+            'Invoice %s validated — buyer has no email, skipping PDF email.',
+            invoice.invoice_number,
+        )
+        return
+
+    try:
+        from xhtml2pdf import pisa
+    except ImportError:
+        logger.warning('xhtml2pdf not installed — skipping buyer PDF email for %s', invoice.invoice_number)
+        return
+
+    try:
+        import io as _io
+        items = invoice.items.filter(is_active=True).order_by('sort_order', 'created_at')
+
+        # Generate PDF
+        html = render_to_string('invoices/invoice_pdf.html', {
+            'invoice': invoice,
+            'items': items,
+        })
+        buf = _io.BytesIO()
+        pisa.CreatePDF(html, dest=buf, encoding='utf-8')
+        buf.seek(0)
+        pdf_bytes = buf.read()
+
+        supplier_name = invoice.company.name
+        subject = f'Invoice {invoice.invoice_number} from {supplier_name}'
+
+        text_body = (
+            f'Dear {invoice.customer.name},\n\n'
+            f'Please find your tax invoice attached.\n\n'
+            f'Invoice No : {invoice.invoice_number}\n'
+            f'Issue Date : {invoice.issue_date}\n'
+            f'Amount Due : {invoice.currency} {invoice.total_amount}\n'
+            f'Status     : Validated\n\n'
+            f'This invoice has been validated through the UAE PEPPOL network '
+            f'(Corner 2 & 3 complete).\n\n'
+            f'For queries, contact {invoice.company.email or supplier_name}.\n\n'
+            f'Best regards,\n{supplier_name}'
+        )
+
+        html_body = (
+            f'<html><body style="font-family:Arial,sans-serif;font-size:14px;color:#111827;">'
+            f'<div style="max-width:600px;margin:0 auto;">'
+            f'<div style="background:#0f2557;padding:24px 28px;">'
+            f'<h1 style="color:#f59e0b;font-size:22px;margin:0;letter-spacing:2px;">TAX INVOICE</h1>'
+            f'<p style="color:#93c5fd;margin:6px 0 0;">{supplier_name}</p>'
+            f'</div>'
+            f'<div style="padding:28px;border:1px solid #e5e7eb;border-top:none;">'
+            f'<p style="color:#374151;">Dear <strong>{invoice.customer.name}</strong>,</p>'
+            f'<p style="color:#374151;margin-top:12px;">Please find your tax invoice attached to this email.</p>'
+            f'<div style="background:#f8faff;border:1px solid #dde5f0;border-left:4px solid #0f2557;'
+            f'padding:16px 20px;margin:20px 0;border-radius:4px;">'
+            f'<table style="font-size:14px;width:100%;border-collapse:collapse;">'
+            f'<tr><td style="color:#6b7280;padding:4px 0;width:40%;">Invoice No</td>'
+            f'<td style="font-weight:bold;color:#0f2557;">{invoice.invoice_number}</td></tr>'
+            f'<tr><td style="color:#6b7280;padding:4px 0;">Issue Date</td>'
+            f'<td style="font-weight:bold;color:#111827;">{invoice.issue_date}</td></tr>'
+            f'<tr><td style="color:#6b7280;padding:4px 0;">Amount Due</td>'
+            f'<td style="font-weight:bold;color:#111827;">{invoice.currency} {invoice.total_amount}</td></tr>'
+            f'<tr><td style="color:#6b7280;padding:4px 0;">Status</td>'
+            f'<td><span style="background:#d1fae5;color:#065f46;padding:2px 10px;border-radius:4px;'
+            f'font-size:12px;font-weight:bold;">VALIDATED</span></td></tr>'
+            f'</table></div>'
+            f'<p style="color:#6b7280;font-size:13px;">This invoice has been validated through the '
+            f'UAE PEPPOL network.</p>'
+            f'<p style="color:#6b7280;font-size:13px;margin-top:16px;">'
+            f'For queries, contact <a href="mailto:{invoice.company.email or ""}" '
+            f'style="color:#0f2557;">{invoice.company.email or supplier_name}</a></p>'
+            f'</div>'
+            f'<div style="background:#f3f4f6;padding:12px 28px;text-align:center;">'
+            f'<p style="font-size:11px;color:#9ca3af;">UAE FTA Compliant &bull; PEPPOL BIS 3.0 &bull; UBL 2.1</p>'
+            f'</div>'
+            f'</div></body></html>'
+        )
+
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body=text_body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[buyer_email],
+        )
+        msg.attach_alternative(html_body, 'text/html')
+        msg.attach(f'{invoice.invoice_number}.pdf', pdf_bytes, 'application/pdf')
+        msg.send(fail_silently=False)
+
+        logger.info(
+            'Invoice PDF emailed to buyer %s for invoice %s',
+            buyer_email, invoice.invoice_number,
+        )
+
+    except Exception:
+        logger.exception(
+            'Failed to send invoice PDF email to buyer for invoice %s (non-fatal)',
+            invoice.invoice_number,
+        )
