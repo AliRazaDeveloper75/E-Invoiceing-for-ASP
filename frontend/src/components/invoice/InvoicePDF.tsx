@@ -270,7 +270,7 @@ function ContactRow({ label, value }: { label: string; value?: string | null }) 
 
 function DetailCell({ label, value, last }: { label: string; value: string; last?: boolean }) {
   return (
-    <View style={[S.stripCell, last ? S.stripLast : undefined]}>
+    <View style={[S.stripCell, ...(last ? [S.stripLast] : [])]}>
       <Text style={S.stripLbl}>{label.toUpperCase()}</Text>
       <Text style={S.stripVal}>{value}</Text>
     </View>
@@ -336,12 +336,8 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
     company?.country || 'UAE',
   ].filter(Boolean).join('\n')
 
-  // Customer address string
-  const customerAddr = [
-    invoice.customer_street_address,
-    invoice.customer_city,
-    invoice.customer_country,
-  ].filter(Boolean).join('\n') || invoice.customer_name
+  // Customer address string (Invoice type only exposes name/trn)
+  const customerAddr = invoice.customer_name
 
   const isCreditNote   = invoice.invoice_type === 'credit_note'
   const isContSupply   = invoice.invoice_type === 'continuous_supply'
@@ -438,12 +434,9 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
             ) : (
               <DetailCell label="Supply Date" value={fmtDate(invoice.supply_date)} />
             )}
-            <DetailCell label="Currency" value={invoice.currency} />
+            <DetailCell label="Currency" value={invoice.currency} last={!invoice.purchase_order_number} />
             {!!invoice.purchase_order_number && (
-              <DetailCell label="PO Number" value={invoice.purchase_order_number} />
-            )}
-            {!!invoice.payment_means_code && (
-              <DetailCell label="Payment Code" value={invoice.payment_means_code} last />
+              <DetailCell label="PO Number" value={invoice.purchase_order_number} last />
             )}
           </View>
 
@@ -497,7 +490,7 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
               .filter((it) => it.is_active !== false)
               .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
               .map((item, i) => (
-                <View key={item.id} style={[S.trow, i % 2 === 1 ? S.trowAlt : undefined]}>
+                <View key={item.id} style={[S.trow, ...(i % 2 === 1 ? [S.trowAlt] : [])]}>
                   <View style={[S.td, { width: '4%', alignItems: 'center' }]}>
                     <Text style={{ color: C.g300, fontFamily: 'Helvetica-Bold' }}>{i + 1}</Text>
                   </View>
