@@ -8,6 +8,7 @@ Rules followed:
 """
 import logging
 import time
+from datetime import timedelta
 from rest_framework import status
 from rest_framework.exceptions import ValidationError as DRFValidationError, PermissionDenied
 from rest_framework.views import APIView
@@ -196,6 +197,21 @@ class LoginView(APIView):
                 details={'code': 'EMAIL_NOT_VERIFIED'},
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
+
+        # If the user verified MFA within the last 24 hours, skip MFA challenge
+        # and issue tokens immediately so they are not prompted every login.
+        if user.mfa_enabled and user.mfa_verified_at:
+            age = timezone.now() - user.mfa_verified_at
+            if age < timedelta(hours=24):
+                access, refresh = _issue_tokens(user, mfa_verified_at=user.mfa_verified_at)
+                return success_response(
+                    data={
+                        'access': access,
+                        'refresh': refresh,
+                        'user': UserSerializer(user).data,
+                    },
+                    message='Login successful.',
+                )
 
         token_record = MFALoginToken.create_for_user(user)
 
@@ -427,6 +443,8 @@ class MFAVerifyLoginView(APIView):
             return error_response(str(msg), status_code=400)
 
         now = timezone.now()
+        user.mfa_verified_at = now
+        user.save(update_fields=['mfa_verified_at'])
         access, refresh = _issue_tokens(user, mfa_verified_at=now)
         return success_response(
             data={
@@ -497,13 +515,14 @@ class MFAEnableLoginView(APIView):
                 status_code=400,
             )
 
+        now = timezone.now()
         user.mfa_enabled = True
-        user.save(update_fields=['mfa_enabled'])
+        user.mfa_verified_at = now
+        user.save(update_fields=['mfa_enabled', 'mfa_verified_at'])
         record.used = True
         record.save(update_fields=['used'])
         logger.info('MFA setup completed and login issued for: %s', user.email)
 
-        now = timezone.now()
         access, refresh = _issue_tokens(user, mfa_verified_at=now)
         return success_response(
             data={

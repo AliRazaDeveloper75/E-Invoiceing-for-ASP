@@ -100,6 +100,11 @@ class User(AbstractBaseUser, PermissionsMixin):
         default='',
         help_text='Base32 TOTP secret. Populated during MFA setup, retained after enable.'
     )
+    mfa_verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Last successful MFA verification. Login skips MFA if within 24 hours.'
+    )
 
     # Django internals
     is_active = models.BooleanField(default=True)

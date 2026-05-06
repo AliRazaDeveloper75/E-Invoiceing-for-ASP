@@ -61,6 +61,7 @@ export default function LoginPage() {
       await login(data.email, data.password);
     } catch (err) {
       if ((err as { code?: string }).code === 'EMAIL_NOT_VERIFIED') {
+        sessionStorage.setItem('verify_email', data.email);
         setUnverified(true);
         return;
       }

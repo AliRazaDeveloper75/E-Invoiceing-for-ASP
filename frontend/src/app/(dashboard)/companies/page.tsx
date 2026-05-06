@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { CountrySelect } from '@/components/ui/CountrySelect';
 import { CitySelect } from '@/components/ui/CitySelect';
+import { PhoneInput } from '@/components/ui/PhoneInput';
 import { useCountryForm } from '@/hooks/useCountryForm';
 import { Building2, Plus, X } from 'lucide-react';
 import { AxiosError } from 'axios';
@@ -41,6 +42,7 @@ export default function CompaniesPage() {
     reset,
     watch,
     setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<CreateForm>({ defaultValues: { country: 'AE' } });
 
@@ -49,7 +51,10 @@ export default function CompaniesPage() {
   const onSubmit = async (data: CreateForm) => {
     setServerError('');
     try {
-      await api.post('/companies/', data);
+      const phone = data.phone
+        ? `${countryForm.dialCode}${data.phone}`.trim()
+        : '';
+      await api.post('/companies/', { ...data, phone });
       await mutate();
       setShowForm(false);
       reset();
@@ -132,16 +137,20 @@ export default function CompaniesPage() {
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Phone"
-                type="tel"
-                inputMode="numeric"
-                onKeyDown={(e) => {
-                  const nav = ['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','Home','End'];
-                  // Allow digits, +, -, space, ( )
-                  if (!nav.includes(e.key) && !/^[\d+\-\s()]$/.test(e.key)) e.preventDefault();
-                }}
-                {...register('phone')}
+              <Controller
+                name="phone"
+                control={control}
+                render={({ field }) => (
+                  <PhoneInput
+                    label="Phone"
+                    dialCode={countryForm.dialCode}
+                    flag={countryForm.flag}
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                  />
+                )}
               />
               <Input label="Email" type="email" {...register('email')} />
             </div>

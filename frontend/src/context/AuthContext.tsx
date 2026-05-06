@@ -21,10 +21,11 @@ interface AuthContextValue extends AuthState {
   refreshUser: () => Promise<void>;
 }
 
-// Login always returns one of these two shapes — never tokens directly
+// Login returns one of three shapes depending on MFA state
 type LoginPayload =
-  | { mfa_required: true;       mfa_token:   string }
-  | { mfa_setup_required: true; setup_token: string };
+  | { access: string; refresh: string; user: User }          // MFA still valid (24 h)
+  | { mfa_required: true;       mfa_token:   string }        // needs TOTP code
+  | { mfa_setup_required: true; setup_token: string };       // first-time setup
 
 type TokenPayload = { access: string; refresh: string; user: User };
 
@@ -60,6 +61,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data } = await api.post<APISuccess<LoginPayload>>('/auth/login/', { email, password });
       const payload = data.data;
+
+      // MFA session still valid — tokens returned directly, skip challenge
+      if ('access' in payload) {
+        _finishLogin(payload);
+        return;
+      }
 
       if ('mfa_required' in payload) {
         sessionStorage.setItem('mfa_token', payload.mfa_token);

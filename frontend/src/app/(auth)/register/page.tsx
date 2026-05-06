@@ -86,6 +86,7 @@ export default function RegisterPage() {
         role: data.role,
       });
       setTokens(res.data.data.tokens.access, res.data.data.tokens.refresh);
+      sessionStorage.setItem('verify_email', data.email);
       router.push('/verify-email');
     } catch (err) {
       const e = err as AxiosError<{ error?: { message?: string; details?: Record<string, string | string[]> } }>;

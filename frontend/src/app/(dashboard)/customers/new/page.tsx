@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { api } from '@/lib/api';
 import { useCompany } from '@/hooks/useCompany';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
 import { CountrySelect } from '@/components/ui/CountrySelect';
 import { CitySelect } from '@/components/ui/CitySelect';
+import { PhoneInput } from '@/components/ui/PhoneInput';
 import { useCountryForm } from '@/hooks/useCountryForm';
 import { ArrowLeft } from 'lucide-react';
 import { AxiosError } from 'axios';
@@ -39,6 +40,7 @@ export default function NewCustomerPage() {
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<CustomerForm>({
     defaultValues: {
@@ -55,8 +57,12 @@ export default function NewCustomerPage() {
   const onSubmit = async (data: CustomerForm) => {
     setServerError({});
     try {
+      const phone = data.phone
+        ? `${countryForm.dialCode}${data.phone}`.trim()
+        : '';
       await api.post('/customers/', {
         ...data,
+        phone,
         company_id: activeId,
       });
       router.push('/customers');
@@ -128,9 +134,15 @@ export default function NewCustomerPage() {
               placeholder="123456789012345"
               hint={needsTRN ? 'Required for UAE B2B / B2G — 15 digits' : '15-digit UAE Tax Registration Number'}
               error={errors.trn?.message || serverError.trn}
+              inputMode="numeric"
+              maxLength={15}
+              onKeyDown={(e) => {
+                const nav = ['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','Home','End'];
+                if (!nav.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault();
+              }}
               {...register('trn', {
                 validate: (v) => {
-                  if (!v) return true; // optional unless needsTRN (backend validates)
+                  if (!v) return true;
                   if (!/^\d{15}$/.test(v)) return 'TRN must be exactly 15 digits';
                   return true;
                 },
@@ -138,9 +150,14 @@ export default function NewCustomerPage() {
             />
             <Input
               label="VAT Number (international)"
-              placeholder="e.g. GB123456789"
-              hint="For non-UAE customers"
+              placeholder="123456789"
+              hint="For non-UAE customers — numbers only"
               error={serverError.vat_number}
+              inputMode="numeric"
+              onKeyDown={(e) => {
+                const nav = ['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','Home','End'];
+                if (!nav.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault();
+              }}
               {...register('vat_number')}
             />
           </div>
@@ -186,12 +203,21 @@ export default function NewCustomerPage() {
                 pattern: { value: /\S+@\S+\.\S+/, message: 'Invalid email' },
               })}
             />
-            <Input
-              label="Phone"
-              type="tel"
-              placeholder="+971 4 000 0000"
-              error={serverError.phone}
-              {...register('phone')}
+            <Controller
+              name="phone"
+              control={control}
+              render={({ field }) => (
+                <PhoneInput
+                  label="Phone"
+                  dialCode={countryForm.dialCode}
+                  flag={countryForm.flag}
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                  error={serverError.phone}
+                />
+              )}
             />
           </div>
 

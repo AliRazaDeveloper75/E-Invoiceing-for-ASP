@@ -4,10 +4,10 @@ import { useEffect, useRef, useState, useCallback, KeyboardEvent, ClipboardEvent
 import { useRouter } from 'next/navigation';
 import { api, clearTokens } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { MailCheck, RefreshCw, ShieldCheck, XCircle, Loader2 } from 'lucide-react';
+import { MailCheck, RefreshCw, ShieldCheck, XCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
-type PageState = 'pending' | 'submitting' | 'success' | 'error' | 'resending' | 'resent';
+type PageState = 'pending' | 'submitting' | 'success' | 'error' | 'resending';
 
 const CODE_LENGTH = 6;
 
@@ -17,9 +17,17 @@ export default function VerifyEmailPage() {
   const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(''));
   const [pageState, setPageState] = useState<PageState>('pending');
   const [errorMsg, setErrorMsg] = useState('');
+  const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
+  const [resentBanner, setResentBanner] = useState(false);
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
+  const resentTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // If already verified, bounce to the right home page
+  // Email comes from auth context or fallback stored at registration/login
+  const pendingEmail =
+    user?.email ||
+    (typeof window !== 'undefined' ? sessionStorage.getItem('verify_email') ?? '' : '');
+
+  // If already verified, bounce to dashboard
   useEffect(() => {
     if (user?.email_verified) {
       router.replace(
@@ -30,6 +38,11 @@ export default function VerifyEmailPage() {
     }
   }, [user, router]);
 
+  // Clean up resent timer on unmount
+  useEffect(() => {
+    return () => { if (resentTimer.current) clearTimeout(resentTimer.current); };
+  }, []);
+
   const submitCode = useCallback(async (code: string) => {
     setPageState('submitting');
     setErrorMsg('');
@@ -37,8 +50,8 @@ export default function VerifyEmailPage() {
       const res = await api.post('/auth/verify-email/', { code });
       const setupToken: string = res.data?.data?.setup_token ?? '';
       setPageState('success');
-      // Clear registration tokens — proper tokens are issued only after MFA setup completes
       clearTokens();
+      sessionStorage.removeItem('verify_email');
       if (setupToken) sessionStorage.setItem('setup_token', setupToken);
       setTimeout(() => router.push('/mfa-setup'), 1500);
     } catch (err: unknown) {
@@ -95,32 +108,36 @@ export default function VerifyEmailPage() {
     const next = Array(CODE_LENGTH).fill('');
     pasted.split('').forEach((ch, i) => { next[i] = ch; });
     setDigits(next);
-    const focusIdx = Math.min(pasted.length, CODE_LENGTH - 1);
-    inputs.current[focusIdx]?.focus();
+    inputs.current[Math.min(pasted.length, CODE_LENGTH - 1)]?.focus();
   };
 
   const resend = async () => {
-    if (!user?.email) return;
+    if (!pendingEmail) return;
     setPageState('resending');
     setErrorMsg('');
     setDigits(Array(CODE_LENGTH).fill(''));
+    setResentBanner(false);
+    if (resentTimer.current) clearTimeout(resentTimer.current);
     try {
-      await api.post('/auth/resend-verification/', { email: user.email });
+      await api.post('/auth/resend-verification/', { email: pendingEmail });
     } catch {
-      // silent
+      // silent — show banner regardless
     }
-    setPageState('resent');
-    setTimeout(() => { setPageState('pending'); inputs.current[0]?.focus(); }, 3000);
+    setPageState('pending');
+    setResentBanner(true);
+    setTimeout(() => inputs.current[0]?.focus(), 50);
+    // Auto-dismiss banner after 5 seconds
+    resentTimer.current = setTimeout(() => setResentBanner(false), 5000);
   };
 
-  // ── Success ─────────────────────────────────────────────────────────────────
+  // ── Success screen ───────────────────────────────────────────────────────────
   if (pageState === 'success') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 max-w-md w-full text-center space-y-4">
           <div className="flex justify-center">
-            <div className="h-16 w-16 rounded-full bg-brand-50 flex items-center justify-center">
-              <ShieldCheck className="h-8 w-8 text-brand-600" />
+            <div className="h-16 w-16 rounded-full bg-emerald-50 flex items-center justify-center">
+              <ShieldCheck className="h-8 w-8 text-emerald-600" />
             </div>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Email verified!</h1>
@@ -130,27 +147,8 @@ export default function VerifyEmailPage() {
     );
   }
 
-  // ── Resent confirmation ──────────────────────────────────────────────────────
-  if (pageState === 'resent') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 max-w-md w-full text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="h-16 w-16 rounded-full bg-brand-50 flex items-center justify-center">
-              <MailCheck className="h-8 w-8 text-brand-600" />
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">New code sent!</h1>
-          <p className="text-gray-500 text-sm">
-            Check your inbox at <span className="font-semibold">{user?.email}</span> for a new
-            6-digit code.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const isSubmitting = pageState === 'submitting';
+  const isResending  = pageState === 'resending';
 
   // ── Main OTP form ────────────────────────────────────────────────────────────
   return (
@@ -159,10 +157,10 @@ export default function VerifyEmailPage() {
 
         {/* Icon */}
         <div className="flex justify-center">
-          <div className="h-16 w-16 rounded-full bg-brand-50 flex items-center justify-center">
+          <div className="h-16 w-16 rounded-full bg-blue-50 flex items-center justify-center">
             {isSubmitting
-              ? <Loader2 className="h-8 w-8 text-brand-600 animate-spin" />
-              : <MailCheck className="h-8 w-8 text-brand-600" />
+              ? <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+              : <MailCheck className="h-8 w-8 text-blue-600" />
             }
           </div>
         </div>
@@ -172,34 +170,74 @@ export default function VerifyEmailPage() {
           <h1 className="text-2xl font-bold text-gray-900">Verify your email</h1>
           <p className="text-gray-500 text-sm leading-relaxed">
             We sent a 6-digit code to{' '}
-            <span className="font-semibold text-gray-700">{user?.email ?? 'your email'}</span>.
+            <span className="font-semibold text-gray-700">{pendingEmail || 'your email'}</span>.
             <br />Enter it below — valid for 15 minutes.
           </p>
         </div>
 
+        {/* ── Resent success banner ── */}
+        {resentBanner && (
+          <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-left">
+            <div className="shrink-0 h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-emerald-800">New code sent!</p>
+              <p className="text-xs text-emerald-600 mt-0.5">
+                Check your inbox at{' '}
+                <span className="font-medium">{pendingEmail}</span>
+              </p>
+            </div>
+            <button
+              onClick={() => setResentBanner(false)}
+              className="ml-auto text-emerald-400 hover:text-emerald-600 transition-colors"
+            >
+              <XCircle className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         {/* OTP boxes */}
-        <div className="flex gap-2.5 justify-center" onPaste={handlePaste}>
-          {digits.map((digit, i) => (
-            <input
-              key={i}
-              ref={el => { inputs.current[i] = el; }}
-              type="text"
-              inputMode="numeric"
-              maxLength={1}
-              value={digit}
-              disabled={isSubmitting}
-              autoFocus={i === 0}
-              onChange={e => handleChange(i, e.target.value)}
-              onKeyDown={e => handleKeyDown(i, e)}
-              className={`
-                w-11 h-14 text-center text-xl font-bold rounded-xl border-2 outline-none
-                transition-all duration-150 caret-transparent
-                ${digit ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-300 bg-gray-50 text-gray-900'}
-                focus:border-brand-500 focus:bg-white focus:shadow-sm
-                disabled:opacity-50 disabled:cursor-not-allowed
-              `}
-            />
-          ))}
+        <div className="flex gap-3 justify-center" onPaste={handlePaste}>
+          {digits.map((digit, i) => {
+            const isFocused = focusedIdx === i;
+            return (
+              <input
+                key={i}
+                ref={el => { inputs.current[i] = el; }}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                disabled={isSubmitting || isResending}
+                autoFocus={i === 0}
+                onChange={e => handleChange(i, e.target.value)}
+                onKeyDown={e => handleKeyDown(i, e)}
+                onFocus={() => setFocusedIdx(i)}
+                onBlur={() => setFocusedIdx(null)}
+                style={{
+                  width: 48,
+                  height: 56,
+                  textAlign: 'center',
+                  fontSize: 22,
+                  fontWeight: 700,
+                  borderRadius: 10,
+                  border: isFocused
+                    ? '2px solid #2563eb'
+                    : digit
+                      ? '2px solid #2563eb'
+                      : '2px solid #d1d5db',
+                  background: digit ? '#eff6ff' : '#f9fafb',
+                  color: '#111827',
+                  outline: 'none',
+                  boxShadow: isFocused ? '0 0 0 3px rgba(37,99,235,0.15)' : 'none',
+                  transition: 'border-color 0.15s, box-shadow 0.15s',
+                  opacity: (isSubmitting || isResending) ? 0.5 : 1,
+                  cursor: (isSubmitting || isResending) ? 'not-allowed' : 'text',
+                }}
+              />
+            );
+          })}
         </div>
 
         {/* Error */}
@@ -216,11 +254,11 @@ export default function VerifyEmailPage() {
             onClick={resend}
             variant="secondary"
             className="w-full"
-            loading={pageState === 'resending'}
+            loading={isResending}
             disabled={isSubmitting}
           >
-            <RefreshCw className="h-4 w-4 mr-1" />
-            Resend code
+            {!isResending && <RefreshCw className="h-4 w-4 mr-1.5" />}
+            {isResending ? 'Sending…' : 'Resend code'}
           </Button>
 
           <button
