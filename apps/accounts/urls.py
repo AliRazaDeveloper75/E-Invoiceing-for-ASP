@@ -4,6 +4,7 @@ Mounted at: /api/v1/auth/ in config/urls.py
 """
 from django.urls import path
 from .views import (
+    CheckEmailView,
     RegisterView,
     LoginView,
     LogoutView,
@@ -27,6 +28,7 @@ app_name = 'accounts'
 
 urlpatterns = [
     # ── Authentication ────────────────────────────────────────────────────────
+    path('check-email/',     CheckEmailView.as_view(),      name='check-email'),
     path('register/',        RegisterView.as_view(),        name='register'),
     path('login/',           LoginView.as_view(),            name='login'),
     path('logout/',          LogoutView.as_view(),           name='logout'),

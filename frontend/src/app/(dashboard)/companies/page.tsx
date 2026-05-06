@@ -5,7 +5,10 @@ import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/Button';
-import { Input, Select } from '@/components/ui/Input';
+import { Input } from '@/components/ui/Input';
+import { CountrySelect } from '@/components/ui/CountrySelect';
+import { CitySelect } from '@/components/ui/CitySelect';
+import { useCountryForm } from '@/hooks/useCountryForm';
 import { Building2, Plus, X } from 'lucide-react';
 import { AxiosError } from 'axios';
 import type { Company } from '@/types';
@@ -13,39 +16,35 @@ import type { Company } from '@/types';
 function fetcher() {
   return api.get<{ success: boolean; data: Company[] }>('/companies/').then((r) => r.data.data);
 }
- 
+
 interface CreateForm {
   name: string;
   legal_name: string;
   trn: string;
   street_address: string;
   city: string;
-  emirate: string;
+  country: string;
   phone: string;
   email: string;
 }
-
-const EMIRATES = [
-  { value: 'dubai', label: 'Dubai' },
-  { value: 'abu_dhabi', label: 'Abu Dhabi' },
-  { value: 'sharjah', label: 'Sharjah' },
-  { value: 'ajman', label: 'Ajman' },
-  { value: 'umm_al_quwain', label: 'Umm Al Quwain' },
-  { value: 'ras_al_khaimah', label: 'Ras Al Khaimah' },
-  { value: 'fujairah', label: 'Fujairah' },
-];
 
 export default function CompaniesPage() {
   const { data: companies = [], mutate } = useSWR<Company[]>('/companies/', fetcher);
   const [showForm, setShowForm] = useState(false);
   const [serverError, setServerError] = useState('');
 
+  const countryForm = useCountryForm('AE');
+
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
-  } = useForm<CreateForm>({ defaultValues: { emirate: 'dubai' } });
+  } = useForm<CreateForm>({ defaultValues: { country: 'AE' } });
+
+  const watchedCountry = watch('country');
 
   const onSubmit = async (data: CreateForm) => {
     setServerError('');
@@ -97,9 +96,16 @@ export default function CompaniesPage() {
               placeholder="123456789012345"
               hint="UAE Tax Registration Number — exactly 15 numeric digits"
               error={errors.trn?.message}
+              maxLength={15}
+              inputMode="numeric"
+              onKeyDown={(e) => {
+                const nav = ['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','Home','End'];
+                if (!nav.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault();
+              }}
               {...register('trn', {
                 required: 'TRN is required',
                 pattern: { value: /^\d{15}$/, message: 'Must be exactly 15 digits' },
+                maxLength: { value: 15, message: 'Must be exactly 15 digits' },
               })}
             />
             <Input
@@ -108,15 +114,35 @@ export default function CompaniesPage() {
               error={errors.street_address?.message}
             />
             <div className="grid grid-cols-2 gap-4">
-              <Input label="City" {...register('city', { required: 'Required' })} error={errors.city?.message} />
-              <Select label="Emirate" {...register('emirate')}>
-                {EMIRATES.map((e) => (
-                  <option key={e.value} value={e.value}>{e.label}</option>
-                ))}
-              </Select>
+              <CountrySelect
+                label="Country"
+                error={errors.country?.message}
+                {...register('country', { required: 'Required' })}
+                onChange={(e) => {
+                  setValue('country', e.target.value, { shouldValidate: true });
+                  setValue('city', '');
+                  countryForm.handleCountryChange(e.target.value);
+                }}
+              />
+              <CitySelect
+                label="City"
+                countryCode={watchedCountry}
+                error={errors.city?.message}
+                {...register('city', { required: 'Required' })}
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <Input label="Phone" type="tel" {...register('phone')} />
+              <Input
+                label="Phone"
+                type="tel"
+                inputMode="numeric"
+                onKeyDown={(e) => {
+                  const nav = ['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','Home','End'];
+                  // Allow digits, +, -, space, ( )
+                  if (!nav.includes(e.key) && !/^[\d+\-\s()]$/.test(e.key)) e.preventDefault();
+                }}
+                {...register('phone')}
+              />
               <Input label="Email" type="email" {...register('email')} />
             </div>
             {serverError && (

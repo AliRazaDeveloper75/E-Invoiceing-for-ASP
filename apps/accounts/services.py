@@ -114,8 +114,15 @@ class AuthService:
             f"UAE E-Invoicing Platform"
         )
 
-        # Spaced digits for readability: "1 2 3 4 5 6"
-        spaced = '&nbsp;&nbsp;'.join(list(code))
+        # One <td> per digit — no spacing between characters
+        digit_cells = ''.join(
+            f'<td align="center" width="44" height="54" '
+            f'style="width:44px;height:54px;background:#ffffff;border:2px solid #2563eb;'
+            f'border-radius:10px;font-size:30px;font-weight:800;color:#1e40af;'
+            f'font-family:Courier New,Courier,monospace;padding:0;">{d}</td>'
+            f'{"<td width=10></td>" if i < 5 else ""}'
+            for i, d in enumerate(code)
+        )
 
         html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -128,7 +135,7 @@ class AuthService:
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0;">
     <tr>
       <td align="center">
-        <table width="560" cellpadding="0" cellspacing="0"
+        <table width="520" cellpadding="0" cellspacing="0"
                style="background:#ffffff;border-radius:16px;overflow:hidden;
                       box-shadow:0 2px 12px rgba(0,0,0,0.08);">
 
@@ -136,67 +143,52 @@ class AuthService:
           <tr>
             <td align="center"
                 style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);
-                       padding:36px 40px 32px;">
-              <div style="display:inline-block;background:rgba(255,255,255,0.15);
-                          border-radius:12px;padding:10px 16px;margin-bottom:16px;">
-                <span style="font-size:22px;font-weight:700;color:#ffffff;
-                             letter-spacing:0.5px;">UAE E-Invoicing</span>
-              </div>
-              <p style="margin:0;color:rgba(255,255,255,0.7);font-size:13px;">
-                PEPPOL 5-Corner Platform
+                       padding:28px 40px;">
+              <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:0.5px;">
+                E-Numerak
+              </p>
+              <p style="margin:4px 0 0;color:rgba(255,255,255,0.6);font-size:12px;">
+                UAE E-Invoicing Platform
               </p>
             </td>
           </tr>
 
           <!-- Body -->
           <tr>
-            <td style="padding:40px 48px 32px;">
-              <p style="margin:0 0 6px;font-size:22px;font-weight:700;color:#111827;">
+            <td style="padding:36px 44px 28px;">
+              <p style="margin:0 0 4px;font-size:20px;font-weight:700;color:#111827;">
                 Verify your email address
               </p>
-              <p style="margin:0 0 28px;font-size:15px;color:#6b7280;line-height:1.6;">
-                Hi <strong style="color:#111827;">{user.full_name}</strong>, use the code below
-                to confirm your email and activate your account.
+              <p style="margin:0 0 28px;font-size:14px;color:#6b7280;line-height:1.6;">
+                Hi <strong style="color:#111827;">{user.full_name}</strong>,
+                enter the code below to activate your account.
               </p>
 
-              <!-- Code box -->
-              <table width="100%" cellpadding="0" cellspacing="0"
-                     style="margin-bottom:28px;">
+              <!-- Digit boxes -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                 <tr>
-                  <td align="center"
-                      style="background:#eff6ff;border:2px dashed #93c5fd;
-                             border-radius:14px;padding:28px 20px;">
-                    <p style="margin:0 0 8px;font-size:12px;font-weight:600;
-                               color:#3b82f6;letter-spacing:1.5px;text-transform:uppercase;">
-                      Verification Code
-                    </p>
-                    <p style="margin:0;font-size:52px;font-weight:800;
-                               letter-spacing:14px;color:#1e40af;
-                               font-family:'Courier New',Courier,monospace;
-                               line-height:1.1;">
-                      {spaced}
-                    </p>
+                  <td align="center">
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>{digit_cells}</tr>
+                    </table>
                   </td>
                 </tr>
               </table>
 
-              <!-- Timer notice -->
-              <table width="100%" cellpadding="0" cellspacing="0"
-                     style="margin-bottom:28px;">
+              <!-- Expiry notice -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                 <tr>
-                  <td style="background:#fefce8;border-left:4px solid #fbbf24;
-                             border-radius:0 8px 8px 0;padding:12px 16px;">
+                  <td style="background:#fefce8;border-left:3px solid #fbbf24;
+                             border-radius:0 8px 8px 0;padding:10px 14px;">
                     <p style="margin:0;font-size:13px;color:#92400e;">
-                      ⏱ This code expires in <strong>15 minutes</strong>.
-                      Do not share it with anyone.
+                      Expires in <strong>15 minutes</strong> — do not share this code.
                     </p>
                   </td>
                 </tr>
               </table>
 
-              <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;">
-                If you did not create an account on the UAE E-Invoicing Platform,
-                you can safely ignore this email.
+              <p style="margin:0;font-size:12px;color:#9ca3af;">
+                If you did not create this account, you can safely ignore this email.
               </p>
             </td>
           </tr>
@@ -204,10 +196,9 @@ class AuthService:
           <!-- Footer -->
           <tr>
             <td style="background:#f9fafb;border-top:1px solid #e5e7eb;
-                       padding:20px 48px;text-align:center;">
-              <p style="margin:0;font-size:12px;color:#9ca3af;">
-                UAE E-Invoicing Platform &nbsp;·&nbsp; Powered by PEPPOL BIS 3.0
-                &nbsp;·&nbsp; FTA Certified
+                       padding:16px 44px;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#9ca3af;">
+                UAE E-Invoicing Platform &nbsp;·&nbsp; PEPPOL BIS 3.0 &nbsp;·&nbsp; FTA Certified
               </p>
             </td>
           </tr>

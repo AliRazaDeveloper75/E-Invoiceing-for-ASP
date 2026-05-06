@@ -7,6 +7,9 @@ import { api } from '@/lib/api';
 import { useCompany } from '@/hooks/useCompany';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
+import { CountrySelect } from '@/components/ui/CountrySelect';
+import { CitySelect } from '@/components/ui/CitySelect';
+import { useCountryForm } from '@/hooks/useCountryForm';
 import { ArrowLeft } from 'lucide-react';
 import { AxiosError } from 'axios';
 
@@ -29,10 +32,13 @@ export default function NewCustomerPage() {
   const { activeId } = useCompany();
   const [serverError, setServerError] = useState<Record<string, string>>({});
 
+  const countryForm = useCountryForm('AE');
+
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<CustomerForm>({
     defaultValues: {
@@ -42,8 +48,8 @@ export default function NewCustomerPage() {
   });
 
   const customerType = watch('customer_type');
-  const country = watch('country');
-  const isUAE = country === 'AE';
+  const watchedCountry = watch('country');
+  const isUAE = watchedCountry === 'AE';
   const needsTRN = isUAE && (customerType === 'b2b' || customerType === 'b2g');
 
   const onSubmit = async (data: CustomerForm) => {
@@ -145,19 +151,19 @@ export default function NewCustomerPage() {
           <h2 className="font-semibold text-gray-800">Address & Contact</h2>
 
           <div className="grid grid-cols-2 gap-4">
-            <Input
+            <CountrySelect
               label="Country *"
-              placeholder="AE"
-              hint="2-letter ISO code (AE, US, GB…)"
               error={errors.country?.message || serverError.country}
-              {...register('country', {
-                required: 'Country is required',
-                pattern: { value: /^[A-Za-z]{2}$/, message: 'Must be a 2-letter code' },
-              })}
+              {...register('country', { required: 'Country is required' })}
+              onChange={(e) => {
+                setValue('country', e.target.value, { shouldValidate: true });
+                setValue('city', '');
+                countryForm.handleCountryChange(e.target.value);
+              }}
             />
-            <Input
+            <CitySelect
               label="City"
-              placeholder="Dubai"
+              countryCode={watchedCountry}
               error={serverError.city}
               {...register('city')}
             />

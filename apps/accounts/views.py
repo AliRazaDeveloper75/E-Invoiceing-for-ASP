@@ -16,6 +16,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 
+from django.contrib.auth import get_user_model
 from apps.common.utils import success_response, error_response
 from .serializers import (
     UserRegistrationSerializer,
@@ -71,6 +72,37 @@ def _get_mfa_token(token_str: str):
 
 
 # ─── Auth ─────────────────────────────────────────────────────────────────────
+
+class CheckEmailView(APIView):
+    """
+    POST /api/v1/auth/check-email/
+
+    Check whether an email address is available for registration.
+    Returns {available: true} if the email is not yet registered.
+    No authentication required.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from django.core.validators import validate_email
+        from django.core.exceptions import ValidationError as DjangoValidationError
+
+        email = request.data.get('email', '').strip().lower()
+        if not email:
+            return error_response('Email is required.', status_code=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            validate_email(email)
+        except DjangoValidationError:
+            return error_response('Invalid email format.', status_code=status.HTTP_400_BAD_REQUEST)
+
+        User = get_user_model()
+        exists = User.objects.filter(email=email).exists()
+        return success_response({
+            'available': not exists,
+            'message': 'Email is already registered.' if exists else 'Email is available.',
+        })
+
 
 class RegisterView(APIView):
     """
@@ -291,7 +323,11 @@ class ChangePasswordView(APIView):
 
 
 class VerifyEmailView(APIView):
-    """POST /api/v1/auth/verify-email/  { code: str }"""
+    """POST /api/v1/auth/verify-email/  { code: str }
+
+    After successful verification, returns a setup_token so the client can
+    immediately proceed to MFA setup without requiring a separate login step.
+    """
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -303,9 +339,20 @@ class VerifyEmailView(APIView):
         except DRFValidationError as exc:
             msg = exc.detail[0] if isinstance(exc.detail, list) else str(exc.detail)
             return error_response(str(msg), status_code=400)
+
+        # Issue a setup_token so the frontend can go straight into MFA setup.
+        # The registration-time JWT tokens will be discarded by the client;
+        # proper tokens with mfa_verified_at are only issued after MFA completes.
+        from apps.accounts.models import MFALoginToken
+        token_record = MFALoginToken.create_for_user(user)
+
         return success_response(
-            data={'email': user.email, 'email_verified': True},
-            message='Email verified successfully.',
+            data={
+                'email': user.email,
+                'email_verified': True,
+                'setup_token': str(token_record.token),
+            },
+            message='Email verified. Please complete two-factor authentication setup.',
         )
 
 

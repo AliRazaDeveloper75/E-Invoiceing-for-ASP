@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback, KeyboardEvent, ClipboardEvent
 import { useRouter } from 'next/navigation';
 import { api, clearTokens } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { MailCheck, RefreshCw, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { MailCheck, RefreshCw, ShieldCheck, XCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 type PageState = 'pending' | 'submitting' | 'success' | 'error' | 'resending' | 'resent';
@@ -13,7 +13,7 @@ const CODE_LENGTH = 6;
 
 export default function VerifyEmailPage() {
   const router = useRouter();
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(''));
   const [pageState, setPageState] = useState<PageState>('pending');
   const [errorMsg, setErrorMsg] = useState('');
@@ -34,24 +34,23 @@ export default function VerifyEmailPage() {
     setPageState('submitting');
     setErrorMsg('');
     try {
-      await api.post('/auth/verify-email/', { code });
-      await refreshUser();
+      const res = await api.post('/auth/verify-email/', { code });
+      const setupToken: string = res.data?.data?.setup_token ?? '';
       setPageState('success');
-      setTimeout(() => {
-        // refreshUser updates user in context; read from the updated user via closure workaround
-        router.push('/dashboard'); // layout will redirect inbound_supplier to /supplier-portal
-      }, 2000);
+      // Clear registration tokens — proper tokens are issued only after MFA setup completes
+      clearTokens();
+      if (setupToken) sessionStorage.setItem('setup_token', setupToken);
+      setTimeout(() => router.push('/mfa-setup'), 1500);
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { error?: { message?: string } } } })
           ?.response?.data?.error?.message ?? 'Invalid or expired code.';
       setErrorMsg(msg);
       setPageState('error');
-      // Clear digits so user can re-enter
       setDigits(Array(CODE_LENGTH).fill(''));
       setTimeout(() => inputs.current[0]?.focus(), 50);
     }
-  }, [refreshUser, router]);
+  }, [router]);
 
   // Auto-submit when all 6 digits filled
   useEffect(() => {
@@ -120,12 +119,12 @@ export default function VerifyEmailPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 max-w-md w-full text-center space-y-4">
           <div className="flex justify-center">
-            <div className="h-16 w-16 rounded-full bg-emerald-50 flex items-center justify-center">
-              <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+            <div className="h-16 w-16 rounded-full bg-brand-50 flex items-center justify-center">
+              <ShieldCheck className="h-8 w-8 text-brand-600" />
             </div>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Email verified!</h1>
-          <p className="text-gray-500 text-sm">Your account is now active. Redirecting…</p>
+          <p className="text-gray-500 text-sm">Setting up two-factor authentication…</p>
         </div>
       </div>
     );
