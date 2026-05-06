@@ -79,12 +79,12 @@ export default function PeppolPage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-[#1e3a5f] to-[#1e4080] text-white py-20">
+      <section className="bg-gradient-to-br from-[#1e3a5f] to-[#1e4080] text-white py-14 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
-            <p className="text-blue-300 text-sm font-semibold uppercase tracking-widest mb-3">PEPPOL Framework</p>
-            <h1 className="text-4xl font-bold mb-4">The PEPPOL 5-Corner Model</h1>
-            <p className="text-blue-100 text-lg leading-relaxed">
+            <p className="text-blue-300 text-xs sm:text-sm font-semibold uppercase tracking-widest mb-3">PEPPOL Framework</p>
+            <h1 className="text-2xl sm:text-4xl font-bold mb-4">The PEPPOL 5-Corner Model</h1>
+            <p className="text-blue-100 text-sm sm:text-lg leading-relaxed">
               UAE&apos;s mandatory e-invoicing infrastructure is built on the PEPPOL network —
               a secure, standardised way to exchange electronic business documents.
             </p>
@@ -93,53 +93,73 @@ export default function PeppolPage() {
       </section>
 
       {/* 5 Corners */}
-      <section className="py-20 bg-white">
+      <section className="py-14 sm:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">How the 5 Corners Work</h2>
-          <p className="text-gray-500 text-sm mb-12 max-w-2xl">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">How the 5 Corners Work</h2>
+          <p className="text-gray-500 text-sm mb-10 sm:mb-12 max-w-2xl">
             The UAE FTA uses the PEPPOL 5-corner model to route e-invoices from the supplier to the buyer through certified intermediaries.
           </p>
 
-          {/* Flow diagram */}
-          <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4 mb-16">
+          {/* Mobile: vertical timeline */}
+          <div className="lg:hidden mb-10">
             {CORNERS.map((corner, i) => (
-              <div key={corner.num} className="flex lg:flex-col items-start lg:items-center gap-4 flex-1 min-w-0">
-                <div className="flex flex-col lg:flex-row items-center gap-3 lg:gap-0 w-full">
-                  <div className={`flex items-center justify-center w-12 h-12 rounded-full ${corner.color} text-white font-bold text-lg shrink-0`}>
+              <div key={corner.num} className="flex gap-4">
+                {/* Left: circle + vertical connector */}
+                <div className="flex flex-col items-center">
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-full ${corner.color} text-white font-bold text-sm shrink-0 z-10`}>
                     {corner.num}
                   </div>
                   {i < CORNERS.length - 1 && (
-                    <div className="hidden lg:block flex-1 h-0.5 bg-gray-200 mx-2" />
+                    <div className="w-0.5 flex-1 min-h-[1.5rem] bg-gray-200 my-1" />
                   )}
                 </div>
-                <div className="lg:text-center mt-2 lg:mt-4">
+                {/* Right: content */}
+                <div className={`pt-1 ${i < CORNERS.length - 1 ? 'pb-5' : 'pb-0'}`}>
                   <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full text-white mb-1 ${corner.color}`}>
                     {corner.tag}
                   </span>
-                  <h3 className="font-semibold text-gray-900 text-sm mb-1">{corner.label}</h3>
+                  <h3 className="font-semibold text-gray-900 text-sm mb-0.5">{corner.label}</h3>
                   <p className="text-xs text-gray-500 leading-relaxed">{corner.desc}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Our position */}
-          <div className="rounded-2xl bg-[#1e3a5f] text-white p-8">
-            <h3 className="font-bold text-lg mb-3">Where Our Platform Sits</h3>
+          {/* Desktop: horizontal grid with connecting lines */}
+          <div className="hidden lg:grid grid-cols-5 mb-16">
+            {CORNERS.map((corner, i) => (
+              <div key={corner.num} className="relative flex flex-col items-center text-center px-2">
+                {i > 0 && <div className="absolute left-0 right-1/2 top-6 h-0.5 bg-gray-200" />}
+                {i < CORNERS.length - 1 && <div className="absolute left-1/2 right-0 top-6 h-0.5 bg-gray-200" />}
+                <div className={`relative z-10 flex items-center justify-center w-12 h-12 rounded-full ${corner.color} text-white font-bold text-lg mb-4`}>
+                  {corner.num}
+                </div>
+                <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full text-white mb-1.5 ${corner.color}`}>
+                  {corner.tag}
+                </span>
+                <h3 className="font-semibold text-gray-900 text-sm mb-1">{corner.label}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{corner.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Where our platform sits */}
+          <div className="rounded-2xl bg-[#1e3a5f] text-white p-6 sm:p-8">
+            <h3 className="font-bold text-base sm:text-lg mb-3">Where Our Platform Sits</h3>
             <p className="text-blue-100 text-sm leading-relaxed mb-4">
               We operate as <strong>Corner 1</strong> — the supplier-side system that creates, validates, and
               packages your invoice into PEPPOL UBL 2.1 XML format.
               Our integration layer (Corner 2 ASP) handles submission to the FTA network.
               Currently using a MockASPClient for development; switch to a real UAE-accredited ASP for production.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               {[
                 { label: 'Corner 1', val: 'Our Platform', color: 'bg-blue-500' },
                 { label: 'Corner 2', val: 'ASP Integration', color: 'bg-indigo-500' },
                 { label: 'Corner 5', val: 'FTA Network', color: 'bg-purple-500' },
               ].map((c) => (
-                <div key={c.label} className="flex items-center gap-3 bg-white/10 rounded-xl p-4">
-                  <div className={`w-8 h-8 rounded-full ${c.color} flex items-center justify-center text-white text-xs font-bold`}>
+                <div key={c.label} className="flex items-center gap-3 bg-white/10 rounded-xl p-3 sm:p-4">
+                  <div className={`w-8 h-8 rounded-full ${c.color} flex items-center justify-center text-white text-xs font-bold shrink-0`}>
                     {c.label.split(' ')[1]}
                   </div>
                   <div>
@@ -154,23 +174,23 @@ export default function PeppolPage() {
       </section>
 
       {/* UBL XML */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-14 sm:py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">UBL 2.1 XML Elements Generated</h2>
-          <p className="text-gray-500 text-sm mb-8">Every invoice generates a fully compliant PEPPOL BIS Billing 3.0 XML document including:</p>
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">UBL 2.1 XML Elements Generated</h2>
+          <p className="text-gray-500 text-sm mb-6 sm:mb-8">Every invoice generates a fully compliant PEPPOL BIS Billing 3.0 XML document including:</p>
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm min-w-[480px]">
               <thead>
                 <tr className="bg-[#1e3a5f] text-white">
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider">UBL Element</th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider">Description</th>
+                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-semibold uppercase tracking-wider whitespace-nowrap">UBL Element</th>
+                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-semibold uppercase tracking-wider">Description</th>
                 </tr>
               </thead>
               <tbody>
                 {UBL_ELEMENTS.map((row, i) => (
                   <tr key={row.element} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-6 py-3 font-mono text-xs text-blue-700">{row.element}</td>
-                    <td className="px-6 py-3 text-gray-600 text-xs">{row.desc}</td>
+                    <td className="px-4 sm:px-6 py-3 font-mono text-xs text-blue-700 whitespace-nowrap">{row.element}</td>
+                    <td className="px-4 sm:px-6 py-3 text-gray-600 text-xs">{row.desc}</td>
                   </tr>
                 ))}
               </tbody>
@@ -180,10 +200,10 @@ export default function PeppolPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 bg-white border-t border-gray-100 text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">See It in Action</h2>
-        <p className="text-gray-500 mb-8">Create an invoice and download the UBL XML right from the portal.</p>
-        <Link href="/dashboard" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#1e3a5f] hover:bg-[#172f4d] text-white font-semibold text-sm transition-colors">
+      <section className="py-12 sm:py-16 bg-white border-t border-gray-100 text-center px-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">See It in Action</h2>
+        <p className="text-gray-500 text-sm mb-6 sm:mb-8">Create an invoice and download the UBL XML right from the portal.</p>
+        <Link href="/dashboard" className="inline-flex items-center gap-2 px-5 sm:px-6 py-3 rounded-xl bg-[#1e3a5f] hover:bg-[#172f4d] text-white font-semibold text-sm transition-colors">
           E-Invoice Portal <ArrowRight className="h-4 w-4" />
         </Link>
       </section>
