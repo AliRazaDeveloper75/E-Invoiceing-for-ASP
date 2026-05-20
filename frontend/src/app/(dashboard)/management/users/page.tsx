@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import {
@@ -404,8 +405,9 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ManagementUsersPage() {
+  const searchParams = useSearchParams();
   const [search, setSearch]         = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
+  const [roleFilter, setRoleFilter] = useState(searchParams.get('role') ?? '');
   const [statusFilter, setStatus]   = useState('');
   const [page, setPage]             = useState(1);
 

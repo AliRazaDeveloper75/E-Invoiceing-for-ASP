@@ -111,7 +111,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const _finishLogin = ({ access, refresh, user }: TokenPayload) => {
     setTokens(access, refresh);
     setState({ user, isLoading: false, isAuthenticated: true });
-    router.push(user.role === 'inbound_supplier' ? '/supplier-portal' : '/dashboard');
+    // Hard redirect so the browser sends a fresh HTTP request with the new
+    // access_token cookie — avoids a race where router.push fires the middleware
+    // before js-cookie's document.cookie write is picked up by Next.js.
+    const dest = user.role === 'inbound_supplier' ? '/supplier-portal' : '/dashboard';
+    window.location.href = dest;
   };
 
   // ── Logout ─────────────────────────────────────────────────────────────────

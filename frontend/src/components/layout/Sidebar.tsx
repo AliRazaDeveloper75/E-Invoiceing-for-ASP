@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
 import {
   LayoutDashboard, FileText, Users, Building2, LogOut,
@@ -58,6 +58,7 @@ export function Sidebar() {
   const { user, logout } = useAuth();
   const { companies, activeCompany, setActiveId } = useCompany();
   const { collapsed, toggle } = useSidebar();
+  const router = useRouter();
 
   const visibleNav = NAV.filter(
     ({ roles }) => roles === null || (user?.role && roles.includes(user.role))
@@ -116,7 +117,13 @@ export function Sidebar() {
           <div className="relative">
             <select
               value={activeCompany?.id ?? ''}
-              onChange={(e) => setActiveId(e.target.value)}
+              onChange={(e) => {
+                if (e.target.value === '__add_new__') {
+                  router.push('/companies/new');
+                } else {
+                  setActiveId(e.target.value);
+                }
+              }}
               className="w-full bg-white/[0.07] text-white text-sm rounded-xl px-3 py-2 pr-8
                          border border-white/[0.12] appearance-none cursor-pointer
                          focus:outline-none focus:ring-2 focus:ring-brand-400/40
@@ -127,6 +134,9 @@ export function Sidebar() {
                   {c.name}
                 </option>
               ))}
+              <option value="__add_new__" className="text-brand-600 bg-white font-semibold">
+                + Add new company
+              </option>
             </select>
             <ChevronDown className="absolute right-2.5 top-2.5 h-4 w-4 pointer-events-none text-white/40" />
           </div>

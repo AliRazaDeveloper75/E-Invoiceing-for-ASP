@@ -983,7 +983,7 @@ export default function NewInvoicePage() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const { register, control, handleSubmit, reset, watch,
+  const { register, control, handleSubmit, reset, watch, setValue,
     formState: { errors, isSubmitting } } = useForm<InvoiceForm>({
     defaultValues: {
       transaction_type: 'b2b', payment_means_code: '30', issue_date: today,
@@ -1207,13 +1207,24 @@ export default function NewInvoicePage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <Field label="Customer (Buyer)" faf error={errors.customer_id?.message}>
-                  <select className={inputCls(errors.customer_id?.message)} {...register('customer_id', { required: 'Customer is required' })}>
+                  <select
+                    className={inputCls(errors.customer_id?.message)}
+                    {...register('customer_id', { required: 'Customer is required' })}
+                    onChange={(e) => {
+                      if (e.target.value === '__add_customer__') {
+                        router.push('/customers/new');
+                      } else {
+                        setValue('customer_id', e.target.value, { shouldValidate: true });
+                      }
+                    }}
+                  >
                     <option value="">Select a customer…</option>
                     {customers.map((cu) => (
                       <option key={cu.id} value={cu.id}>
                         {cu.name}{cu.trn ? ` — TRN: ${cu.trn}` : ''}{cu.city ? ` (${cu.city})` : ''}
                       </option>
                     ))}
+                    <option value="__add_customer__">+ Add new customer</option>
                   </select>
                 </Field>
               </div>

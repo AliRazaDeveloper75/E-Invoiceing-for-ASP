@@ -7,10 +7,12 @@ import {
   Users, FileText, Building2, CheckCircle2,
   XCircle, Clock, RefreshCw,
   Send, Landmark, ShieldCheck, ArrowRight, CreditCard, Eye,
+  Truck, UserCheck,
 } from 'lucide-react';
 
-function fetcher(url: string) {
-  return api.get(url).then((r) => r.data.data);
+async function fetcher(url: string) {
+  const r = await api.get(url);
+  return r.data.data;
 }
 
 interface AdminStats {
@@ -127,11 +129,13 @@ export default function ManagementPage() {
           {/* ── Platform stats ──────────────────────────────────────────── */}
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Platform Overview</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <StatCard label="Total Users"      value={usr?.total ?? 0}               sub={`${usr?.active ?? 0} active`}    icon={Users}        color="bg-blue-100 text-blue-600"     href="/management/users" />
-              <StatCard label="Companies"        value={stats?.companies.total ?? 0}    sub="registered"                      icon={Building2}    color="bg-violet-100 text-violet-600" />
-              <StatCard label="Total Invoices"   value={inv?.total ?? 0}                sub="across all companies"            icon={FileText}     color="bg-indigo-100 text-indigo-600" href="/management/invoices" />
-              <StatCard label="Validated"        value={inv?.by_status?.validated ?? 0} sub="accepted by ASP"                icon={CheckCircle2} color="bg-emerald-100 text-emerald-600" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <StatCard label="Total Users"      value={usr?.total ?? 0}                          sub={`${usr?.active ?? 0} active`} icon={Users}        color="bg-blue-100 text-blue-600"     href="/management/users" />
+              <StatCard label="Suppliers"        value={usr?.by_role?.['supplier'] ?? 0}           sub="registered suppliers"         icon={UserCheck}    color="bg-indigo-100 text-indigo-600" href="/management/users?role=supplier" />
+              <StatCard label="Buyers"           value={usr?.by_role?.['inbound_supplier'] ?? 0}   sub="inbound suppliers"            icon={Truck}        color="bg-amber-100 text-amber-600"   href="/management/users?role=inbound_supplier" />
+              <StatCard label="Companies"        value={stats?.companies.total ?? 0}               sub="registered"                   icon={Building2}    color="bg-violet-100 text-violet-600" />
+              <StatCard label="Total Invoices"   value={inv?.total ?? 0}                           sub="across all companies"         icon={FileText}     color="bg-indigo-100 text-indigo-600" href="/management/invoices" />
+              <StatCard label="Validated"        value={inv?.by_status?.validated ?? 0}            sub="accepted by ASP"              icon={CheckCircle2} color="bg-emerald-100 text-emerald-600" />
             </div>
           </div>
 
@@ -246,22 +250,26 @@ export default function ManagementPage() {
           {/* ── User role breakdown ──────────────────────────────────────── */}
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">User Roles</h2>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {[
-                { role: 'admin',      label: 'Admins',       color: 'bg-red-100 text-red-600' },
-                { role: 'supplier',   label: 'Suppliers',    color: 'bg-blue-100 text-blue-600' },
-                { role: 'accountant', label: 'Accountants',  color: 'bg-indigo-100 text-indigo-600' },
-                { role: 'viewer',     label: 'Viewers',      color: 'bg-gray-100 text-gray-600' },
+                { role: 'admin',            label: 'Admins',            color: 'bg-red-100 text-red-600' },
+                { role: 'supplier',         label: 'Suppliers',         color: 'bg-blue-100 text-blue-600' },
+                { role: 'accountant',       label: 'Accountants',       color: 'bg-indigo-100 text-indigo-600' },
+                { role: 'inbound_supplier', label: 'Buyers',            color: 'bg-amber-100 text-amber-600' },
+                { role: 'viewer',           label: 'Viewers',           color: 'bg-gray-100 text-gray-600' },
               ].map(({ role, label, color }) => (
-                <div key={role} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${color}`}>
-                    <Users className="h-4 w-4" />
+                <Link key={role} href={`/management/users?role=${role}`}>
+                  <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3 hover:shadow-md transition-shadow cursor-pointer">
+                    <div className={`p-2 rounded-lg ${color}`}>
+                      <Users className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xl font-bold text-gray-900">{usr?.by_role?.[role] ?? 0}</p>
+                      <p className="text-xs text-gray-500">{label}</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-gray-300 shrink-0" />
                   </div>
-                  <div>
-                    <p className="text-xl font-bold text-gray-900">{usr?.by_role?.[role] ?? 0}</p>
-                    <p className="text-xs text-gray-500">{label}</p>
-                  </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

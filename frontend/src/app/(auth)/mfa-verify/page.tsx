@@ -16,12 +16,15 @@ export default function MFAVerifyPage() {
   const [loading, setLoading] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Redirect to login if no pending MFA token
+  // Redirect to login if no pending MFA token — run once on mount only.
+  // Using [router] as dep caused the effect to re-fire when router changed
+  // during post-MFA navigation, racing with the mfa_token removal.
   useEffect(() => {
-    if (typeof window !== 'undefined' && !sessionStorage.getItem('mfa_token')) {
+    if (!sessionStorage.getItem('mfa_token')) {
       router.replace('/login');
     }
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const code = digits.join('');
 
