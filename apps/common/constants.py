@@ -38,6 +38,7 @@ USER_ROLE_CHOICES = [
 # Internal lifecycle status
 INVOICE_STATUS_DRAFT           = 'draft'
 INVOICE_STATUS_PENDING         = 'pending'          # Queued for ASP submission
+INVOICE_STATUS_PROCESSING      = 'processing'       # Celery worker actively processing (locked)
 INVOICE_STATUS_SUBMITTED       = 'submitted'        # Sent to ASP
 INVOICE_STATUS_VALIDATED       = 'validated'        # ASP accepted & validated
 INVOICE_STATUS_REJECTED        = 'rejected'         # ASP rejected
@@ -48,6 +49,7 @@ INVOICE_STATUS_PARTIALLY_PAID  = 'partially_paid'   # Partially paid by buyer
 INVOICE_STATUS_CHOICES = [
     (INVOICE_STATUS_DRAFT,          'Draft'),
     (INVOICE_STATUS_PENDING,        'Pending Submission'),
+    (INVOICE_STATUS_PROCESSING,     'Processing'),
     (INVOICE_STATUS_SUBMITTED,      'Submitted to ASP'),
     (INVOICE_STATUS_VALIDATED,      'Validated by ASP'),
     (INVOICE_STATUS_REJECTED,       'Rejected'),

@@ -99,9 +99,13 @@ class AuthService:
 
     @staticmethod
     def send_verification_email(user: User) -> None:
+        from django.conf import settings as _settings
         from apps.accounts.models import EmailVerificationToken
         record = EmailVerificationToken.create_for_user(user)
         code = record.code
+
+        if _settings.DEBUG:
+            logger.info('DEV — verification code for %s: %s', user.email, code)
 
         subject = 'Your UAE E-Invoicing verification code'
 

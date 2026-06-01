@@ -16,12 +16,33 @@ export const api = axios.create({
   timeout: 15000,
 });
 
+// Public auth endpoints that must never receive a stale JWT token.
+// Sending an expired Bearer token to these causes DRF to reject the request
+// with 401 before the AllowAny permission check ever runs.
+const PUBLIC_AUTH_PATHS = [
+  '/auth/register/',
+  '/auth/login/',
+  '/auth/token/refresh/',
+  '/auth/check-email/',
+  '/auth/verify-email/',
+  '/auth/resend-verification/',
+  '/auth/forgot-password/',
+  '/auth/reset-password/',
+  '/auth/mfa/verify-login/',
+  '/auth/mfa/setup-login/',
+  '/auth/mfa/enable-login/',
+];
+
 // ── Request interceptor: attach access token ───────────────────────────────
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const access = Cookies.get('access_token');
-  if (access && config.headers) {
-    config.headers['Authorization'] = `Bearer ${access}`;
+  const url = config.url ?? '';
+  const isPublic = PUBLIC_AUTH_PATHS.some((p) => url.includes(p));
+  if (!isPublic) {
+    const access = Cookies.get('access_token');
+    if (access && config.headers) {
+      config.headers['Authorization'] = `Bearer ${access}`;
+    }
   }
   return config;
 });

@@ -6,7 +6,7 @@ import { clsx } from 'clsx';
 import {
   LayoutDashboard, FileText, Users, Building2, LogOut,
   ChevronDown, Inbox, ShieldCheck, PlusCircle,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose, PanelLeftOpen, ScanLine, ShieldAlert, UserPlus,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/hooks/useCompany';
@@ -23,7 +23,10 @@ const NAV: {
   { href: '/customers',                 label: 'Customers',      icon: Users,           roles: ['admin', 'supplier', 'accountant', 'viewer'] },
   { href: '/companies',                 label: 'Companies',      icon: Building2,       roles: ['admin', 'supplier', 'accountant', 'viewer'] },
   { href: '/inbound',                   label: 'Inbound',        icon: Inbox,           roles: ['admin'] },
+  { href: '/ai-ocr',                    label: 'AI Scanner',     icon: ScanLine,        roles: ['admin', 'accountant'] },
+  { href: '/fraud-alerts',              label: 'Fraud Alerts',   icon: ShieldAlert,     roles: ['admin'] },
   { href: '/management',                label: 'Management',     icon: ShieldCheck,     roles: ['admin'] },
+  { href: '/management/invitations',    label: 'Invitations',    icon: UserPlus,        roles: ['admin'] },
   { href: '/supplier-portal',           label: 'My Portal',      icon: LayoutDashboard, roles: ['inbound_supplier'] },
   { href: '/supplier-portal/invoices',  label: 'My Invoices',   icon: FileText,        roles: ['inbound_supplier'] },
   { href: '/supplier-portal/submit',    label: 'Submit Invoice', icon: PlusCircle,      roles: ['inbound_supplier'] },

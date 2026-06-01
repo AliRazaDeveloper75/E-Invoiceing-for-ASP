@@ -7,9 +7,13 @@ Pipeline triggered when an invoice is submitted (status → PENDING):
     ├── 1. Load & lock invoice
     ├── 2. Validate (InvoiceValidationService)
     ├── 3. Generate XML (UAEInvoiceXMLGenerator)
-    ├── 4. Save XML to media storage
-    ├── 5. Transmit to ASP (ASPIntegrationService)
-    └── 6. Update invoice status
+    ├── 4. PEPPOL schema validation (FullPEPPOLValidator — XSD + Schematron)
+    ├── 5. Sign XML (XAdESBESSigner — XAdES-BES, if PEPPOL_SIGNING_ENABLED)
+    ├── 6. Save (signed) XML to media storage
+    ├── 7. SMP endpoint discovery (SMPClient — non-fatal if unavailable)
+    ├── 8. Transmit to ASP (ASPIntegrationService)
+    ├── 9. Update invoice status
+    └── 10. Report to FTA (Corner 5)
 
 Periodic tasks (Celery Beat):
   retry_failed_transmissions()  — every 15 min: retry PENDING stuck invoices
@@ -65,22 +69,45 @@ def process_invoice(self, invoice_id: str) -> dict:
 
     logger.info('Processing invoice: %s (attempt %d)', invoice_id, self.request.retries + 1)
 
-    # ── Step 1: Load invoice ──────────────────────────────────────────────────
-    try:
-        invoice = Invoice.objects.select_related('company', 'customer').get(
-            id=invoice_id
-        )
-    except Invoice.DoesNotExist:
-        logger.error('Invoice not found: %s — task aborted.', invoice_id)
-        return {'status': 'error', 'reason': 'Invoice not found.'}
+    # ── Step 1: Load & lock invoice ───────────────────────────────────────────
+    # select_for_update(skip_locked=True) prevents two workers processing the
+    # same invoice concurrently.  skip_locked=True returns immediately if the
+    # row is already locked (another worker has it) rather than blocking.
+    from django.db import transaction as db_transaction
 
-    # Guard: only process PENDING invoices
-    if invoice.status != 'pending':
-        logger.warning(
-            'Invoice %s is not in PENDING status (current: %s) — skipping.',
-            invoice.invoice_number, invoice.status
-        )
-        return {'status': 'skipped', 'reason': f'Status is "{invoice.status}", not "pending".'}
+    try:
+        with db_transaction.atomic():
+            try:
+                invoice = (
+                    Invoice.objects
+                    .select_for_update(skip_locked=True)
+                    .select_related('company', 'customer')
+                    .get(id=invoice_id, status='pending')
+                )
+            except Invoice.DoesNotExist:
+                # Either invoice not found OR skip_locked fired (another worker has it)
+                # Both cases: skip gracefully.
+                try:
+                    check = Invoice.objects.only('status', 'invoice_number').get(id=invoice_id)
+                    logger.warning(
+                        'Invoice %s skipped: status="%s" (locked by another worker or wrong state).',
+                        check.invoice_number, check.status
+                    )
+                    return {'status': 'skipped', 'reason': f'Status is "{check.status}" or locked.'}
+                except Invoice.DoesNotExist:
+                    logger.error('Invoice not found: %s — task aborted.', invoice_id)
+                    return {'status': 'error', 'reason': 'Invoice not found.'}
+
+            # Transition: PENDING → PROCESSING (prevents retry tasks re-queuing it)
+            Invoice.objects.filter(pk=invoice.pk).update(
+                status='processing',
+                updated_at=timezone.now(),
+            )
+            invoice.status = 'processing'
+
+    except Exception as exc:
+        logger.exception('Failed to acquire lock for invoice %s', invoice_id)
+        raise self.retry(exc=exc, countdown=_backoff(self.request.retries))
 
     # ── Step 2: Validate ──────────────────────────────────────────────────────
     logger.info('Validating invoice: %s', invoice.invoice_number)
@@ -129,7 +156,54 @@ def process_invoice(self, invoice_id: str) -> dict:
         logger.exception('XML generation failed for %s', invoice.invoice_number)
         raise self.retry(exc=exc, countdown=_backoff(self.request.retries))
 
-    # ── Step 4: Save XML to media storage ─────────────────────────────────────
+    # ── Step 4: PEPPOL Schema Validation ─────────────────────────────────────
+    logger.info('Running PEPPOL schema validation for: %s', invoice.invoice_number)
+
+    try:
+        from services.peppol_validator import FullPEPPOLValidator
+        peppol_result = FullPEPPOLValidator().validate(
+            xml_bytes,
+            invoice_type=invoice.invoice_type,
+        )
+    except Exception as exc:
+        logger.exception('PEPPOL validator crashed for %s', invoice.invoice_number)
+        raise self.retry(exc=exc, countdown=_backoff(self.request.retries))
+
+    if not peppol_result.is_valid:
+        logger.warning(
+            'Invoice %s failed PEPPOL validation: %s',
+            invoice.invoice_number, peppol_result.errors
+        )
+        InvoiceService.mark_rejected(invoice, {
+            'source':   'peppol_schema',
+            'errors':   peppol_result.errors,
+            'warnings': peppol_result.warnings,
+            'xsd_valid': peppol_result.xsd_valid,
+            'sch_valid': peppol_result.sch_valid,
+        })
+        return {
+            'status':   'rejected',
+            'reason':   'PEPPOL schema/business-rule validation failed',
+            'errors':   peppol_result.errors,
+        }
+
+    if peppol_result.warnings:
+        logger.warning(
+            'Invoice %s PEPPOL validation warnings: %s',
+            invoice.invoice_number, peppol_result.warnings
+        )
+
+    # ── Step 5: Sign XML (XAdES-BES) ─────────────────────────────────────────
+    logger.info('Applying digital signature for invoice: %s', invoice.invoice_number)
+
+    try:
+        from services.xml_signer import XAdESBESSigner
+        xml_bytes = XAdESBESSigner().sign(xml_bytes, invoice_id=invoice.invoice_number)
+    except Exception as exc:
+        logger.exception('XML signer crashed for %s', invoice.invoice_number)
+        raise self.retry(exc=exc, countdown=_backoff(self.request.retries))
+
+    # ── Step 6: Save XML to media storage ─────────────────────────────────────
     logger.info('Saving XML file for invoice: %s', invoice.invoice_number)
 
     try:
@@ -143,17 +217,36 @@ def process_invoice(self, invoice_id: str) -> dict:
         logger.exception('XML file save failed for %s', invoice.invoice_number)
         raise self.retry(exc=exc, countdown=_backoff(self.request.retries))
 
-    # ── Step 5: Submit to ASP ─────────────────────────────────────────────────
+    # ── Step 7: SMP endpoint discovery ───────────────────────────────────────
+    logger.info('Resolving PEPPOL endpoint for invoice: %s', invoice.invoice_number)
+
+    try:
+        from services.smp_client import SMPClient
+        endpoint = SMPClient().lookup_invoice_endpoint(invoice)
+        if endpoint:
+            logger.info(
+                'SMP resolved endpoint for %s: %s',
+                invoice.invoice_number, endpoint.transport_url
+            )
+    except Exception as exc:
+        # SMP failure is non-fatal in current phase — ASP handles routing
+        logger.warning(
+            'SMP lookup failed for %s (non-fatal): %s',
+            invoice.invoice_number, exc
+        )
+        endpoint = None
+
+    # ── Step 8: Submit to ASP ─────────────────────────────────────────────────
     logger.info('Submitting invoice %s to ASP', invoice.invoice_number)
 
     try:
-        asp_response = ASPIntegrationService.transmit(invoice, xml_bytes)
+        asp_response = ASPIntegrationService.transmit(invoice, xml_bytes, endpoint=endpoint)
 
     except Exception as exc:
         logger.exception('ASP transmission error for %s', invoice.invoice_number)
         raise self.retry(exc=exc, countdown=_backoff(self.request.retries))
 
-    # ── Step 6: Update status from ASP response ───────────────────────────────
+    # ── Step 7: Update status from ASP response ───────────────────────────────
     if asp_response.is_accepted:
         InvoiceService.mark_submitted_to_asp(invoice, asp_response.submission_id)
         logger.info(
@@ -166,7 +259,7 @@ def process_invoice(self, invoice_id: str) -> dict:
             InvoiceService.mark_validated(invoice, asp_response.raw)
             logger.info('Invoice %s immediately validated by ASP.', invoice.invoice_number)
 
-            # ── Step 7: Report to FTA (Corner 5) ─────────────────────────────
+            # ── Step 8: Report to FTA (Corner 5) ─────────────────────────────
             _report_to_fta(invoice, xml_bytes)
 
             return {'status': 'validated', 'submission_id': asp_response.submission_id}
@@ -213,8 +306,9 @@ def retry_failed_transmissions() -> dict:
     from apps.invoices.models import Invoice
 
     stuck_threshold = timezone.now() - timedelta(minutes=10)
-    stuck_invoices  = Invoice.objects.filter(
-        status='pending',
+    # Include 'processing' in case worker died mid-execution (orphaned lock)
+    stuck_invoices = Invoice.objects.filter(
+        status__in=['pending', 'processing'],
         updated_at__lt=stuck_threshold,
         is_active=True,
     )

@@ -9,7 +9,7 @@ Design decisions:
   (avoids circular imports; one user can belong to multiple companies)
 """
 import uuid
-import random
+import secrets
 from datetime import timedelta
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
@@ -104,6 +104,24 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True,
         blank=True,
         help_text='Last successful MFA verification. Login skips MFA if within 24 hours.'
+    )
+
+    # ── Security Tracking ─────────────────────────────────────────────────────
+    email_verified_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Timestamp of email verification. Null = not verified.'
+    )
+    last_password_changed = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Used to invalidate old JWTs after password change.'
+    )
+    failed_login_count = models.PositiveSmallIntegerField(
+        default=0,
+        help_text='Consecutive failed login attempts (reset on success).'
+    )
+    locked_until = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Account locked until this time after too many failed logins.'
     )
 
     # Django internals
@@ -209,7 +227,8 @@ class EmailVerificationToken(models.Model):
 
     @classmethod
     def _generate_code(cls) -> str:
-        return f'{random.randint(0, 999999):06d}'
+        # secrets.randbelow is cryptographically secure (OS CSPRNG)
+        return f'{secrets.randbelow(1_000_000):06d}'
 
     @classmethod
     def create_for_user(cls, user):

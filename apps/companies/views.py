@@ -67,7 +67,7 @@ class CompanyListCreateView(APIView):
             companies = _Company.objects.filter(is_active=True).order_by('name')
         else:
             companies = CompanyService.get_user_companies(request.user)
-        serializer = CompanySerializer(companies, many=True)
+        serializer = CompanySerializer(companies, many=True, context={'request': request})
         return success_response(data=serializer.data)
 
     def post(self, request):
@@ -84,7 +84,7 @@ class CompanyListCreateView(APIView):
             data=serializer.validated_data,
         )
         return success_response(
-            data=CompanySerializer(company).data,
+            data=CompanySerializer(company, context={'request': request}).data,
             message='Company created successfully.',
             status_code=status.HTTP_201_CREATED
         )
@@ -102,16 +102,19 @@ class CompanyDetailView(APIView):
 
     def get(self, request, company_id):
         company, _ = _get_company_and_membership(request, company_id)
-        return success_response(data=CompanySerializer(company).data)
+        return success_response(data=CompanySerializer(company, context={'request': request}).data)
 
     def put(self, request, company_id):
-        company, membership = _get_company_and_membership(request, company_id)
-
-        if not membership.is_admin:
-            return error_response(
-                message='Only company admins can update company details.',
-                status_code=status.HTTP_403_FORBIDDEN
-            )
+        # Platform admin can update any company without membership
+        if request.user.role == 'admin':
+            company = get_object_or_404(Company, id=company_id, is_active=True)
+        else:
+            company, membership = _get_company_and_membership(request, company_id)
+            if not membership.is_admin:
+                return error_response(
+                    message='Only company admins can update company details.',
+                    status_code=status.HTTP_403_FORBIDDEN
+                )
 
         serializer = CompanyUpdateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -122,18 +125,21 @@ class CompanyDetailView(APIView):
 
         company = CompanyService.update_company(company, serializer.validated_data)
         return success_response(
-            data=CompanySerializer(company).data,
+            data=CompanySerializer(company, context={'request': request}).data,
             message='Company updated successfully.'
         )
 
     def delete(self, request, company_id):
-        company, membership = _get_company_and_membership(request, company_id)
-
-        if not membership.is_admin:
-            return error_response(
-                message='Only company admins can deactivate a company.',
-                status_code=status.HTTP_403_FORBIDDEN
-            )
+        # Platform admin can deactivate any company without membership
+        if request.user.role == 'admin':
+            company = get_object_or_404(Company, id=company_id, is_active=True)
+        else:
+            company, membership = _get_company_and_membership(request, company_id)
+            if not membership.is_admin:
+                return error_response(
+                    message='Only company admins can deactivate a company.',
+                    status_code=status.HTTP_403_FORBIDDEN
+                )
 
         CompanyService.deactivate_company(company)
         return success_response(message='Company deactivated successfully.')

@@ -1,5 +1,10 @@
 from django.urls import path
-from .views import InvoiceSubmissionLogsView, ASPWebhookView, InvoiceTimelineView
+from .views import (
+    InvoiceSubmissionLogsView,
+    ASPWebhookView,
+    InvoiceTimelineView,
+    PEPPOLParticipantLookupView,
+)
 
 app_name = 'integrations'
 
@@ -21,5 +26,12 @@ urlpatterns = [
         'asp/webhook/',
         ASPWebhookView.as_view(),
         name='asp-webhook',
+    ),
+    # PEPPOL participant lookup — check if a buyer is registered on the network
+    # GET /api/v1/integrations/peppol/lookup/?participant_id=0235:123456789012345
+    path(
+        'peppol/lookup/',
+        PEPPOLParticipantLookupView.as_view(),
+        name='peppol-participant-lookup',
     ),
 ]

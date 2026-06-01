@@ -44,10 +44,16 @@ export interface Company {
   email: string;
   website: string;
   peppol_endpoint: string;
+  logo_url?: string | null;
   is_active: boolean;
   member_count: number;
   created_at: string;
   updated_at: string;
+  // Banking / payment info (optional — shown in PDF)
+  bank_name?: string;
+  bank_account_number?: string;
+  iban?: string;
+  swift_code?: string;
 }
 
 export interface CompanyMember {
@@ -126,6 +132,11 @@ export interface Invoice {
   customer: string;
   customer_name: string;
   customer_trn: string;
+  customer_address?: string;
+  customer_city?: string;
+  customer_country?: string;
+  customer_phone?: string;
+  customer_email?: string;
   issue_date: string;
   due_date: string | null;
   supply_date: string | null;
@@ -144,6 +155,8 @@ export interface Invoice {
   xml_generated_at: string | null;
   asp_submission_id: string;
   asp_submitted_at: string | null;
+  payment_means_code: string;
+  amount_paid: string | null;
   items: InvoiceItem[];
   item_count: number;
   is_editable: boolean;

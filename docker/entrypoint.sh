@@ -1,7 +1,7 @@
-#!/bin/sh
-# Docker entrypoint for the Django backend and Celery workers.
+#!/bin/bash
+# Docker entrypoint for UAE E-Invoicing Django backend.
 # Waits for PostgreSQL to be ready, then runs migrations before starting.
-set -e
+set -euo pipefail
 
 echo "==> Waiting for PostgreSQL at ${DB_HOST:-db}:${DB_PORT:-5432}..."
 until python -c "

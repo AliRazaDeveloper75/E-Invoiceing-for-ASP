@@ -76,13 +76,12 @@ class Invoice(BaseModel):
     # ── Identity ───────────────────────────────────────────────────────────────
     invoice_number = models.CharField(
         max_length=50,
-        unique=True,
         db_index=True,
-        help_text='Auto-generated unique invoice number (e.g. INV-202601-000001).'
+        help_text='Auto-generated invoice number, unique per company (e.g. INV-202601-000001).'
     )
     invoice_sequence = models.PositiveIntegerField(
         default=0,
-        help_text='Sequential number per company. Used to generate invoice_number.'
+        help_text='Sequential number per company. Used to generate invoice_number. Never reset.'
     )
     invoice_type = models.CharField(
         max_length=20,
@@ -244,10 +243,13 @@ class Invoice(BaseModel):
         verbose_name = 'Invoice'
         verbose_name_plural = 'Invoices'
         ordering = ['-issue_date', '-invoice_sequence']
+        # UAE Article 70: numbering must be unique and consecutive per issuing company
+        unique_together = [('company', 'invoice_number')]
         indexes = [
-            models.Index(fields=['company', 'status'],        name='idx_invoice_company_status'),
-            models.Index(fields=['company', 'issue_date'],    name='idx_invoice_company_date'),
-            models.Index(fields=['company', 'customer'],      name='idx_invoice_company_customer'),
+            models.Index(fields=['company', 'status'],           name='idx_invoice_company_status'),
+            models.Index(fields=['company', 'issue_date'],       name='idx_invoice_company_date'),
+            models.Index(fields=['company', 'customer'],         name='idx_invoice_company_customer'),
+            models.Index(fields=['company', 'invoice_sequence'], name='idx_invoice_company_seq'),
         ]
 
     def __str__(self):
@@ -392,3 +394,232 @@ class InvoiceItem(BaseModel):
             self.vat_amount = Decimal('0.00')
 
         self.total_amount = self.subtotal + self.vat_amount
+
+
+# ─── Invoice Audit Log ────────────────────────────────────────────────────────
+
+class InvoiceAuditLog(models.Model):
+    """
+    Immutable audit trail for every state change and edit on an invoice.
+
+    UAE Federal Decree-Law No. 16 (Article 65) requires full audit trail.
+    Never update these records — create new entries only.
+    """
+
+    ACTION_CREATED    = 'created'
+    ACTION_UPDATED    = 'updated'
+    ACTION_SUBMITTED  = 'submitted'
+    ACTION_VALIDATED  = 'validated'
+    ACTION_REJECTED   = 'rejected'
+    ACTION_CANCELLED  = 'cancelled'
+    ACTION_PAID       = 'paid'
+    ACTION_XML_GEN    = 'xml_generated'
+    ACTION_ASP_SENT   = 'asp_sent'
+    ACTION_FTA_SENT   = 'fta_reported'
+    ACTION_ITEM_ADDED = 'item_added'
+    ACTION_ITEM_UPDATED = 'item_updated'
+    ACTION_ITEM_REMOVED = 'item_removed'
+    ACTION_DELETED    = 'deleted'
+
+    ACTION_CHOICES = [
+        (ACTION_CREATED,      'Invoice Created'),
+        (ACTION_UPDATED,      'Invoice Updated'),
+        (ACTION_SUBMITTED,    'Submitted for Processing'),
+        (ACTION_VALIDATED,    'Validated by ASP'),
+        (ACTION_REJECTED,     'Rejected'),
+        (ACTION_CANCELLED,    'Cancelled'),
+        (ACTION_PAID,         'Marked Paid'),
+        (ACTION_XML_GEN,      'XML Generated'),
+        (ACTION_ASP_SENT,     'Sent to ASP'),
+        (ACTION_FTA_SENT,     'Reported to FTA'),
+        (ACTION_ITEM_ADDED,   'Item Added'),
+        (ACTION_ITEM_UPDATED, 'Item Updated'),
+        (ACTION_ITEM_REMOVED, 'Item Removed'),
+        (ACTION_DELETED,      'Invoice Deleted'),
+    ]
+
+    id = models.BigAutoField(primary_key=True)
+
+    invoice = models.ForeignKey(
+        Invoice,
+        on_delete=models.CASCADE,
+        related_name='audit_logs',
+    )
+    action = models.CharField(max_length=30, choices=ACTION_CHOICES, db_index=True)
+
+    # Actor (null if system-generated e.g. Celery)
+    performed_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='invoice_audit_logs',
+    )
+    performed_by_email = models.EmailField(
+        blank=True,
+        default='',
+        help_text='Denormalized email for historical accuracy after user deletion.'
+    )
+
+    # What changed (for UPDATE actions)
+    field_name  = models.CharField(max_length=100, blank=True, default='')
+    old_value   = models.TextField(blank=True, default='')
+    new_value   = models.TextField(blank=True, default='')
+
+    # Context
+    description = models.TextField(blank=True, default='')
+    metadata    = models.JSONField(null=True, blank=True)
+
+    # Request context
+    ip_address  = models.GenericIPAddressField(null=True, blank=True)
+    user_agent  = models.CharField(max_length=500, blank=True, default='')
+    request_id  = models.CharField(max_length=64, blank=True, default='')
+
+    timestamp   = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = 'invoice_audit_logs'
+        verbose_name = 'Invoice Audit Log'
+        verbose_name_plural = 'Invoice Audit Logs'
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['invoice', 'timestamp'],  name='idx_auditlog_invoice_ts'),
+            models.Index(fields=['invoice', 'action'],     name='idx_auditlog_invoice_action'),
+            models.Index(fields=['performed_by', 'timestamp'], name='idx_auditlog_user_ts'),
+        ]
+
+    def __str__(self):
+        return f'{self.invoice.invoice_number} | {self.action} @ {self.timestamp}'
+
+    @classmethod
+    def log(cls, invoice, action: str, performed_by=None, request=None,
+            field_name='', old_value='', new_value='', description='', metadata=None):
+        """
+        Convenience factory. Call this everywhere instead of cls.objects.create().
+        Thread-safe — uses bulk_create internally where possible.
+        """
+        entry = cls(
+            invoice=invoice,
+            action=action,
+            performed_by=performed_by,
+            performed_by_email=getattr(performed_by, 'email', ''),
+            field_name=field_name,
+            old_value=str(old_value) if old_value != '' else '',
+            new_value=str(new_value) if new_value != '' else '',
+            description=description,
+            metadata=metadata,
+        )
+        if request:
+            entry.ip_address = _get_client_ip(request)
+            entry.user_agent = request.META.get('HTTP_USER_AGENT', '')[:500]
+            entry.request_id = getattr(request, 'request_id', '')
+        entry.save()
+        return entry
+
+
+def _get_client_ip(request) -> str:
+    """Extract real client IP, respecting X-Forwarded-For."""
+    forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
+    if forwarded:
+        return forwarded.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR', '')
+
+
+# ─── Invoice Fraud Alert ──────────────────────────────────────────────────────
+
+class InvoiceFraudAlert(BaseModel):
+    """
+    Persisted result of the AI fraud analysis for a single invoice.
+
+    Created (or updated) by the analyze_invoice_fraud Celery task.
+    risk_score:  0.0 (clean) → 1.0 (high risk)
+    risk_level:  'low' | 'medium' | 'high'
+    auto_action: 'none' | 'flag' | 'block' | 'approve'
+    """
+
+    RISK_LOW    = 'low'
+    RISK_MEDIUM = 'medium'
+    RISK_HIGH   = 'high'
+    RISK_CHOICES = [
+        (RISK_LOW,    'Low Risk'),
+        (RISK_MEDIUM, 'Medium Risk — Review Required'),
+        (RISK_HIGH,   'High Risk — Blocked'),
+    ]
+
+    ACTION_NONE    = 'none'
+    ACTION_FLAG    = 'flag'
+    ACTION_BLOCK   = 'block'
+    ACTION_APPROVE = 'approve'
+    ACTION_CHOICES = [
+        (ACTION_NONE,    'No Action'),
+        (ACTION_FLAG,    'Flagged for Review'),
+        (ACTION_BLOCK,   'Blocked'),
+        (ACTION_APPROVE, 'Auto-Approved'),
+    ]
+
+    invoice = models.OneToOneField(
+        Invoice,
+        on_delete=models.CASCADE,
+        related_name='fraud_alert',
+    )
+
+    risk_score = models.FloatField(
+        default=0.0,
+        help_text='Composite fraud risk score 0.0–1.0.',
+    )
+    risk_level = models.CharField(
+        max_length=10,
+        choices=RISK_CHOICES,
+        default=RISK_LOW,
+        db_index=True,
+    )
+    auto_action = models.CharField(
+        max_length=10,
+        choices=ACTION_CHOICES,
+        default=ACTION_NONE,
+    )
+
+    flags_json = models.JSONField(
+        default=list,
+        help_text='List of FraudFlag dicts: {code, description, severity, category}.',
+    )
+    duplicate_invoice_ids = models.JSONField(
+        default=list,
+        help_text='UUIDs of invoices considered duplicates of this one.',
+    )
+    ai_explanation = models.TextField(
+        blank=True,
+        default='',
+        help_text='LLM-generated explanation (high-risk invoices only).',
+    )
+
+    # Resolution
+    is_resolved   = models.BooleanField(default=False)
+    resolved_by   = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='resolved_fraud_alerts',
+    )
+    resolved_at   = models.DateTimeField(null=True, blank=True)
+    resolution_note = models.TextField(blank=True, default='')
+
+    # Timestamps (task execution)
+    analyzed_at  = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'invoice_fraud_alerts'
+        verbose_name = 'Invoice Fraud Alert'
+        verbose_name_plural = 'Invoice Fraud Alerts'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['risk_level', 'is_resolved'], name='idx_fraud_risk_resolved'),
+            models.Index(fields=['invoice'],                   name='idx_fraud_invoice'),
+        ]
+
+    def __str__(self):
+        return f'{self.invoice.invoice_number} | {self.risk_level} ({self.risk_score:.2f})'
+
+    @property
+    def is_flagged(self) -> bool:
+        return self.risk_level in (self.RISK_MEDIUM, self.RISK_HIGH)

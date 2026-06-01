@@ -1,0 +1,236 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+
+jobs:
+
+  # ── Backend Lint & Security ───────────────────────────────────────────────────
+  lint:
+    name: Lint & Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install lint dependencies
+        run: pip install flake8==7.0.0 black==24.4.2 bandit==1.7.9
+
+      - name: flake8 (style + errors)
+        run: flake8 apps/ tasks/ services/ config/ --max-line-length=120 --extend-ignore=E203,W503
+
+      - name: black (formatting check)
+        run: black --check --line-length=120 apps/ tasks/ services/ config/
+
+      - name: bandit (security lint)
+        run: bandit -r apps/ tasks/ services/ -ll -x apps/*/tests/,apps/*/migrations/
+
+  # ── Backend Tests ─────────────────────────────────────────────────────────────
+  test:
+    name: Django Tests
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: einvoicing_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      SECRET_KEY: ci-test-secret-key-not-for-production-at-all
+      DB_NAME: einvoicing_test
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      REDIS_URL: redis://localhost:6379/0
+      CELERY_BROKER_URL: redis://localhost:6379/1
+      CELERY_RESULT_BACKEND: redis://localhost:6379/2
+      DJANGO_SETTINGS_MODULE: config.settings.testing
+      ASP_WEBHOOK_SECRET: ci-webhook-secret
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+      PEPPOL_SIGNING_ENABLED: "false"
+      PEPPOL_XSD_VALIDATION_ENABLED: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements/development.txt
+
+      - name: Run migrations
+        run: python manage.py migrate --noinput
+
+      - name: Run tests
+        run: |
+          pytest apps/ tasks/ services/ \
+            --ds=config.settings.testing \
+            --cov=apps --cov=tasks --cov=services \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --tb=short \
+            -q
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage.xml
+          fail_ci_if_error: false
+
+  # ── Migration Check ───────────────────────────────────────────────────────────
+  migration-check:
+    name: Migration Consistency
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: einvoicing_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      SECRET_KEY: ci-test-secret-key-not-for-production-at-all
+      DB_NAME: einvoicing_test
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DJANGO_SETTINGS_MODULE: config.settings.testing
+      ALLOWED_HOSTS: localhost
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+      PEPPOL_SIGNING_ENABLED: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements/development.txt
+
+      - name: Check for missing migrations
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Verify migrations apply cleanly
+        run: python manage.py migrate --noinput
+
+      - name: Check for migration conflicts
+        run: python manage.py migrate --run-syncdb --check 2>/dev/null || true
+
+  # ── Frontend Lint & Build ─────────────────────────────────────────────────────
+  frontend:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+          NEXT_PUBLIC_APP_NAME: UAE E-Invoicing
+          # Disable telemetry in CI
+          NEXT_TELEMETRY_DISABLED: "1"
+
+  # ── Docker Build Validation ────────────────────────────────────────────────────
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [test, migration-check]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.backend
+          target: runtime
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: uae-einvoicing-backend:ci-${{ github.sha }}

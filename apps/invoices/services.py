@@ -140,36 +140,68 @@ class VATCalculationService:
 # ─── Invoice Number Generator ─────────────────────────────────────────────────
 
 class InvoiceNumberService:
-    """Generates sequential, unique invoice numbers per company."""
+    """
+    Generates sequential, unique invoice numbers per company.
+
+    UAE Article 70: invoice numbers must be consecutive per issuing entity.
+    Sequence resets are NOT allowed — numbers are monotonically increasing.
+    """
 
     @staticmethod
     @transaction.atomic
     def generate(company: Company) -> tuple[str, int]:
         """
-        Thread-safe invoice number generation using SELECT FOR UPDATE.
+        Thread-safe, per-company invoice number generation.
 
-        Format: INV-{YYYYMM}-{sequence:06d}
+        Locks the Company row (SELECT FOR UPDATE) to prevent duplicate sequence
+        numbers when two workers process invoices for the same company concurrently.
+
+        Format:  INV-{YYYYMM}-{sequence:06d}
         Example: INV-202601-000001
 
-        Sequence is GLOBAL across all companies because invoice_number has a
-        global unique constraint. Locking on the company row prevents races
-        between concurrent requests for the same company.
+        Sequence is per-company and never resets (UAE Article 70 compliance).
 
         Returns: (invoice_number: str, sequence: int)
         """
         from django.db.models import Max
 
-        # Lock ALL invoices (global) to prevent duplicate number generation
-        # across companies that share the same unique invoice_number constraint.
+        # Lock the specific company row — prevents race conditions between
+        # concurrent invoice creation requests for the SAME company only.
+        Company.objects.select_for_update().get(pk=company.pk)
+
+        # Get the current max sequence for THIS company
         result = (
             Invoice.objects
-            .select_for_update()
+            .filter(company=company)
             .aggregate(max_seq=Max('invoice_sequence'))
         )
         next_seq = (result['max_seq'] or 0) + 1
         year_month = timezone.now().strftime('%Y%m')
         invoice_number = f'INV-{year_month}-{next_seq:06d}'
         return invoice_number, next_seq
+
+    @staticmethod
+    def detect_gaps(company: Company) -> list[int]:
+        """
+        UAE Article 70 compliance: detect missing sequence numbers.
+
+        Returns a list of missing sequence numbers (gaps) for the company.
+        Gaps indicate invoices that were created but later hard-deleted,
+        or a numbering error that must be investigated.
+        """
+        sequences = list(
+            Invoice.objects
+            .filter(company=company)
+            .order_by('invoice_sequence')
+            .values_list('invoice_sequence', flat=True)
+        )
+        if not sequences:
+            return []
+
+        expected = set(range(sequences[0], sequences[-1] + 1))
+        actual   = set(sequences)
+        gaps     = sorted(expected - actual)
+        return gaps
 
 
 # ─── Invoice Item Service ─────────────────────────────────────────────────────

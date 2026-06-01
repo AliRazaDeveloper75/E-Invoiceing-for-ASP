@@ -15,6 +15,9 @@ Endpoints:
   GET  /api/v1/admin/invoices/                       — all invoices (all companies)
   POST /api/v1/admin/invoices/<uuid>/submit/         — admin triggers ASP submission
   POST /api/v1/admin/invoices/<uuid>/report-fta/     — admin triggers FTA reporting
+  POST /api/v1/contact/                              — public contact form submission
+  GET  /api/v1/admin/contact-messages/               — list all contact messages (admin)
+  PUT  /api/v1/admin/contact-messages/<uuid>/        — update status/note (admin)
 """
 import logging
 from django.contrib.auth import get_user_model
@@ -88,6 +91,10 @@ class AdminStatsView(APIView):
         payment_count = pay_qs.count()
         buyer_viewed  = inv_qs.filter(buyer_viewed_at__isnull=False).count()
 
+        # Contact message stats
+        contact_qs = ContactMessage.objects.filter(is_active=True)
+        contact_new = contact_qs.filter(status=ContactMessage.STATUS_NEW).count()
+
         return success_response(data={
             'users': {
                 'total':    total_users,
@@ -108,6 +115,9 @@ class AdminStatsView(APIView):
             'payments': {
                 'total_count':  payment_count,
                 'total_amount': str(payment_total),
+            },
+            'contact_messages': {
+                'new': contact_new,
             },
         })
 
@@ -665,3 +675,115 @@ class AdminPaymentVoidView(APIView):
             message=f'Payment voided. Invoice {invoice.invoice_number} status updated to {new_status}.',
             data={'invoice_status': new_status},
         )
+
+
+# ─── Contact Messages ─────────────────────────────────────────────────────────
+
+from .models import ContactMessage
+
+
+class ContactMessageSubmitView(APIView):
+    """
+    POST /api/v1/contact/
+    Public endpoint — no authentication required.
+    """
+    permission_classes = []
+    authentication_classes = []
+
+    def post(self, request):
+        data = request.data
+        required = ['first_name', 'last_name', 'email', 'message']
+        for field in required:
+            if not data.get(field, '').strip():
+                return error_response(f'{field} is required.', status_code=400)
+
+        ContactMessage.objects.create(
+            first_name=data['first_name'].strip(),
+            last_name=data['last_name'].strip(),
+            email=data['email'].strip(),
+            company=data.get('company', '').strip(),
+            subject=data.get('subject', 'other'),
+            message=data['message'].strip(),
+        )
+        return success_response(message='Message received. We will get back to you within 24 hours.')
+
+
+class AdminContactMessageListView(APIView):
+    """
+    GET /api/v1/admin/contact-messages/
+    List all contact form submissions — admin only.
+    """
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        qs = ContactMessage.objects.filter(is_active=True)
+
+        status_filter = request.query_params.get('status', '').strip()
+        search = request.query_params.get('search', '').strip()
+
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        if search:
+            qs = qs.filter(
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(email__icontains=search) |
+                Q(company__icontains=search) |
+                Q(message__icontains=search)
+            )
+
+        paginator = StandardResultsPagination()
+        page = paginator.paginate_queryset(qs, request)
+
+        data = [{
+            'id':         str(m.id),
+            'first_name': m.first_name,
+            'last_name':  m.last_name,
+            'email':      m.email,
+            'company':    m.company,
+            'subject':    m.subject,
+            'subject_display': m.get_subject_display(),
+            'message':    m.message,
+            'status':     m.status,
+            'admin_note': m.admin_note,
+            'created_at': m.created_at.isoformat(),
+        } for m in page]
+
+        return success_response(data={
+            'results': data,
+            'counts': {
+                'new':     ContactMessage.objects.filter(is_active=True, status='new').count(),
+                'read':    ContactMessage.objects.filter(is_active=True, status='read').count(),
+                'replied': ContactMessage.objects.filter(is_active=True, status='replied').count(),
+            },
+            'pagination': {
+                'count':    paginator.page.paginator.count,
+                'next':     paginator.get_next_link(),
+                'previous': paginator.get_previous_link(),
+            },
+        })
+
+
+class AdminContactMessageDetailView(APIView):
+    """
+    PUT /api/v1/admin/contact-messages/<uuid>/
+    Update status and admin note.
+    """
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def put(self, request, pk):
+        msg = get_object_or_404(ContactMessage, id=pk, is_active=True)
+        allowed = {'new', 'read', 'replied'}
+        new_status = request.data.get('status', msg.status)
+        if new_status not in allowed:
+            return error_response('Invalid status.', status_code=400)
+        msg.status = new_status
+        msg.admin_note = request.data.get('admin_note', msg.admin_note)
+        msg.save(update_fields=['status', 'admin_note', 'updated_at'])
+        return success_response(message='Updated.')
+
+    def delete(self, request, pk):
+        msg = get_object_or_404(ContactMessage, id=pk, is_active=True)
+        msg.is_active = False
+        msg.save(update_fields=['is_active', 'updated_at'])
+        return success_response(message='Message deleted.')

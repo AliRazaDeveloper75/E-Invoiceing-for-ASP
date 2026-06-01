@@ -12,7 +12,62 @@ export const COUNTRIES: CountryData[] = [
   // ── Middle East / GCC ────────────────────────────────────────────────────
   {
     name: 'United Arab Emirates', code: 'AE', dialCode: '+971', flag: '🇦🇪',
-    cities: ['Abu Dhabi', 'Dubai', 'Sharjah', 'Ajman', 'Umm Al Quwain', 'Ras Al Khaimah', 'Fujairah', 'Al Ain', 'Khor Fakkan', 'Dibba Al Hisn'],
+    cities: [
+      // Abu Dhabi Emirate
+      'Abu Dhabi',
+      'Al Ain',
+      'Al Ruwais',
+      'Madinat Zayed',
+      'Liwa',
+      'Al Mirfa',
+      'Ghayathi',
+      'Delma Island',
+      // Dubai Emirate
+      'Dubai',
+      'Deira',
+      'Bur Dubai',
+      'Jumeirah',
+      'Business Bay',
+      'Downtown Dubai',
+      'Dubai Marina',
+      'JLT (Jumeirah Lake Towers)',
+      'DIFC',
+      'Al Quoz',
+      'Al Barsha',
+      'Mirdif',
+      'Al Qusais',
+      'Dubai Silicon Oasis',
+      'Dubai Investment Park',
+      'Jebel Ali',
+      'Palm Jumeirah',
+      // Sharjah Emirate
+      'Sharjah',
+      'Khor Fakkan',
+      'Kalba',
+      'Dibba Al Hisn',
+      'Dhaid',
+      'Al Hamriyah',
+      // Ajman Emirate
+      'Ajman',
+      'Manama (Ajman)',
+      // Umm Al Quwain
+      'Umm Al Quwain',
+      'Al Salamah',
+      // Ras Al Khaimah
+      'Ras Al Khaimah',
+      'Al Nakheel',
+      'Al Hamra',
+      'Julfar',
+      'Al Rams',
+      'Shaam',
+      // Fujairah Emirate
+      'Fujairah',
+      'Dibba Al Fujairah',
+      'Al Fujairah City',
+      'Masafi',
+      'Al Bithnah',
+      'Qidfa',
+    ],
     languages: ['Arabic'], currency: 'AED',
   },
   {

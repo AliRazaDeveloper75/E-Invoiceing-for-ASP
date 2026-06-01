@@ -247,10 +247,84 @@ function ChatbotTab() {
   );
 }
 
+// ─── Context data mini-card ───────────────────────────────────────────────────
+
+interface ContextData {
+  type: string;
+  count?: number;
+  total_aed?: number;
+  total_outstanding_aed?: number;
+  total_revenue_aed?: number;
+  total_vat_aed?: number;
+  invoices?: Array<{ invoice_number: string; customer: string; total_amount: number; status: string }>;
+  customers?: Array<{ customer_name: string; total_revenue_aed: number; invoice_count: number }>;
+}
+
+function DataCard({ data }: { data: ContextData }) {
+  const labels: Record<string, string> = {
+    unpaid_invoices:   'Unpaid Invoices',
+    overdue_invoices:  'Overdue Invoices',
+    vat_summary:       'VAT Summary',
+    recent_invoices:   'Recent Invoices',
+    revenue_summary:   'Revenue Summary',
+    top_customers:     'Top Customers',
+    draft_invoices:    'Draft Invoices',
+  };
+
+  const fmtAED = (n?: number) =>
+    n !== undefined ? `AED ${n.toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : null;
+
+  return (
+    <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mt-1 text-xs space-y-2">
+      <p className="font-semibold text-blue-700">{labels[data.type] ?? data.type}</p>
+      {data.count !== undefined && <p className="text-gray-600">Count: <strong>{data.count}</strong></p>}
+      {fmtAED(data.total_aed) && <p className="text-gray-600">Total: <strong>{fmtAED(data.total_aed)}</strong></p>}
+      {fmtAED(data.total_outstanding_aed) && <p className="text-gray-600">Outstanding: <strong>{fmtAED(data.total_outstanding_aed)}</strong></p>}
+      {fmtAED(data.total_revenue_aed) && <p className="text-gray-600">Revenue: <strong>{fmtAED(data.total_revenue_aed)}</strong></p>}
+      {fmtAED(data.total_vat_aed) && <p className="text-gray-600">VAT: <strong>{fmtAED(data.total_vat_aed)}</strong></p>}
+      {data.invoices && data.invoices.length > 0 && (
+        <div className="space-y-1">
+          {data.invoices.slice(0, 3).map((inv, i) => (
+            <div key={i} className="flex items-center justify-between text-gray-600">
+              <span className="truncate max-w-[120px]">{inv.invoice_number} — {inv.customer}</span>
+              <span className="text-gray-500 shrink-0">{fmtAED(inv.total_amount)}</span>
+            </div>
+          ))}
+          {data.invoices.length > 3 && (
+            <p className="text-blue-500">+{data.invoices.length - 3} more</p>
+          )}
+        </div>
+      )}
+      {data.customers && data.customers.slice(0, 3).map((c, i) => (
+        <div key={i} className="flex items-center justify-between text-gray-600">
+          <span className="truncate max-w-[130px]">{c.customer_name}</span>
+          <span className="text-gray-500 shrink-0">{fmtAED(c.total_revenue_aed)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── AgentMessage ─────────────────────────────────────────────────────────────
+
+interface AgentMessage extends Message {
+  contextData?: ContextData | null;
+}
+
+// ─── Suggested queries ────────────────────────────────────────────────────────
+
+const SUGGESTED = [
+  'Show unpaid invoices',
+  'What is my VAT this month?',
+  'Overdue invoices',
+  'My top customers',
+  'Revenue this month',
+];
+
 // ─── AgentTab ─────────────────────────────────────────────────────────────────
 
 function AgentTab() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<AgentMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -260,11 +334,11 @@ function AgentTab() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  async function send() {
-    const text = input.trim();
-    if (!text || loading) return;
+  async function send(text?: string) {
+    const msgText = (text ?? input).trim();
+    if (!msgText || loading) return;
 
-    const userMsg: Message = { role: 'user', content: text };
+    const userMsg: AgentMessage = { role: 'user', content: msgText };
     const next = [...messages, userMsg];
     setMessages(next);
     setInput('');
@@ -272,9 +346,10 @@ function AgentTab() {
     setError(null);
 
     try {
-      const res = await api.post('/chat/', { messages: next });
+      const res = await api.post('/chat/', { messages: next.map(m => ({ role: m.role, content: m.content })) });
       const reply: string = res.data?.data?.reply ?? 'No response received.';
-      setMessages((m) => [...m, { role: 'assistant', content: reply }]);
+      const contextData = res.data?.data?.context_data ?? null;
+      setMessages((m) => [...m, { role: 'assistant', content: reply, contextData }]);
     } catch {
       setError('Could not get a response. Please try again.');
     } finally {
@@ -294,11 +369,25 @@ function AgentTab() {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center gap-3 text-gray-400 py-8">
-            <Bot className="w-10 h-10 text-blue-300" />
-            <p className="text-sm leading-relaxed">
-              Ask me anything about UAE e-invoicing,<br />VAT rules, or using this platform.
+          <div className="flex flex-col items-start justify-start gap-3 text-gray-500 py-4">
+            <div className="flex items-center gap-2 text-blue-600">
+              <Bot className="w-5 h-5" />
+              <span className="text-sm font-medium">AI Accounting Assistant</span>
+            </div>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Ask me about your invoices, VAT totals, overdue payments, or UAE e-invoicing rules.
             </p>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {SUGGESTED.map(q => (
+                <button
+                  key={q}
+                  onClick={() => send(q)}
+                  className="text-xs px-3 py-1.5 bg-white border border-gray-200 rounded-full text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -307,14 +396,19 @@ function AgentTab() {
             key={i}
             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
-            <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
-                msg.role === 'user'
-                  ? 'bg-blue-600 text-white rounded-br-sm'
-                  : 'bg-gray-100 text-gray-800 rounded-bl-sm'
-              }`}
-            >
-              {msg.content}
+            <div className={`max-w-[88%] ${msg.role === 'user' ? '' : 'space-y-1'}`}>
+              <div
+                className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+                  msg.role === 'user'
+                    ? 'bg-blue-600 text-white rounded-br-sm'
+                    : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                }`}
+              >
+                {msg.content}
+              </div>
+              {msg.role === 'assistant' && msg.contextData && (
+                <DataCard data={msg.contextData} />
+              )}
             </div>
           </div>
         ))}
@@ -341,12 +435,12 @@ function AgentTab() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKey}
-          placeholder="Type a message… (Enter to send)"
+          placeholder="Ask about invoices, VAT, payments…"
           className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent max-h-32 overflow-y-auto"
           style={{ minHeight: '40px' }}
         />
         <button
-          onClick={send}
+          onClick={() => send()}
           disabled={!input.trim() || loading}
           className="p-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
         >

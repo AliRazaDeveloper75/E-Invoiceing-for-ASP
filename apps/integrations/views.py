@@ -11,14 +11,18 @@ Endpoints:
   POST /api/v1/integrations/asp/webhook/
        — receive status-change callbacks from the ASP (Corner 2 → our system)
 """
+import hashlib
+import hmac
 import logging
+
+from django.conf import settings
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
 from apps.common.utils import success_response, error_response
-from apps.invoices.models import Invoice
+from apps.invoices.models import Invoice, InvoiceAuditLog
 from apps.companies.permissions import IsCompanyMember
 from apps.companies.models import CompanyMember
 from .models import ASPSubmissionLog
@@ -29,6 +33,44 @@ from apps.common.constants import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _verify_asp_webhook_signature(request) -> bool:
+    """
+    Verify HMAC-SHA256 signature sent by the ASP in X-ASP-Signature header.
+
+    The ASP computes:  HMAC-SHA256(secret_key, request_body_bytes)
+    We re-compute the same and compare in constant time to prevent timing attacks.
+
+    Returns True if signature is valid or if webhook secret is not configured
+    (dev/test mode — logs a WARNING so it's visible in production logs).
+    """
+    secret = getattr(settings, 'ASP_WEBHOOK_SECRET', '')
+    if not secret:
+        logger.warning(
+            'ASP_WEBHOOK_SECRET not configured — skipping HMAC verification. '
+            'This is a SECURITY RISK in production.'
+        )
+        return True  # Allow in dev; in prod, enforce via REQUIRE_ASP_WEBHOOK_SECRET setting
+
+    # Enforce strict mode in production
+    if not getattr(settings, 'DEBUG', True) and not secret:
+        logger.error('ASP_WEBHOOK_SECRET must be set in production.')
+        return False
+
+    provided_sig = request.headers.get('X-ASP-Signature', '')
+    if not provided_sig:
+        logger.warning('ASP webhook received without X-ASP-Signature header.')
+        return False
+
+    expected_sig = hmac.new(
+        secret.encode('utf-8'),
+        request.body,
+        hashlib.sha256,
+    ).hexdigest()
+
+    # Constant-time comparison prevents timing-based signature oracle attacks
+    return hmac.compare_digest(provided_sig.lower(), expected_sig.lower())
 
 
 class InvoiceSubmissionLogsView(APIView):
@@ -80,6 +122,14 @@ class ASPWebhookView(APIView):
     permission_classes = [AllowAny]   # signature-verified, not JWT-authenticated
 
     def post(self, request):
+        # ── Step 0: Verify HMAC signature ─────────────────────────────────────
+        if not _verify_asp_webhook_signature(request):
+            logger.warning(
+                'ASP webhook rejected: invalid HMAC signature. IP=%s',
+                request.META.get('REMOTE_ADDR', 'unknown'),
+            )
+            return error_response('Invalid webhook signature.', status_code=403)
+
         # ── Step 1: Validate payload ───────────────────────────────────────────
         serializer = ASPWebhookSerializer(data=request.data)
         if not serializer.is_valid():
@@ -125,6 +175,34 @@ class ASPWebhookView(APIView):
                 'Invoice %s transitioned to %s via ASP webhook.',
                 invoice.invoice_number, new_status
             )
+
+            # Audit log the webhook-driven status change
+            invoice.refresh_from_db(fields=['status'])
+            InvoiceAuditLog.log(
+                invoice=invoice,
+                action=(
+                    InvoiceAuditLog.ACTION_VALIDATED
+                    if new_status == INVOICE_STATUS_VALIDATED
+                    else InvoiceAuditLog.ACTION_REJECTED
+                ),
+                description=f'Status set to {new_status} via ASP webhook callback.',
+                metadata={'submission_id': submission_id, 'asp_status': asp_status},
+            )
+
+            # Corner 5: Trigger FTA reporting asynchronously for validated invoices
+            if new_status == INVOICE_STATUS_VALIDATED:
+                try:
+                    from tasks.fta_tasks import report_invoice_to_fta
+                    report_invoice_to_fta.apply_async(
+                        args=[str(invoice.id)],
+                        queue='celery',
+                        countdown=5,  # brief delay to let DB settle
+                    )
+                except Exception as exc:
+                    logger.error(
+                        'Could not enqueue FTA task for invoice %s: %s',
+                        invoice.invoice_number, exc
+                    )
 
         # ── Step 4: Acknowledge ────────────────────────────────────────────────
         return success_response(
@@ -406,3 +484,100 @@ def _build_flow(invoice) -> list:
         ]
     else:
         return []
+
+
+# ─── PEPPOL Participant Lookup ────────────────────────────────────────────────
+
+class PEPPOLParticipantLookupView(APIView):
+    """
+    GET /api/v1/integrations/peppol/lookup/?participant_id=0235:123456789
+
+    Checks whether a PEPPOL participant is registered on the network and,
+    if so, returns their AS4 endpoint information via SMP lookup.
+
+    Used by the frontend to verify buyer PEPPOL registration before
+    sending an invoice via the OpenPEPPOL network.
+
+    Query params:
+      participant_id  Full PEPPOL participant ID (e.g. '0235:123456789012345')
+                      or bare UAE TRN/TIN (will be prefixed with '0235:')
+
+    Response:
+      {
+        "registered": true,
+        "participant_id": "0235:123456789012345",
+        "transport_url": "https://...",
+        "transport_profile": "peppol-transport-as4-v2_0",
+        "from_cache": false
+      }
+    """
+    permission_classes = [IsAuthenticated]
+
+    # UA PEPPOL scheme identifier
+    UAE_SCHEME = '0235'
+
+    def get(self, request):
+        raw_id = request.query_params.get('participant_id', '').strip()
+        if not raw_id:
+            return error_response(
+                'participant_id query parameter is required. '
+                'Example: ?participant_id=0235:123456789012345',
+                status_code=400,
+            )
+
+        # Normalise: if caller passed a bare TRN/TIN without a scheme prefix, add UAE scheme
+        participant_id = raw_id if ':' in raw_id else f'{self.UAE_SCHEME}:{raw_id}'
+
+        # Basic format check: scheme:identifier, at least 3 chars each side
+        parts = participant_id.split(':', 1)
+        if len(parts) != 2 or len(parts[0]) < 2 or len(parts[1]) < 3:
+            return error_response(
+                f'Invalid participant_id format: "{participant_id}". '
+                'Expected format: scheme:identifier (e.g. 0235:123456789012345).',
+                status_code=400,
+            )
+
+        logger.info(
+            'PEPPOL lookup requested by user=%s for participant=%s',
+            request.user.email, participant_id,
+        )
+
+        try:
+            from services.smp_client import SMPClient, PEPPOL_INVOICE_DOCTYPE
+            client   = SMPClient()
+            endpoint = client.lookup(participant_id, PEPPOL_INVOICE_DOCTYPE)
+        except Exception as exc:
+            logger.error(
+                'PEPPOL SMP lookup error for participant=%s: %s',
+                participant_id, exc, exc_info=True,
+            )
+            return error_response(
+                'SMP lookup failed due to an internal error. Please try again later.',
+                status_code=503,
+            )
+
+        if endpoint is None:
+            return success_response({
+                'registered':       False,
+                'participant_id':   participant_id,
+                'transport_url':    None,
+                'transport_profile': None,
+                'from_cache':       False,
+                'message': (
+                    f'Participant {participant_id} is not registered on the '
+                    'PEPPOL network for PEPPOL BIS Billing 3.0 invoices. '
+                    'Invoices must be sent via email or another channel.'
+                ),
+            })
+
+        return success_response({
+            'registered':        True,
+            'participant_id':    participant_id,
+            'transport_url':     endpoint.transport_url,
+            'transport_profile': endpoint.transport_profile,
+            'from_cache':        endpoint.from_cache,
+            'message': (
+                f'Participant {participant_id} is registered. '
+                'Invoices can be delivered via the PEPPOL AS4 network.'
+            ),
+        })

@@ -82,6 +82,7 @@ class CheckEmailView(APIView):
     Returns {available: true} if the email is not yet registered.
     No authentication required.
     """
+    authentication_classes = []   # skip JWT auth — stale cookies must not cause 401
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -112,6 +113,7 @@ class RegisterView(APIView):
     Register a new user. Returns JWT tokens on success.
     No authentication required.
     """
+    authentication_classes = []   # skip JWT auth — stale cookies must not cause 401
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -140,7 +142,10 @@ class RegisterView(APIView):
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        AuthService.send_verification_email(user)
+        try:
+            AuthService.send_verification_email(user)
+        except Exception as exc:
+            logger.warning('Verification email failed for %s: %s', user.email, exc)
 
         access, refresh = _issue_tokens(user)
         return success_response(
@@ -166,6 +171,7 @@ class LoginView(APIView):
                           Client must complete setup via /auth/mfa/setup-login/
                           then confirm with  /auth/mfa/enable-login/
     """
+    authentication_classes = []   # skip JWT auth — stale cookies must not cause 401
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -344,6 +350,7 @@ class VerifyEmailView(APIView):
     After successful verification, returns a setup_token so the client can
     immediately proceed to MFA setup without requiring a separate login step.
     """
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -374,6 +381,7 @@ class VerifyEmailView(APIView):
 
 class ResendVerificationView(APIView):
     """POST /api/v1/auth/resend-verification/  { email: str }"""
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -388,6 +396,7 @@ class ResendVerificationView(APIView):
 
 class ForgotPasswordView(APIView):
     """POST /api/v1/auth/forgot-password/  { email: str }"""
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -402,6 +411,7 @@ class ForgotPasswordView(APIView):
 
 class ResetPasswordView(APIView):
     """POST /api/v1/auth/reset-password/  { token: str, new_password: str }"""
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -426,6 +436,7 @@ class MFAVerifyLoginView(APIView):
     Step 2 when mfa_enabled=True.
     Verifies TOTP and returns JWT tokens.
     """
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -466,6 +477,7 @@ class MFASetupLoginView(APIView):
     Validates the setup_token (proves password was correct),
     generates a TOTP secret, and returns the QR URI.
     """
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -490,6 +502,7 @@ class MFAEnableLoginView(APIView):
     Confirms the TOTP code during forced setup, activates MFA,
     and returns JWT tokens — completing the login.
     """
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):

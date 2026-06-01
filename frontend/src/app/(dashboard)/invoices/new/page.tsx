@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import useSWR from 'swr';
@@ -387,7 +387,7 @@ function parseExcelToItems(file: File): Promise<{ items: ItemField[]; errors: st
 
         const header = (rows[0] as string[]).map(h => String(h).trim());
         const colMap: Record<string, number> = {};
-        EXCEL_COLS.forEach(({ key, header: label }) => {
+        EXCEL_COLS.forEach(({ key }) => {
           const idx = header.findIndex(h =>
             h.toLowerCase().startsWith(key.replace(/_/g, ' ')) ||
             h.toLowerCase().includes(key.replace(/_/g, ' '))
@@ -997,6 +997,19 @@ export default function NewInvoicePage() {
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
 
+  // Auto-fill supplier location from company data when form loads
+  useEffect(() => {
+    if (!activeCompany) return;
+    const current = watch('supplier_location');
+    if (current) return; // user already typed something — don't overwrite
+    const loc =
+      activeCompany.formatted_address?.trim() ||
+      [activeCompany.city, activeCompany.emirate, activeCompany.country]
+        .filter(Boolean).join(', ');
+    if (loc) setValue('supplier_location', loc);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCompany]);
+
   // Watch for preview
   const watchedItems     = watch('items');
   const currency         = watch('currency');
@@ -1013,6 +1026,14 @@ export default function NewInvoicePage() {
   const accent       = selected ? (C[selected.color] ?? C.blue) : C.blue;
 
   const selectedCustomer = customers.find((c) => c.id === watchedCustomerId);
+
+  // Auto-fill customer location when a customer is selected
+  useEffect(() => {
+    if (!selectedCustomer) return;
+    const loc = [selectedCustomer.city, selectedCustomer.country].filter(Boolean).join(', ');
+    if (loc) setValue('customer_location', loc);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCustomer?.id]);
 
   // ── Stepper completion logic ──────────────────────────────────────────────
   const hasCustomer   = !!watchedCustomerId;

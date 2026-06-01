@@ -24,19 +24,20 @@ class ASPIntegrationService:
     """
 
     @staticmethod
-    def transmit(invoice, xml_bytes: bytes) -> ASPResponse:
+    def transmit(invoice, xml_bytes: bytes, endpoint=None) -> ASPResponse:
         """
         Submit the invoice XML to the ASP.
 
         Steps:
           1. Get configured ASP client
-          2. Submit XML
+          2. Submit XML (with optional SMP-discovered endpoint URL)
           3. Log the attempt (success or failure)
           4. Return ASPResponse for the task to handle
 
         Args:
             invoice:   Invoice model instance (must be in PENDING status)
             xml_bytes: Raw UBL 2.1 XML bytes from XMLGenerator
+            endpoint:  Optional SMPEndpoint with transport_url (from SMP discovery)
 
         Returns:
             ASPResponse — normalised response
@@ -57,11 +58,12 @@ class ASPIntegrationService:
             invoice.invoice_number, attempt_number
         )
 
-        # Call the ASP
+        # Call the ASP — pass discovered endpoint if available
         response = client.submit_invoice(
             xml_bytes=xml_bytes,
             invoice_number=invoice.invoice_number,
             company_trn=invoice.company.trn,
+            endpoint_url=endpoint.transport_url if endpoint else None,
         )
 
         # Log every attempt regardless of outcome

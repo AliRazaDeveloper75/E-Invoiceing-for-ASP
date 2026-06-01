@@ -22,10 +22,13 @@ export default function VerifyEmailPage() {
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
   const resentTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Email comes from auth context or fallback stored at registration/login
-  const pendingEmail =
-    user?.email ||
-    (typeof window !== 'undefined' ? sessionStorage.getItem('verify_email') ?? '' : '');
+  // Read email client-side only to avoid SSR/client hydration mismatch.
+  // sessionStorage does not exist on the server, so we initialise to '' and
+  // populate it in an effect after the component mounts.
+  const [pendingEmail, setPendingEmail] = useState('');
+  useEffect(() => {
+    setPendingEmail(user?.email || sessionStorage.getItem('verify_email') || '');
+  }, [user?.email]);
 
   // If already verified, bounce to dashboard
   useEffect(() => {

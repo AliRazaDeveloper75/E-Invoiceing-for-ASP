@@ -31,6 +31,41 @@ EMIRATE_CHOICES = [
     ('fujairah',       'Fujairah'),
 ]
 
+BUSINESS_TYPE_CHOICES = [
+    ('llc',         'Limited Liability Company (LLC)'),
+    ('sole',        'Sole Proprietorship'),
+    ('partnership', 'Partnership'),
+    ('branch',      'Branch of Foreign Company'),
+    ('freezone',    'Free Zone Company'),
+    ('civil',       'Civil Company'),
+    ('public',      'Public Joint Stock Company'),
+    ('private',     'Private Joint Stock Company'),
+]
+
+INDUSTRY_TYPE_CHOICES = [
+    ('technology',     'Technology'),
+    ('manufacturing',  'Manufacturing'),
+    ('trading',        'Trading'),
+    ('retail',         'Retail'),
+    ('construction',   'Construction'),
+    ('hospitality',    'Hospitality'),
+    ('healthcare',     'Healthcare'),
+    ('finance',        'Finance'),
+    ('real_estate',    'Real Estate'),
+    ('logistics',      'Logistics'),
+    ('education',      'Education'),
+    ('consulting',     'Consulting'),
+    ('other',          'Other'),
+]
+
+ONBOARDING_STATUS_CHOICES = [
+    ('not_started',  'Not Started'),
+    ('submitted',    'Submitted'),
+    ('under_review', 'Under Review'),
+    ('approved',     'Approved'),
+    ('rejected',     'Rejected'),
+]
+
 # ─── Validators ──────────────────────────────────────────────────────────────
 
 def validate_trn(value: str) -> None:
@@ -130,6 +165,50 @@ class Company(BaseModel):
         default='',
         help_text='PEPPOL participant ID assigned by ASP (e.g. 0088:1234567890123).'
     )
+
+    # ── Branding ──────────────────────────────────────────────────────────────
+    logo = models.ImageField(
+        upload_to='company_logos/',
+        blank=True,
+        null=True,
+        help_text='Company logo (PNG/JPG).'
+    )
+
+    # ── Business Classification ────────────────────────────────────────────────
+    business_type = models.CharField(
+        max_length=20,
+        choices=BUSINESS_TYPE_CHOICES,
+        blank=True,
+        default='',
+    )
+    industry_type = models.CharField(
+        max_length=20,
+        choices=INDUSTRY_TYPE_CHOICES,
+        blank=True,
+        default='',
+    )
+
+    # ── Contact Person ────────────────────────────────────────────────────────
+    contact_person_name  = models.CharField(max_length=255, blank=True, default='')
+    contact_person_email = models.EmailField(blank=True, default='')
+    contact_person_phone = models.CharField(max_length=20, blank=True, default='')
+
+    # ── Onboarding / Compliance Status ────────────────────────────────────────
+    onboarding_status = models.CharField(
+        max_length=20,
+        choices=ONBOARDING_STATUS_CHOICES,
+        default='not_started',
+        db_index=True,
+    )
+    onboarding_notes = models.TextField(blank=True, default='')
+    onboarding_reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_companies',
+    )
+    onboarding_reviewed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'companies'

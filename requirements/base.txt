@@ -1,0 +1,55 @@
+# ─── Core Framework ───────────────────────────────────────────────────────────
+Django==5.0.4
+djangorestframework==3.15.1
+djangorestframework-simplejwt==5.3.1
+
+# ─── Database ─────────────────────────────────────────────────────────────────
+psycopg2-binary==2.9.9
+
+# ─── Async Queue ──────────────────────────────────────────────────────────────
+celery==5.3.6
+kombu==5.3.4
+redis==5.0.4
+django-celery-beat==2.6.0
+
+# ─── Cache ────────────────────────────────────────────────────────────────────
+django-redis==5.4.0
+
+# ─── Environment & Config ─────────────────────────────────────────────────────
+django-environ==0.11.2
+
+# ─── CORS ─────────────────────────────────────────────────────────────────────
+django-cors-headers==4.3.1
+
+# ─── XML / PEPPOL UBL 2.1 ────────────────────────────────────────────────────
+lxml==5.2.1
+
+# ─── PDF Generation ───────────────────────────────────────────────────────────
+xhtml2pdf==0.2.16
+
+# ─── MFA / TOTP ───────────────────────────────────────────────────────────────
+pyotp==2.9.0
+
+# ─── Structured Logging ───────────────────────────────────────────────────────
+python-json-logger==2.0.7
+
+# ─── HTTP Client (ASP / SMP) ──────────────────────────────────────────────────
+requests==2.32.3
+urllib3==2.2.1
+
+# ─── Cryptography (PEPPOL cert handling) ─────────────────────────────────────
+cryptography==42.0.8
+pyOpenSSL==24.1.0
+
+# ─── AI / Chatbot ─────────────────────────────────────────────────────────────
+openai==1.51.0
+anthropic==0.34.2
+
+# ─── AI OCR (PDF→image fallback for OpenAI) ──────────────────────────────────
+# pdf2image requires poppler — install via: apt-get install poppler-utils
+# Comment out if not using OpenAI vision fallback for PDF OCR
+pdf2image==1.17.0
+
+# ─── Utilities ────────────────────────────────────────────────────────────────
+Pillow==10.3.0
+python-dateutil==2.9.0

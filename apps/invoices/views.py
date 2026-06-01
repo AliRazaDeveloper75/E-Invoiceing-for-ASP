@@ -9,6 +9,8 @@ Endpoints:
   DELETE /api/v1/invoices/{id}/                      soft delete (DRAFT only)
   POST /api/v1/invoices/{id}/submit/                 DRAFT → PENDING
   POST /api/v1/invoices/{id}/cancel/                 cancel (DRAFT/PENDING)
+  POST /api/v1/invoices/{id}/validate/               pre-submit validation (no state change)
+  POST /api/v1/invoices/{id}/report-fta/             manually trigger FTA re-report
   GET  /api/v1/invoices/{id}/download-xml/           download UBL 2.1 XML file
   GET  /api/v1/invoices/{id}/vat-summary/            VAT breakdown by rate type
   GET  /api/v1/invoices/{id}/items/                  list items
@@ -16,6 +18,8 @@ Endpoints:
   PUT  /api/v1/invoices/{id}/items/{item_id}/        update item
   DELETE /api/v1/invoices/{id}/items/{item_id}/      remove item
   GET  /api/v1/invoices/dashboard/?company_id=<uuid> dashboard stats
+  GET  /api/v1/invoices/export/?company_id=<uuid>    CSV export
+  GET  /api/v1/invoices/gap-report/?company_id=<uuid> UAE Art.70 gap detection
 """
 import io
 import logging
@@ -436,4 +440,226 @@ class InvoiceDashboardView(APIView):
             'status_breakdown':  stats['status_breakdown'],
             'total_revenue':     str(stats['total_revenue']),
             'total_vat':         str(stats['total_vat']),
+        })
+
+
+# ─── Pre-Submit Validation ────────────────────────────────────────────────────
+
+class InvoiceValidateView(APIView):
+    """
+    POST /api/v1/invoices/{id}/validate/
+
+    Run the full validation pipeline on an invoice WITHOUT changing its status.
+    Returns detailed errors/warnings so the user can fix issues before submitting.
+
+    Runs:
+      1. InvoiceValidationService (UAE business rules)
+      2. FullPEPPOLValidator (XSD + Schematron) — on generated XML
+
+    Does NOT change invoice status. Safe to call repeatedly.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, invoice_id):
+        invoice, _, err = _resolve_invoice(request, invoice_id)
+        if err:
+            return err
+
+        errors   = []
+        warnings = []
+
+        # Layer 1: Business rule validation
+        try:
+            from services.validation_service import InvoiceValidationService
+            result = InvoiceValidationService().validate(invoice)
+            errors.extend(result.errors)
+            warnings.extend(result.warnings)
+        except Exception as exc:
+            logger.exception('Validation service error for %s', invoice.invoice_number)
+            return error_response(f'Validation service error: {exc}', status_code=500)
+
+        # Layer 2: PEPPOL XML validation (generate XML first)
+        peppol_errors   = []
+        peppol_warnings = []
+        if not errors:  # Only run PEPPOL validation if basic validation passes
+            try:
+                from services.xml_generator import UAEInvoiceXMLGenerator
+                from services.peppol_validator import FullPEPPOLValidator
+                from apps.invoices.services import VATCalculationService
+
+                VATCalculationService.recalculate_invoice_totals(invoice)
+                invoice.refresh_from_db()
+
+                xml_bytes = UAEInvoiceXMLGenerator().generate(invoice)
+                peppol_result = FullPEPPOLValidator().validate(
+                    xml_bytes, invoice_type=invoice.invoice_type
+                )
+                peppol_errors.extend(peppol_result.errors)
+                peppol_warnings.extend(peppol_result.warnings)
+            except Exception as exc:
+                logger.warning('PEPPOL validation error for %s: %s', invoice.invoice_number, exc)
+                peppol_warnings.append(f'PEPPOL validation skipped: {exc}')
+
+        is_valid = not errors and not peppol_errors
+        return success_response(data={
+            'invoice_number':   invoice.invoice_number,
+            'is_valid':         is_valid,
+            'errors':           errors,
+            'warnings':         warnings,
+            'peppol_errors':    peppol_errors,
+            'peppol_warnings':  peppol_warnings,
+            'can_submit':       is_valid and invoice.is_submittable,
+        })
+
+
+# ─── Manual FTA Re-Report ─────────────────────────────────────────────────────
+
+class InvoiceFTAReportView(APIView):
+    """
+    POST /api/v1/invoices/{id}/report-fta/
+
+    Manually trigger FTA reporting for a validated invoice.
+    Use this when automatic FTA reporting failed (fta_status='error').
+    Admin only.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, invoice_id):
+        if request.user.role != 'admin':
+            return error_response('Platform admin access required.', status_code=403)
+
+        invoice, _, err = _resolve_invoice(request, invoice_id)
+        if err:
+            return err
+
+        if invoice.status not in ('validated', 'paid'):
+            return error_response(
+                f'Invoice must be validated or paid. Current status: {invoice.status}.',
+                status_code=400
+            )
+
+        from tasks.fta_tasks import report_invoice_to_fta
+        from apps.invoices.models import Invoice
+
+        # Reset status to pending before re-queuing
+        Invoice.objects.filter(pk=invoice.pk).update(fta_status='pending')
+
+        task = report_invoice_to_fta.apply_async(
+            args=[str(invoice.id)],
+            queue='celery',
+        )
+        return success_response(
+            data={'task_id': str(task.id), 'invoice_number': invoice.invoice_number},
+            message='FTA report re-queued successfully.'
+        )
+
+
+# ─── Invoice CSV Export ───────────────────────────────────────────────────────
+
+class InvoiceExportView(APIView):
+    """
+    GET /api/v1/invoices/export/?company_id=<uuid>
+
+    Export all invoices for a company as CSV.
+    Supports the same filters as InvoiceListCreateView.
+
+    Optional: ?status=validated&date_from=2026-01-01&date_to=2026-03-31
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        import csv as _csv
+
+        company_id = request.query_params.get('company_id')
+        if not company_id:
+            return error_response('company_id is required.', status_code=400)
+
+        company, _ = get_company_and_membership(request.user, company_id)
+        if not company:
+            return error_response('Company not found or access denied.', status_code=404)
+
+        creator_filter = None if request.user.role == 'admin' else request.user
+        invoices = InvoiceService.get_company_invoices(
+            company=company,
+            status=request.query_params.get('status'),
+            date_from=request.query_params.get('date_from'),
+            date_to=request.query_params.get('date_to'),
+            search=request.query_params.get('search'),
+            created_by=creator_filter,
+        ).select_related('customer')
+
+        output = io.StringIO()
+        writer = _csv.writer(output)
+
+        writer.writerow([
+            'Invoice Number', 'Type', 'Status', 'Customer', 'Customer TRN',
+            'Issue Date', 'Due Date', 'Currency',
+            'Subtotal', 'Discount', 'Taxable Amount', 'VAT', 'Total Amount',
+            'ASP Submission ID', 'FTA Reference', 'FTA Status',
+            'XML Generated', 'Created At',
+        ])
+
+        for inv in invoices:
+            writer.writerow([
+                inv.invoice_number,
+                inv.get_invoice_type_display(),
+                inv.get_status_display(),
+                inv.customer.name,
+                getattr(inv.customer, 'trn', ''),
+                str(inv.issue_date),
+                str(inv.due_date) if inv.due_date else '',
+                inv.currency,
+                str(inv.subtotal),
+                str(inv.discount_amount),
+                str(inv.taxable_amount),
+                str(inv.total_vat),
+                str(inv.total_amount),
+                inv.asp_submission_id,
+                inv.fta_reference,
+                inv.fta_status or '',
+                inv.xml_generated_at.isoformat() if inv.xml_generated_at else '',
+                inv.created_at.isoformat(),
+            ])
+
+        csv_content = output.getvalue().encode('utf-8-sig')  # BOM for Excel
+        filename = f'invoices_{company.trn}.csv'
+        response = HttpResponse(csv_content, content_type='text/csv; charset=utf-8-sig')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+
+# ─── Invoice Gap Detection (UAE Article 70) ──────────────────────────────────
+
+class InvoiceGapReportView(APIView):
+    """
+    GET /api/v1/invoices/gap-report/?company_id=<uuid>
+
+    UAE Article 70: invoice numbers must be consecutive per company.
+    Returns any gaps in the invoice sequence for compliance auditing.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        company_id = request.query_params.get('company_id')
+        if not company_id:
+            return error_response('company_id is required.', status_code=400)
+
+        company, _ = get_company_and_membership(request.user, company_id)
+        if not company:
+            return error_response('Company not found or access denied.', status_code=404)
+
+        from .services import InvoiceNumberService
+        gaps = InvoiceNumberService.detect_gaps(company)
+
+        return success_response(data={
+            'company':        company.name,
+            'company_trn':    company.trn,
+            'gap_count':      len(gaps),
+            'gaps':           gaps,
+            'compliant':      len(gaps) == 0,
+            'message': (
+                'Invoice numbering is compliant with UAE Article 70.'
+                if not gaps
+                else f'{len(gaps)} gap(s) detected in invoice sequence. Investigate immediately.'
+            ),
         })

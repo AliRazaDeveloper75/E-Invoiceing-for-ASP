@@ -18,7 +18,8 @@ class CompanySerializer(serializers.ModelSerializer):
     """Full company representation for GET responses."""
 
     formatted_address = serializers.SerializerMethodField()
-    member_count = serializers.SerializerMethodField()
+    member_count      = serializers.SerializerMethodField()
+    logo_url          = serializers.SerializerMethodField()
 
     class Meta:
         model = Company
@@ -30,6 +31,7 @@ class CompanySerializer(serializers.ModelSerializer):
             'phone', 'email', 'website',
             'legal_registration_id', 'legal_registration_type',
             'peppol_endpoint',
+            'logo_url',
             'is_active', 'member_count',
             'created_at', 'updated_at',
         ]
@@ -40,6 +42,14 @@ class CompanySerializer(serializers.ModelSerializer):
 
     def get_member_count(self, obj) -> int:
         return obj.members.filter(is_active=True).count()
+
+    def get_logo_url(self, obj):
+        if not obj.logo:
+            return None
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.logo.url)
+        return obj.logo.url
 
 
 class CompanyCreateSerializer(serializers.Serializer):

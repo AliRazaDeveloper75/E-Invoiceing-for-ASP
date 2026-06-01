@@ -77,6 +77,7 @@ class MockASPClient:
         xml_bytes: bytes,
         invoice_number: str,
         company_trn: str,
+        endpoint_url: Optional[str] = None,
     ) -> ASPResponse:
         """
         Simulate submitting an invoice XML to the ASP.
@@ -85,13 +86,14 @@ class MockASPClient:
             xml_bytes:      Raw UBL 2.1 XML payload
             invoice_number: Invoice number (for logging/tracking)
             company_trn:    Supplier TRN (used as sender identifier)
+            endpoint_url:   Optional SMP-discovered recipient AS4 endpoint URL
 
         Returns:
             ASPResponse with status and submission_id
         """
         logger.info(
-            '[MOCK ASP] Submitting invoice: %s (TRN: %s, %d bytes)',
-            invoice_number, company_trn, len(xml_bytes)
+            '[MOCK ASP] Submitting invoice: %s (TRN: %s, %d bytes, endpoint: %s)',
+            invoice_number, company_trn, len(xml_bytes), endpoint_url or 'default'
         )
 
         # Simulate network latency (remove in production)
@@ -184,9 +186,11 @@ class RealASPClient:
         xml_bytes: bytes,
         invoice_number: str,
         company_trn: str,
+        endpoint_url: Optional[str] = None,
     ) -> ASPResponse:
         """Submit invoice XML to the real ASP endpoint."""
-        url = f'{self._base_url}/invoices/submit'
+        # If SMP resolved a direct AS4 endpoint, use it; otherwise fall back to ASP base
+        url = endpoint_url or f'{self._base_url}/invoices/submit'
 
         try:
             response = self._session.post(

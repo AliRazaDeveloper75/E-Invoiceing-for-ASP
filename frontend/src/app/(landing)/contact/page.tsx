@@ -1,25 +1,27 @@
 'use client';
 
-import { Mail, MapPin, Phone, MessageSquare, ExternalLink } from 'lucide-react';
+import { useState } from 'react';
+import { Mail, MapPin, Phone, MessageSquare, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { api } from '@/lib/api';
 
 const CONTACT_ITEMS = [
   {
     icon: <Mail className="h-5 w-5" />,
     label: 'Email',
-    value: 'support@uae-einvoicing.ae',
+    value: 'info@e-numerak.com',
     sub: 'We respond within 24 hours',
   },
   {
     icon: <Phone className="h-5 w-5" />,
     label: 'Phone',
-    value: '+971 4 XXX XXXX',
+    value: '+971 50 635 8421',
     sub: 'Sun – Thu, 9 AM – 6 PM GST',
   },
   {
     icon: <MapPin className="h-5 w-5" />,
     label: 'Address',
-    value: 'Dubai Internet City, Dubai, UAE',
-    sub: 'United Arab Emirates',
+    value: 'Office Number 205, Malik Abdullah Ahmad Khalifa bin Hamidan al-Fulsi',
+    sub: 'Deirah – Al-Khabisi, Dubai, UAE',
   },
 ];
 
@@ -42,7 +44,48 @@ const FAQS = [
   },
 ];
 
+const SUBJECTS = [
+  { value: 'fta_compliance', label: 'FTA Compliance Question' },
+  { value: 'peppol',         label: 'PEPPOL Integration' },
+  { value: 'support',        label: 'Platform Support' },
+  { value: 'pricing',        label: 'Pricing / Demo' },
+  { value: 'other',          label: 'Other' },
+];
+
 export default function ContactPage() {
+  const [form, setForm] = useState({
+    first_name: '', last_name: '', email: '',
+    company: '', subject: '', message: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!form.first_name.trim() || !form.last_name.trim() || !form.email.trim() || !form.message.trim()) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await api.post('/contact/', form);
+      setSubmitted(true);
+      setForm({ first_name: '', last_name: '', email: '', company: '', subject: '', message: '' });
+    } catch {
+      setError('Something went wrong. Please try again or email us directly.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <>
       {/* Hero */}
@@ -69,67 +112,88 @@ export default function ContactPage() {
                 <MessageSquare className="h-5 w-5 text-[#1e3a5f]" />
                 <h2 className="font-bold text-gray-900">Send a Message</h2>
               </div>
-              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                <div className="grid grid-cols-2 gap-4">
+
+              {submitted ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <CheckCircle2 className="h-14 w-14 text-emerald-500 mb-4" />
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Message Sent!</h3>
+                  <p className="text-sm text-gray-500 mb-6">Thank you for reaching out. We'll get back to you within 24 hours.</p>
+                  <button
+                    onClick={() => setSubmitted(false)}
+                    className="px-5 py-2 rounded-lg bg-[#1e3a5f] text-white text-sm font-semibold hover:bg-[#172f4d]"
+                  >
+                    Send Another Message
+                  </button>
+                </div>
+              ) : (
+                <form className="space-y-4" onSubmit={handleSubmit}>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1.5">First Name *</label>
+                      <input
+                        name="first_name" value={form.first_name} onChange={handleChange}
+                        type="text" placeholder="Ahmed"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1.5">Last Name *</label>
+                      <input
+                        name="last_name" value={form.last_name} onChange={handleChange}
+                        type="text" placeholder="Al Rashid"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">First Name</label>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Email Address *</label>
                     <input
-                      type="text"
-                      placeholder="Ahmed"
+                      name="email" value={form.email} onChange={handleChange}
+                      type="email" placeholder="ahmed@company.ae"
                       className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Last Name</label>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Company / TRN (optional)</label>
                     <input
-                      type="text"
-                      placeholder="Al Rashid"
+                      name="company" value={form.company} onChange={handleChange}
+                      type="text" placeholder="Company name or Tax Registration Number"
                       className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Email Address</label>
-                  <input
-                    type="email"
-                    placeholder="ahmed@company.ae"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Company / TRN (optional)</label>
-                  <input
-                    type="text"
-                    placeholder="Company name or Tax Registration Number"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Subject</label>
-                  <select className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">Select a topic…</option>
-                    <option>FTA Compliance Question</option>
-                    <option>PEPPOL Integration</option>
-                    <option>Platform Support</option>
-                    <option>Pricing / Demo</option>
-                    <option>Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Message</label>
-                  <textarea
-                    rows={4}
-                    placeholder="Describe your question or requirement…"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full py-3 rounded-xl bg-[#1e3a5f] hover:bg-[#172f4d] text-white font-semibold text-sm transition-colors"
-                >
-                  Send Message
-                </button>
-              </form>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Subject</label>
+                    <select
+                      name="subject" value={form.subject} onChange={handleChange}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select a topic…</option>
+                      {SUBJECTS.map(s => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Message *</label>
+                    <textarea
+                      name="message" value={form.message} onChange={handleChange}
+                      rows={4} placeholder="Describe your question or requirement…"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {error && (
+                    <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+                  )}
+
+                  <button
+                    type="submit" disabled={submitting}
+                    className="w-full py-3 rounded-xl bg-[#1e3a5f] hover:bg-[#172f4d] text-white font-semibold text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? 'Sending…' : 'Send Message'}
+                  </button>
+                </form>
+              )}
             </div>
 
             {/* Contact info + FAQ */}

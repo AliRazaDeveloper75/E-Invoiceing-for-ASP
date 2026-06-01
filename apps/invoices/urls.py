@@ -2,7 +2,7 @@
 Invoices URL configuration.
 Mounted at: /api/v1/invoices/ in config/urls.py
 """
-from django.urls import path
+from django.urls import path, include
 from .views import (
     InvoiceListCreateView,
     InvoiceDetailView,
@@ -14,8 +14,13 @@ from .views import (
     InvoiceItemListCreateView,
     InvoiceItemDetailView,
     InvoiceDashboardView,
+    InvoiceValidateView,
+    InvoiceFTAReportView,
+    InvoiceExportView,
+    InvoiceGapReportView,
 )
 from apps.payments.views import SupplierPaymentListView
+from .workflow_views import WorkflowEvaluateView
 
 app_name = 'invoices'
 
@@ -67,8 +72,37 @@ urlpatterns = [
          InvoiceItemDetailView.as_view(),
          name='invoice-item-detail'),
 
+    # ── Pre-submit Validation ─────────────────────────────────────────────────
+    path('<uuid:invoice_id>/validate/',
+         InvoiceValidateView.as_view(),
+         name='invoice-validate'),
+
+    # ── Manual FTA Re-Report ──────────────────────────────────────────────────
+    path('<uuid:invoice_id>/report-fta/',
+         InvoiceFTAReportView.as_view(),
+         name='invoice-report-fta'),
+
+    # ── Export ────────────────────────────────────────────────────────────────
+    # Must be declared before <uuid:invoice_id>/ to avoid URL collision
+    path('export/',
+         InvoiceExportView.as_view(),
+         name='invoice-export'),
+
+    # ── UAE Article 70 Gap Report ─────────────────────────────────────────────
+    path('gap-report/',
+         InvoiceGapReportView.as_view(),
+         name='invoice-gap-report'),
+
     # ── Payments (supplier view) ──────────────────────────────────────────────
     path('<uuid:invoice_id>/payments/',
          SupplierPaymentListView.as_view(),
          name='invoice-payments'),
+
+    # ── Fraud Detection ───────────────────────────────────────────────────────
+    path('<uuid:invoice_pk>/fraud/', include('apps.invoices.fraud_urls')),
+
+    # ── Workflow Automation ───────────────────────────────────────────────────
+    path('<uuid:invoice_pk>/workflow/evaluate/',
+         WorkflowEvaluateView.as_view(),
+         name='workflow-evaluate'),
 ]

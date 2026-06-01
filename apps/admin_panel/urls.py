@@ -19,6 +19,8 @@ from .views import (
     AdminInvoiceTimelineView,
     AdminPaymentListView,
     AdminPaymentVoidView,
+    AdminContactMessageListView,
+    AdminContactMessageDetailView,
 )
 
 app_name = 'admin_panel'
@@ -45,4 +47,8 @@ urlpatterns = [
     # ── Payment Management ────────────────────────────────────────────────────
     path('payments/',                               AdminPaymentListView.as_view(),      name='payment-list'),
     path('payments/<uuid:pk>/',                     AdminPaymentVoidView.as_view(),      name='payment-void'),
+
+    # ── Contact Messages ──────────────────────────────────────────────────────
+    path('contact-messages/',                       AdminContactMessageListView.as_view(),   name='contact-list'),
+    path('contact-messages/<uuid:pk>/',             AdminContactMessageDetailView.as_view(), name='contact-detail'),
 ]

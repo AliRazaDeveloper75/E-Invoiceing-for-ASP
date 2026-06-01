@@ -88,10 +88,15 @@ class InvoiceItemUpdateSerializer(serializers.Serializer):
 class InvoiceSerializer(serializers.ModelSerializer):
     """Full invoice representation including summary and customer info."""
 
-    customer_name   = serializers.CharField(source='customer.name',          read_only=True)
-    customer_trn    = serializers.CharField(source='customer.trn',           read_only=True)
-    company_name    = serializers.CharField(source='company.name',           read_only=True)
-    company_trn     = serializers.CharField(source='company.trn',            read_only=True)
+    customer_name    = serializers.CharField(source='customer.name',           read_only=True)
+    customer_trn     = serializers.CharField(source='customer.trn',           read_only=True)
+    customer_address = serializers.CharField(source='customer.street_address', read_only=True, default='')
+    customer_city    = serializers.CharField(source='customer.city',           read_only=True, default='')
+    customer_country = serializers.CharField(source='customer.country',        read_only=True, default='')
+    customer_phone   = serializers.CharField(source='customer.phone',          read_only=True, default='')
+    customer_email   = serializers.EmailField(source='customer.email',         read_only=True, default='')
+    company_name     = serializers.CharField(source='company.name',            read_only=True)
+    company_trn      = serializers.CharField(source='company.trn',             read_only=True)
     status_display  = serializers.CharField(source='get_status_display',     read_only=True)
     type_display    = serializers.CharField(source='get_invoice_type_display', read_only=True)
     is_editable     = serializers.BooleanField(read_only=True)
@@ -108,6 +113,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             # Parties
             'company_name', 'company_trn',
             'customer', 'customer_name', 'customer_trn',
+            'customer_address', 'customer_city', 'customer_country', 'customer_phone', 'customer_email',
             # Dates
             'issue_date', 'due_date', 'supply_date', 'supply_date_end',
             # Continuous supply

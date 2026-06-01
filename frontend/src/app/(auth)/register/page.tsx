@@ -89,15 +89,22 @@ export default function RegisterPage() {
       sessionStorage.setItem('verify_email', data.email);
       router.push('/verify-email');
     } catch (err) {
+      console.error('[register] error:', err);
       const e = err as AxiosError<{ error?: { message?: string; details?: Record<string, string | string[]> } }>;
-      const details = e.response?.data?.error?.details;
-      if (details) {
-        const msgs = Object.entries(details)
-          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v[0] : v}`)
-          .join('; ');
+      const apiErr = e.response?.data?.error;
+      if (apiErr?.details) {
+        const msgs = Object.entries(apiErr.details)
+          .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${Array.isArray(v) ? v[0] : v}`)
+          .join('\n');
         setServerError(msgs);
+      } else if (apiErr?.message) {
+        setServerError(apiErr.message);
+      } else if (e.response?.status === 500) {
+        setServerError('Server error. Please try again in a moment.');
+      } else if (!e.response) {
+        setServerError('Request timed out or could not reach the server. Please try again.');
       } else {
-        setServerError(e.response?.data?.error?.message ?? 'Registration failed. Please try again.');
+        setServerError('Registration failed. Please check your details and try again.');
       }
     }
   };
