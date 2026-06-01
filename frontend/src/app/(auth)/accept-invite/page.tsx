@@ -2,7 +2,8 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { Suspense, useState, useEffect, useRef } from 'react';
+import { Loader2 as SpinnerFallback } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { api, setTokens } from '@/lib/api';
@@ -134,7 +135,7 @@ Select.displayName = 'Select';
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function AcceptInvitePage() {
+function AcceptInviteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';
@@ -718,5 +719,17 @@ export default function AcceptInvitePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AcceptInvitePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <SpinnerFallback className="h-8 w-8 animate-spin text-brand-600" />
+      </div>
+    }>
+      <AcceptInviteContent />
+    </Suspense>
   );
 }
