@@ -45,34 +45,7 @@ class Migration(migrations.Migration):
                 help_text='AS4 MessageId of the last successful PEPPOL transmission.',
             ),
         ),
-        migrations.AddField(
-            model_name='invoice',
-            name='fta_status',
-            field=models.CharField(
-                blank=True,
-                choices=[
-                    ('not_reported', 'Not Reported'),
-                    ('pending',      'Pending'),
-                    ('accepted',     'Accepted'),
-                    ('rejected',     'Rejected'),
-                    ('error',        'Error'),
-                ],
-                default='not_reported',
-                max_length=20,
-                db_index=True,
-                help_text='FTA Corner 5 reporting status.',
-            ),
-        ),
-        migrations.AddField(
-            model_name='invoice',
-            name='fta_reference',
-            field=models.CharField(
-                blank=True,
-                default='',
-                max_length=255,
-                help_text='FTA-assigned reference number upon acceptance.',
-            ),
-        ),
+        # fta_status and fta_reference already added by 0003 — skipped here
         migrations.AddIndex(
             model_name='invoice',
             index=models.Index(

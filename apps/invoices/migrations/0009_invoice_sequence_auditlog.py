@@ -21,14 +21,29 @@ class Migration(migrations.Migration):
         # invoice_sequence already exists from 0001_initial — no AddField needed
 
         # ── Step 2: Remove global unique constraint on invoice_number ─────────
-        migrations.AlterField(
-            model_name='invoice',
-            name='invoice_number',
-            field=models.CharField(
-                max_length=50,
-                db_index=True,
-                help_text='Auto-generated invoice number, unique per company (e.g. INV-202601-000001).',
-            ),
+        # Use RunSQL to safely drop the unique constraint regardless of its name
+        # (Django may rename it during earlier AlterField operations)
+        migrations.RunSQL(
+            sql="""
+                DO $$
+                DECLARE r RECORD;
+                BEGIN
+                    FOR r IN (
+                        SELECT conname FROM pg_constraint
+                        WHERE conrelid = 'invoices'::regclass
+                        AND contype = 'u'
+                        AND cardinality(conkey) = 1
+                        AND conkey[1] = (
+                            SELECT attnum FROM pg_attribute
+                            WHERE attrelid = 'invoices'::regclass
+                            AND attname = 'invoice_number'
+                        )
+                    ) LOOP
+                        EXECUTE 'ALTER TABLE invoices DROP CONSTRAINT ' || quote_ident(r.conname);
+                    END LOOP;
+                END $$;
+            """,
+            reverse_sql="ALTER TABLE invoices ADD CONSTRAINT invoices_invoice_number_key UNIQUE (invoice_number);",
         ),
 
         # ── Step 3: Add per-company unique constraint ──────────────────────────
