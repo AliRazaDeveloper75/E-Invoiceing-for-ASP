@@ -90,6 +90,8 @@ services:
       - ../.env.prod
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
+    healthcheck:
+      disable: true
     depends_on:
       db:
         condition: service_healthy
@@ -114,6 +116,8 @@ services:
       - ../.env.prod
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
+    healthcheck:
+      disable: true
     depends_on:
       db:
         condition: service_healthy
@@ -177,6 +181,8 @@ services:
       - ../.env.prod
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
+    healthcheck:
+      disable: true
     ports:
       - "127.0.0.1:5555:5555"
     depends_on:
