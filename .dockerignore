@@ -24,8 +24,9 @@ frontend/
 frontend/node_modules
 frontend/.next
 
-# Docker
+# Docker config (exclude all except entrypoint needed by Dockerfile)
 docker/
+!docker/entrypoint.sh
 
 # OS
 .DS_Store

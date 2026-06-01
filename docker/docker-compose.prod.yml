@@ -17,14 +17,12 @@ services:
   db:
     image: postgres:15-alpine
     restart: unless-stopped
-    environment:
-      POSTGRES_DB:       ${DB_NAME:-einvoicing_db}
-      POSTGRES_USER:     ${DB_USER:-einvoicing}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    env_file:
+      - ../.env.prod
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-einvoicing} -d ${DB_NAME:-einvoicing_db}"]
+      test: ["CMD-SHELL", "pg_isready -U einvoicing -d einvoicing_db"]
       interval: 5s
       timeout: 5s
       retries: 20
