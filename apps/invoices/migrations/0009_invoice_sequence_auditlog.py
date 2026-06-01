@@ -18,15 +18,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # ── Step 1: Add invoice_sequence ──────────────────────────────────────
-        migrations.AddField(
-            model_name='invoice',
-            name='invoice_sequence',
-            field=models.PositiveIntegerField(
-                default=0,
-                help_text='Sequential number per company. Used to generate invoice_number. Never reset.',
-            ),
-        ),
+        # invoice_sequence already exists from 0001_initial — no AddField needed
 
         # ── Step 2: Remove global unique constraint on invoice_number ─────────
         migrations.AlterField(
