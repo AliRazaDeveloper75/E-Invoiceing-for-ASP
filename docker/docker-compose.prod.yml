@@ -132,7 +132,7 @@ services:
       context: ../frontend
       dockerfile: ../docker/Dockerfile.frontend
       args:
-        NEXT_PUBLIC_API_URL: https://api.e-numerak.com
+        NEXT_PUBLIC_API_URL: http://api.e-numerak.com
     image: einvoicing-frontend:prod
     restart: unless-stopped
     environment:
