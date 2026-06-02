@@ -7,11 +7,16 @@ const PUBLIC_EXACT = new Set(['/', '/about', '/peppol', '/services', '/contact']
 const ALWAYS_PUBLIC = ['/activate', '/verify-email', '/buyer/accept-invite', '/accept-invite'];
 
 // Public for unauthenticated users — authenticated users get bounced to dashboard
-const GUEST_ONLY = ['/login', '/register', '/mfa-verify', '/mfa-setup', '/forgot-password', '/reset-password'];
+const GUEST_ONLY = ['/login', '/mfa-verify', '/mfa-setup', '/forgot-password', '/reset-password'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const access = request.cookies.get('access_token')?.value;
+
+  // Registration is disabled — invite-only platform
+  if (pathname === '/register' || pathname.startsWith('/register/')) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
 
   const isPublic =
     PUBLIC_EXACT.has(pathname) ||
