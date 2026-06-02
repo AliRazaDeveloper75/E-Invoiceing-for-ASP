@@ -13,6 +13,13 @@ import { PhoneInput } from '@/components/ui/PhoneInput';
 import { useCountryForm } from '@/hooks/useCountryForm';
 import { ArrowLeft } from 'lucide-react';
 import { AxiosError } from 'axios';
+import {
+  emailValidators,
+  validateTRN,
+  numericOnlyKeyDown,
+  alphaOnlyKeyDown,
+  validatePhoneNumber,
+} from '@/lib/validation';
 
 interface CustomerForm {
   name: string;
@@ -100,23 +107,35 @@ export default function NewCustomerPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label="Name *"
+              label="Trading Name"
+              required
+              tooltip="The name this customer trades under — shown on invoices. E.g. 'Acme LLC'"
               placeholder="Acme LLC"
               error={errors.name?.message || serverError.name}
-              {...register('name', { required: 'Name is required' })}
+              onKeyDown={alphaOnlyKeyDown}
+              {...register('name', {
+                required: 'Trading name is required',
+                minLength: { value: 2, message: 'Name must be at least 2 characters' },
+                maxLength: { value: 100, message: 'Name must be 100 characters or fewer' },
+              })}
             />
             <Input
               label="Legal Name"
+              tooltip="Full legal registered name, if different from the trading name. E.g. 'Acme Limited Liability Company'"
               placeholder="Acme Limited Liability Company"
               error={serverError.legal_name}
-              {...register('legal_name')}
+              {...register('legal_name', {
+                maxLength: { value: 200, message: 'Legal name must be 200 characters or fewer' },
+              })}
             />
           </div>
 
           <Select
-            label="Customer Type *"
+            label="Customer Type"
+            required
+            tooltip="B2B — business buyer with a TRN. B2G — government entity. B2C — individual consumer (no TRN required)."
             error={errors.customer_type?.message}
-            {...register('customer_type', { required: true })}
+            {...register('customer_type', { required: 'Customer type is required' })}
           >
             <option value="b2b">B2B — Business to Business</option>
             <option value="b2g">B2G — Business to Government</option>
@@ -130,35 +149,35 @@ export default function NewCustomerPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label={`TRN ${needsTRN ? '*' : '(optional)'}`}
+              label={needsTRN ? 'TRN' : 'TRN (optional)'}
+              required={needsTRN}
+              tooltip="UAE Tax Registration Number issued by the Federal Tax Authority. Must be exactly 15 numeric digits. Required for UAE B2B and B2G customers."
               placeholder="123456789012345"
               hint={needsTRN ? 'Required for UAE B2B / B2G — 15 digits' : '15-digit UAE Tax Registration Number'}
               error={errors.trn?.message || serverError.trn}
               inputMode="numeric"
               maxLength={15}
-              onKeyDown={(e) => {
-                const nav = ['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','Home','End'];
-                if (!nav.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault();
-              }}
+              onKeyDown={numericOnlyKeyDown}
               {...register('trn', {
-                validate: (v) => {
-                  if (!v) return true;
-                  if (!/^\d{15}$/.test(v)) return 'TRN must be exactly 15 digits';
-                  return true;
-                },
+                validate: (v) => validateTRN(v, needsTRN),
               })}
             />
             <Input
               label="VAT Number (international)"
+              tooltip="Tax identification number for non-UAE customers. Digits only. Leave blank if not applicable."
               placeholder="123456789"
               hint="For non-UAE customers — numbers only"
               error={serverError.vat_number}
               inputMode="numeric"
-              onKeyDown={(e) => {
-                const nav = ['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','Home','End'];
-                if (!nav.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault();
-              }}
-              {...register('vat_number')}
+              maxLength={20}
+              onKeyDown={numericOnlyKeyDown}
+              {...register('vat_number', {
+                validate: (v) => {
+                  if (!v?.trim()) return true;
+                  if (!/^\d+$/.test(v)) return 'VAT number must contain digits only';
+                  return true;
+                },
+              })}
             />
           </div>
         </div>
@@ -169,7 +188,9 @@ export default function NewCustomerPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <CountrySelect
-              label="Country *"
+              label="Country"
+              required
+              tooltip="Select the country where this customer is registered or based."
               error={errors.country?.message || serverError.country}
               {...register('country', { required: 'Country is required' })}
               onChange={(e) => {
@@ -180,6 +201,7 @@ export default function NewCustomerPage() {
             />
             <CitySelect
               label="City"
+              tooltip="Select the customer's city. Options update based on the selected country."
               countryCode={watchedCountry}
               error={serverError.city}
               {...register('city')}
@@ -188,48 +210,73 @@ export default function NewCustomerPage() {
 
           <Input
             label="Street Address"
-            placeholder="Office 101, Business Bay"
-            error={serverError.street_address}
-            {...register('street_address')}
+            tooltip="Full street address including building number, street name, and area. E.g. 'Office 101, Business Bay Tower, Business Bay'"
+            placeholder="Office 101, Business Bay Tower, Business Bay"
+            error={errors.street_address?.message || serverError.street_address}
+            {...register('street_address', {
+              validate: (v) => {
+                if (!v?.trim()) return true;
+                if (v.trim().length < 5) return 'Please enter a more complete street address';
+                return true;
+              },
+            })}
           />
 
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Email"
               type="email"
+              tooltip="Customer's billing or accounts email address. Used for invoice delivery. E.g. billing@customer.ae"
               placeholder="billing@customer.ae"
               error={errors.email?.message || serverError.email}
               {...register('email', {
-                pattern: { value: /\S+@\S+\.\S+/, message: 'Invalid email' },
+                validate: (v) => {
+                  if (!v?.trim()) return true;
+                  return emailValidators.validate.format(v) === true
+                    ? emailValidators.validate.noDisposable(v)
+                    : emailValidators.validate.format(v);
+                },
               })}
             />
             <Controller
               name="phone"
               control={control}
-              render={({ field }) => (
+              rules={{
+                validate: (v) => {
+                  if (!v?.trim()) return true;
+                  return validatePhoneNumber(v, countryForm.dialCode);
+                },
+              }}
+              render={({ field, fieldState }) => (
                 <PhoneInput
                   label="Phone"
+                  tooltip="Customer's contact phone number. Enter local number only — the country dial code is added automatically."
                   dialCode={countryForm.dialCode}
                   flag={countryForm.flag}
                   value={field.value ?? ''}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
                   name={field.name}
-                  error={serverError.phone}
+                  error={fieldState.error?.message || serverError.phone}
                 />
               )}
             />
           </div>
 
-          <div>
+          <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Notes</label>
             <textarea
               rows={2}
-              placeholder="Optional notes about this customer"
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+              placeholder="Optional notes about this customer (payment terms, special requirements, etc.)"
+              className="mt-0.5 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-gray-400"
-              {...register('notes')}
+              {...register('notes', {
+                maxLength: { value: 500, message: 'Notes must be 500 characters or fewer' },
+              })}
             />
+            {errors.notes && (
+              <p className="text-xs text-red-600">⚠ {errors.notes.message}</p>
+            )}
           </div>
         </div>
 

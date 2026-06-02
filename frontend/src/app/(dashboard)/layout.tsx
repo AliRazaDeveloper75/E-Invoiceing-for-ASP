@@ -8,6 +8,7 @@ import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/context/AuthContext';
 import { SidebarProvider, useSidebar } from '@/context/SidebarContext';
 import { ChatWidget } from '@/components/chat/ChatWidget';
+import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const { collapsed } = useSidebar();
@@ -62,6 +63,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <SidebarProvider>
       <DashboardShell>{children}</DashboardShell>
+      <OnboardingModal />
     </SidebarProvider>
   );
 }

@@ -1,10 +1,12 @@
 import React from 'react';
 import { clsx } from 'clsx';
+import { FieldTooltip } from './FieldTooltip';
 
 interface PhoneInputProps {
   label?: string;
   error?: string;
   hint?: string;
+  tooltip?: string;
   /** Country dial code prefix e.g. "+971". Displayed as a read-only badge. */
   dialCode?: string;
   /** Country flag emoji e.g. "🇦🇪". Displayed alongside the dial code. */
@@ -36,6 +38,7 @@ export function PhoneInput({
   label,
   error,
   hint,
+  tooltip,
   dialCode = '',
   flag = '',
   value = '',
@@ -57,8 +60,9 @@ export function PhoneInput({
   return (
     <div className="flex flex-col gap-1">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-gray-700">
-          {label}
+        <label htmlFor={inputId} className="flex items-center text-sm font-medium text-gray-700">
+          <span>{label}</span>
+          {tooltip && <FieldTooltip content={tooltip} />}
         </label>
       )}
       <div

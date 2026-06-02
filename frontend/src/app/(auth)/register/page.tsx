@@ -12,6 +12,11 @@ import {
   FileText, ShieldCheck, Network, Landmark, CheckCircle2, ArrowRight,
   Building2, Truck,
 } from 'lucide-react';
+import {
+  emailValidators, firstNameValidators, lastNameValidators,
+  passwordStrength, PASSWORD_STRENGTH_LABELS, PASSWORD_STRENGTH_COLORS,
+  alphaOnlyKeyDown,
+} from '@/lib/validation';
 
 interface RegisterForm {
   first_name: string;
@@ -73,6 +78,7 @@ export default function RegisterPage() {
   } = useForm<RegisterForm>({ defaultValues: { role: 'supplier' } });
 
   const selectedRole = watch('role');
+  const passwordValue = watch('password', '');
 
   const onSubmit = async (data: RegisterForm) => {
     setServerError('');
@@ -170,43 +176,81 @@ export default function RegisterPage() {
               <div className="grid grid-cols-2 gap-3">
                 <Input
                   label="First name"
+                  required
+                  tooltip="Your given name as it appears on official documents. Letters only, no numbers."
                   placeholder="Ahmed"
                   error={errors.first_name?.message}
-                  {...register('first_name', { required: 'Required' })}
+                  onKeyDown={alphaOnlyKeyDown}
+                  {...register('first_name', firstNameValidators)}
                 />
                 <Input
                   label="Last name"
+                  required
+                  tooltip="Your family name as it appears on official documents. Letters only, no numbers."
                   placeholder="Al Mansouri"
                   error={errors.last_name?.message}
-                  {...register('last_name', { required: 'Required' })}
+                  onKeyDown={alphaOnlyKeyDown}
+                  {...register('last_name', lastNameValidators)}
                 />
               </div>
 
               <Input
                 label="Email address"
                 type="email"
+                required
+                tooltip="Your work or business email address. Used for login and notifications. Disposable email addresses are not accepted."
                 placeholder="you@company.ae"
                 error={errors.email?.message}
-                {...register('email', {
-                  required: 'Email is required',
-                  pattern: { value: /\S+@\S+\.\S+/, message: 'Invalid email' },
-                })}
+                {...register('email', emailValidators)}
               />
 
-              <Input
-                label="Password"
-                type="password"
-                placeholder="Min. 8 characters"
-                error={errors.password?.message}
-                {...register('password', {
-                  required: 'Password is required',
-                  minLength: { value: 8, message: 'Minimum 8 characters' },
-                })}
-              />
+              <div className="space-y-1">
+                <Input
+                  label="Password"
+                  type="password"
+                  required
+                  tooltip="Must be at least 8 characters and include at least one uppercase letter and one number. Example: MyPass123"
+                  placeholder="Min. 8 characters"
+                  error={errors.password?.message}
+                  {...register('password', {
+                    required: 'Password is required',
+                    minLength: { value: 8, message: 'Password must be at least 8 characters' },
+                    validate: {
+                      hasUpper: (v) => /[A-Z]/.test(v) || 'Password must contain at least one uppercase letter',
+                      hasNumber: (v) => /[0-9]/.test(v) || 'Password must contain at least one number',
+                    },
+                  })}
+                />
+                {/* Password strength bar */}
+                {passwordValue && (
+                  <div className="space-y-1">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4].map((i) => {
+                        const strength = passwordStrength(passwordValue);
+                        return (
+                          <div
+                            key={i}
+                            className={`h-1.5 flex-1 rounded-full transition-all ${
+                              i <= strength
+                                ? PASSWORD_STRENGTH_COLORS[strength]
+                                : 'bg-gray-200'
+                            }`}
+                          />
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Strength: <span className="font-medium">{PASSWORD_STRENGTH_LABELS[passwordStrength(passwordValue)]}</span>
+                    </p>
+                  </div>
+                )}
+              </div>
 
               <Input
                 label="Confirm password"
                 type="password"
+                required
+                tooltip="Re-enter your password exactly as above to confirm it."
                 placeholder="Repeat password"
                 error={errors.confirm_password?.message}
                 {...register('confirm_password', {

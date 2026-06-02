@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { clsx } from 'clsx';
 import { Eye, EyeOff } from 'lucide-react';
+import { FieldTooltip } from './FieldTooltip';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   hint?: string;
+  tooltip?: string;
+  required?: boolean;
 }
 
 // forwardRef is required so react-hook-form can attach its internal ref.
 // Without it, register() can't read field values → all validations fail.
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, hint, className, id, type, ...props }, ref) => {
+  ({ label, error, hint, tooltip, className, id, type, required, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
     const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
     const isPassword = type === 'password';
@@ -20,8 +23,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex flex-col gap-1">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-medium text-gray-700">
-            {label}
+          <label htmlFor={inputId} className="flex items-center text-sm font-medium text-gray-700">
+            <span>
+              {label}
+              {required && <span className="text-red-500 ml-0.5">*</span>}
+            </span>
+            {tooltip && <FieldTooltip content={tooltip} />}
           </label>
         )}
         <div className="relative">
@@ -29,6 +36,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             ref={ref}
             type={resolvedType}
+            required={required}
             {...props}
             className={clsx(
               'block w-full rounded-lg border px-3 py-2 text-sm shadow-sm',
@@ -36,7 +44,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               'focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500',
               'disabled:bg-gray-50 disabled:text-gray-500',
               isPassword && 'pr-10',
-              error ? 'border-red-400 focus:ring-red-400' : 'border-gray-300',
+              error ? 'border-red-400 bg-red-50/30 focus:ring-red-400' : 'border-gray-300',
               className
             )}
           />
@@ -54,7 +62,11 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             </button>
           )}
         </div>
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        {error && (
+          <p className="flex items-center gap-1 text-xs text-red-600">
+            <span>⚠</span> {error}
+          </p>
+        )}
         {hint && !error && <p className="text-xs text-gray-500">{hint}</p>}
       </div>
     );
@@ -66,33 +78,44 @@ Input.displayName = 'Input';
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
+  tooltip?: string;
+  required?: boolean;
 }
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, className, id, children, ...props }, ref) => {
+  ({ label, error, tooltip, className, id, required, children, ...props }, ref) => {
     const selectId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
     return (
       <div className="flex flex-col gap-1">
         {label && (
-          <label htmlFor={selectId} className="text-sm font-medium text-gray-700">
-            {label}
+          <label htmlFor={selectId} className="flex items-center text-sm font-medium text-gray-700">
+            <span>
+              {label}
+              {required && <span className="text-red-500 ml-0.5">*</span>}
+            </span>
+            {tooltip && <FieldTooltip content={tooltip} />}
           </label>
         )}
         <select
           id={selectId}
           ref={ref}
+          required={required}
           {...props}
           className={clsx(
             'block w-full rounded-lg border px-3 py-2 text-sm shadow-sm bg-white',
             'focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500',
             'disabled:bg-gray-50',
-            error ? 'border-red-400' : 'border-gray-300',
+            error ? 'border-red-400 bg-red-50/30' : 'border-gray-300',
             className
           )}
         >
           {children}
         </select>
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        {error && (
+          <p className="flex items-center gap-1 text-xs text-red-600">
+            <span>⚠</span> {error}
+          </p>
+        )}
       </div>
     );
   }

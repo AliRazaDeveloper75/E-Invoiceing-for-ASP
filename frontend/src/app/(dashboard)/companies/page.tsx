@@ -18,6 +18,10 @@ import {
 } from 'lucide-react';
 import { AxiosError } from 'axios';
 import type { Company } from '@/types';
+import {
+  emailValidators, validateTRN, validateWebsite,
+  numericOnlyKeyDown, validatePhoneNumber,
+} from '@/lib/validation';
 
 async function fetcher() {
   const r = await api.get<{ success: boolean; data: Company[] }>('/companies/');
@@ -289,45 +293,60 @@ function CompanyFormPanel({
         <div className="grid grid-cols-2 gap-4">
           <Input
             label="Trading Name"
+            required
+            tooltip="The name your company trades under. This will appear on all invoices. E.g. 'Acme LLC'"
             placeholder="Acme LLC"
             error={errors.name?.message}
-            {...register('name', { required: 'Required' })}
+            {...register('name', {
+              required: 'Trading name is required',
+              minLength: { value: 2, message: 'Name must be at least 2 characters' },
+              maxLength: { value: 100, message: 'Name must be 100 characters or fewer' },
+            })}
           />
           <Input
             label="Legal Name"
+            tooltip="Full legal registered company name, if different from the trading name. E.g. 'Acme Limited Liability Company'"
             placeholder="Acme Limited Liability Company"
-            {...register('legal_name')}
+            {...register('legal_name', {
+              maxLength: { value: 200, message: 'Legal name must be 200 characters or fewer' },
+            })}
           />
         </div>
 
         <Input
-          label="TRN (15 digits)"
-          placeholder="123456789012345"
-          hint="UAE Tax Registration Number — exactly 15 numeric digits"
+          label="TRN"
+          required
+          tooltip="UAE Tax Registration Number issued by the Federal Tax Authority (FTA). Must be exactly 15 numeric digits. No letters or symbols. E.g. 100123456700003"
+          placeholder="100123456700003"
+          hint="Exactly 15 numeric digits — no letters or symbols"
           error={errors.trn?.message}
           maxLength={15}
           inputMode="numeric"
-          onKeyDown={(e) => {
-            const nav = ['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','Home','End'];
-            if (!nav.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault();
-          }}
+          onKeyDown={numericOnlyKeyDown}
           {...register('trn', {
-            required: 'TRN is required',
-            pattern: { value: /^\d{15}$/, message: 'Must be exactly 15 digits' },
+            validate: (v) => validateTRN(v, true),
           })}
         />
 
         <Input
           label="Street Address"
+          required
+          tooltip="Full street address including building/office number, street name, and area. E.g. 'Office 501, Al Futtaim Tower, Festival City'"
+          placeholder="Office 501, Al Futtaim Tower, Festival City"
           error={errors.street_address?.message}
-          {...register('street_address', { required: 'Required' })}
+          {...register('street_address', {
+            required: 'Street address is required',
+            minLength: { value: 5, message: 'Please enter a more complete street address' },
+          })}
         />
 
         <div className="grid grid-cols-2 gap-4">
           <CountrySelect
             label="Country"
+            required
+            tooltip="Select the country where your company is registered."
             error={errors.country?.message}
-            {...register('country', { required: 'Required' })}
+            {...register('country', { required: 'Country is required' })}
             onChange={(e) => {
               setValue('country', e.target.value, { shouldValidate: true });
               setValue('city', '');
@@ -336,9 +355,11 @@ function CompanyFormPanel({
           />
           <CitySelect
             label="City"
+            required
+            tooltip="Select your company's city. Options update based on the selected country."
             countryCode={watchedCountry}
             error={errors.city?.message}
-            {...register('city', { required: 'Required' })}
+            {...register('city', { required: 'City is required' })}
           />
         </div>
 
@@ -346,22 +367,52 @@ function CompanyFormPanel({
           <Controller
             name="phone"
             control={control}
-            render={({ field }) => (
+            rules={{
+              validate: (v) => {
+                if (!v?.trim()) return true;
+                return validatePhoneNumber(v, countryForm.dialCode);
+              },
+            }}
+            render={({ field, fieldState }) => (
               <PhoneInput
                 label="Phone"
+                tooltip="Company contact phone number. Enter local number only — the dial code is added automatically based on your selected country."
                 dialCode={countryForm.dialCode}
                 flag={countryForm.flag}
                 value={field.value ?? ''}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
                 name={field.name}
+                error={fieldState.error?.message}
               />
             )}
           />
-          <Input label="Email" type="email" {...register('email')} />
+          <Input
+            label="Email"
+            type="email"
+            tooltip="Company contact or billing email address. E.g. info@company.ae"
+            placeholder="info@company.ae"
+            error={errors.email?.message}
+            {...register('email', {
+              validate: (v) => {
+                if (!v?.trim()) return true;
+                return emailValidators.validate.format(v) === true
+                  ? emailValidators.validate.noDisposable(v)
+                  : emailValidators.validate.format(v);
+              },
+            })}
+          />
         </div>
 
-        <Input label="Website" placeholder="https://example.com" {...register('website')} />
+        <Input
+          label="Website"
+          tooltip="Company website URL. Must start with http:// or https://. E.g. https://company.ae"
+          placeholder="https://company.ae"
+          error={errors.website?.message}
+          {...register('website', {
+            validate: (v) => validateWebsite(v ?? ''),
+          })}
+        />
 
         {serverError && (
           <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">

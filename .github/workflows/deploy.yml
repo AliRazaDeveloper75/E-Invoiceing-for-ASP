@@ -4,212 +4,170 @@ on:
   push:
     branches: [main]
 
-# Only one deploy at a time — cancel in-flight if a new push arrives
+# One deploy at a time — queue the next, don't cancel in-flight
 concurrency:
   group: deploy-production
-  cancel-in-progress: false  # Let in-flight deploys finish; queue the next
+  cancel-in-progress: false
 
 jobs:
 
-  # ── Gate: all CI checks must pass ─────────────────────────────────────────────
+  # ── Gate: CI must pass before deploy ──────────────────────────────────────────
   ci-gate:
     name: Wait for CI
     runs-on: ubuntu-latest
     steps:
-      - name: Check CI status
+      - name: CI passed
         run: echo "CI passed — proceeding with deploy"
 
-  # ── Build & Push Docker Image ─────────────────────────────────────────────────
-  build-push:
-    name: Build & Push Backend Image
+  # ── Detect which services changed ─────────────────────────────────────────────
+  detect-changes:
+    name: Detect Changed Services
     runs-on: ubuntu-latest
     needs: ci-gate
     outputs:
-      image_tag: ${{ steps.meta.outputs.tags }}
-      image_digest: ${{ steps.build.outputs.digest }}
-
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+      nginx: ${{ steps.changes.outputs.nginx }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          fetch-depth: 2
 
-      - name: Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/uae-einvoicing-backend
-          tags: |
-            type=sha,prefix=git-,format=short
-            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Check changed paths
+        id: changes
+        run: |
+          CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
+          echo "Changed files:"
+          echo "$CHANGED"
 
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: docker/Dockerfile.backend
-          target: runtime
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            BUILD_SHA=${{ github.sha }}
+          BACKEND=false
+          FRONTEND=false
+          NGINX=false
 
-  # ── Deploy Backend to EC2 ────────────────────────────────────────────────────
-  deploy-backend:
-    name: Deploy Backend (EC2)
+          echo "$CHANGED" | grep -qE "^(apps/|config/|services/|tasks/|requirements|docker/Dockerfile)" && BACKEND=true || true
+          echo "$CHANGED" | grep -qE "^frontend/" && FRONTEND=true || true
+          echo "$CHANGED" | grep -qE "^docker/nginx\.conf" && NGINX=true || true
+
+          echo "backend=$BACKEND"   >> $GITHUB_OUTPUT
+          echo "frontend=$FRONTEND" >> $GITHUB_OUTPUT
+          echo "nginx=$NGINX"       >> $GITHUB_OUTPUT
+
+          echo "Backend:  $BACKEND | Frontend: $FRONTEND | Nginx: $NGINX"
+
+  # ── Deploy to Hostinger VPS ───────────────────────────────────────────────────
+  deploy:
+    name: Deploy to VPS
     runs-on: ubuntu-latest
-    needs: build-push
+    needs: detect-changes
     environment: production
 
     steps:
-      - uses: actions/checkout@v4
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
           timeout: 60s
-          command_timeout: 15m
+          command_timeout: 20m
           script: |
             set -euo pipefail
 
-            IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/uae-einvoicing-backend:git-$(echo '${{ github.sha }}' | cut -c1-7)"
-            COMPOSE_FILE=~/einvoicing/docker/docker-compose.prod.yml
+            DEPLOY_DIR=~/E-Invoiceing-for-ASP
+            COMPOSE="docker compose -f $DEPLOY_DIR/docker/docker-compose.prod.yml"
+            BACKEND_CHANGED="${{ needs.detect-changes.outputs.backend }}"
+            FRONTEND_CHANGED="${{ needs.detect-changes.outputs.frontend }}"
+            NGINX_CHANGED="${{ needs.detect-changes.outputs.nginx }}"
 
-            echo "==> Pulling image: $IMAGE"
-            docker pull "$IMAGE"
+            echo "============================================"
+            echo "  Deploy SHA: $(echo '${{ github.sha }}' | cut -c1-7)"
+            echo "  Backend:  $BACKEND_CHANGED"
+            echo "  Frontend: $FRONTEND_CHANGED"
+            echo "  Nginx:    $NGINX_CHANGED"
+            echo "============================================"
 
-            echo "==> Cleaning up old images"
-            pip cache purge 2>/dev/null || true
-            sudo journalctl --vacuum-size=50M 2>/dev/null || true
-            docker image prune -f --filter "until=24h" 2>/dev/null || true
-
-            echo "==> Updating docker-compose image reference"
-            cd ~/einvoicing
+            # ── Pull latest code ──────────────────────────────────────────────
+            echo "==> Pulling latest code"
+            cd $DEPLOY_DIR
             git fetch origin main
             git reset --hard origin/main
 
-            # Override image tag for this deploy
-            export BACKEND_IMAGE="$IMAGE"
+            # ── Backend ───────────────────────────────────────────────────────
+            if [ "$BACKEND_CHANGED" = "true" ]; then
+              echo "==> Rebuilding backend image"
+              $COMPOSE up -d --build --no-deps backend
 
-            echo "==> Running migrations"
-            docker compose -f "$COMPOSE_FILE" run --rm \
-              -e DJANGO_SETTINGS_MODULE=config.settings.production \
-              backend python manage.py migrate --noinput
+              echo "==> Running migrations"
+              $COMPOSE exec -T backend python manage.py migrate --noinput
 
-            echo "==> Collecting static files"
-            docker compose -f "$COMPOSE_FILE" run --rm \
-              backend python manage.py collectstatic --noinput --clear
+              echo "==> Collecting static files"
+              $COMPOSE exec -T backend python manage.py collectstatic --noinput --clear
 
-            echo "==> Rolling restart (zero-downtime)"
-            docker compose -f "$COMPOSE_FILE" up -d --no-deps --pull always backend
-            sleep 5
-            docker compose -f "$COMPOSE_FILE" up -d --no-deps celery-worker celery-beat flower
+              echo "==> Restarting Celery workers"
+              $COMPOSE up -d --build --no-deps celery-worker celery-beat
+            else
+              echo "==> No backend changes — skipping rebuild"
+            fi
 
+            # ── Frontend ──────────────────────────────────────────────────────
+            if [ "$FRONTEND_CHANGED" = "true" ]; then
+              echo "==> Rebuilding frontend image"
+              $COMPOSE up -d --build --no-deps frontend
+            else
+              echo "==> No frontend changes — skipping rebuild"
+            fi
+
+            # ── Nginx ─────────────────────────────────────────────────────────
+            if [ "$NGINX_CHANGED" = "true" ]; then
+              echo "==> Reloading nginx config"
+              $COMPOSE exec -T nginx nginx -s reload
+            fi
+
+            # ── Health check ──────────────────────────────────────────────────
             echo "==> Health check"
-            for i in 1 2 3 4 5; do
-              STATUS=$(curl -sf -o /dev/null -w "%{http_code}" http://localhost:8000/health/ || echo "000")
+            for i in 1 2 3 4 5 6; do
+              STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+                --max-time 10 https://api.e-numerak.com/health/ || echo "000")
               if [ "$STATUS" = "200" ]; then
-                echo "✅ Backend healthy (attempt $i)"
+                echo "✅ Healthy (attempt $i, status=$STATUS)"
                 break
               fi
               echo "Attempt $i: status=$STATUS — waiting 10s..."
               sleep 10
-              if [ "$i" = "5" ]; then
-                echo "❌ Health check failed after 5 attempts"
-                docker compose -f "$COMPOSE_FILE" logs --tail=50 backend
+              if [ "$i" = "6" ]; then
+                echo "❌ Health check failed after 6 attempts"
+                $COMPOSE logs --tail=60 backend
                 exit 1
               fi
             done
 
-            echo "✅ Backend deployed: $IMAGE"
+            # ── Prune old Docker images ───────────────────────────────────────
+            docker image prune -f --filter "until=48h" 2>/dev/null || true
 
-  # ── Deploy Frontend ───────────────────────────────────────────────────────────
-  deploy-frontend:
-    name: Deploy Frontend (Next.js)
-    runs-on: ubuntu-latest
-    needs: ci-gate
-    environment: production
+            echo "✅ Deploy complete: $(echo '${{ github.sha }}' | cut -c1-7)"
 
-    steps:
-      - name: Deploy frontend via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          timeout: 60s
-          command_timeout: 15m
-          script: |
-            set -euo pipefail
-
-            # ── Disk cleanup ──────────────────────────────────────────────────
-            sudo apt-get clean -y 2>/dev/null || true
-            find ~/einvoicing/frontend -type d -name ".next" -maxdepth 2 | \
-              head -5 | xargs rm -rf 2>/dev/null || true
-
-            # ── Pull latest code ──────────────────────────────────────────────
-            cd ~/einvoicing
-            git fetch origin main
-            git reset --hard origin/main
-
-            # ── Build Next.js ─────────────────────────────────────────────────
-            cd ~/einvoicing/frontend
-            npm ci --prefer-offline
-            NEXT_TELEMETRY_DISABLED=1 npm run build
-
-            # ── Restart via PM2 ───────────────────────────────────────────────
-            pm2 restart einvoicing-frontend 2>/dev/null || \
-              pm2 start npm --name einvoicing-frontend -- start
-            pm2 save
-
-            # ── Health check ──────────────────────────────────────────────────
-            sleep 5
-            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" http://localhost:3000/ || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "✅ Frontend healthy (status=$STATUS)"
-            else
-              echo "⚠️  Frontend returned status=$STATUS — check PM2 logs"
-              pm2 logs einvoicing-frontend --lines 30
-            fi
-
-            echo "✅ Frontend deployed: SHA=${{ github.sha }}"
-
-  # ── Post-Deploy Notification ──────────────────────────────────────────────────
+  # ── Post-Deploy Summary ───────────────────────────────────────────────────────
   notify:
     name: Deploy Summary
     runs-on: ubuntu-latest
-    needs: [deploy-backend, deploy-frontend]
+    needs: [deploy]
     if: always()
-
     steps:
-      - name: Report deploy status
+      - name: Report status
         run: |
-          BACKEND="${{ needs.deploy-backend.result }}"
-          FRONTEND="${{ needs.deploy-frontend.result }}"
+          STATUS="${{ needs.deploy.result }}"
           SHA="${{ github.sha }}"
-          SHORT_SHA="${SHA:0:7}"
 
           echo "## Deploy Summary"
-          echo "SHA: $SHORT_SHA"
-          echo "Backend:  $BACKEND"
-          echo "Frontend: $FRONTEND"
+          echo "SHA:    ${SHA:0:7}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Status: $STATUS"
 
-          if [ "$BACKEND" = "success" ] && [ "$FRONTEND" = "success" ]; then
-            echo "✅ Full deployment successful"
+          if [ "$STATUS" = "success" ]; then
+            echo "✅ Production deploy successful"
+            echo "   https://e-numerak.com"
+            echo "   https://api.e-numerak.com/health/"
           else
-            echo "❌ Deployment had failures — check job logs"
+            echo "❌ Deploy failed — check job logs above"
             exit 1
           fi
