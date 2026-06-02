@@ -4,6 +4,11 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // ESLint runs in CI separately — skip it during Docker build to avoid
+  // plugin-not-found errors from pre-existing disable comments
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 
   async headers() {
     return [
