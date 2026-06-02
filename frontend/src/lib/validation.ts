@@ -1,3 +1,6 @@
+// Structural type compatible with both React.KeyboardEvent and native KeyboardEvent
+type KbEvent = { key: string; preventDefault(): void; ctrlKey: boolean; metaKey: boolean };
+
 // ─── Email ────────────────────────────────────────────────────────────────────
 
 // Strict RFC 5322-compatible email regex (rejects "a@b", requires TLD)
@@ -163,7 +166,7 @@ export function validateStreetAddress(address: string): string | true {
 
 export const NUMERIC_NAV_KEYS = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
 
-export function numericOnlyKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+export function numericOnlyKeyDown(e: KbEvent) {
   if (!NUMERIC_NAV_KEYS.includes(e.key) && !/^\d$/.test(e.key) && !e.ctrlKey && !e.metaKey) {
     e.preventDefault();
   }
@@ -171,7 +174,7 @@ export function numericOnlyKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
 
 // ─── Block non-alpha keydown (for name fields) ────────────────────────────────
 
-export function alphaOnlyKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+export function alphaOnlyKeyDown(e: KbEvent) {
   const allowed = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End', ' ', '-', "'", '.'];
   if (!allowed.includes(e.key) && !/^[\p{L}\p{M}]$/u.test(e.key) && !e.ctrlKey && !e.metaKey) {
     e.preventDefault();

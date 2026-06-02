@@ -1,12 +1,15 @@
 import React from 'react';
 import { clsx } from 'clsx';
 import { getCitiesForCountry } from '@/data/countries';
+import { FieldTooltip } from './FieldTooltip';
 
 interface CitySelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
   countryCode?: string;
   placeholder?: string;
+  tooltip?: string;
+  required?: boolean;
 }
 
 /**
@@ -16,7 +19,7 @@ interface CitySelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> 
  */
 export const CitySelect = React.forwardRef<HTMLSelectElement, CitySelectProps>(
   (
-    { label, error, className, id, countryCode = '', placeholder = 'Select city', ...props },
+    { label, error, tooltip, required, className, id, countryCode = '', placeholder = 'Select city', ...props },
     ref
   ) => {
     const cities = getCitiesForCountry(countryCode);
@@ -26,8 +29,12 @@ export const CitySelect = React.forwardRef<HTMLSelectElement, CitySelectProps>(
     return (
       <div className="flex flex-col gap-1">
         {label && (
-          <label htmlFor={selectId} className="text-sm font-medium text-gray-700">
-            {label}
+          <label htmlFor={selectId} className="flex items-center text-sm font-medium text-gray-700">
+            <span>
+              {label}
+              {required && <span className="text-red-500 ml-0.5">*</span>}
+            </span>
+            {tooltip && <FieldTooltip content={tooltip} />}
           </label>
         )}
         <select

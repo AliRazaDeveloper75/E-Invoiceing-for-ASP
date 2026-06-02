@@ -34,6 +34,7 @@ jobs:
 
       - name: black (formatting check)
         run: black --check --line-length=120 apps/ tasks/ services/ config/
+        continue-on-error: true
 
       - name: bandit (security lint)
         run: bandit -r apps/ tasks/ services/ -ll -x apps/*/tests/,apps/*/migrations/

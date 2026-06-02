@@ -1,11 +1,14 @@
 import React from 'react';
 import { clsx } from 'clsx';
 import { COUNTRY_OPTIONS } from '@/data/countries';
+import { FieldTooltip } from './FieldTooltip';
 
 interface CountrySelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
   placeholder?: string;
+  tooltip?: string;
+  required?: boolean;
 }
 
 /**
@@ -14,14 +17,18 @@ interface CountrySelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
  * Works with react-hook-form's register() via forwardRef.
  */
 export const CountrySelect = React.forwardRef<HTMLSelectElement, CountrySelectProps>(
-  ({ label, error, className, id, placeholder = 'Select country', ...props }, ref) => {
+  ({ label, error, tooltip, required, className, id, placeholder = 'Select country', ...props }, ref) => {
     const selectId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
 
     return (
       <div className="flex flex-col gap-1">
         {label && (
-          <label htmlFor={selectId} className="text-sm font-medium text-gray-700">
-            {label}
+          <label htmlFor={selectId} className="flex items-center text-sm font-medium text-gray-700">
+            <span>
+              {label}
+              {required && <span className="text-red-500 ml-0.5">*</span>}
+            </span>
+            {tooltip && <FieldTooltip content={tooltip} />}
           </label>
         )}
         <select
