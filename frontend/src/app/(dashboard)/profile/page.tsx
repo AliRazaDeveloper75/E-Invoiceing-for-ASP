@@ -20,6 +20,7 @@ export default function ProfilePage() {
   const [pwMsg, setPwMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
@@ -39,12 +40,26 @@ export default function ProfilePage() {
 
   async function changePassword(e: React.FormEvent) {
     e.preventDefault();
+    setPwMsg(null);
+
+    if (!pwForm.old_password) {
+      setPwMsg({ type: 'error', text: 'Please enter your current password.' });
+      return;
+    }
+    if (pwForm.new_password.length < 8) {
+      setPwMsg({ type: 'error', text: 'New password must be at least 8 characters.' });
+      return;
+    }
     if (pwForm.new_password !== pwForm.confirm_password) {
       setPwMsg({ type: 'error', text: 'New passwords do not match.' });
       return;
     }
+    if (pwForm.old_password === pwForm.new_password) {
+      setPwMsg({ type: 'error', text: 'New password must be different from your current password.' });
+      return;
+    }
+
     setPwSaving(true);
-    setPwMsg(null);
     try {
       await api.post('/auth/change-password/', {
         old_password: pwForm.old_password,
@@ -53,7 +68,14 @@ export default function ProfilePage() {
       setPwMsg({ type: 'success', text: 'Password changed successfully.' });
       setPwForm({ old_password: '', new_password: '', confirm_password: '' });
     } catch (err: any) {
-      const msg = err?.response?.data?.message ?? err?.response?.data?.detail ?? 'Failed to change password.';
+      // API returns { error: { message, details } }
+      const apiError = err?.response?.data?.error;
+      const details = apiError?.details;
+      // Flatten details object into readable message if present
+      const detailMsg = details
+        ? Object.values(details).flat().join(' ')
+        : null;
+      const msg = detailMsg ?? apiError?.message ?? 'Failed to change password.';
       setPwMsg({ type: 'error', text: msg });
     } finally {
       setPwSaving(false);
@@ -172,15 +194,18 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          <div>
+          <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-1">Confirm new password</label>
             <input
-              type="password"
+              type={showConfirm ? 'text' : 'password'}
               value={pwForm.confirm_password}
               onChange={e => setPwForm(f => ({ ...f, confirm_password: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               required
             />
+            <button type="button" onClick={() => setShowConfirm(v => !v)} className="absolute right-3 top-8 text-gray-400">
+              {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
           </div>
 
           {pwMsg && (
