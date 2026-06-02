@@ -3,7 +3,6 @@
 export const dynamic = 'force-dynamic';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -239,17 +238,9 @@ export default function LoginPage() {
             </form>
           </div>
 
-          <div className="mt-6 space-y-3">
-            <p className="text-center text-sm text-gray-500">
-              Don&apos;t have an account?{' '}
-              <Link href="/register" className="text-brand-600 font-semibold hover:underline">
-                Create one free
-              </Link>
-            </p>
-            <div className="flex items-center justify-center gap-2 text-[11px] text-gray-400">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-              Secure JWT authentication — data encrypted in transit
-            </div>
+          <div className="mt-6 flex items-center justify-center gap-2 text-[11px] text-gray-400">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+            Secure JWT authentication — data encrypted in transit
           </div>
         </div>
       </div>
