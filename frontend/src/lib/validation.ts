@@ -48,11 +48,24 @@ export const emailValidators = {
 
 // ─── Phone ────────────────────────────────────────────────────────────────────
 
-// Strip formatting, validate length per ITU-T E.164 (7–15 total digits)
-export function validatePhoneNumber(localNumber: string, dialCode = ''): string | true {
+// Strip formatting, validate length. If expectedLength is given (country-specific),
+// the local number must match it exactly. Otherwise falls back to ITU-T E.164 range.
+export function validatePhoneNumber(
+  localNumber: string,
+  dialCode = '',
+  expectedLength?: number,
+): string | true {
   if (!localNumber?.trim()) return 'Phone number is required';
   const digits = localNumber.replace(/[\s\-().+]/g, '');
   if (!/^\d+$/.test(digits)) return 'Phone number must contain only digits, spaces, hyphens, or parentheses';
+
+  if (expectedLength) {
+    if (digits.length !== expectedLength) {
+      return `Phone number must be exactly ${expectedLength} digits for the selected country`;
+    }
+    return true;
+  }
+
   const total = (dialCode.replace('+', '').length) + digits.length;
   if (total < 7)  return 'Phone number is too short (minimum 7 digits)';
   if (total > 15) return 'Phone number is too long (maximum 15 digits)';

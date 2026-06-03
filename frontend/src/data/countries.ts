@@ -495,3 +495,29 @@ export function getLanguages(code: string): string[] {
 export function getFlag(code: string): string {
   return getCountryByCode(code)?.flag ?? '';
 }
+
+// Expected national (local) phone number digit length per country.
+// This is the number of digits AFTER the dial code.
+const PHONE_LENGTH: Record<string, number> = {
+  AE: 9,  // UAE     e.g. 50 123 4567
+  SA: 9,  // Saudi
+  QA: 8,  // Qatar
+  KW: 8,  // Kuwait
+  BH: 8,  // Bahrain
+  OM: 8,  // Oman
+  US: 10, // USA
+  CA: 10, // Canada
+  GB: 10, // UK
+  IN: 10, // India
+  PK: 10, // Pakistan
+  EG: 10, // Egypt
+  JO: 9,  // Jordan
+  LB: 8,  // Lebanon
+};
+
+const DEFAULT_PHONE_LENGTH = 12; // permissive fallback for unlisted countries
+
+/** Max number of local digits allowed for a country's phone number (excludes dial code). */
+export function getPhoneLength(code: string): number {
+  return PHONE_LENGTH[code?.toUpperCase()] ?? DEFAULT_PHONE_LENGTH;
+}

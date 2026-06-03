@@ -19,6 +19,8 @@ interface PhoneInputProps {
   placeholder?: string;
   disabled?: boolean;
   id?: string;
+  /** Max number of local digits allowed (country-specific, excludes dial code). */
+  maxLength?: number;
 }
 
 /**
@@ -48,12 +50,30 @@ export function PhoneInput({
   placeholder = '50 123 4567',
   disabled = false,
   id,
+  maxLength,
 }: PhoneInputProps) {
   const inputId = id ?? name ?? 'phone';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Allow digits, spaces, hyphens, and parentheses
-    const raw = e.target.value.replace(/[^\d\s\-().]/g, '');
+    let raw = e.target.value.replace(/[^\d\s\-().]/g, '');
+    // Enforce the country-specific digit cap (count digits only, keep formatting)
+    if (maxLength) {
+      const digits = raw.replace(/\D/g, '');
+      if (digits.length > maxLength) {
+        // Trim extra digits from the end while preserving allowed formatting chars
+        let count = 0;
+        let out = '';
+        for (const ch of raw) {
+          if (/\d/.test(ch)) {
+            if (count >= maxLength) continue;
+            count++;
+          }
+          out += ch;
+        }
+        raw = out;
+      }
+    }
     onChange?.(raw);
   };
 

@@ -17,6 +17,7 @@ function ResetPasswordForm() {
   const [password, setPassword]   = useState('');
   const [confirm, setConfirm]     = useState('');
   const [showPw, setShowPw]       = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState('');
   const [success, setSuccess]     = useState(false);
@@ -125,15 +126,24 @@ function ResetPasswordForm() {
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Confirm new password
             </label>
-            <input
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Repeat password"
-              required
-              className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg
-                         focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="relative">
+              <input
+                type={showConfirm ? 'text' : 'password'}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                placeholder="Repeat password"
+                required
+                className="w-full px-3 py-2.5 pr-10 text-sm border border-gray-300 rounded-lg
+                           focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm((v) => !v)}
+                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+              >
+                {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
 
           {error && (

@@ -19,6 +19,7 @@ import {
 import { AxiosError } from 'axios';
 import type { Customer } from '@/types';
 import * as XLSX from 'xlsx';
+import { FieldTooltip } from '@/components/ui/FieldTooltip';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -288,22 +289,27 @@ function GroupHeading({ icon, title, subtitle }: { icon: React.ReactNode; title:
 
 // ─── Field wrapper ────────────────────────────────────────────────────────────
 
-function Field({ label, faf, hint, error, children }: {
-  label: string; faf?: boolean; hint?: string; error?: string; children: React.ReactNode;
+function Field({ label, faf, hint, tooltip, required, error, children }: {
+  label: string; faf?: boolean; hint?: string; tooltip?: string;
+  required?: boolean; error?: string; children: React.ReactNode;
 }) {
+  const info = tooltip ?? hint;
   return (
     <div>
       <div className="flex items-center gap-1.5 mb-1">
-        <label className="text-sm font-medium text-gray-700">{label}</label>
+        <label className="text-sm font-medium text-gray-700">
+          {label}
+          {required && <span className="text-red-500 ml-0.5">*</span>}
+        </label>
         {faf && (
           <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-indigo-50 text-indigo-600 border border-indigo-200 leading-none">
             FAF
           </span>
         )}
+        {info && <FieldTooltip content={info} />}
       </div>
       {children}
-      {hint && !error && <p className="text-xs text-gray-400 mt-0.5">{hint}</p>}
-      {error && <p className="text-xs text-red-500 mt-0.5">{error}</p>}
+      {error && <p className="flex items-center gap-1 text-xs text-red-500 mt-0.5">⚠ {error}</p>}
     </div>
   );
 }
@@ -554,31 +560,47 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove }: {
         <Field label="Item / Service Name" faf hint="Short name for this product or service">
           <input placeholder="e.g. IT Consulting, Office Chair…" className={inputCls()} {...register(`items.${idx}.item_name`)} />
         </Field>
-        <Field label="Product / Service Reference" faf>
+        <Field label="Product / Service Reference" faf
+          tooltip="Your internal product code or SKU for this line — e.g. SKU-001 or SVC-REF.">
           <input placeholder="e.g. SKU-001 or SVC-REF" className={inputCls()} {...register(`items.${idx}.product_reference`)} />
         </Field>
       </div>
 
-      <Field label="Description of Goods / Services" faf error={errors.items?.[idx]?.description?.message}>
+      <Field label="Description of Goods / Services" faf required
+        tooltip="A clear description of the goods or services supplied. Required on every line by the FTA."
+        error={errors.items?.[idx]?.description?.message}>
         <input
           placeholder="Full description of goods or services supplied…"
           className={inputCls(errors.items?.[idx]?.description?.message)}
-          {...register(`items.${idx}.description`, { required: 'Required' })}
+          {...register(`items.${idx}.description`, {
+            required: 'Description is required',
+            maxLength: { value: 300, message: 'Description must be 300 characters or fewer' },
+          })}
         />
       </Field>
 
       <div className="grid grid-cols-4 gap-3">
-        <Field label="Quantity" error={errors.items?.[idx]?.quantity?.message}>
+        <Field label="Quantity" required
+          tooltip="Number of units supplied. Must be greater than 0."
+          error={errors.items?.[idx]?.quantity?.message}>
           <input type="number" step="0.0001" min="0.0001" className={inputCls(errors.items?.[idx]?.quantity?.message)}
-            {...register(`items.${idx}.quantity`, { required: 'Required' })} />
+            {...register(`items.${idx}.quantity`, {
+              required: 'Required',
+              validate: (v) => (parseFloat(v) > 0) || 'Must be greater than 0',
+            })} />
         </Field>
-        <Field label="Unit">
+        <Field label="Unit" tooltip="Unit of measure — e.g. pcs, hr, kg, yr.">
           <input placeholder="pcs / hr / kg" className={inputCls()} {...register(`items.${idx}.unit`)} />
         </Field>
-        <Field label="Unit Price (excl. VAT)" error={errors.items?.[idx]?.unit_price?.message}>
+        <Field label="Unit Price (excl. VAT)" required
+          tooltip="Price per unit excluding VAT. Cannot be negative."
+          error={errors.items?.[idx]?.unit_price?.message}>
           <input type="number" step="0.0001" min="0" placeholder="0.00"
             className={inputCls(errors.items?.[idx]?.unit_price?.message)}
-            {...register(`items.${idx}.unit_price`, { required: 'Required' })} />
+            {...register(`items.${idx}.unit_price`, {
+              required: 'Required',
+              validate: (v) => (parseFloat(v) >= 0) || 'Cannot be negative',
+            })} />
         </Field>
         <Field label="Tax Code" faf hint="S=5%, Z=0%, E=Exempt, O=OOS">
           <input placeholder="S / Z / E / O" className={inputCls()} {...register(`items.${idx}.tax_code`)} />
@@ -586,7 +608,8 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove }: {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <Field label="VAT Rate">
+        <Field label="VAT Rate"
+          tooltip="The VAT treatment for this line: Standard 5%, Zero-rated 0%, Exempt, or Out of Scope.">
           {vatLocked ? (
             <>
               <input type="hidden" value="out_of_scope" {...register(`items.${idx}.vat_rate_type`)} />
@@ -603,10 +626,12 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove }: {
             </select>
           )}
         </Field>
-        <Field label="Debit Amount (AED)" faf>
+        <Field label="Debit Amount (AED)" faf
+          tooltip="FAF ledger debit amount in AED for this line, if applicable. Optional.">
           <input type="number" step="0.01" min="0" placeholder="0.00" className={inputCls()} {...register(`items.${idx}.debit_amount`)} />
         </Field>
-        <Field label="Credit Amount (AED)" faf>
+        <Field label="Credit Amount (AED)" faf
+          tooltip="FAF ledger credit amount in AED for this line, if applicable. Optional.">
           <input type="number" step="0.01" min="0" placeholder="0.00" className={inputCls()} {...register(`items.${idx}.credit_amount`)} />
         </Field>
       </div>
@@ -1221,13 +1246,15 @@ export default function NewInvoicePage() {
       <div className="grid grid-cols-[1fr_360px] gap-6 items-start">
 
         {/* ── LEFT: Form ── */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 min-w-0">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 min-w-0" noValidate>
 
           {/* Parties */}
           <Section title="Parties" subtitle="FAF: Company name, TRN, locations of suppliers and customers, accounts receivable/payable">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <Field label="Customer (Buyer)" faf error={errors.customer_id?.message}>
+                <Field label="Customer (Buyer)" faf required
+                  tooltip="The business or person being invoiced. For B2B/B2G the customer must have a valid 15-digit TRN. Pick '+ Add new customer' to create one."
+                  error={errors.customer_id?.message}>
                   <select
                     className={inputCls(errors.customer_id?.message)}
                     {...register('customer_id', { required: 'Customer is required' })}
@@ -1312,11 +1339,22 @@ export default function NewInvoicePage() {
           {/* Invoice Dates */}
           <Section title="Invoice Dates" subtitle="FAF: Invoice dates, transaction dates, tax payment dates">
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Issue Date" faf>
-                <input type="date" className={inputCls()} {...register('issue_date')} />
+              <Field label="Issue Date" faf required
+                tooltip="The date this invoice is issued. Required by the FTA and must not be in the future."
+                error={errors.issue_date?.message}>
+                <input type="date" max={today} className={inputCls(errors.issue_date?.message)}
+                  {...register('issue_date', {
+                    required: 'Issue date is required',
+                    validate: (v) => !v || v <= today || 'Issue date cannot be in the future',
+                  })} />
               </Field>
-              <Field label="Due Date (optional)">
-                <input type="date" className={inputCls()} {...register('due_date')} />
+              <Field label="Due Date (optional)"
+                tooltip="The date payment is due. Must be on or after the issue date."
+                error={errors.due_date?.message}>
+                <input type="date" className={inputCls(errors.due_date?.message)}
+                  {...register('due_date', {
+                    validate: (v) => !v || !issueDate || v >= issueDate || 'Due date cannot be before the issue date',
+                  })} />
               </Field>
               <Field label="Date of Supply (optional)" hint="Tax point date if different from issue date">
                 <input type="date" className={inputCls()} {...register('supply_date')} />
@@ -1334,7 +1372,9 @@ export default function NewInvoicePage() {
                 <p className={`text-xs font-semibold ${accent.icon}`}>
                   Original Invoice Reference — required for {selected.value === 'credit_note' ? 'Credit' : 'Debit'} Notes
                 </p>
-                <Field label="Original Invoice Number" faf error={errors.reference_number?.message}>
+                <Field label="Original Invoice Number" faf required
+                  tooltip="The number of the original tax invoice this credit/debit note adjusts. Required for credit and debit notes."
+                  error={errors.reference_number?.message}>
                   <input placeholder="e.g. INV-202604-000001" className={inputCls(errors.reference_number?.message)}
                     {...register('reference_number', { required: 'Required for credit/debit notes' })} />
                 </Field>
@@ -1365,7 +1405,8 @@ export default function NewInvoicePage() {
           {/* Currency & Financials */}
           <Section title="Currency & Financials" subtitle="FAF: VAT amounts in actual currency and AED">
             <div className="grid grid-cols-3 gap-4">
-              <Field label="Currency">
+              <Field label="Currency" required
+                tooltip="The currency this invoice is issued in. Non-AED invoices require an exchange rate to AED for FTA reporting.">
                 <select className={selectCls} {...register('currency')}>
                   <option value="AED">AED — UAE Dirham</option>
                   <option value="USD">USD — US Dollar</option>
@@ -1375,13 +1416,32 @@ export default function NewInvoicePage() {
                   <option value="QAR">QAR — Qatari Riyal</option>
                 </select>
               </Field>
-              <Field label="Exchange Rate to AED" faf hint={isAED ? 'Always 1.0 for AED invoices' : 'Convert VAT amounts to AED for FTA reporting'}>
+              <Field label="Exchange Rate to AED" faf
+                tooltip={isAED ? 'Always 1.0 for AED invoices.' : 'Rate used to convert all VAT amounts to AED for FTA reporting. Must be greater than 0.'}
+                error={errors.exchange_rate?.message}>
                 <input type="number" step="0.000001" min="0.000001" disabled={isAED}
-                  className={`w-full text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isAED ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
-                  {...register('exchange_rate')} />
+                  className={`w-full text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isAED ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed' : errors.exchange_rate ? 'border-red-400' : 'border-gray-300'}`}
+                  {...register('exchange_rate', {
+                    validate: (v) => {
+                      if (isAED) return true;
+                      const n = parseFloat(v);
+                      if (isNaN(n) || n <= 0) return 'Enter a valid exchange rate greater than 0';
+                      return true;
+                    },
+                  })} />
               </Field>
-              <Field label="Invoice Discount (optional)">
-                <input type="number" step="0.01" min="0" placeholder="0.00" className={inputCls()} {...register('discount_amount')} />
+              <Field label="Invoice Discount (optional)"
+                tooltip="Optional discount applied to the invoice subtotal before VAT is calculated."
+                error={errors.discount_amount?.message}>
+                <input type="number" step="0.01" min="0" placeholder="0.00" className={inputCls(errors.discount_amount?.message)}
+                  {...register('discount_amount', {
+                    validate: (v) => {
+                      if (!v) return true;
+                      const n = parseFloat(v);
+                      if (isNaN(n) || n < 0) return 'Discount cannot be negative';
+                      return true;
+                    },
+                  })} />
               </Field>
             </div>
             {!isAED && (

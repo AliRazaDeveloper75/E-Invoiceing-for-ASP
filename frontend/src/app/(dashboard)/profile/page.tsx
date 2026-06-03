@@ -28,11 +28,15 @@ export default function ProfilePage() {
     setProfileSaving(true);
     setProfileMsg(null);
     try {
-      await api.patch('/auth/me/', profileForm);
+      await api.put('/auth/me/', profileForm);
       await refreshUser();
       setProfileMsg({ type: 'success', text: 'Profile updated successfully.' });
     } catch (err: any) {
-      const msg = err?.response?.data?.message ?? err?.message ?? 'Failed to update profile.';
+      const apiError = err?.response?.data?.error;
+      const details = apiError?.details
+        ? Object.values(apiError.details).flat().join(' ')
+        : null;
+      const msg = details ?? apiError?.message ?? 'Failed to update profile.';
       setProfileMsg({ type: 'error', text: msg });
     } finally {
       setProfileSaving(false);

@@ -6,6 +6,7 @@ import {
   getDialCode,
   getLanguages,
   getFlag,
+  getPhoneLength,
   type CountryData,
 } from '@/data/countries';
 
@@ -19,6 +20,7 @@ export interface CountryFormState {
   cityValue: string;
   dialCode: string;
   flag: string;
+  phoneLength: number;
   languages: string[];
   selectedCountry: CountryData | null;
 
@@ -57,6 +59,7 @@ export function useCountryForm(defaultCountryCode = 'AE'): CountryFormState {
   const selectedCountry = useMemo(() => getCountryByCode(countryCode) ?? null, [countryCode]);
   const dialCode = useMemo(() => getDialCode(countryCode), [countryCode]);
   const flag = useMemo(() => getFlag(countryCode), [countryCode]);
+  const phoneLength = useMemo(() => getPhoneLength(countryCode), [countryCode]);
   const languages = useMemo(() => getLanguages(countryCode), [countryCode]);
 
   const handleCountryChange = useCallback((code: string) => {
@@ -80,6 +83,7 @@ export function useCountryForm(defaultCountryCode = 'AE'): CountryFormState {
     cityValue,
     dialCode,
     flag,
+    phoneLength,
     languages,
     selectedCountry,
     handleCountryChange,

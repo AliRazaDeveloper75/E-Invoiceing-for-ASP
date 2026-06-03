@@ -17,7 +17,10 @@ function WhatsAppIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-import { api } from '@/lib/api';
+// External AI Agent endpoint (streaming). Override via NEXT_PUBLIC_AI_AGENT_URL.
+const AI_AGENT_URL =
+  process.env.NEXT_PUBLIC_AI_AGENT_URL ??
+  'https://tax-data-assistant-backend-production.up.railway.app/chat';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -247,84 +250,19 @@ function ChatbotTab() {
   );
 }
 
-// ─── Context data mini-card ───────────────────────────────────────────────────
-
-interface ContextData {
-  type: string;
-  count?: number;
-  total_aed?: number;
-  total_outstanding_aed?: number;
-  total_revenue_aed?: number;
-  total_vat_aed?: number;
-  invoices?: Array<{ invoice_number: string; customer: string; total_amount: number; status: string }>;
-  customers?: Array<{ customer_name: string; total_revenue_aed: number; invoice_count: number }>;
-}
-
-function DataCard({ data }: { data: ContextData }) {
-  const labels: Record<string, string> = {
-    unpaid_invoices:   'Unpaid Invoices',
-    overdue_invoices:  'Overdue Invoices',
-    vat_summary:       'VAT Summary',
-    recent_invoices:   'Recent Invoices',
-    revenue_summary:   'Revenue Summary',
-    top_customers:     'Top Customers',
-    draft_invoices:    'Draft Invoices',
-  };
-
-  const fmtAED = (n?: number) =>
-    n !== undefined ? `AED ${n.toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : null;
-
-  return (
-    <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mt-1 text-xs space-y-2">
-      <p className="font-semibold text-blue-700">{labels[data.type] ?? data.type}</p>
-      {data.count !== undefined && <p className="text-gray-600">Count: <strong>{data.count}</strong></p>}
-      {fmtAED(data.total_aed) && <p className="text-gray-600">Total: <strong>{fmtAED(data.total_aed)}</strong></p>}
-      {fmtAED(data.total_outstanding_aed) && <p className="text-gray-600">Outstanding: <strong>{fmtAED(data.total_outstanding_aed)}</strong></p>}
-      {fmtAED(data.total_revenue_aed) && <p className="text-gray-600">Revenue: <strong>{fmtAED(data.total_revenue_aed)}</strong></p>}
-      {fmtAED(data.total_vat_aed) && <p className="text-gray-600">VAT: <strong>{fmtAED(data.total_vat_aed)}</strong></p>}
-      {data.invoices && data.invoices.length > 0 && (
-        <div className="space-y-1">
-          {data.invoices.slice(0, 3).map((inv, i) => (
-            <div key={i} className="flex items-center justify-between text-gray-600">
-              <span className="truncate max-w-[120px]">{inv.invoice_number} — {inv.customer}</span>
-              <span className="text-gray-500 shrink-0">{fmtAED(inv.total_amount)}</span>
-            </div>
-          ))}
-          {data.invoices.length > 3 && (
-            <p className="text-blue-500">+{data.invoices.length - 3} more</p>
-          )}
-        </div>
-      )}
-      {data.customers && data.customers.slice(0, 3).map((c, i) => (
-        <div key={i} className="flex items-center justify-between text-gray-600">
-          <span className="truncate max-w-[130px]">{c.customer_name}</span>
-          <span className="text-gray-500 shrink-0">{fmtAED(c.total_revenue_aed)}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ─── AgentMessage ─────────────────────────────────────────────────────────────
-
-interface AgentMessage extends Message {
-  contextData?: ContextData | null;
-}
-
 // ─── Suggested queries ────────────────────────────────────────────────────────
 
 const SUGGESTED = [
-  'Show unpaid invoices',
-  'What is my VAT this month?',
-  'Overdue invoices',
-  'My top customers',
-  'Revenue this month',
+  'How do I add a company?',
+  'What is E-Numerak?',
+  'How do I create an invoice?',
+  'What is a TRN?',
 ];
 
 // ─── AgentTab ─────────────────────────────────────────────────────────────────
 
 function AgentTab() {
-  const [messages, setMessages] = useState<AgentMessage[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -338,18 +276,35 @@ function AgentTab() {
     const msgText = (text ?? input).trim();
     if (!msgText || loading) return;
 
-    const userMsg: AgentMessage = { role: 'user', content: msgText };
-    const next = [...messages, userMsg];
-    setMessages(next);
+    setMessages((m) => [...m, { role: 'user', content: msgText }]);
     setInput('');
     setLoading(true);
     setError(null);
 
     try {
-      const res = await api.post('/chat/', { messages: next.map(m => ({ role: m.role, content: m.content })) });
-      const reply: string = res.data?.data?.reply ?? 'No response received.';
-      const contextData = res.data?.data?.context_data ?? null;
-      setMessages((m) => [...m, { role: 'assistant', content: reply, contextData }]);
+      const res = await fetch(AI_AGENT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msgText }),
+      });
+      if (!res.ok || !res.body) throw new Error('Request failed');
+
+      // Stream the reply chunk-by-chunk into a single assistant message
+      setMessages((m) => [...m, { role: 'assistant', content: '' }]);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let reply = '';
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        reply += decoder.decode(value, { stream: true });
+        setMessages((m) => {
+          const updated = [...m];
+          updated[updated.length - 1] = { role: 'assistant', content: reply };
+          return updated;
+        });
+      }
     } catch {
       setError('Could not get a response. Please try again.');
     } finally {
@@ -372,10 +327,10 @@ function AgentTab() {
           <div className="flex flex-col items-start justify-start gap-3 text-gray-500 py-4">
             <div className="flex items-center gap-2 text-blue-600">
               <Bot className="w-5 h-5" />
-              <span className="text-sm font-medium">AI Accounting Assistant</span>
+              <span className="text-sm font-medium">AI Tax Assistant</span>
             </div>
             <p className="text-xs text-gray-400 leading-relaxed">
-              Ask me about your invoices, VAT totals, overdue payments, or UAE e-invoicing rules.
+              Assalam o Alaikum! Ask me anything about tax invoices, VAT, TRN, or UAE e-invoicing on E-Numerak.
             </p>
             <div className="flex flex-wrap gap-1.5 mt-1">
               {SUGGESTED.map(q => (
@@ -404,11 +359,16 @@ function AgentTab() {
                     : 'bg-gray-100 text-gray-800 rounded-bl-sm'
                 }`}
               >
-                {msg.content}
+                {msg.content || (
+                  msg.role === 'assistant' && loading ? (
+                    <span className="flex gap-1 items-center h-4">
+                      <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" />
+                      <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+                      <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0.4s]" />
+                    </span>
+                  ) : null
+                )}
               </div>
-              {msg.role === 'assistant' && msg.contextData && (
-                <DataCard data={msg.contextData} />
-              )}
             </div>
           </div>
         ))}
@@ -453,16 +413,15 @@ function AgentTab() {
 
 // ─── ChatWidget ───────────────────────────────────────────────────────────────
 
-export function ChatWidget({ publicMode = false }: ChatWidgetProps) {
+export function ChatWidget(_props: ChatWidgetProps = {}) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>('chatbot');
 
-  const tabs: { id: Tab; label: string }[] = publicMode
-    ? [{ id: 'chatbot', label: 'Help Topics' }]
-    : [
-        { id: 'chatbot', label: 'Help Topics' },
-        { id: 'agent',   label: 'AI Agent' },
-      ];
+  // Both tabs are available everywhere — public landing pages and the dashboard.
+  const tabs: { id: Tab; label: string }[] = [
+    { id: 'chatbot', label: 'Help Topics' },
+    { id: 'agent',   label: 'AI Agent' },
+  ];
 
   return (
     <>

@@ -21,7 +21,7 @@ const NAV: {
   { href: '/dashboard',                label: 'Dashboard',      icon: LayoutDashboard, roles: ['admin', 'supplier', 'accountant', 'viewer'] },
   { href: '/invoices',                  label: 'Invoices',       icon: FileText,        roles: ['admin', 'supplier', 'accountant', 'viewer'] },
   { href: '/customers',                 label: 'Customers',      icon: Users,           roles: ['admin', 'supplier', 'accountant', 'viewer'] },
-  { href: '/companies',                 label: 'Companies',      icon: Building2,       roles: ['admin', 'supplier', 'accountant', 'viewer'] },
+  { href: '/companies',                 label: 'Companies',      icon: Building2,       roles: ['admin', 'accountant', 'viewer'] },
   { href: '/inbound',                   label: 'Inbound',        icon: Inbox,           roles: ['admin'] },
   { href: '/ai-ocr',                    label: 'AI Scanner',     icon: ScanLine,        roles: ['admin', 'accountant'] },
   { href: '/fraud-alerts',              label: 'Fraud Alerts',   icon: ShieldAlert,     roles: ['admin'] },

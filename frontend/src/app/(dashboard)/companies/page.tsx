@@ -370,15 +370,16 @@ function CompanyFormPanel({
             rules={{
               validate: (v) => {
                 if (!v?.trim()) return true;
-                return validatePhoneNumber(v, countryForm.dialCode);
+                return validatePhoneNumber(v, countryForm.dialCode, countryForm.phoneLength);
               },
             }}
             render={({ field, fieldState }) => (
               <PhoneInput
                 label="Phone"
-                tooltip="Company contact phone number. Enter local number only — the dial code is added automatically based on your selected country."
+                tooltip={`Company contact phone number — exactly ${countryForm.phoneLength} digits for the selected country. Enter local number only; the dial code is added automatically.`}
                 dialCode={countryForm.dialCode}
                 flag={countryForm.flag}
+                maxLength={countryForm.phoneLength}
                 value={field.value ?? ''}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
