@@ -13,6 +13,12 @@ import {
   Eye, EyeOff, Upload, X, ChevronRight, ChevronLeft,
   Loader2, ShieldCheck, ArrowRight,
 } from 'lucide-react';
+import { FieldTooltip } from '@/components/ui/FieldTooltip';
+import {
+  validateEmail, validateWebsite, validateTRN,
+  firstNameValidators, lastNameValidators,
+  numericOnlyKeyDown, alphaOnlyKeyDown,
+} from '@/lib/validation';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -89,15 +95,18 @@ const STEPS = [
 // ─── Field components ─────────────────────────────────────────────────────────
 
 function Field({
-  label, error, children, required, className = '',
-}: { label: string; error?: string; children: React.ReactNode; required?: boolean; className?: string }) {
+  label, error, children, required, tooltip, className = '',
+}: { label: string; error?: string; children: React.ReactNode; required?: boolean; tooltip?: string; className?: string }) {
   return (
     <div className={className}>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
+      <div className="flex items-center mb-1.5">
+        <label className="block text-sm font-medium text-gray-700">
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
+        {tooltip && <FieldTooltip content={tooltip} />}
+      </div>
       {children}
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 flex items-center gap-1 text-xs text-red-600">⚠ {error}</p>}
     </div>
   );
 }
@@ -381,6 +390,7 @@ function AcceptInviteContent() {
           {/* Form card */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <form
+              noValidate
               onSubmit={handleSubmit(onSubmit)}
               onKeyDown={(e) => { if (e.key === 'Enter' && step < 4) e.preventDefault(); }}
             >
@@ -395,22 +405,27 @@ function AcceptInviteContent() {
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <Field label="First name" error={errors.first_name?.message} required>
+                    <Field label="First name" error={errors.first_name?.message} required
+                      tooltip="Your given name as on official documents. Letters only.">
                       <Input
                         placeholder="Ahmed"
                         error={errors.first_name?.message}
-                        {...register('first_name', { required: 'Required' })}
+                        onKeyDown={alphaOnlyKeyDown}
+                        {...register('first_name', firstNameValidators)}
                       />
                     </Field>
-                    <Field label="Last name" error={errors.last_name?.message} required>
+                    <Field label="Last name" error={errors.last_name?.message} required
+                      tooltip="Your family name as on official documents. Letters only.">
                       <Input
                         placeholder="Al Mansouri"
                         error={errors.last_name?.message}
-                        {...register('last_name', { required: 'Required' })}
+                        onKeyDown={alphaOnlyKeyDown}
+                        {...register('last_name', lastNameValidators)}
                       />
                     </Field>
                   </div>
-                  <Field label="Password" error={errors.password?.message} required>
+                  <Field label="Password" error={errors.password?.message} required
+                    tooltip="At least 8 characters, including one uppercase letter and one number. Example: MyPass123">
                     <div className="relative">
                       <Input
                         type={showPw ? 'text' : 'password'}
@@ -418,7 +433,11 @@ function AcceptInviteContent() {
                         error={errors.password?.message}
                         {...register('password', {
                           required: 'Password is required',
-                          minLength: { value: 8, message: 'Minimum 8 characters' },
+                          minLength: { value: 8, message: 'Password must be at least 8 characters' },
+                          validate: {
+                            hasUpper: (v) => /[A-Z]/.test(v) || 'Must contain an uppercase letter',
+                            hasNumber: (v) => /[0-9]/.test(v) || 'Must contain a number',
+                          },
                         })}
                       />
                       <button type="button" onClick={() => setShowPw(!showPw)}
@@ -427,7 +446,8 @@ function AcceptInviteContent() {
                       </button>
                     </div>
                   </Field>
-                  <Field label="Confirm password" error={errors.confirm_password?.message} required>
+                  <Field label="Confirm password" error={errors.confirm_password?.message} required
+                    tooltip="Re-enter your password exactly to confirm it.">
                     <div className="relative">
                       <Input
                         type={showCpw ? 'text' : 'password'}
@@ -476,46 +496,57 @@ function AcceptInviteContent() {
                     </div>
                   </div>
 
-                  <Field label="Company name" error={errors.company_name?.message} required>
+                  <Field label="Company name" error={errors.company_name?.message} required
+                    tooltip="The name your company trades under. This appears on your invoices. You can edit the suggested name.">
                     <Input
                       placeholder="Al Mansouri Trading LLC"
                       error={errors.company_name?.message}
-                      {...register('company_name', { required: 'Company name is required' })}
+                      {...register('company_name', {
+                        required: 'Company name is required',
+                        minLength: { value: 2, message: 'Name must be at least 2 characters' },
+                        maxLength: { value: 100, message: 'Name must be 100 characters or fewer' },
+                      })}
                     />
                   </Field>
-                  <Field label="Legal name" error={errors.company_legal_name?.message}>
+                  <Field label="Legal name" error={errors.company_legal_name?.message}
+                    tooltip="Full legal registered name if different from the trading name. Leave blank if identical.">
                     <Input
                       placeholder="Same as company name if identical"
                       {...register('company_legal_name')}
                     />
                   </Field>
                   <div className="grid grid-cols-2 gap-4">
-                    <Field label="TRN (Tax Registration Number)" error={errors.trn?.message} required>
+                    <Field label="TRN (Tax Registration Number)" error={errors.trn?.message} required
+                      tooltip="15-digit Tax Registration Number from the UAE FTA. Digits only — no letters or symbols.">
                       <Input
                         placeholder="100123456700003"
                         maxLength={15}
+                        inputMode="numeric"
                         error={errors.trn?.message}
-                        {...register('trn', {
-                          required: 'TRN is required',
-                          pattern: { value: /^\d{15}$/, message: '15 digits required' },
-                        })}
+                        onKeyDown={numericOnlyKeyDown}
+                        {...register('trn', { validate: (v) => validateTRN(v, true) })}
                       />
                     </Field>
-                    <Field label="Trade License Number" error={errors.trade_license_number?.message}>
+                    <Field label="Trade License Number" error={errors.trade_license_number?.message}
+                      tooltip="Your trade license number as issued by the DED or relevant free zone authority.">
                       <Input placeholder="DED-2024-12345" {...register('trade_license_number')} />
                     </Field>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <Field label="Business type" error={errors.business_type?.message}>
-                      <Select {...register('business_type')}>
+                    <Field label="Business type" error={errors.business_type?.message} required
+                      tooltip="The legal structure of your company as per your trade license.">
+                      <Select error={errors.business_type?.message}
+                        {...register('business_type', { required: 'Business type is required' })}>
                         <option value="">Select type…</option>
                         {BUSINESS_TYPES.map(b => (
                           <option key={b.value} value={b.value}>{b.label}</option>
                         ))}
                       </Select>
                     </Field>
-                    <Field label="Industry" error={errors.industry_type?.message}>
-                      <Select {...register('industry_type')}>
+                    <Field label="Industry" error={errors.industry_type?.message} required
+                      tooltip="The primary industry your company operates in.">
+                      <Select error={errors.industry_type?.message}
+                        {...register('industry_type', { required: 'Industry is required' })}>
                         <option value="">Select industry…</option>
                         {INDUSTRY_TYPES.map(i => (
                           <option key={i.value} value={i.value}>{i.label}</option>
@@ -533,23 +564,29 @@ function AcceptInviteContent() {
                     <h2 className="text-xl font-bold text-gray-900">Address & contact</h2>
                     <p className="text-sm text-gray-500 mt-1">Registered address and contact details</p>
                   </div>
-                  <Field label="Street address" error={errors.street_address?.message} required>
+                  <Field label="Street address" error={errors.street_address?.message} required
+                    tooltip="Full street address including building/office number, street, and area.">
                     <Input
                       placeholder="Office 401, Al Barsha Business Centre"
                       error={errors.street_address?.message}
-                      {...register('street_address', { required: 'Street address is required' })}
+                      {...register('street_address', {
+                        required: 'Street address is required',
+                        minLength: { value: 5, message: 'Please enter a more complete address' },
+                      })}
                     />
                   </Field>
                   <div className="grid grid-cols-2 gap-4">
-                    <Field label="City" error={errors.city?.message} required>
+                    <Field label="City" error={errors.city?.message} required
+                      tooltip="The city where your company is located.">
                       <Input
                         placeholder="Dubai"
                         error={errors.city?.message}
                         {...register('city', { required: 'City is required' })}
                       />
                     </Field>
-                    <Field label="Emirate" error={errors.emirate?.message} required>
-                      <Select {...register('emirate', { required: 'Required' })}>
+                    <Field label="Emirate" error={errors.emirate?.message} required
+                      tooltip="The emirate where your company is registered.">
+                      <Select error={errors.emirate?.message} {...register('emirate', { required: 'Required' })}>
                         {EMIRATE_CHOICES.map(e => (
                           <option key={e.value} value={e.value}>{e.label}</option>
                         ))}
@@ -557,38 +594,56 @@ function AcceptInviteContent() {
                     </Field>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <Field label="P.O. Box">
-                      <Input placeholder="12345" {...register('po_box')} />
+                    <Field label="P.O. Box" tooltip="Your company P.O. Box number, if any.">
+                      <Input placeholder="12345" inputMode="numeric" onKeyDown={numericOnlyKeyDown} {...register('po_box')} />
                     </Field>
-                    <Field label="Country">
+                    <Field label="Country" tooltip="Two-letter country code. Default AE for the UAE.">
                       <Input placeholder="AE" maxLength={2} {...register('country')} />
                     </Field>
                   </div>
                   <div className="border-t border-gray-100 pt-5">
                     <p className="text-sm font-semibold text-gray-700 mb-4">Company contact</p>
                     <div className="grid grid-cols-2 gap-4">
-                      <Field label="Phone">
-                        <Input placeholder="+971 4 000 0000" {...register('company_phone')} />
+                      <Field label="Phone" error={errors.company_phone?.message}
+                        tooltip="Company landline or mobile, including country code. E.g. +971 4 000 0000">
+                        <Input placeholder="+971 4 000 0000" error={errors.company_phone?.message}
+                          {...register('company_phone', {
+                            validate: (v) => !v || /^[\d\s\-+()]{7,20}$/.test(v) || 'Enter a valid phone number',
+                          })} />
                       </Field>
-                      <Field label="Company email">
-                        <Input type="email" placeholder="info@company.ae" {...register('company_email')} />
+                      <Field label="Company email" error={errors.company_email?.message}
+                        tooltip="Company contact or billing email. E.g. info@company.ae">
+                        <Input type="email" placeholder="info@company.ae" error={errors.company_email?.message}
+                          {...register('company_email', {
+                            validate: (v) => !v || validateEmail(v),
+                          })} />
                       </Field>
                     </div>
-                    <Field label="Website" className="mt-4">
-                      <Input placeholder="https://company.ae" {...register('website')} />
+                    <Field label="Website" className="mt-4" error={errors.website?.message}
+                      tooltip="Company website URL. Must start with http:// or https://">
+                      <Input placeholder="https://company.ae" error={errors.website?.message}
+                        {...register('website', { validate: (v) => validateWebsite(v ?? '') })} />
                     </Field>
                   </div>
                   <div className="border-t border-gray-100 pt-5">
                     <p className="text-sm font-semibold text-gray-700 mb-4">Contact person</p>
-                    <Field label="Full name">
+                    <Field label="Full name" tooltip="Name of the primary contact person for this company.">
                       <Input placeholder="Ahmed Al Mansouri" {...register('contact_person_name')} />
                     </Field>
                     <div className="grid grid-cols-2 gap-4 mt-4">
-                      <Field label="Email">
-                        <Input type="email" placeholder="ahmed@company.ae" {...register('contact_person_email')} />
+                      <Field label="Email" error={errors.contact_person_email?.message}
+                        tooltip="Contact person's email address.">
+                        <Input type="email" placeholder="ahmed@company.ae" error={errors.contact_person_email?.message}
+                          {...register('contact_person_email', {
+                            validate: (v) => !v || validateEmail(v),
+                          })} />
                       </Field>
-                      <Field label="Phone">
-                        <Input placeholder="+971 50 000 0000" {...register('contact_person_phone')} />
+                      <Field label="Phone" error={errors.contact_person_phone?.message}
+                        tooltip="Contact person's phone number, including country code.">
+                        <Input placeholder="+971 50 000 0000" error={errors.contact_person_phone?.message}
+                          {...register('contact_person_phone', {
+                            validate: (v) => !v || /^[\d\s\-+()]{7,20}$/.test(v) || 'Enter a valid phone number',
+                          })} />
                       </Field>
                     </div>
                   </div>

@@ -2,11 +2,16 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useCompany } from '@/hooks/useCompany';
 import { api } from '@/lib/api';
-import { User, Lock, Save, Eye, EyeOff } from 'lucide-react';
+import {
+  User, Lock, Save, Eye, EyeOff,
+  Building2, Hash, MapPin, Phone, Mail, Globe,
+} from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, refreshUser } = useAuth();
+  const { activeCompany } = useCompany();
 
   const [profileForm, setProfileForm] = useState({
     first_name: user?.first_name ?? '',
@@ -165,6 +170,52 @@ export default function ProfilePage() {
           </button>
         </form>
       </div>
+
+      {/* Company details (read-only) */}
+      {activeCompany && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+          <div className="flex items-center gap-3">
+            {activeCompany.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={activeCompany.logo_url} alt={activeCompany.name}
+                className="h-10 w-10 rounded-lg object-cover border border-gray-200" />
+            ) : (
+              <div className="h-10 w-10 rounded-lg bg-brand-600 flex items-center justify-center text-white">
+                <Building2 className="h-5 w-5" />
+              </div>
+            )}
+            <div>
+              <p className="font-semibold text-gray-900">{activeCompany.name}</p>
+              {activeCompany.legal_name && activeCompany.legal_name !== activeCompany.name && (
+                <p className="text-xs text-gray-400">{activeCompany.legal_name}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              { icon: Hash,    label: 'TRN',     value: activeCompany.trn },
+              { icon: MapPin,  label: 'Address', value: activeCompany.formatted_address },
+              { icon: Phone,   label: 'Phone',   value: activeCompany.phone },
+              { icon: Mail,    label: 'Email',   value: activeCompany.email },
+              { icon: Globe,   label: 'Website', value: activeCompany.website },
+              { icon: Hash,    label: 'PEPPOL Endpoint', value: activeCompany.peppol_endpoint },
+            ].filter(r => r.value).map(({ icon: Icon, label, value }) => (
+              <div key={label} className="flex items-start gap-3">
+                <Icon className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-400 font-medium">{label}</p>
+                  <p className="text-sm text-gray-800 break-words">{String(value)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-xs text-gray-400">
+            Company details are managed by your administrator. Contact support to request changes.
+          </p>
+        </div>
+      )}
 
       {/* Change password */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
