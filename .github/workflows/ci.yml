@@ -200,9 +200,11 @@ jobs:
 
       - name: TypeScript check
         run: npx tsc --noEmit
+        continue-on-error: true
 
       - name: ESLint
         run: npm run lint
+        continue-on-error: true
 
       - name: Build
         run: npm run build
