@@ -50,15 +50,16 @@ const EMIRATE_CHOICES = [
   { value: 'fujairah', label: 'Fujairah' },
 ];
 
+// Ordered by how common each legal form is in the UAE — most popular first.
 const BUSINESS_TYPES = [
   { value: 'llc', label: 'Limited Liability Company (LLC)' },
   { value: 'sole', label: 'Sole Proprietorship' },
-  { value: 'partnership', label: 'Partnership' },
-  { value: 'branch', label: 'Branch of Foreign Company' },
   { value: 'freezone', label: 'Free Zone Company' },
+  { value: 'branch', label: 'Branch of Foreign Company' },
+  { value: 'partnership', label: 'Partnership' },
   { value: 'civil', label: 'Civil Company' },
-  { value: 'public', label: 'Public Joint Stock Company' },
-  { value: 'private', label: 'Private Joint Stock Company' },
+  { value: 'private', label: 'Private Joint Stock Company (PrJSC)' },
+  { value: 'public', label: 'Public Joint Stock Company (PJSC)' },
 ];
 
 const INDUSTRY_TYPES = [
@@ -528,8 +529,17 @@ function AcceptInviteContent() {
                       />
                     </Field>
                     <Field label="Trade License Number" error={errors.trade_license_number?.message}
-                      tooltip="Your trade license number as issued by the DED or relevant free zone authority.">
-                      <Input placeholder="DED-2024-12345" {...register('trade_license_number')} />
+                      tooltip="Trade license number from the DED or free zone authority. 3–30 characters — letters, numbers, hyphens or slashes only. E.g. DED-2024-12345 or CN-1234567.">
+                      <Input placeholder="DED-2024-12345" maxLength={30} error={errors.trade_license_number?.message}
+                        {...register('trade_license_number', {
+                          validate: (v) => {
+                            if (!v?.trim()) return true;
+                            const t = v.trim();
+                            if (!/^[A-Za-z0-9][A-Za-z0-9\-/ ]{2,29}$/.test(t))
+                              return 'Use 3–30 letters, numbers, hyphens or slashes only';
+                            return true;
+                          },
+                        })} />
                     </Field>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
