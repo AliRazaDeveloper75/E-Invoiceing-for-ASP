@@ -40,11 +40,13 @@ SML_ZONE_PRODUCTION = 'edelivery.tech.ec.europa.eu'
 # PEPPOL test/acceptance SML zone
 SML_ZONE_TEST       = 'acc.edelivery.tech.ec.europa.eu'
 
-# Document type identifier for PEPPOL BIS Billing 3.0 Invoice
+# Document type identifier for UAE PINT-AE Billing Invoice.
+# This is what the "Confirm ID" SMP lookup must query in the UAE network —
+# NOT the generic EU BIS 3.0 doctype.
 PEPPOL_INVOICE_DOCTYPE = (
     'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2'
     '::Invoice'
-    '##urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0'
+    '##urn:peppol:pint:billing-1@ae-1'
     '::2.1'
 )
 

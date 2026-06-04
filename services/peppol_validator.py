@@ -191,11 +191,17 @@ class PEPPOLSchematronValidator:
         'PINT-AE.sch',
     ]
 
-    def __init__(self, schema_dir: Optional[str] = None):
+    def __init__(self, schema_dir: Optional[str] = None, version: Optional[str] = None):
         if schema_dir is None:
             from django.conf import settings
             schema_dir = os.path.join(settings.PEPPOL_SCHEMA_DIR, 'sch')
+        from apps.common.constants import PINT_AE_VERSION
         self._schema_dir = Path(schema_dir)
+        # PINT-AE version routing: validate against the active spec version
+        # (1.0.3 until 7 Jun 2026, 1.0.4 from 8 Jun 2026). Version-specific
+        # Schematron lives in sch/<version>/, falling back to the flat sch/ dir.
+        self._version = version or PINT_AE_VERSION
+        self._version_dir = self._schema_dir / self._version
         self._xslt_cache: dict = {}
 
     def _compile_schematron(self, sch_file: str) -> Optional[etree.XSLT]:
@@ -203,12 +209,17 @@ class PEPPOLSchematronValidator:
         Compile a .sch file to an XSLT transform using the ISO Schematron
         skeleton stylesheets bundled with lxml.
 
-        Returns None if the file doesn't exist (graceful degradation).
+        Looks in the version-specific folder (sch/<version>/) first, then the
+        flat sch/ directory. Returns None if the file doesn't exist anywhere
+        (graceful degradation).
         """
         if sch_file in self._xslt_cache:
             return self._xslt_cache[sch_file]
 
-        sch_path = self._schema_dir / sch_file
+        # Prefer the version-pinned artifact, fall back to the flat directory.
+        sch_path = self._version_dir / sch_file
+        if not sch_path.exists():
+            sch_path = self._schema_dir / sch_file
         if not sch_path.exists():
             logger.debug('Schematron file not found (optional): %s', sch_path)
             return None

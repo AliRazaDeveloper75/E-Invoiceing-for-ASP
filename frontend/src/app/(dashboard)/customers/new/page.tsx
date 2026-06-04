@@ -14,7 +14,7 @@ import { useCountryForm } from '@/hooks/useCountryForm';
 import { ArrowLeft } from 'lucide-react';
 import { AxiosError } from 'axios';
 import {
-  emailValidators,
+  validateEmail,
   validateTRN,
   numericOnlyKeyDown,
   alphaOnlyKeyDown,
@@ -60,6 +60,8 @@ export default function NewCustomerPage() {
   const watchedCountry = watch('country');
   const isUAE = watchedCountry === 'AE';
   const needsTRN = isUAE && (customerType === 'b2b' || customerType === 'b2g');
+  // Non-UAE business customers must provide an international VAT/tax number.
+  const needsVAT = !isUAE && (customerType === 'b2b' || customerType === 'b2g');
 
   const onSubmit = async (data: CustomerForm) => {
     setServerError({});
@@ -163,18 +165,19 @@ export default function NewCustomerPage() {
               })}
             />
             <Input
-              label="VAT Number (international)"
-              tooltip="Tax identification number for non-UAE customers. Digits only. Leave blank if not applicable."
+              label={needsVAT ? 'VAT Number (international)' : 'VAT Number (international, optional)'}
+              required={needsVAT}
+              tooltip="Tax identification number for non-UAE customers. 5–20 digits. Required for international B2B/B2G customers."
               placeholder="123456789"
-              hint="For non-UAE customers — numbers only"
-              error={serverError.vat_number}
+              hint={needsVAT ? 'Required for non-UAE business customers' : 'For non-UAE customers — numbers only'}
+              error={errors.vat_number?.message || serverError.vat_number}
               inputMode="numeric"
               maxLength={20}
               onKeyDown={numericOnlyKeyDown}
               {...register('vat_number', {
                 validate: (v) => {
-                  if (!v?.trim()) return true;
-                  if (!/^\d+$/.test(v)) return 'VAT number must contain digits only';
+                  if (!v?.trim()) return needsVAT ? 'VAT number is required for international customers' : true;
+                  if (!/^\d{5,20}$/.test(v)) return 'VAT number must be 5–20 digits';
                   return true;
                 },
               })}
@@ -226,16 +229,13 @@ export default function NewCustomerPage() {
             <Input
               label="Email"
               type="email"
-              tooltip="Customer's billing or accounts email address. Used for invoice delivery. E.g. billing@customer.ae"
+              required
+              tooltip="Customer's billing or accounts email address. Required — used to deliver invoices. E.g. billing@customer.ae"
               placeholder="billing@customer.ae"
               error={errors.email?.message || serverError.email}
               {...register('email', {
-                validate: (v) => {
-                  if (!v?.trim()) return true;
-                  return emailValidators.validate.format(v) === true
-                    ? emailValidators.validate.noDisposable(v)
-                    : emailValidators.validate.format(v);
-                },
+                required: 'Email is required',
+                validate: (v) => validateEmail(v),
               })}
             />
             <Controller

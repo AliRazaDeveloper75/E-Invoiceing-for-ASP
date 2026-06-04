@@ -122,7 +122,7 @@ export function Sidebar() {
               value={activeCompany?.id ?? ''}
               onChange={(e) => {
                 if (e.target.value === '__add_new__') {
-                  router.push('/companies/new');
+                  router.push('/companies?new=1');
                 } else {
                   setActiveId(e.target.value);
                 }

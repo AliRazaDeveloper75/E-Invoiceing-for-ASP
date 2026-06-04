@@ -331,6 +331,30 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
 const inputCls = (err?: string) =>
   `w-full text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${err ? 'border-red-400' : 'border-gray-300'}`;
 
+// Flatten a DRF error-details object (which may nest arrays/objects, e.g. per-item
+// errors) into readable "field: message" lines — never renders [object Object].
+function flattenServerErrors(details: unknown, prefix = ''): string[] {
+  const out: string[] = [];
+  if (details == null) return out;
+  if (typeof details === 'string') { out.push(prefix ? `${prefix}: ${details}` : details); return out; }
+  if (Array.isArray(details)) {
+    details.forEach((item, i) => {
+      const p = prefix ? `${prefix}[${i + 1}]` : `#${i + 1}`;
+      out.push(...flattenServerErrors(item, p));
+    });
+    return out;
+  }
+  if (typeof details === 'object') {
+    Object.entries(details as Record<string, unknown>).forEach(([k, v]) => {
+      const label = k.replace(/_/g, ' ');
+      out.push(...flattenServerErrors(v, prefix ? `${prefix} · ${label}` : label));
+    });
+    return out;
+  }
+  out.push(prefix ? `${prefix}: ${String(details)}` : String(details));
+  return out;
+}
+
 const selectCls = 'w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500';
 
 // ─── Excel columns (order matters — matches sample template) ──────────────────
@@ -557,12 +581,17 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove }: {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Item / Service Name" faf hint="Short name for this product or service">
-          <input placeholder="e.g. IT Consulting, Office Chair…" className={inputCls()} {...register(`items.${idx}.item_name`)} />
+        <Field label="Item / Service Name" faf error={errors.items?.[idx]?.item_name?.message}
+          tooltip="Short name for this product or service. Max 120 characters.">
+          <input placeholder="e.g. IT Consulting, Office Chair…" maxLength={120}
+            className={inputCls(errors.items?.[idx]?.item_name?.message)}
+            {...register(`items.${idx}.item_name`, {
+              maxLength: { value: 120, message: 'Max 120 characters' },
+            })} />
         </Field>
         <Field label="Product / Service Reference" faf
           tooltip="Your internal product code or SKU for this line — e.g. SKU-001 or SVC-REF.">
-          <input placeholder="e.g. SKU-001 or SVC-REF" className={inputCls()} {...register(`items.${idx}.product_reference`)} />
+          <input placeholder="e.g. SKU-001 or SVC-REF" maxLength={50} className={inputCls()} {...register(`items.${idx}.product_reference`)} />
         </Field>
       </div>
 
@@ -590,7 +619,10 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove }: {
             })} />
         </Field>
         <Field label="Unit" tooltip="Unit of measure — e.g. pcs, hr, kg, yr.">
-          <input placeholder="pcs / hr / kg" className={inputCls()} {...register(`items.${idx}.unit`)} />
+          <input placeholder="pcs / hr / kg" maxLength={12} className={inputCls()}
+            {...register(`items.${idx}.unit`, {
+              pattern: { value: /^[A-Za-z0-9 ]*$/, message: 'Letters/numbers only' },
+            })} />
         </Field>
         <Field label="Unit Price (excl. VAT)" required
           tooltip="Price per unit excluding VAT. Cannot be negative."
@@ -1385,18 +1417,35 @@ export default function NewInvoicePage() {
                 <input disabled placeholder="Auto-generated on save"
                   className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-400 cursor-not-allowed" />
               </Field>
-              <Field label="Permit Number" faf>
-                <input placeholder="e.g. UAE-PERMIT-2024-XXXX" className={inputCls()} {...register('permit_number')} />
+              <Field label="Permit Number" faf error={errors.permit_number?.message}>
+                <input placeholder="e.g. UAE-PERMIT-2024-XXXX" maxLength={40}
+                  className={inputCls(errors.permit_number?.message)}
+                  {...register('permit_number', {
+                    pattern: { value: /^[A-Za-z0-9\-/ ]*$/, message: 'Letters, numbers, - or / only' },
+                  })} />
               </Field>
-              <Field label="Transaction ID" faf>
-                <input placeholder="e.g. TXN-2024-000001" className={inputCls()} {...register('transaction_id')} />
+              <Field label="Transaction ID" faf error={errors.transaction_id?.message}>
+                <input placeholder="e.g. TXN-2024-000001" maxLength={40}
+                  className={inputCls(errors.transaction_id?.message)}
+                  {...register('transaction_id', {
+                    pattern: { value: /^[A-Za-z0-9\-/ ]*$/, message: 'Letters, numbers, - or / only' },
+                  })} />
               </Field>
-              <Field label="Purchase Order Number">
-                <input placeholder="Buyer PO reference" className={inputCls()} {...register('purchase_order_number')} />
+              <Field label="Purchase Order Number" error={errors.purchase_order_number?.message}>
+                <input placeholder="Buyer PO reference" maxLength={40}
+                  className={inputCls(errors.purchase_order_number?.message)}
+                  {...register('purchase_order_number', {
+                    pattern: { value: /^[A-Za-z0-9\-/ ]*$/, message: 'Letters, numbers, - or / only' },
+                  })} />
               </Field>
               <div className="col-span-2">
-                <Field label="GL / Account ID" faf hint="General Ledger account ID — required for FTA Audit File (FAF)">
-                  <input placeholder="e.g. GL-4100 or AR-001" className={inputCls()} {...register('gl_account_id')} />
+                <Field label="GL / Account ID" faf error={errors.gl_account_id?.message}
+                  tooltip="General Ledger account ID — required for FTA Audit File (FAF).">
+                  <input placeholder="e.g. GL-4100 or AR-001" maxLength={40}
+                    className={inputCls(errors.gl_account_id?.message)}
+                    {...register('gl_account_id', {
+                      pattern: { value: /^[A-Za-z0-9\-/ ]*$/, message: 'Letters, numbers, - or / only' },
+                    })} />
                 </Field>
               </div>
             </div>
@@ -1506,8 +1555,8 @@ export default function NewInvoicePage() {
               <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-red-700">{serverError}</p>
-                {Object.entries(serverDet).map(([k, v]) => (
-                  <p key={k} className="text-xs text-red-600 mt-0.5"><span className="font-medium">{k}:</span> {Array.isArray(v) ? v.join(', ') : String(v)}</p>
+                {flattenServerErrors(serverDet).map((line, i) => (
+                  <p key={i} className="text-xs text-red-600 mt-0.5">{line}</p>
                 ))}
               </div>
             </div>

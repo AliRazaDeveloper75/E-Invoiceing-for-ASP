@@ -186,14 +186,30 @@ class LoginView(APIView):
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        user = authenticate(
-            request,
-            email=serializer.validated_data['email'],
-            password=serializer.validated_data['password'],
-        )
+        User = get_user_model()
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
+
+        # Distinguish "email not registered" from "wrong password" for clearer UX.
+        existing = User.objects.filter(email__iexact=email).first()
+        if existing is None:
+            return error_response(
+                'No account found with this email address.',
+                details={'code': 'EMAIL_NOT_FOUND'},
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+        if not existing.is_active:
+            return error_response(
+                'This account is inactive. Please contact your administrator.',
+                details={'code': 'ACCOUNT_INACTIVE'},
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        user = authenticate(request, email=email, password=password)
         if user is None:
             return error_response(
-                'No active account found with the given credentials.',
+                'Incorrect password. Please try again.',
+                details={'code': 'INVALID_PASSWORD'},
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
 

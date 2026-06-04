@@ -1,6 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+export const dynamic = 'force-dynamic';
+
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { useForm, Controller } from 'react-hook-form';
@@ -452,6 +455,17 @@ export default function CompaniesPage() {
   function openCreate() { setEditTarget(null); setPanelMode('create'); }
   function openEdit(c: Company) { setEditTarget(c); setPanelMode('edit'); }
   function closePanel() { setPanelMode(null); setEditTarget(null); }
+
+  // Open the create panel automatically when arriving via "+ Add new company" (?new=1)
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setPanelMode('create');
+      setEditTarget(null);
+      router.replace('/companies'); // clear the query param
+    }
+  }, [searchParams, router]);
 
   function toggleSelect(id: string) {
     setSelected(prev => {

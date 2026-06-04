@@ -65,8 +65,10 @@ function generateInvoiceNumber(): string {
 }
 
 async function fetchCustomers(url: string) {
-  const r = await api.get<{ results: Customer[] }>(url);
-  return r.data.results;
+  const r = await api.get(url);
+  const d = r.data;
+  // Tolerate the various API envelope shapes used across the app.
+  return (d?.results ?? d?.data?.results ?? d?.data ?? []) as Customer[];
 }
 
 const INV_TYPE_LABEL: Record<string, string> = {
@@ -440,7 +442,7 @@ function LineItemsEditor({ items, currency, onChange }: {
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">
                     Item Name <span className="text-red-500">*</span>
                   </label>
-                  <input type="text" value={item.name}
+                  <input type="text" value={item.name} maxLength={120}
                     onChange={(e) => updateItem(item.id, 'name', e.target.value)}
                     placeholder="e.g. Consulting Services"
                     className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm
@@ -1052,7 +1054,9 @@ export default function PintCreatePage() {
     .map((id) => PINT_FIELDS.find((f) => f.id === id))
     .filter(Boolean) as PintField[];
   const visibleFields   = showOptional ? stepFields : stepFields.filter((f) => f.mandatory !== 'Optional');
-  const mandatoryFields = stepFields.filter((f) => f.mandatory === 'Mandatory');
+  // Count every non-optional field as "required" so the progress bar and the
+  // X / Y counter match the fields actually shown (Mandatory + Mandatory-If Applicable).
+  const mandatoryFields = stepFields.filter((f) => f.mandatory !== 'Optional');
   const filledMandatory = mandatoryFields.filter((f) => values[f.id]?.trim()).length;
   const stepPct         = mandatoryFields.length > 0
     ? Math.round((filledMandatory / mandatoryFields.length) * 100) : 100;
@@ -1068,13 +1072,17 @@ export default function PintCreatePage() {
       }
       const errs: Record<string, string> = {};
       lineItems.forEach((item, idx) => {
-        if (!item.name.trim())      errs[`item_${idx}_name`]  = `Item ${idx + 1}: name is required`;
-        if (!item.unitPrice.trim()) errs[`item_${idx}_price`] = `Item ${idx + 1}: unit price is required`;
+        if (!item.name.trim())            errs[`item_${idx}_name`]  = `Item ${idx + 1}: name is required`;
+        else if (item.name.length > 120)  errs[`item_${idx}_name`]  = `Item ${idx + 1}: name too long (max 120)`;
+        if (!item.unitPrice.trim())       errs[`item_${idx}_price`] = `Item ${idx + 1}: unit price is required`;
+        else if (parseFloat(item.unitPrice) < 0) errs[`item_${idx}_price`] = `Item ${idx + 1}: unit price cannot be negative`;
+        if (!(parseFloat(item.quantity) > 0))     errs[`item_${idx}_qty`]   = `Item ${idx + 1}: quantity must be greater than 0`;
+        if (parseFloat(item.discount || '0') < 0) errs[`item_${idx}_disc`]  = `Item ${idx + 1}: discount cannot be negative`;
       });
       setErrors(errs);
       return Object.keys(errs).length === 0;
     }
-    if (step.id === 'payment' || step.id === 'submit') return true;
+    if (step.id === 'submit') return true;
     const errs: Record<string, string> = {};
     mandatoryFields.forEach((f) => {
       if (!values[f.id]?.trim()) errs[f.id] = `${f.businessTerm} is required`;
@@ -1150,9 +1158,26 @@ export default function PintCreatePage() {
       await api.post('/invoices/', payload);
       router.push('/invoices');
     } catch (err: unknown) {
-      const apiErr = err as { response?: { data?: { message?: string; details?: unknown } } };
-      const msg = apiErr?.response?.data?.message
-        ?? (err instanceof Error ? err.message : 'Submission failed. Please try again.');
+      // Backend returns { error: { message, details } }. Surface the real reason.
+      const data = (err as { response?: { data?: { error?: { message?: string; details?: unknown }; message?: string; detail?: string } } })
+        ?.response?.data;
+      const apiError = data?.error;
+      const flatten = (d: unknown, prefix = ''): string[] => {
+        if (d == null) return [];
+        if (typeof d === 'string') return [prefix ? `${prefix}: ${d}` : d];
+        if (Array.isArray(d)) return d.flatMap((x, i) => flatten(x, prefix ? `${prefix}[${i + 1}]` : `#${i + 1}`));
+        if (typeof d === 'object')
+          return Object.entries(d as Record<string, unknown>)
+            .flatMap(([k, v]) => flatten(v, prefix ? `${prefix} · ${k.replace(/_/g, ' ')}` : k.replace(/_/g, ' ')));
+        return [prefix ? `${prefix}: ${String(d)}` : String(d)];
+      };
+      const detailLines = flatten(apiError?.details);
+      const msg =
+        (detailLines.length ? detailLines.join('  •  ') : '') ||
+        apiError?.message ||
+        data?.message ||
+        data?.detail ||
+        (err instanceof Error ? err.message : 'Submission failed. Please try again.');
       setSubmitError(msg);
     } finally {
       setIsSubmitting(false);

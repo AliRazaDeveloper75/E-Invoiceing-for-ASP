@@ -2,6 +2,7 @@
 System-wide constants for UAE E-Invoicing platform.
 Based on: UAE MoF PEPPOL e-invoicing framework (Phase 1 go-live Q2 2026).
 """
+import os
 from decimal import Decimal
 
 # ─── UAE VAT Rates ────────────────────────────────────────────────────────────
@@ -121,8 +122,23 @@ DEFAULT_CURRENCY = CURRENCY_AED
 
 # ─── PEPPOL / XML ─────────────────────────────────────────────────────────────
 PEPPOL_UBL_VERSION = '2.1'
-PEPPOL_CUSTOMIZATION_ID = 'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0'
+
+# UAE PINT-AE CustomizationIDs (NOT the generic EU BIS 3.0 id).
+# The CustomizationID is identical across PINT-AE 1.0.3 and 1.0.4 — the version
+# difference lives in the Schematron/code-list validation artifacts, not here.
+PEPPOL_CUSTOMIZATION_ID          = 'urn:peppol:pint:billing-1@ae-1'      # standard billing
+PEPPOL_CUSTOMIZATION_ID_SELFBILL = 'urn:peppol:pint:selfbilling-1@ae-1'  # self-billing (type 389)
+
+# Legacy EU BIS 3.0 id — kept only for reference / fallback if ever needed.
+PEPPOL_CUSTOMIZATION_ID_EU_BIS = 'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0'
+
 PEPPOL_PROFILE_ID = 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0'
+
+# Active PINT-AE spec version. 1.0.3 is mandatory until 7 Jun 2026; 1.0.4 from
+# 8 Jun 2026. Override with env PINT_AE_VERSION to flip without a code change.
+PINT_AE_VERSION = os.getenv('PINT_AE_VERSION', '1.0.3')
+PINT_AE_SUPPORTED_VERSIONS = ('1.0.3', '1.0.4')
+
 UAE_COUNTRY_CODE = 'AE'
 
 # ─── FTA Reporting Status (Corner 5) ────────────────────────────────────────

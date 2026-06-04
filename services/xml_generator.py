@@ -19,6 +19,7 @@ from lxml import etree
 from apps.common.constants import (
     PEPPOL_UBL_VERSION,
     PEPPOL_CUSTOMIZATION_ID,
+    PEPPOL_CUSTOMIZATION_ID_SELFBILL,
     PEPPOL_PROFILE_ID,
     UAE_COUNTRY_CODE,
     PROFILE_EXECUTION_IDS,
@@ -154,7 +155,12 @@ class UAEInvoiceXMLGenerator:
             return el
 
         cbc('UBLVersionID', PEPPOL_UBL_VERSION)
-        cbc('CustomizationID', PEPPOL_CUSTOMIZATION_ID)
+        # UAE PINT-AE CustomizationID — self-billing uses a distinct profile.
+        is_self_billed = getattr(invoice, 'is_self_billed', False)
+        customization_id = (
+            PEPPOL_CUSTOMIZATION_ID_SELFBILL if is_self_billed else PEPPOL_CUSTOMIZATION_ID
+        )
+        cbc('CustomizationID', customization_id)
         cbc('ProfileID', PEPPOL_PROFILE_ID)
 
         # ProfileExecutionID identifies the business process variant
