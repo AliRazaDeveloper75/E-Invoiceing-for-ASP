@@ -101,7 +101,13 @@ export default function NewCustomerPage() {
         <p className="text-gray-500 text-sm mt-1">Add a customer to issue invoices to</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form
+        noValidate
+        onSubmit={handleSubmit(onSubmit, () => {
+          setServerError({ general: 'Please fill in all required (*) fields before creating the customer.' });
+        })}
+        className="space-y-5"
+      >
 
         {/* Identity */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm space-y-4">
@@ -167,17 +173,18 @@ export default function NewCustomerPage() {
             <Input
               label={needsVAT ? 'VAT Number (international)' : 'VAT Number (international, optional)'}
               required={needsVAT}
-              tooltip="Tax identification number for non-UAE customers. 5–20 digits. Required for international B2B/B2G customers."
-              placeholder="123456789"
-              hint={needsVAT ? 'Required for non-UAE business customers' : 'For non-UAE customers — numbers only'}
+              tooltip="Tax identification number for non-UAE customers. Exactly 15 digits — same format as a TRN. Required for international B2B/B2G customers."
+              placeholder="123456789012345"
+              hint={needsVAT ? 'Required for non-UAE business customers — 15 digits' : '15-digit international VAT/tax number'}
               error={errors.vat_number?.message || serverError.vat_number}
               inputMode="numeric"
-              maxLength={20}
+              maxLength={15}
               onKeyDown={numericOnlyKeyDown}
               {...register('vat_number', {
                 validate: (v) => {
                   if (!v?.trim()) return needsVAT ? 'VAT number is required for international customers' : true;
-                  if (!/^\d{5,20}$/.test(v)) return 'VAT number must be 5–20 digits';
+                  if (!/^\d+$/.test(v)) return 'VAT number must contain digits only — no letters or symbols';
+                  if (v.length !== 15) return `VAT number must be exactly 15 digits (you entered ${v.length})`;
                   return true;
                 },
               })}
@@ -204,24 +211,23 @@ export default function NewCustomerPage() {
             />
             <CitySelect
               label="City"
+              required
               tooltip="Select the customer's city. Options update based on the selected country."
               countryCode={watchedCountry}
-              error={serverError.city}
-              {...register('city')}
+              error={errors.city?.message || serverError.city}
+              {...register('city', { required: 'City is required' })}
             />
           </div>
 
           <Input
             label="Street Address"
+            required
             tooltip="Full street address including building number, street name, and area. E.g. 'Office 101, Business Bay Tower, Business Bay'"
             placeholder="Office 101, Business Bay Tower, Business Bay"
             error={errors.street_address?.message || serverError.street_address}
             {...register('street_address', {
-              validate: (v) => {
-                if (!v?.trim()) return true;
-                if (v.trim().length < 5) return 'Please enter a more complete street address';
-                return true;
-              },
+              required: 'Street address is required',
+              minLength: { value: 5, message: 'Please enter a more complete street address' },
             })}
           />
 

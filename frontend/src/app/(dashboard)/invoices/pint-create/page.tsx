@@ -178,6 +178,14 @@ function FieldRenderer({ field, value, onChange, error, isActive, onFocus, onBlu
     isActive ? 'border-brand-100 bg-brand-50/50 shadow-sm' : 'border-transparent',
   ].join(' ');
 
+  // Character limit per field — prevents the huge-junk input problem.
+  const term = field.businessTerm.toLowerCase();
+  const maxLen =
+    field.inputType === 'textarea'                ? 1000 :
+    /vat|identifier|trn|scheme|code/.test(term)   ? 30   :
+    /name|address|description/.test(term)         ? 200  :
+    140;
+
   return (
     <div className={wrapCls}>
       <div className="flex items-start justify-between gap-2 mb-2.5">
@@ -207,7 +215,7 @@ function FieldRenderer({ field, value, onChange, error, isActive, onFocus, onBlu
       ) : field.inputType === 'textarea' ? (
         <textarea value={value} onChange={(e) => onChange(field.id, e.target.value)}
           onFocus={() => onFocus(field.id)} onBlur={onBlur}
-          placeholder={field.placeholder} rows={3}
+          placeholder={field.placeholder} rows={3} maxLength={maxLen}
           className={inputCls + ' resize-none'} />
       ) : (
         <input type={field.inputType} value={value}
@@ -215,6 +223,8 @@ function FieldRenderer({ field, value, onChange, error, isActive, onFocus, onBlu
           onFocus={() => onFocus(field.id)} onBlur={onBlur}
           placeholder={field.placeholder}
           step={field.inputType === 'number' ? 'any' : undefined}
+          min={field.inputType === 'number' ? '0' : undefined}
+          maxLength={field.inputType === 'number' ? undefined : maxLen}
           className={inputCls} />
       )}
 

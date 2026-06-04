@@ -53,6 +53,43 @@ function Breadcrumbs() {
 
 // ─── User dropdown ────────────────────────────────────────────────────────────
 
+function NotificationBell() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+        aria-label="Notifications"
+      >
+        <Bell className="h-[18px] w-[18px]" />
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-72 rounded-xl border border-gray-200 bg-white shadow-lg z-50">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <p className="text-sm font-semibold text-gray-900">Notifications</p>
+          </div>
+          <div className="px-4 py-8 text-center">
+            <Bell className="h-6 w-6 mx-auto text-gray-300 mb-2" />
+            <p className="text-sm text-gray-500">You&apos;re all caught up</p>
+            <p className="text-xs text-gray-400 mt-0.5">No new notifications</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function UserMenu() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
@@ -172,10 +209,7 @@ export function Header() {
         )}
 
         {/* Notifications */}
-        <button className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors">
-          <Bell className="h-4.5 w-4.5 h-[18px] w-[18px]" />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500" />
-        </button>
+        <NotificationBell />
 
         {/* Divider */}
         <div className="h-5 w-px bg-gray-200" />

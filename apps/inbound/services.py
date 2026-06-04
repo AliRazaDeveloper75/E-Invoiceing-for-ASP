@@ -6,6 +6,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 
 from .models import (
+    Supplier,
     InboundInvoice,
     InboundObservation,
     InboundAuditLog,
@@ -61,6 +62,103 @@ class InboundInvoiceService:
         InboundInvoiceItem.objects.bulk_create(items)
 
         cls._log(invoice, '', INBOUND_STATUS_RECEIVED, 'Invoice received', actor=None)
+        return invoice
+
+    # ── PEPPOL AS4 ingestion (Corner 3) ───────────────────────────────────────
+
+    @classmethod
+    def ingest_as4_message(cls, *, message_id: str, sender_id: str, receiver_id: str,
+                           payload_xml: bytes, signature_valid: bool):
+        """
+        Persist an invoice received over the PEPPOL AS4 network (Corner 3).
+
+        Defensive by design: it parses what it can from the UBL payload and falls
+        back to safe defaults so a received message is NEVER lost — the raw XML is
+        always stored for audit/retention even if parsing is imperfect.
+        """
+        from datetime import date
+        from decimal import Decimal
+        from lxml import etree
+        from apps.companies.models import Company
+
+        raw_text = payload_xml.decode('utf-8', 'ignore') if payload_xml else ''
+
+        def x(root, local: str) -> str:
+            """Namespace-agnostic first-match text by local element name."""
+            found = root.xpath(f"//*[local-name()='{local}']")
+            return found[0].text.strip() if found and found[0].text else ''
+
+        supplier_name = ''
+        supplier_trn  = ''
+        receiver_trn  = ''
+        inv_number    = message_id
+        issue_date    = date.today()
+        currency      = 'AED'
+        subtotal = total_vat = total_amount = Decimal('0.00')
+
+        try:
+            root = etree.fromstring(payload_xml)
+            inv_number    = x(root, 'ID') or message_id
+            supplier_name = x(root, 'RegistrationName') or x(root, 'Name') or sender_id
+            # CompanyID appears for both parties; first is usually the supplier TRN
+            company_ids = root.xpath("//*[local-name()='CompanyID']")
+            if company_ids:
+                supplier_trn = (company_ids[0].text or '').strip()
+                if len(company_ids) > 1:
+                    receiver_trn = (company_ids[1].text or '').strip()
+            currency = x(root, 'DocumentCurrencyCode') or 'AED'
+            issd = x(root, 'IssueDate')
+            if issd:
+                try: issue_date = date.fromisoformat(issd)
+                except ValueError: pass
+            try: total_amount = Decimal(x(root, 'TaxInclusiveAmount') or '0')
+            except Exception: pass
+            try: subtotal = Decimal(x(root, 'TaxExclusiveAmount') or '0')
+            except Exception: pass
+            try: total_vat = Decimal(x(root, 'TaxAmount') or '0')
+            except Exception: pass
+        except Exception as exc:
+            logger.warning('AS4 ingest: UBL parse incomplete for %s: %s', message_id, exc)
+
+        # Resolve receiving company by the receiver participant TRN; fall back to first active.
+        receiver_trn = receiver_trn or (receiver_id.split(':')[-1] if ':' in receiver_id else receiver_id)
+        receiving_company = (
+            Company.objects.filter(trn=receiver_trn).first()
+            or Company.objects.filter(is_active=True).first()
+        )
+        if receiving_company is None:
+            logger.error('AS4 ingest: no receiving company found for %s — message logged only', message_id)
+            return None
+
+        # Find or create the sending supplier under that company.
+        supplier_trn = supplier_trn or (sender_id.split(':')[-1] if ':' in sender_id else sender_id)
+        supplier = Supplier.objects.filter(trn=supplier_trn, receiving_company=receiving_company).first()
+        if supplier is None:
+            supplier = Supplier.objects.create(
+                name=supplier_name or f'PEPPOL Sender {supplier_trn}',
+                trn=supplier_trn or '000000000000000',
+                email=f'peppol+{(supplier_trn or message_id)[:30]}@inbound.e-numerak.com',
+                receiving_company=receiving_company,
+            )
+
+        invoice = InboundInvoice.objects.create(
+            supplier=supplier,
+            receiving_company=receiving_company,
+            channel='as4',
+            supplier_invoice_number=inv_number[:100],
+            invoice_type='tax_invoice',
+            transaction_type='b2b',
+            issue_date=issue_date,
+            currency=currency[:3] or 'AED',
+            subtotal=subtotal,
+            total_vat=total_vat,
+            total_amount=total_amount,
+            raw_xml=raw_text,
+            notes=f'Received via PEPPOL AS4. MessageId={message_id}. '
+                  f'Signature {"verified" if signature_valid else "NOT verified"}.',
+        )
+        cls._log(invoice, '', INBOUND_STATUS_RECEIVED, 'Invoice received via PEPPOL AS4', actor=None)
+        logger.info('AS4 ingest: stored inbound invoice %s (msg=%s)', invoice.id, message_id)
         return invoice
 
     # ── Validation ────────────────────────────────────────────────────────────

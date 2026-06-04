@@ -48,6 +48,63 @@ from .services import InboundInvoiceService
 logger = logging.getLogger(__name__)
 
 
+# ─── PEPPOL AS4 Inbound (Corner 3) ────────────────────────────────────────────
+
+class AS4ReceiveView(APIView):
+    """
+    POST /api/v1/inbound/as4/   — PEPPOL AS4/ebMS3 receiving endpoint (Corner 3).
+
+    Public, machine-to-machine endpoint. Other Access Points POST signed AS4
+    (MTOM/SOAP) messages here. We:
+      1. Parse the MTOM body → SOAP + payload
+      2. Verify the WS-Security signature
+      3. Extract & persist the inbound UBL invoice
+      4. Return a signed AS4 Receipt (synchronous ack)
+
+    Authentication is via the message signature / mutual-TLS at the proxy — NOT JWT.
+    """
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    parser_classes = []   # do not parse — we need the raw multipart body
+
+    def post(self, request):
+        from django.http import HttpResponse
+        from services.as4.receiver import AS4Receiver
+
+        content_type = request.META.get('CONTENT_TYPE', '')
+        raw_body = request.body or b''
+
+        result = AS4Receiver().receive(content_type, raw_body)
+
+        if not result.success:
+            logger.warning('AS4 inbound rejected: %s (code=%s)', result.errors, result.error_code)
+            # ebMS error — respond 400 with a short diagnostic
+            return HttpResponse(
+                f'<error code="{result.error_code}">{"; ".join(result.errors)}</error>',
+                status=status.HTTP_400_BAD_REQUEST,
+                content_type='application/xml',
+            )
+
+        # Persist the received invoice (best-effort — never block the AS4 ack)
+        try:
+            InboundInvoiceService.ingest_as4_message(
+                message_id=result.message_id,
+                sender_id=result.sender_id,
+                receiver_id=result.receiver_id,
+                payload_xml=result.payload_xml,
+                signature_valid=result.signature_valid,
+            )
+        except Exception as exc:
+            logger.exception('AS4 inbound: persistence failed for %s: %s', result.message_id, exc)
+
+        logger.info('AS4 inbound accepted: msg=%s sender=%s', result.message_id, result.sender_id)
+        return HttpResponse(
+            result.receipt_xml or b'<ack/>',
+            status=status.HTTP_200_OK,
+            content_type='application/soap+xml',
+        )
+
+
 # ─── Supplier Auth Mixin ──────────────────────────────────────────────────────
 
 class SupplierAPIKeyAuthentication:

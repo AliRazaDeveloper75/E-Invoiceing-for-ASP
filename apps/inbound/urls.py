@@ -2,6 +2,7 @@ app_name = 'inbound'
 
 from django.urls import path
 from .views import (
+    AS4ReceiveView,
     InboundSubmitView,
     InboundInvoiceListView,
     InboundInvoiceDetailView,
@@ -16,6 +17,9 @@ from .views import (
 )
 
 urlpatterns = [
+    # ── PEPPOL AS4 receiving endpoint (Corner 3) — public, machine-to-machine ──
+    path('as4/',                AS4ReceiveView.as_view(),                name='inbound-as4-receive'),
+
     # Supplier-facing submission
     path('submit/',             InboundSubmitView.as_view(),             name='inbound-submit'),
 

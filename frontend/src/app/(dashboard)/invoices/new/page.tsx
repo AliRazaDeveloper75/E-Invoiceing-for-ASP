@@ -1325,18 +1325,27 @@ export default function NewInvoicePage() {
                   <option value="58">58 — SEPA Credit Transfer</option>
                 </select>
               </Field>
-              <Field label="Accounts Receivable / Payable" faf>
-                <select className={selectCls} {...register('accounts_type')}>
-                  <option value="">— Not specified —</option>
+              <Field label="Accounts Receivable / Payable" faf required
+                error={errors.accounts_type?.message}>
+                <select className={selectCls} {...register('accounts_type', { required: 'Required for FAF' })}>
+                  <option value="">— Select —</option>
                   <option value="receivable">Accounts Receivable (AR)</option>
                   <option value="payable">Accounts Payable (AP)</option>
                 </select>
               </Field>
-              <Field label="Supplier Location" faf hint="FAF: Locations of suppliers">
-                <input placeholder="e.g. Dubai, UAE" className={inputCls()} {...register('supplier_location')} />
+              <Field label="Supplier Location" faf required
+                tooltip="FAF: Location of the supplier. E.g. Dubai, UAE"
+                error={errors.supplier_location?.message}>
+                <input placeholder="e.g. Dubai, UAE" maxLength={120}
+                  className={inputCls(errors.supplier_location?.message)}
+                  {...register('supplier_location', { required: 'Supplier location is required' })} />
               </Field>
-              <Field label="Customer Location" faf hint="FAF: Locations of customers">
-                <input placeholder="e.g. Riyadh, Saudi Arabia" className={inputCls()} {...register('customer_location')} />
+              <Field label="Customer Location" faf required
+                tooltip="FAF: Location of the customer. E.g. Riyadh, Saudi Arabia"
+                error={errors.customer_location?.message}>
+                <input placeholder="e.g. Riyadh, Saudi Arabia" maxLength={120}
+                  className={inputCls(errors.customer_location?.message)}
+                  {...register('customer_location', { required: 'Customer location is required' })} />
               </Field>
             </div>
           </Section>
@@ -1439,11 +1448,12 @@ export default function NewInvoicePage() {
                   })} />
               </Field>
               <div className="col-span-2">
-                <Field label="GL / Account ID" faf error={errors.gl_account_id?.message}
+                <Field label="GL / Account ID" faf required error={errors.gl_account_id?.message}
                   tooltip="General Ledger account ID — required for FTA Audit File (FAF).">
                   <input placeholder="e.g. GL-4100 or AR-001" maxLength={40}
                     className={inputCls(errors.gl_account_id?.message)}
                     {...register('gl_account_id', {
+                      required: 'GL / Account ID is required for FAF',
                       pattern: { value: /^[A-Za-z0-9\-/ ]*$/, message: 'Letters, numbers, - or / only' },
                     })} />
                 </Field>
