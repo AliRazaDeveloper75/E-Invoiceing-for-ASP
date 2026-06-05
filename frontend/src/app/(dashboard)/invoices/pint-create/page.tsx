@@ -178,13 +178,23 @@ function FieldRenderer({ field, value, onChange, error, isActive, onFocus, onBlu
     isActive ? 'border-brand-100 bg-brand-50/50 shadow-sm' : 'border-transparent',
   ].join(' ');
 
+  // VAT identifiers (seller IBT-031, buyer IBT-048) — exactly 15 digits, digits only.
+  const isVatId = field.id === 'IBT-031' || field.id === 'IBT-048';
+  // Trading names (seller IBT-028, buyer IBT-045) — limited length.
+  const isTradingName = field.id === 'IBT-028' || field.id === 'IBT-045';
+
   // Character limit per field — prevents the huge-junk input problem.
   const term = field.businessTerm.toLowerCase();
   const maxLen =
+    isVatId                                       ? 15   :
+    isTradingName                                 ? 100  :
     field.inputType === 'textarea'                ? 1000 :
     /vat|identifier|trn|scheme|code/.test(term)   ? 30   :
     /name|address|description/.test(term)         ? 200  :
     140;
+
+  // Invoice number is system-generated — read-only, view only.
+  const isReadOnly = field.id === 'IBT-001';
 
   return (
     <div className={wrapCls}>
@@ -217,6 +227,9 @@ function FieldRenderer({ field, value, onChange, error, isActive, onFocus, onBlu
           onFocus={() => onFocus(field.id)} onBlur={onBlur}
           placeholder={field.placeholder} rows={3} maxLength={maxLen}
           className={inputCls + ' resize-none'} />
+      ) : isReadOnly ? (
+        <input type="text" value={value} readOnly tabIndex={-1}
+          className={inputCls + ' bg-gray-50 text-gray-500 cursor-not-allowed font-mono'} />
       ) : (
         <input type={field.inputType} value={value}
           onChange={(e) => onChange(field.id, e.target.value)}

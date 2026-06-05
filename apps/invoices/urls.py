@@ -21,10 +21,20 @@ from .views import (
 )
 from apps.payments.views import SupplierPaymentListView
 from .workflow_views import WorkflowEvaluateView
+from .product_views import ProductListCreateView, ProductDetailView
 
 app_name = 'invoices'
 
 urlpatterns = [
+    # ── Product catalog ───────────────────────────────────────────────────────
+    # Must be declared before <uuid:invoice_id>/ to avoid URL collision
+    path('products/',
+         ProductListCreateView.as_view(),
+         name='product-list-create'),
+    path('products/<uuid:pk>/',
+         ProductDetailView.as_view(),
+         name='product-detail'),
+
     # ── Dashboard ─────────────────────────────────────────────────────────────
     # Must be declared before <uuid:invoice_id>/ to avoid URL collision
     path('dashboard/',

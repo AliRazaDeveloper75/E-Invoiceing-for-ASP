@@ -228,6 +228,36 @@ async function customerFetcher(url: string) {
   return r.data.results ?? [];
 }
 
+// ─── Product catalog ──────────────────────────────────────────────────────────
+
+interface CatalogProduct {
+  id: string;
+  name: string;
+  description: string;
+  unit_price: string;
+  vat_rate_type: string;
+  unit: string;
+  scope: 'global' | 'company';
+}
+
+async function productFetcher(url: string) {
+  const r = await api.get<{ success: boolean; data: CatalogProduct[] }>(url);
+  return r.data.data ?? [];
+}
+
+// Preview invoice number shown in the form/preview. The final number is assigned
+// by the backend sequence on save; this is a human-friendly draft reference.
+function generateInvoiceNumber(): string {
+  const now  = new Date();
+  const dd   = String(now.getDate()).padStart(2, '0');
+  const mm   = String(now.getMonth() + 1).padStart(2, '0');
+  const yyyy = String(now.getFullYear());
+  const key  = `inv-seq-${dd}${mm}${yyyy}`;
+  const seq  = parseInt(localStorage.getItem(key) ?? '0', 10) + 1;
+  localStorage.setItem(key, String(seq));
+  return `INV-${dd}${mm}${yyyy}-${String(seq).padStart(3, '0')}`;
+}
+
 // ─── Type card ────────────────────────────────────────────────────────────────
 
 function TypeCard({ card, selected, onSelect }: { card: CardType; selected: boolean; onSelect: () => void }) {
@@ -563,12 +593,24 @@ function ExcelUploadButton({
 
 // ─── Line item row ────────────────────────────────────────────────────────────
 
-function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove }: {
+function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, products, setValue }: {
   idx: number;
   register: ReturnType<typeof useForm<InvoiceForm>>['register'];
   errors: ReturnType<typeof useForm<InvoiceForm>>['formState']['errors'];
   vatLocked: boolean; onRemove: () => void; canRemove: boolean;
+  products: CatalogProduct[];
+  setValue: ReturnType<typeof useForm<InvoiceForm>>['setValue'];
 }) {
+  function applyProduct(id: string) {
+    const p = products.find((x) => x.id === id);
+    if (!p) return;
+    setValue(`items.${idx}.item_name`, p.name, { shouldValidate: true });
+    setValue(`items.${idx}.description`, p.description || p.name, { shouldValidate: true });
+    setValue(`items.${idx}.unit_price`, p.unit_price, { shouldValidate: true });
+    setValue(`items.${idx}.unit`, p.unit || '', { shouldValidate: true });
+    if (!vatLocked) setValue(`items.${idx}.vat_rate_type`, p.vat_rate_type || 'standard', { shouldValidate: true });
+  }
+
   return (
     <div className="rounded-lg border border-gray-200 bg-gray-50/40 p-4 space-y-3">
       <div className="flex items-center justify-between">
@@ -579,6 +621,25 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove }: {
           </button>
         )}
       </div>
+
+      {/* Pick from saved catalog — auto-fills the fields below */}
+      {products.length > 0 && (
+        <div>
+          <label className="text-xs font-medium text-gray-500">Pick from catalog (optional)</label>
+          <select
+            defaultValue=""
+            onChange={(e) => { applyProduct(e.target.value); e.target.value = ''; }}
+            className={selectCls + ' mt-1'}
+          >
+            <option value="">— Select a saved product to auto-fill —</option>
+            {products.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}{p.unit_price ? ` — ${p.unit_price}` : ''}{p.scope === 'global' ? ' (global)' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Item / Service Name" faf error={errors.items?.[idx]?.item_name?.message}
@@ -779,9 +840,10 @@ interface PreviewProps {
   currency: string;
   discount: string;
   items: LineItem[];
+  invoiceNo: string;
 }
 
-function InvoicePreview({ card, companyName, customerName, issueDate, dueDate, currency, discount, items }: PreviewProps) {
+function InvoicePreview({ card, companyName, customerName, issueDate, dueDate, currency, discount, items, invoiceNo }: PreviewProps) {
   const cur  = currency || 'AED';
   const disc = parseFloat(discount) || 0;
 
@@ -867,8 +929,8 @@ function InvoicePreview({ card, companyName, customerName, issueDate, dueDate, c
         <div className="mt-4 relative z-10 flex items-end justify-between">
           <div>
             <p className="text-white/40 text-[9px] uppercase tracking-widest">Invoice Number</p>
-            <p className="text-white/80 font-mono font-semibold text-xs mt-0.5">
-              DRAFT — Auto-generated
+            <p className="text-white/90 font-mono font-semibold text-xs mt-0.5">
+              {invoiceNo}
             </p>
           </div>
           <div className="flex items-center gap-1.5">
@@ -1032,10 +1094,16 @@ export default function NewInvoicePage() {
   const [serverError, setServerError] = useState('');
   const [serverDet, setServerDet]     = useState<Record<string, string[]>>({});
   const [submitted, setSubmitted]     = useState(false);
+  const [invoiceNo]                   = useState(generateInvoiceNumber);
 
   const { data: customers = [] } = useSWR<Customer[]>(
     activeId ? `/customers/?company_id=${activeId}&page_size=200` : null,
     customerFetcher,
+  );
+
+  const { data: products = [] } = useSWR<CatalogProduct[]>(
+    activeId ? `/invoices/products/?company_id=${activeId}` : '/invoices/products/',
+    productFetcher,
   );
 
   const today = new Date().toISOString().slice(0, 10);
@@ -1054,18 +1122,20 @@ export default function NewInvoicePage() {
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
 
-  // Auto-fill supplier location from company data when form loads
+  // Supplier location derived from the active company's profile address.
+  const supplierLoc =
+    activeCompany?.formatted_address?.trim() ||
+    [activeCompany?.city, activeCompany?.emirate, activeCompany?.country]
+      .filter(Boolean).join(', ') || '';
+
+  // Auto-fill supplier location from company data when form loads / company changes.
   useEffect(() => {
-    if (!activeCompany) return;
+    if (!supplierLoc) return;
     const current = watch('supplier_location');
     if (current) return; // user already typed something — don't overwrite
-    const loc =
-      activeCompany.formatted_address?.trim() ||
-      [activeCompany.city, activeCompany.emirate, activeCompany.country]
-        .filter(Boolean).join(', ');
-    if (loc) setValue('supplier_location', loc);
+    setValue('supplier_location', supplierLoc);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCompany]);
+  }, [supplierLoc]);
 
   // Watch for preview
   const watchedItems     = watch('items');
@@ -1145,6 +1215,7 @@ export default function NewInvoicePage() {
       transaction_type: 'b2b', payment_means_code: '30', issue_date: today,
       currency: 'AED', exchange_rate: '1.000000', discount_amount: '0.00',
       is_reverse_charge: !!card.isReverseCharge, accounts_type: '', import_subtype: '',
+      supplier_location: supplierLoc,   // keep auto-filled from company profile
       items: [{ item_name: '', description: '', product_reference: '', quantity: '1', unit: '',
                 unit_price: '', vat_rate_type: card.vatRate, tax_code: '',
                 debit_amount: '', credit_amount: '' }],
@@ -1422,9 +1493,9 @@ export default function NewInvoicePage() {
               </div>
             )}
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Invoice Number" hint="Auto-generated on save">
-                <input disabled placeholder="Auto-generated on save"
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-400 cursor-not-allowed" />
+              <Field label="Invoice Number" hint="System-generated reference">
+                <input disabled value={invoiceNo} readOnly
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-700 font-mono cursor-not-allowed" />
               </Field>
               <Field label="Permit Number" faf error={errors.permit_number?.message}>
                 <input placeholder="e.g. UAE-PERMIT-2024-XXXX" maxLength={40}
@@ -1538,7 +1609,8 @@ export default function NewInvoicePage() {
             <div className="space-y-3">
               {fields.map((f, idx) => (
                 <ItemRow key={f.id} idx={idx} register={register} errors={errors}
-                  vatLocked={vatLocked} onRemove={() => remove(idx)} canRemove={fields.length > 1} />
+                  vatLocked={vatLocked} onRemove={() => remove(idx)} canRemove={fields.length > 1}
+                  products={products} setValue={setValue} />
               ))}
             </div>
             <button type="button"
@@ -1608,6 +1680,7 @@ export default function NewInvoicePage() {
             currency={currency}
             discount={discount}
             items={watchedItems}
+            invoiceNo={invoiceNo}
           />
         </div>
 

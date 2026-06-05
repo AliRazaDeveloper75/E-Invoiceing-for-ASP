@@ -27,6 +27,7 @@ export default function ProfilePage() {
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [logoBroken, setLogoBroken] = useState(false);
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
@@ -175,13 +176,14 @@ export default function ProfilePage() {
       {activeCompany && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
           <div className="flex items-center gap-3">
-            {activeCompany.logo_url ? (
+            {activeCompany.logo_url && !logoBroken ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={activeCompany.logo_url} alt={activeCompany.name}
+                onError={() => setLogoBroken(true)}
                 className="h-10 w-10 rounded-lg object-cover border border-gray-200" />
             ) : (
-              <div className="h-10 w-10 rounded-lg bg-brand-600 flex items-center justify-center text-white">
-                <Building2 className="h-5 w-5" />
+              <div className="h-10 w-10 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">
+                {activeCompany.name?.slice(0, 2).toUpperCase() || <Building2 className="h-5 w-5" />}
               </div>
             )}
             <div>

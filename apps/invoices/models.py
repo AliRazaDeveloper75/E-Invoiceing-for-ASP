@@ -623,3 +623,42 @@ class InvoiceFraudAlert(BaseModel):
     @property
     def is_flagged(self) -> bool:
         return self.risk_level in (self.RISK_MEDIUM, self.RISK_HIGH)
+
+
+# ─── Product Catalog ──────────────────────────────────────────────────────────
+
+class Product(BaseModel):
+    """
+    Reusable catalog item suppliers pick when adding invoice line items.
+
+    Two scopes:
+      - Global  (company=None) — managed by platform admins, visible to everyone
+      - Company (company set)  — managed by that company, visible to its users only
+    """
+    company = models.ForeignKey(
+        'companies.Company',
+        on_delete=models.CASCADE,
+        related_name='products',
+        null=True, blank=True,
+        help_text='Owning company. Null = global catalog item (admin-managed).',
+    )
+    name         = models.CharField(max_length=150)
+    description  = models.CharField(max_length=500, blank=True, default='')
+    unit_price   = models.DecimalField(
+        max_digits=15, decimal_places=4,
+        validators=[MinValueValidator(Decimal('0'))],
+    )
+    vat_rate_type = models.CharField(max_length=20, choices=VAT_RATE_CHOICES, default='standard')
+    unit          = models.CharField(max_length=20, blank=True, default='')
+    is_active     = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'products'
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['company', 'is_active'], name='idx_product_company_active'),
+        ]
+
+    def __str__(self):
+        scope = 'global' if self.company_id is None else self.company.name
+        return f'{self.name} ({scope})'

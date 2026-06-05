@@ -12,7 +12,31 @@ from apps.common.constants import (
     INVOICE_TYPE_CREDIT_NOTE, INVOICE_TYPE_CONTINUOUS,
     PAYMENT_MEANS_CHOICES,
 )
-from .models import Invoice, InvoiceItem
+from .models import Invoice, InvoiceItem, Product
+
+
+# ─── Product (catalog) ────────────────────────────────────────────────────────
+
+class ProductSerializer(serializers.ModelSerializer):
+    """Read/write serializer for catalog products."""
+    scope = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'name', 'description', 'unit_price',
+            'vat_rate_type', 'unit', 'is_active', 'company', 'scope', 'created_at',
+        ]
+        read_only_fields = ['id', 'company', 'scope', 'created_at']
+
+    def get_scope(self, obj):
+        return 'global' if obj.company_id is None else 'company'
+
+    def validate_name(self, v):
+        v = (v or '').strip()
+        if len(v) < 2:
+            raise serializers.ValidationError('Name must be at least 2 characters.')
+        return v
 
 
 # ─── InvoiceItem ──────────────────────────────────────────────────────────────

@@ -204,8 +204,8 @@ function AcceptInviteContent() {
   // ── Navigation helpers ───────────────────────────────────────────────────
   const STEP_FIELDS: Record<number, string[]> = {
     1: ['first_name', 'last_name', 'password', 'confirm_password'],
-    2: ['company_name', 'trn', 'business_type', 'industry_type'],
-    3: ['street_address', 'city', 'emirate'],
+    2: ['company_name', 'company_legal_name', 'trn', 'trade_license_number', 'business_type', 'industry_type'],
+    3: ['street_address', 'city', 'emirate', 'po_box', 'country', 'company_phone', 'company_email', 'website', 'contact_person_email', 'contact_person_phone'],
     4: [],
   };
 
@@ -256,7 +256,10 @@ function AcceptInviteContent() {
       const { tokens } = res.data.data;
       setTokens(tokens.access, tokens.refresh);
       setDone(true);
-      setTimeout(() => router.push('/dashboard'), 2500);
+      // Full page load (not client-side push) so AuthContext re-initialises with
+      // the new tokens — a client-side push lands on a blank dashboard because the
+      // auth state is still empty from this (never-logged-in) session.
+      setTimeout(() => { window.location.href = '/dashboard'; }, 2500);
     } catch (err) {
       const e = err as AxiosError<{ error?: { message?: string; details?: Record<string, unknown> } }>;
       const apiErr = e.response?.data?.error;

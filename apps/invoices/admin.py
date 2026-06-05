@@ -1,6 +1,15 @@
 """Django admin for Invoice and InvoiceItem models."""
 from django.contrib import admin
-from .models import Invoice, InvoiceItem
+from .models import Invoice, InvoiceItem, Product
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('name', 'company', 'unit_price', 'vat_rate_type', 'unit', 'is_active', 'created_at')
+    list_filter  = ('vat_rate_type', 'is_active')
+    search_fields = ('name', 'description')
+    # company=None → global catalog item, visible to all companies
+    fields = ('company', 'name', 'description', 'unit_price', 'vat_rate_type', 'unit', 'is_active')
 
 
 class InvoiceItemInline(admin.TabularInline):

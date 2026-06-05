@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { api } from '@/lib/api';
@@ -58,10 +58,17 @@ export default function NewCustomerPage() {
 
   const customerType = watch('customer_type');
   const watchedCountry = watch('country');
-  const isUAE = watchedCountry === 'AE';
-  const needsTRN = isUAE && (customerType === 'b2b' || customerType === 'b2g');
-  // Non-UAE business customers must provide an international VAT/tax number.
-  const needsVAT = !isUAE && (customerType === 'b2b' || customerType === 'b2g');
+  const watchedTrn = watch('trn');
+  // TRN is mandatory for every business customer (B2B / B2G), regardless of country.
+  const needsTRN = customerType === 'b2b' || customerType === 'b2g';
+  // VAT number stays optional — TRN is the required tax identifier.
+  const needsVAT = false;
+  const [vatSameAsTrn, setVatSameAsTrn] = useState(false);
+
+  // Keep VAT synced to TRN while "Same as TRN" is checked.
+  useEffect(() => {
+    if (vatSameAsTrn) setValue('vat_number', watchedTrn ?? '', { shouldValidate: true });
+  }, [vatSameAsTrn, watchedTrn, setValue]);
 
   const onSubmit = async (data: CustomerForm) => {
     setServerError({});
@@ -179,6 +186,7 @@ export default function NewCustomerPage() {
               error={errors.vat_number?.message || serverError.vat_number}
               inputMode="numeric"
               maxLength={15}
+              disabled={vatSameAsTrn}
               onKeyDown={numericOnlyKeyDown}
               {...register('vat_number', {
                 validate: (v) => {
@@ -190,6 +198,16 @@ export default function NewCustomerPage() {
               })}
             />
           </div>
+
+          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={vatSameAsTrn}
+              onChange={(e) => setVatSameAsTrn(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+            />
+            VAT Number same as TRN
+          </label>
         </div>
 
         {/* Address & Contact */}
