@@ -256,11 +256,17 @@ class AS4MessageSigner:
 
         # ── Compute digests of the signed elements ────────────────────────────
 
-        # 1. Payload attachment digest (raw bytes, no XML transforms)
-        payload_cid = message_id.replace('@', '_').replace('.', '_')
-        payload_digest_b64 = base64.b64encode(
-            hashlib.sha256(payload_bytes).digest()
-        ).decode('ascii')
+        # 1. Payload attachment digest (raw bytes, no XML transforms).
+        #    Receipts/signals have no payload attachment, so this is skipped
+        #    when payload_bytes is empty (no cid: reference to resolve).
+        if payload_bytes:
+            payload_cid = message_id.replace('@', '_').replace('.', '_')
+            payload_digest_b64 = base64.b64encode(
+                hashlib.sha256(payload_bytes).digest()
+            ).decode('ascii')
+        else:
+            payload_cid = None
+            payload_digest_b64 = None
 
         # 2. eb3:Messaging digest (exclusive C14N)
         header = envelope.find(f'{{{NS_SOAP12}}}Header')
@@ -294,21 +300,23 @@ class AS4MessageSigner:
             ts_id=ts_id,
         )
 
-        # Canonicalize SignedInfo — this is what gets RSA-signed
-        signed_info_c14n = etree.tostring(signed_info, method='c14n', exclusive=True)
-
-        # ── RSA-SHA256 signature ───────────────────────────────────────────────
-        raw_sig = self._key.sign(signed_info_c14n, padding.PKCS1v15(), hashes.SHA256())
-        sig_value_b64 = base64.b64encode(raw_sig).decode('ascii')
-
-        # ── Assemble ds:Signature and add to Security header ──────────────────
+        # ── Assemble ds:Signature and attach to the tree FIRST ────────────────
+        # SignedInfo must be canonicalized from its in-tree position so the
+        # namespace context matches at sign-time and verify-time. Signing a
+        # detached SignedInfo and verifying an attached one produces a mismatch.
         signature = self._assemble_signature(
             sig_id=sig_id,
             signed_info=signed_info,
-            sig_value=sig_value_b64,
+            sig_value='',                 # filled in after we compute the signature
             token_ref_uri=token_ref_uri,
         )
         security.append(signature)
+
+        # ── Canonicalize the now-attached SignedInfo and RSA-sign it ──────────
+        signed_info_c14n = etree.tostring(signed_info, method='c14n', exclusive=True)
+        raw_sig = self._key.sign(signed_info_c14n, padding.PKCS1v15(), hashes.SHA256())
+        sig_value_el = signature.find(f'{{{NS_DS}}}SignatureValue')
+        sig_value_el.text = base64.b64encode(raw_sig).decode('ascii')
 
     def _build_signed_info(
         self,
@@ -327,13 +335,15 @@ class AS4MessageSigner:
         sig_method = etree.SubElement(signed_info, f'{{{NS_DS}}}SignatureMethod')
         sig_method.set('Algorithm', ALG_SIGN_RSA_SHA256)
 
-        # Reference 1: payload attachment (cid: — no XML transform, raw bytes digest)
-        self._add_reference(
-            signed_info,
-            uri=f'cid:{payload_cid}',
-            digest=payload_digest,
-            transforms=None,
-        )
+        # Reference 1: payload attachment (cid: — raw bytes digest, no transform).
+        # Omitted for receipts/signals that carry no payload attachment.
+        if payload_cid is not None and payload_digest is not None:
+            self._add_reference(
+                signed_info,
+                uri=f'cid:{payload_cid}',
+                digest=payload_digest,
+                transforms=None,
+            )
 
         # Reference 2: eb3:Messaging element (exclusive C14N)
         self._add_reference(

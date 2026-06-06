@@ -96,7 +96,8 @@ class AS4EnvelopeBuilder:
         self._build_messaging(header, message_id, conversation_id, timestamp)
         self._build_security_placeholder(header)
 
-        etree.SubElement(envelope, f'{{{NS_SOAP12}}}Body')
+        body = etree.SubElement(envelope, f'{{{NS_SOAP12}}}Body')
+        body.set(f'{{{NS_WSU}}}Id', 'body')   # so the ds:Reference URI='#body' resolves
 
         return envelope
 
@@ -218,6 +219,7 @@ def build_receipt_signal(
 
     messaging = etree.SubElement(header, f'{{{NS_EBMS3}}}Messaging')
     messaging.set(f'{{{NS_SOAP12}}}mustUnderstand', 'true')
+    messaging.set(f'{{{NS_WSU}}}Id', 'messaging')   # signed reference target
 
     signal_msg = etree.SubElement(messaging, f'{{{NS_EBMS3}}}SignalMessage')
 
@@ -244,7 +246,13 @@ def build_receipt_signal(
         ref_el = etree.SubElement(msg_part_nri, f'{{{NS_DS}}}Reference')
         ref_el.set('URI', ref_uri)
 
-    etree.SubElement(envelope, f'{{{NS_SOAP12}}}Body')
+    # WS-Security placeholder so the receipt can be signed by our AP (PEPPOL
+    # requires the AS4 Receipt SignalMessage to be signed for non-repudiation).
+    security = etree.SubElement(header, f'{{{NS_WSSE}}}Security')
+    security.set(f'{{{NS_SOAP12}}}mustUnderstand', 'true')
+
+    body = etree.SubElement(envelope, f'{{{NS_SOAP12}}}Body')
+    body.set(f'{{{NS_WSU}}}Id', 'body')
 
     return envelope
 
