@@ -22,6 +22,9 @@ const AI_AGENT_URL =
   process.env.NEXT_PUBLIC_AI_AGENT_URL ??
   'https://tax-data-assistant-backend-production.up.railway.app/chat';
 
+// Base URL (without the trailing /chat) for /register, /chat and /clear-memory.
+const AI_AGENT_BASE = AI_AGENT_URL.replace(/\/chat\/?$/, '');
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Tab = 'chatbot' | 'agent';
@@ -262,19 +265,80 @@ const SUGGESTED = [
 // ─── AgentTab ─────────────────────────────────────────────────────────────────
 
 function AgentTab() {
+  // Session + registration
+  const [sessionId, setSessionId] = useState('');
+  const [registered, setRegistered] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [regError, setRegError] = useState<string | null>(null);
+  const [regLoading, setRegLoading] = useState(false);
+
+  // Chat
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // Initialize session id + restore registration (client side only — no SSR issue)
+  useEffect(() => {
+    let id = localStorage.getItem('chat_session_id');
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem('chat_session_id', id);
+    }
+    setSessionId(id);
+
+    const reg = localStorage.getItem('chat_registered');
+    const savedName = localStorage.getItem('chat_user_name');
+    if (reg === 'true' && savedName) {
+      setRegistered(true);
+      setMessages([{
+        role: 'assistant',
+        content: `Welcome back, ${savedName}! 👋 How can I assist you with UAE tax today?`,
+      }]);
+    }
+  }, []);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  async function register() {
+    setRegError(null);
+    if (!sessionId) return setRegError('Please wait and try again.');
+    if (!name.trim()) return setRegError('Please enter your name.');
+    if (!email.trim() || !email.includes('@')) return setRegError('Please enter a valid email.');
+
+    setRegLoading(true);
+    try {
+      const res = await fetch(`${AI_AGENT_BASE}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), session_id: sessionId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        localStorage.setItem('chat_registered', 'true');
+        localStorage.setItem('chat_user_name', name.trim());
+        setRegistered(true);
+        setMessages([{
+          role: 'assistant',
+          content: `Assalam o Alaikum, ${name.trim()}! 👋 I'm your E-Numerak Tax Assistant. How can I help you today?`,
+        }]);
+      } else {
+        setRegError(data.detail || 'Registration failed. Please try again.');
+      }
+    } catch {
+      setRegError('Connection failed. Please check your internet.');
+    } finally {
+      setRegLoading(false);
+    }
+  }
+
   async function send(text?: string) {
     const msgText = (text ?? input).trim();
-    if (!msgText || loading) return;
+    if (!msgText || loading || !sessionId) return;
 
     setMessages((m) => [...m, { role: 'user', content: msgText }]);
     setInput('');
@@ -282,10 +346,10 @@ function AgentTab() {
     setError(null);
 
     try {
-      const res = await fetch(AI_AGENT_URL, {
+      const res = await fetch(`${AI_AGENT_BASE}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msgText }),
+        body: JSON.stringify({ message: msgText, session_id: sessionId }),
       });
       if (!res.ok || !res.body) throw new Error('Request failed');
 
@@ -312,6 +376,14 @@ function AgentTab() {
     }
   }
 
+  async function newChat() {
+    if (sessionId) {
+      try { await fetch(`${AI_AGENT_BASE}/clear-memory/${sessionId}`, { method: 'POST' }); } catch { /* ignore */ }
+    }
+    setError(null);
+    setMessages([{ role: 'assistant', content: 'New conversation started! How can I help you? 😊' }]);
+  }
+
   function handleKey(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -319,8 +391,70 @@ function AgentTab() {
     }
   }
 
+  // ── Registration gate ──────────────────────────────────────────────────────
+  if (!registered) {
+    return (
+      <div className="flex flex-col h-full justify-center px-6 py-6 bg-gray-50">
+        <div className="text-center mb-5">
+          <div className="text-3xl mb-2">👋</div>
+          <h2 className="text-gray-800 font-bold text-base">Welcome to E-Numerak</h2>
+          <p className="text-gray-500 text-xs mt-1">Your UAE Tax Assistant — here to help 24/7</p>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-semibold text-gray-600 mb-1 block">Full Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && register()}
+              placeholder="Enter your name"
+              className="w-full text-sm text-gray-800 border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-blue-400 bg-white transition-colors"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-600 mb-1 block">Email Address</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && register()}
+              placeholder="Enter your email"
+              className="w-full text-sm text-gray-800 border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-blue-400 bg-white transition-colors"
+            />
+          </div>
+
+          {regError && <p className="text-red-500 text-xs text-center">{regError}</p>}
+
+          <button
+            onClick={register}
+            disabled={regLoading}
+            className="w-full bg-blue-600 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors mt-1"
+          >
+            {regLoading ? 'Starting…' : 'Start Chatting →'}
+          </button>
+        </div>
+
+        <p className="text-center text-xs text-gray-400 mt-4">🔒 Your data is safe and private</p>
+      </div>
+    );
+  }
+
+  // ── Chat ────────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col h-full">
+      {/* New chat */}
+      <div className="flex justify-end px-3 pt-2">
+        <button
+          onClick={newChat}
+          title="New chat"
+          className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600 border border-gray-200 rounded-full px-2 py-0.5 hover:border-blue-400 transition-colors"
+        >
+          <RotateCcw className="w-3 h-3" /> New chat
+        </button>
+      </div>
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 && (
