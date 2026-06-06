@@ -59,6 +59,7 @@ services:
     volumes:
       - static_files:/app/staticfiles
       - media_files:/app/media
+      - /etc/peppol:/etc/peppol:ro          # AS4 signing keystore (.p12)
     depends_on:
       db:
         condition: service_healthy
@@ -91,6 +92,7 @@ services:
       DJANGO_SETTINGS_MODULE: config.settings.production
     volumes:
       - media_files:/app/media
+      - /etc/peppol:/etc/peppol:ro          # AS4 signing keystore (.p12)
     healthcheck:
       disable: true
     depends_on:

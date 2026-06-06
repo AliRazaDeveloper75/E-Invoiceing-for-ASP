@@ -245,6 +245,15 @@ async function productFetcher(url: string) {
   return r.data.data ?? [];
 }
 
+// Limit free-text fields: max 15 words, each word max 15 characters.
+function limitWords(value: string, label: string, maxWords = 15, maxWordLen = 15): string | true {
+  if (!value?.trim()) return true;
+  const words = value.trim().split(/\s+/);
+  if (words.length > maxWords) return `${label}: maximum ${maxWords} words`;
+  if (words.some((w) => w.length > maxWordLen)) return `${label}: each word max ${maxWordLen} characters`;
+  return true;
+}
+
 // Preview invoice number shown in the form/preview. The final number is assigned
 // by the backend sequence on save; this is a human-friendly draft reference.
 function generateInvoiceNumber(): string {
@@ -1409,14 +1418,20 @@ export default function NewInvoicePage() {
                 error={errors.supplier_location?.message}>
                 <input placeholder="e.g. Dubai, UAE" maxLength={120}
                   className={inputCls(errors.supplier_location?.message)}
-                  {...register('supplier_location', { required: 'Supplier location is required' })} />
+                  {...register('supplier_location', {
+                    required: 'Supplier location is required',
+                    validate: (v) => limitWords(v, 'Supplier location'),
+                  })} />
               </Field>
               <Field label="Customer Location" faf required
                 tooltip="FAF: Location of the customer. E.g. Riyadh, Saudi Arabia"
                 error={errors.customer_location?.message}>
                 <input placeholder="e.g. Riyadh, Saudi Arabia" maxLength={120}
                   className={inputCls(errors.customer_location?.message)}
-                  {...register('customer_location', { required: 'Customer location is required' })} />
+                  {...register('customer_location', {
+                    required: 'Customer location is required',
+                    validate: (v) => limitWords(v, 'Customer location'),
+                  })} />
               </Field>
             </div>
           </Section>

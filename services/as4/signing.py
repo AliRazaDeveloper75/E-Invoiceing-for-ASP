@@ -54,6 +54,8 @@ class AS4MessageSigner:
 
     def __init__(self):
         from django.conf import settings
+        self._keystore_path = getattr(settings, 'PEPPOL_KEYSTORE_PATH', '')
+        self._keystore_pwd  = getattr(settings, 'PEPPOL_KEYSTORE_PASSWORD', '')
         self._cert_path = getattr(settings, 'PEPPOL_CERT_PATH', '')
         self._key_path  = getattr(settings, 'PEPPOL_PRIVATE_KEY_PATH', '')
         self._enabled   = getattr(settings, 'PEPPOL_SIGNING_ENABLED', False)
@@ -142,12 +144,42 @@ class AS4MessageSigner:
         if self._cert is not None:
             return
 
-        if not self._cert_path or not self._key_path:
+        from cryptography.hazmat.primitives import serialization as ser
+
+        # Preferred path: a PKCS#12 keystore (.p12/.pfx) as issued by the PEPPOL portal.
+        if self._keystore_path:
+            self._load_from_keystore()
+        elif self._cert_path and self._key_path:
+            self._load_from_pem()
+        else:
             raise RuntimeError(
-                'PEPPOL_CERT_PATH and PEPPOL_PRIVATE_KEY_PATH must be configured '
-                'to enable AS4 signing.'
+                'No AS4 signing credentials configured. Set PEPPOL_KEYSTORE_PATH '
+                '(+ PEPPOL_KEYSTORE_PASSWORD) for a .p12 keystore, or '
+                'PEPPOL_CERT_PATH + PEPPOL_PRIVATE_KEY_PATH for PEM files.'
             )
 
+        # Cache the DER encoding of the cert for the BinarySecurityToken.
+        self._cert_der = self._cert.public_bytes(ser.Encoding.DER)
+
+    def _load_from_keystore(self) -> None:
+        """Load cert + private key from a PKCS#12 (.p12/.pfx) keystore."""
+        from cryptography.hazmat.primitives.serialization import pkcs12
+
+        p12_bytes = Path(self._keystore_path).read_bytes()
+        password  = self._keystore_pwd.encode('utf-8') if self._keystore_pwd else None
+
+        key, cert, _additional = pkcs12.load_key_and_certificates(p12_bytes, password)
+        if cert is None or key is None:
+            raise RuntimeError(
+                f'PKCS#12 keystore {self._keystore_path} did not contain both a '
+                'certificate and a private key.'
+            )
+        self._cert = cert
+        self._key  = key
+        logger.info('AS4 signing credentials loaded from keystore: %s', self._keystore_path)
+
+    def _load_from_pem(self) -> None:
+        """Load cert + (unencrypted) private key from separate PEM/DER files."""
         from cryptography import x509
         from cryptography.hazmat.primitives import serialization
         from cryptography.hazmat.backends import default_backend
@@ -160,15 +192,12 @@ class AS4MessageSigner:
         except Exception:
             self._cert = x509.load_der_x509_certificate(cert_pem, default_backend())
 
-        from cryptography.hazmat.primitives import serialization as ser
-        self._cert_der = self._cert.public_bytes(ser.Encoding.DER)
-
         try:
             self._key = serialization.load_pem_private_key(key_pem, password=None)
         except Exception:
             self._key = serialization.load_der_private_key(key_pem, password=None)
 
-        logger.debug('AS4 signing credentials loaded from: %s', self._cert_path)
+        logger.info('AS4 signing credentials loaded from PEM: %s', self._cert_path)
 
     # ── Security header construction ───────────────────────────────────────────
 

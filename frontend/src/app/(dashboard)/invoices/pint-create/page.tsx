@@ -86,6 +86,15 @@ function computeLineAmount(qty: string, price: string, discount: string): number
   return Math.max(0, (parseFloat(qty) || 0) * (parseFloat(price) || 0) - (parseFloat(discount) || 0));
 }
 
+// Limit free-text fields: max 15 words, each word max 15 characters.
+function validateWords(value: string, label: string, maxWords = 15, maxWordLen = 15): string | null {
+  if (!value?.trim()) return null;
+  const words = value.trim().split(/\s+/);
+  if (words.length > maxWords) return `${label}: maximum ${maxWords} words`;
+  if (words.some((w) => w.length > maxWordLen)) return `${label}: each word max ${maxWordLen} characters`;
+  return null;
+}
+
 function computeTotals(items: LineItem[]) {
   let subtotal = 0, totalVat = 0;
   items.forEach((item) => {
@@ -232,9 +241,10 @@ function FieldRenderer({ field, value, onChange, error, isActive, onFocus, onBlu
           className={inputCls + ' bg-gray-50 text-gray-500 cursor-not-allowed font-mono'} />
       ) : (
         <input type={field.inputType} value={value}
-          onChange={(e) => onChange(field.id, e.target.value)}
+          onChange={(e) => onChange(field.id, isVatId ? e.target.value.replace(/\D/g, '') : e.target.value)}
           onFocus={() => onFocus(field.id)} onBlur={onBlur}
-          placeholder={field.placeholder}
+          placeholder={isVatId ? '15-digit number' : field.placeholder}
+          inputMode={isVatId ? 'numeric' : undefined}
           step={field.inputType === 'number' ? 'any' : undefined}
           min={field.inputType === 'number' ? '0' : undefined}
           maxLength={field.inputType === 'number' ? undefined : maxLen}
@@ -1109,6 +1119,20 @@ export default function PintCreatePage() {
     const errs: Record<string, string> = {};
     mandatoryFields.forEach((f) => {
       if (!values[f.id]?.trim()) errs[f.id] = `${f.businessTerm} is required`;
+    });
+    // Field-specific format rules for this step's fields.
+    stepFields.forEach((f) => {
+      const v = values[f.id]?.trim();
+      if (!v || errs[f.id]) return;
+      // VAT identifiers — exactly 15 digits.
+      if (f.id === 'IBT-031' || f.id === 'IBT-048') {
+        if (!/^\d{15}$/.test(v)) errs[f.id] = `${f.businessTerm} must be exactly 15 digits`;
+      }
+      // Trading names + cities — word/length limits.
+      if (['IBT-028', 'IBT-045', 'IBT-037', 'IBT-052'].includes(f.id)) {
+        const w = validateWords(v, f.businessTerm);
+        if (w) errs[f.id] = w;
+      }
     });
     setErrors(errs);
     if (Object.keys(errs).length > 0) {

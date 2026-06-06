@@ -4,6 +4,14 @@
 !.env.example
 !.env.*.example
 
+# ─── PEPPOL / PKI certificates (NEVER commit) ─────────────────────────────────
+*.p12
+*.pfx
+*.pem
+*.key
+certs/
+secrets/
+
 # ─── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]

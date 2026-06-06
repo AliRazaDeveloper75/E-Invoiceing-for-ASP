@@ -312,9 +312,20 @@ PAYPAL_SANDBOX = env.bool('PAYPAL_SANDBOX', default=True)
 PEPPOL_SCHEMA_DIR = env('PEPPOL_SCHEMA_DIR', default=str(BASE_DIR / 'schemas' / 'peppol'))
 
 # PKI paths — populated with real certs in production from /etc/peppol/
-PEPPOL_CERT_PATH        = env('PEPPOL_CERT_PATH',        default='')
-PEPPOL_PRIVATE_KEY_PATH = env('PEPPOL_PRIVATE_KEY_PATH', default='')
-PEPPOL_CA_CERT_PATH     = env('PEPPOL_CA_CERT_PATH',     default='')
+#
+# Two ways to provide the AP signing credentials:
+#   (A) PKCS#12 keystore (recommended — single .p12 file from the PEPPOL portal):
+#         PEPPOL_KEYSTORE_PATH=/etc/peppol/ap-test.p12
+#         PEPPOL_KEYSTORE_PASSWORD=<the .p12 password>
+#   (B) Separate PEM files (cert + unencrypted private key):
+#         PEPPOL_CERT_PATH=/etc/peppol/cert.pem
+#         PEPPOL_PRIVATE_KEY_PATH=/etc/peppol/key.pem
+# If a keystore is configured it takes precedence over the PEM paths.
+PEPPOL_KEYSTORE_PATH     = env('PEPPOL_KEYSTORE_PATH',     default='')
+PEPPOL_KEYSTORE_PASSWORD = env('PEPPOL_KEYSTORE_PASSWORD', default='')
+PEPPOL_CERT_PATH         = env('PEPPOL_CERT_PATH',         default='')
+PEPPOL_PRIVATE_KEY_PATH  = env('PEPPOL_PRIVATE_KEY_PATH',  default='')
+PEPPOL_CA_CERT_PATH      = env('PEPPOL_CA_CERT_PATH',      default='')
 
 # Certificate expiry warning threshold (days before expiry to start alerting)
 PEPPOL_CERT_EXPIRY_WARNING_DAYS = env.int('PEPPOL_CERT_EXPIRY_WARNING_DAYS', default=30)

@@ -34,15 +34,18 @@ _require_env('DB_PASSWORD',           'Set the PostgreSQL password.')
 _require_env('ASP_WEBHOOK_SECRET',    'Get this from your ASP provider.')
 _require_env('DEFAULT_FROM_EMAIL',    'Set the FROM email address for outbound emails.')
 
-# Warn (don't block) if PEPPOL certs not yet provisioned
-_peppol_cert = env('PEPPOL_CERT_PATH', default='')
-_peppol_key  = env('PEPPOL_PRIVATE_KEY_PATH', default='')
-if not _peppol_cert or not _peppol_key:
+# Warn (don't block) if PEPPOL certs not yet provisioned.
+# Credentials may come from a PKCS#12 keystore OR separate PEM files.
+_peppol_keystore = env('PEPPOL_KEYSTORE_PATH', default='')
+_peppol_cert     = env('PEPPOL_CERT_PATH', default='')
+_peppol_key      = env('PEPPOL_PRIVATE_KEY_PATH', default='')
+if not _peppol_keystore and not (_peppol_cert and _peppol_key):
     import logging as _logging
     _logging.getLogger(__name__).critical(
-        'PEPPOL certificate paths not configured. '
+        'PEPPOL signing credentials not configured. '
         'Invoices will be transmitted UNSIGNED — not compliant with UAE e-invoicing rules. '
-        'Set PEPPOL_CERT_PATH and PEPPOL_PRIVATE_KEY_PATH.'
+        'Set PEPPOL_KEYSTORE_PATH (+ PEPPOL_KEYSTORE_PASSWORD) or '
+        'PEPPOL_CERT_PATH + PEPPOL_PRIVATE_KEY_PATH.'
     )
 
 # ─── HTTPS + HSTS ─────────────────────────────────────────────────────────────

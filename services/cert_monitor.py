@@ -109,6 +109,8 @@ class CertificateMonitor:
 
     def __init__(self):
         from django.conf import settings
+        self._keystore_path = getattr(settings, 'PEPPOL_KEYSTORE_PATH',     '')
+        self._keystore_pwd  = getattr(settings, 'PEPPOL_KEYSTORE_PASSWORD', '')
         self._cert_path     = getattr(settings, 'PEPPOL_CERT_PATH',        '')
         self._key_path      = getattr(settings, 'PEPPOL_PRIVATE_KEY_PATH', '')
         self._ca_cert_path  = getattr(settings, 'PEPPOL_CA_CERT_PATH',     '')
@@ -121,8 +123,15 @@ class CertificateMonitor:
         """
         result = CertMonitorResult()
 
+        # If a PKCS#12 keystore is configured, inspect the AP cert inside it.
+        if self._keystore_path:
+            result.add_certificate(
+                self._check_keystore(self._keystore_path, 'PEPPOL AP Certificate (keystore)')
+            )
+
         certs_to_check = [
-            (self._cert_path,    'PEPPOL AP Certificate'),
+            # Only check the standalone cert path if a keystore is not in use.
+            (self._cert_path if not self._keystore_path else '', 'PEPPOL AP Certificate'),
             (self._ca_cert_path, 'PEPPOL CA Certificate'),
         ]
 
@@ -134,7 +143,7 @@ class CertificateMonitor:
             result.add_certificate(status)
 
         # Private key — only check existence/readability (never load the private key bytes)
-        if self._key_path:
+        if self._key_path and not self._keystore_path:
             key_status = self._check_key_file(self._key_path, 'PEPPOL Private Key')
             result.add_certificate(key_status)
             if not key_status.is_healthy:
@@ -221,6 +230,68 @@ class CertificateMonitor:
         except Exception as exc:
             status.errors.append(f'Certificate parse error: {exc}')
             logger.error('%s: failed to parse certificate: %s', label, exc)
+
+        return status
+
+    def _check_keystore(self, path: str, label: str) -> CertificateStatus:
+        """Load a PKCS#12 (.p12/.pfx) keystore and inspect the bundled certificate."""
+        status = CertificateStatus(path=path, label=label)
+        p = Path(path)
+
+        if not p.exists():
+            status.errors.append(f'File not found: {path}')
+            return status
+        status.exists = True
+
+        try:
+            p12_bytes = p.read_bytes()
+        except OSError as exc:
+            status.errors.append(f'Cannot read file: {exc}')
+            return status
+        status.readable = True
+
+        try:
+            from cryptography.hazmat.primitives.serialization import pkcs12
+
+            password = self._keystore_pwd.encode('utf-8') if self._keystore_pwd else None
+            key, cert, _additional = pkcs12.load_key_and_certificates(p12_bytes, password)
+
+            if cert is None:
+                status.errors.append('Keystore contains no certificate.')
+                return status
+            if key is None:
+                status.errors.append('Keystore contains no private key.')
+
+            status.subject = cert.subject.rfc4514_string()
+            status.issuer  = cert.issuer.rfc4514_string()
+
+            try:
+                not_after  = cert.not_valid_after_utc
+                not_before = cert.not_valid_before_utc
+            except AttributeError:
+                not_after  = cert.not_valid_after.replace(tzinfo=timezone.utc)
+                not_before = cert.not_valid_before.replace(tzinfo=timezone.utc)
+
+            status.not_after  = not_after
+            status.not_before = not_before
+
+            now = datetime.now(tz=timezone.utc)
+            delta = not_after - now
+            status.days_remaining = delta.days
+            status.is_expired = delta.days < 0
+            status.is_warning = (not status.is_expired) and (delta.days <= self._warning_days)
+
+            if status.is_expired:
+                status.errors.append(f'Certificate expired on {not_after.strftime("%Y-%m-%d")}')
+                logger.critical('%s: EXPIRED on %s', label, not_after.strftime('%Y-%m-%d'))
+            elif status.is_warning:
+                logger.warning('%s: expires in %d day(s)', label, delta.days)
+            else:
+                logger.info('%s: healthy, expires in %d day(s)', label, delta.days)
+
+        except Exception as exc:
+            status.errors.append(f'Keystore parse error (wrong password?): {exc}')
+            logger.error('%s: failed to load keystore: %s', label, exc)
 
         return status
 
