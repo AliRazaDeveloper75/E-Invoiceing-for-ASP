@@ -341,6 +341,11 @@ PEPPOL_XSD_VALIDATION_ENABLED = env.bool('PEPPOL_XSD_VALIDATION_ENABLED', defaul
 # (enable temporarily during PEPPOL Testbed certification).
 PEPPOL_AS4_DEBUG_CAPTURE = env.bool('PEPPOL_AS4_DEBUG_CAPTURE', default=False)
 
+# When True, inbound AS4 verification also fails on any reference-digest mismatch.
+# Kept False during initial certification (SignedInfo RSA signature is the gate);
+# flip to True once digest c14n is confirmed against the Testbed.
+PEPPOL_AS4_STRICT_DIGESTS = env.bool('PEPPOL_AS4_STRICT_DIGESTS', default=False)
+
 # Allow large AS4 payloads (Testbed sends 10MB+ files — TC2A.5B).
 # 20 MB ceiling for the raw request body.
 DATA_UPLOAD_MAX_MEMORY_SIZE = env.int('DATA_UPLOAD_MAX_MEMORY_SIZE', default=20 * 1024 * 1024)

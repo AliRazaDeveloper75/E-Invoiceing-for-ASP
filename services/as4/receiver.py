@@ -80,7 +80,8 @@ class AS4Receiver:
         """
         result = AS4ReceiveResult()
         try:
-            soap_part, payload_part = self._split_multipart(content_type, raw_body)
+            soap_part, attachments = self._split_multipart(content_type, raw_body)
+            payload_part = next(iter(attachments.values()), None)
         except Exception as exc:
             logger.error('AS4 inbound: failed to parse multipart body: %s', exc)
             result.add_error(f'Malformed MTOM body: {exc}', 'EBMS:0009')
@@ -104,7 +105,7 @@ class AS4Receiver:
         # Verify the WS-Security signature
         if self._verify_signature:
             try:
-                result.signature_valid = self._signer.verify_inbound(envelope)
+                result.signature_valid = self._signer.verify_inbound(envelope, attachments)
             except Exception as exc:
                 logger.warning('AS4 inbound: signature verification raised: %s', exc)
                 result.signature_valid = False
@@ -141,23 +142,25 @@ class AS4Receiver:
     # ── Helpers ─────────────────────────────────────────────────────────────────
 
     @staticmethod
-    def _split_multipart(content_type: str, raw_body: bytes) -> tuple[bytes, Optional[bytes]]:
+    def _split_multipart(content_type: str, raw_body: bytes) -> tuple[bytes, dict]:
         """
-        Split an MTOM multipart/related body into (soap_envelope_bytes, payload_bytes).
+        Split an MTOM multipart/related body into (soap_envelope_bytes, attachments).
 
+        ``attachments`` maps each part's Content-ID (without the surrounding <>)
+        to its raw decoded bytes — needed to verify cid: signature references.
         Falls back to treating the whole body as the SOAP part when it is not
         multipart (some APs send bare application/soap+xml).
         """
         ct = (content_type or '').lower()
         if 'multipart/related' not in ct:
-            return raw_body, None
+            return raw_body, {}
 
         # Reconstruct a MIME document so Python's email parser can split the parts.
         header = f'Content-Type: {content_type}\r\n\r\n'.encode()
         msg = message_from_bytes(header + raw_body)
 
         soap_part: Optional[bytes] = None
-        payload_part: Optional[bytes] = None
+        attachments: dict = {}
         for part in msg.walk():
             part_ct = (part.get_content_type() or '').lower()
             if part_ct == 'multipart/related':
@@ -165,17 +168,16 @@ class AS4Receiver:
             body = part.get_payload(decode=True)
             if body is None:
                 continue
-            if 'soap+xml' in part_ct or '<' in body[:64].decode('utf-8', 'ignore') and b'Envelope' in body[:512]:
-                if soap_part is None:
-                    soap_part = body
-                    continue
-            # First non-SOAP part is treated as the invoice payload
-            if payload_part is None:
-                payload_part = body
+            if soap_part is None and ('soap+xml' in part_ct or b'Envelope' in body[:512]):
+                soap_part = body
+                continue
+            # Attachment — key by Content-ID (strip <> and whitespace).
+            cid = (part.get('Content-ID', '') or '').strip().lstrip('<').rstrip('>')
+            attachments[cid or f'__part{len(attachments)}'] = body
 
         if soap_part is None:
             raise ValueError('No SOAP part found in multipart body.')
-        return soap_part, payload_part
+        return soap_part, attachments
 
     @staticmethod
     def _xpath_text(envelope: etree._Element, path: str) -> str:

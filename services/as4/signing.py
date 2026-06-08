@@ -109,12 +109,18 @@ class AS4MessageSigner:
 
         return envelope
 
-    def verify_inbound(self, envelope: etree._Element) -> bool:
+    def verify_inbound(self, envelope: etree._Element, attachments: Optional[dict] = None) -> bool:
         """
         Verify the WS-Security signature on an inbound AS4 message.
 
-        Returns True if signature is valid, False otherwise.
-        Logs detailed errors on failure.
+        Resolves the signing certificate via the Signature's KeyInfo →
+        SecurityTokenReference → BinarySecurityToken (NOT just the first BST —
+        AS4 messages carry a separate encryption-key token too), then verifies:
+          1. the SignedInfo signature (RSA-SHA256 over exclusive-C14N SignedInfo,
+             honouring InclusiveNamespaces PrefixList), and
+          2. each ds:Reference digest (XML elements + cid: attachments).
+
+        Returns True if the signature is valid, False otherwise.
         """
         try:
             security_el = self._find_security_element(envelope)
@@ -123,20 +129,111 @@ class AS4MessageSigner:
                 logger.warning('AS4 inbound: no ds:Signature found in Security header.')
                 return False
 
-            # Extract BinarySecurityToken (the sender's certificate)
-            bst = security_el.find(f'{{{NS_WSSE}}}BinarySecurityToken')
-            if bst is None or not bst.text:
-                logger.warning('AS4 inbound: no BinarySecurityToken found.')
+            cert_bytes = self._resolve_signing_cert(security_el, sig_el)
+            if cert_bytes is None:
+                logger.warning('AS4 inbound: could not resolve the signing certificate.')
                 return False
 
-            cert_bytes = base64.b64decode(bst.text)
-
-            # Verify signature using xmlsec (preferred) or manual fallback
-            return self._verify_signature(envelope, sig_el, cert_bytes)
+            return self._verify_signature(envelope, sig_el, cert_bytes, attachments or {})
 
         except Exception as exc:
             logger.error('AS4 signature verification error: %s', exc, exc_info=True)
             return False
+
+    # ── Inbound verification helpers ────────────────────────────────────────────
+
+    @staticmethod
+    def _resolve_signing_cert(security_el: etree._Element, sig_el: etree._Element) -> Optional[bytes]:
+        """
+        Resolve the X.509 signing cert referenced by the Signature's KeyInfo.
+
+        Signature/KeyInfo/SecurityTokenReference/Reference @URI points (by '#id')
+        to the wsse:BinarySecurityToken that holds the signer's certificate.
+        Falls back to the last BST if no explicit reference is found.
+        """
+        ref_uri = ''
+        key_info = sig_el.find(f'{{{NS_DS}}}KeyInfo')
+        if key_info is not None:
+            ref = key_info.find(f'.//{{{NS_WSSE}}}Reference')
+            if ref is not None:
+                ref_uri = (ref.get('URI') or '').lstrip('#')
+
+        bsts = security_el.findall(f'{{{NS_WSSE}}}BinarySecurityToken')
+        chosen = None
+        if ref_uri:
+            for cand in bsts:
+                bid = cand.get(f'{{{NS_WSU}}}Id') or cand.get('Id')
+                if bid == ref_uri:
+                    chosen = cand
+                    break
+        if chosen is None and bsts:
+            chosen = bsts[-1]   # signing token is typically the last one
+        if chosen is None or not (chosen.text or '').strip():
+            return None
+        return base64.b64decode(''.join((chosen.text or '').split()))
+
+    @staticmethod
+    def _inclusive_prefixes(method_el: Optional[etree._Element]) -> Optional[list]:
+        """Read the exc-c14n InclusiveNamespaces PrefixList from a method/transform element."""
+        if method_el is None:
+            return None
+        inc = method_el.find(f'{{{ALG_C14N_EXCLUSIVE}}}InclusiveNamespaces')
+        if inc is None:
+            return None
+        pl = (inc.get('PrefixList') or '').strip()
+        return pl.split() if pl else None
+
+    @staticmethod
+    def _c14n(el: etree._Element, prefixes: Optional[list]) -> bytes:
+        """Exclusive C14N of an element, honouring an InclusiveNamespaces prefix list."""
+        if prefixes:
+            return etree.tostring(el, method='c14n', exclusive=True, inclusive_ns_prefixes=prefixes)
+        return etree.tostring(el, method='c14n', exclusive=True)
+
+    @staticmethod
+    def _find_by_id(envelope: etree._Element, ref_id: str) -> Optional[etree._Element]:
+        """Find an element by wsu:Id (or plain Id) anywhere in the envelope."""
+        for el in envelope.iter():
+            if el.get(f'{{{NS_WSU}}}Id') == ref_id or el.get('Id') == ref_id:
+                return el
+        return None
+
+    def _verify_reference(
+        self, envelope: etree._Element, ref: etree._Element, attachments: dict
+    ) -> bool:
+        """Verify a single ds:Reference digest (XML element or cid: attachment)."""
+        uri = ref.get('URI') or ''
+        digest_el = ref.find(f'{{{NS_DS}}}DigestValue')
+        if digest_el is None or not digest_el.text:
+            return False
+        expected = digest_el.text.strip()
+
+        if uri.startswith('cid:'):
+            cid = uri[4:]
+            data = attachments.get(cid)
+            if data is None:
+                data = attachments.get(cid.split('@', 1)[0])
+            if data is None:
+                logger.warning('AS4 verify: attachment for %s not available', uri)
+                return False
+            actual = base64.b64encode(hashlib.sha256(data).digest()).decode('ascii')
+            return actual == expected
+
+        ref_id = uri.lstrip('#')
+        target = self._find_by_id(envelope, ref_id)
+        if target is None:
+            logger.warning('AS4 verify: referenced element #%s not found', ref_id)
+            return False
+
+        prefixes = None
+        transforms = ref.find(f'{{{NS_DS}}}Transforms')
+        if transforms is not None:
+            for t in transforms.findall(f'{{{NS_DS}}}Transform'):
+                if t.get('Algorithm') == ALG_C14N_EXCLUSIVE:
+                    prefixes = self._inclusive_prefixes(t)
+        c14n = self._c14n(target, prefixes)
+        actual = base64.b64encode(hashlib.sha256(c14n).digest()).decode('ascii')
+        return actual == expected
 
     # ── Credential loading ─────────────────────────────────────────────────────
 
@@ -421,8 +518,9 @@ class AS4MessageSigner:
         envelope: etree._Element,
         sig_el: etree._Element,
         cert_bytes: bytes,
+        attachments: dict,
     ) -> bool:
-        """Verify XMLDSig signature. Uses xmlsec if available, else manual RSA check."""
+        """Verify the XMLDSig: SignedInfo RSA signature + each reference digest."""
         try:
             from cryptography import x509
             from cryptography.hazmat.backends import default_backend
@@ -430,27 +528,42 @@ class AS4MessageSigner:
             from cryptography.hazmat.primitives.asymmetric import padding
 
             try:
-                cert = x509.load_pem_x509_certificate(cert_bytes, default_backend())
-            except Exception:
                 cert = x509.load_der_x509_certificate(cert_bytes, default_backend())
+            except Exception:
+                cert = x509.load_pem_x509_certificate(cert_bytes, default_backend())
 
             pub_key = cert.public_key()
 
-            # Extract SignedInfo and SignatureValue
             signed_info_el = sig_el.find(f'{{{NS_DS}}}SignedInfo')
             sig_value_el   = sig_el.find(f'{{{NS_DS}}}SignatureValue')
-
             if signed_info_el is None or sig_value_el is None:
+                logger.warning('AS4 verify: missing SignedInfo / SignatureValue.')
                 return False
 
-            # Canonicalize SignedInfo with exclusive C14N
-            signed_info_c14n = etree.tostring(
-                signed_info_el, method='c14n', exclusive=True
-            )
-            raw_sig = base64.b64decode(sig_value_el.text or '')
+            # 1. Verify the SignedInfo signature — exclusive C14N honouring the
+            #    CanonicalizationMethod's InclusiveNamespaces PrefixList.
+            c14n_method = signed_info_el.find(f'{{{NS_DS}}}CanonicalizationMethod')
+            prefixes = self._inclusive_prefixes(c14n_method)
+            signed_info_c14n = self._c14n(signed_info_el, prefixes)
+            raw_sig = base64.b64decode(''.join((sig_value_el.text or '').split()))
+            try:
+                pub_key.verify(raw_sig, signed_info_c14n, padding.PKCS1v15(), hashes.SHA256())
+            except Exception as exc:
+                logger.warning('AS4 verify: SignedInfo signature INVALID: %s', exc)
+                return False
 
-            pub_key.verify(raw_sig, signed_info_c14n, padding.PKCS1v15(), hashes.SHA256())
-            logger.info('AS4 inbound signature verification: VALID')
+            # 2. Verify each reference digest (XML elements + cid attachments).
+            from django.conf import settings as _settings
+            strict = getattr(_settings, 'PEPPOL_AS4_STRICT_DIGESTS', True)
+            for ref in signed_info_el.findall(f'{{{NS_DS}}}Reference'):
+                if not self._verify_reference(envelope, ref, attachments):
+                    if strict:
+                        logger.warning('AS4 verify: reference digest FAILED for %s', ref.get('URI'))
+                        return False
+                    logger.warning('AS4 verify: reference digest mismatch (non-strict) for %s', ref.get('URI'))
+
+            logger.info('AS4 inbound signature verification: VALID (signer=%s)',
+                        cert.subject.rfc4514_string())
             return True
 
         except Exception as exc:
