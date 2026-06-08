@@ -1,9 +1,12 @@
 """
 Inbound invoice services — orchestration between models, validation, and email.
 """
+import logging
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     Supplier,

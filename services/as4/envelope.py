@@ -195,22 +195,26 @@ class AS4EnvelopeBuilder:
 
 def build_receipt_signal(
     original_message_id: str,
-    received_references: list[str],
+    received_references: list,
 ) -> etree._Element:
     """
     Build an ebMS 3.0 AS4 Receipt SignalMessage.
 
     Called by the inbound AS4 endpoint after validating a received message.
-    The receipt must echo back the reference elements from the original
-    UserMessage's WS-Security signature (NonRepudiationInformation).
+    The receipt echoes back the FULL ds:Reference elements (URI + DigestMethod
+    + DigestValue) from the original UserMessage's signature, wrapped in
+    ebbp:NonRepudiationInformation — the sender (phase4) verifies these against
+    what it signed, so URIs alone are not sufficient.
 
     Args:
         original_message_id: MessageId from the UserMessage being acknowledged
-        received_references: List of Reference URI strings from the original signature
+        received_references: List of deep-copied ds:Reference lxml elements
+            from the original signature's SignedInfo.
 
     Returns:
         lxml Element: <S12:Envelope> containing the receipt signal
     """
+    import copy
     receipt_message_id = f'{uuid.uuid4()}@peppol.eu'
     timestamp = datetime.now(tz=timezone.utc).strftime(TS_FORMAT)
 
@@ -233,18 +237,24 @@ def build_receipt_signal(
 
     receipt = etree.SubElement(signal_msg, f'{{{NS_EBMS3}}}Receipt')
 
-    # NonRepudiationInformation — echoes back signature references
+    # NonRepudiationInformation — echo the full ds:Reference elements (with
+    # digests) from the original message's signature.
     nri = etree.SubElement(
         receipt,
         '{http://docs.oasis-open.org/ebxml-bp/ebbp-signals-2.0}NonRepudiationInformation',
     )
-    for ref_uri in received_references:
+    for ref in received_references:
         msg_part_nri = etree.SubElement(
             nri,
             '{http://docs.oasis-open.org/ebxml-bp/ebbp-signals-2.0}MessagePartNRInformation',
         )
-        ref_el = etree.SubElement(msg_part_nri, f'{{{NS_DS}}}Reference')
-        ref_el.set('URI', ref_uri)
+        if isinstance(ref, str):
+            # Backwards-compat: bare URI string.
+            r = etree.SubElement(msg_part_nri, f'{{{NS_DS}}}Reference')
+            r.set('URI', ref)
+        else:
+            # Deep-copied ds:Reference element from the original SignedInfo.
+            msg_part_nri.append(copy.deepcopy(ref))
 
     # WS-Security placeholder so the receipt can be signed by our AP (PEPPOL
     # requires the AS4 Receipt SignalMessage to be signed for non-repudiation).

@@ -188,8 +188,14 @@ class AS4Receiver:
         return ''
 
     @staticmethod
-    def _collect_signature_references(envelope: etree._Element) -> list[str]:
-        """Echo back the ds:Reference URIs from the inbound signature (for the Receipt)."""
+    def _collect_signature_references(envelope: etree._Element) -> list:
+        """
+        Return deep copies of the ds:Reference elements from the inbound
+        signature's SignedInfo. The AS4 Receipt's NonRepudiationInformation
+        must echo these full references (URI + DigestMethod + DigestValue),
+        not just the URIs, or the sender (phase4) rejects the receipt.
+        """
+        import copy
         ns = {'ds': NS_DS}
-        refs = envelope.xpath('.//ds:Signature/ds:SignedInfo/ds:Reference/@URI', namespaces=ns)
-        return [str(r) for r in refs] if refs else []
+        refs = envelope.xpath('.//ds:Signature/ds:SignedInfo/ds:Reference', namespaces=ns)
+        return [copy.deepcopy(r) for r in refs] if refs else []

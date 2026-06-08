@@ -21,7 +21,7 @@ from lxml import etree
 
 from services.as4.receiver import AS4Receiver
 from services.as4.signing import AS4MessageSigner
-from services.as4.constants import NS_DS, NS_WSSE, NS_WSU
+from services.as4.constants import NS_DS, NS_WSSE, NS_WSU, NS_EBMS3
 
 
 class Command(BaseCommand):
@@ -94,3 +94,29 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('  RESULT: SIGNATURE VALID'))
         else:
             self.stdout.write(self.style.ERROR('  RESULT: SIGNATURE INVALID'))
+
+        # Build + sign the AS4 Receipt we would return, and self-verify it.
+        self.stdout.write(self.style.MIGRATE_LABEL('\n-- Generated Receipt --'))
+        try:
+            from services.as4.envelope import build_receipt_signal, envelope_to_bytes
+            msg_id = ''
+            mi = envelope.find(f'.//{{{NS_EBMS3}}}MessageId')
+            if mi is not None:
+                msg_id = (mi.text or '').strip()
+            refs = AS4Receiver._collect_signature_references(envelope)
+            receipt = build_receipt_signal(msg_id, refs)
+            signer.sign(receipt, b'', msg_id)
+            receipt_bytes = envelope_to_bytes(receipt)
+            self.stdout.write(f'  Receipt bytes: {len(receipt_bytes)}')
+            self.stdout.write(f'  Signed: {b"Signature" in receipt_bytes}, '
+                              f'Receipt: {b"Receipt" in receipt_bytes}, '
+                              f'NRI: {b"NonRepudiationInformation" in receipt_bytes}')
+            ok = signer.verify_inbound(etree.fromstring(receipt_bytes), {})
+            self.stdout.write(('  Self-verify receipt: ' +
+                               ('VALID' if ok else 'INVALID')))
+            self.stdout.write('\n--- RECEIPT XML ---')
+            self.stdout.write(receipt_bytes.decode('utf-8', 'replace'))
+        except Exception as exc:
+            import traceback
+            self.stdout.write(self.style.ERROR(f'  Receipt build failed: {exc}'))
+            self.stdout.write(traceback.format_exc())
