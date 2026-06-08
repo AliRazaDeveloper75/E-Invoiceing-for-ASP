@@ -61,6 +61,7 @@ class Command(BaseCommand):
         parser.add_argument('--cert', default='', help='Recipient cert PEM/DER (else auto from capture).')
         parser.add_argument('--sender', default='0235:104132266800003', help='originalSender participant id.')
         parser.add_argument('--receiver', default='9922:OPTBCNTRLP1001', help='finalRecipient participant id.')
+        parser.add_argument('--payload', default='', help='Path to the exact document to send (from the Testbed ZIP).')
         parser.add_argument('--large', action='store_true', help='Send a ~10MB payload (TC2A.6).')
 
     def handle(self, *args, **opts):
@@ -88,12 +89,16 @@ class Command(BaseCommand):
         self.stdout.write(f'Endpoint          : {opts["endpoint"]}')
 
         # 3. Payload
-        payload = SAMPLE_INVOICE
-        if opts['large']:
+        if opts['payload']:
+            payload = open(opts['payload'], 'rb').read()
+            self.stdout.write(f'Payload           : {opts["payload"]} ({len(payload)} bytes)')
+        elif opts['large']:
+            payload = SAMPLE_INVOICE
             filler = ('<cac:Note>' + 'X' * 100 + '</cac:Note>').encode()
             payload = payload.replace(b'</Invoice>', filler * 100000 + b'</Invoice>')
             self.stdout.write(f'Payload           : large (~{len(payload) // (1024*1024)} MB)')
         else:
+            payload = SAMPLE_INVOICE
             self.stdout.write('Payload           : sample invoice')
 
         # 4. Build + send
