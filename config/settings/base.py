@@ -337,6 +337,15 @@ PEPPOL_SIGNING_ENABLED = env.bool('PEPPOL_SIGNING_ENABLED', default=True)
 # Enable PEPPOL XSD schema validation (can disable in dev if schemas not yet downloaded)
 PEPPOL_XSD_VALIDATION_ENABLED = env.bool('PEPPOL_XSD_VALIDATION_ENABLED', default=True)
 
+# Capture raw inbound AS4 messages to MEDIA_ROOT/as4_debug/ for analysis
+# (enable temporarily during PEPPOL Testbed certification).
+PEPPOL_AS4_DEBUG_CAPTURE = env.bool('PEPPOL_AS4_DEBUG_CAPTURE', default=False)
+
+# Allow large AS4 payloads (Testbed sends 10MB+ files — TC2A.5B).
+# 20 MB ceiling for the raw request body.
+DATA_UPLOAD_MAX_MEMORY_SIZE = env.int('DATA_UPLOAD_MAX_MEMORY_SIZE', default=20 * 1024 * 1024)
+FILE_UPLOAD_MAX_MEMORY_SIZE = env.int('FILE_UPLOAD_MAX_MEMORY_SIZE', default=20 * 1024 * 1024)
+
 # SMP lookup base URL (production: https://b2bi.peppol.eu — UAE ASP will provide)
 PEPPOL_SMP_BASE_URL = env('PEPPOL_SMP_BASE_URL', default='')
 # True = use PEPPOL test SML (acc.edelivery.tech.ec.europa.eu), False = production

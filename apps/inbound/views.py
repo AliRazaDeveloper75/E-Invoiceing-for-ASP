@@ -74,6 +74,24 @@ class AS4ReceiveView(APIView):
         content_type = request.META.get('CONTENT_TYPE', '')
         raw_body = request.body or b''
 
+        # Debug capture: when PEPPOL_AS4_DEBUG_CAPTURE=True, dump the raw inbound
+        # message so we can analyse exactly what a sending AP (e.g. the PEPPOL
+        # Testbed) transmits, and build spec-exact signature verification.
+        from django.conf import settings as _settings
+        if getattr(_settings, 'PEPPOL_AS4_DEBUG_CAPTURE', False):
+            try:
+                import os
+                from datetime import datetime, timezone as _tz
+                dbg_dir = os.path.join(_settings.MEDIA_ROOT, 'as4_debug')
+                os.makedirs(dbg_dir, exist_ok=True)
+                ts = datetime.now(tz=_tz.utc).strftime('%Y%m%dT%H%M%S_%f')
+                with open(os.path.join(dbg_dir, f'{ts}.bin'), 'wb') as fh:
+                    fh.write(f'Content-Type: {content_type}\r\n\r\n'.encode())
+                    fh.write(raw_body)
+                logger.info('AS4 debug capture saved: %s.bin (%d bytes)', ts, len(raw_body))
+            except Exception as _exc:
+                logger.warning('AS4 debug capture failed: %s', _exc)
+
         result = AS4Receiver().receive(content_type, raw_body)
 
         if not result.success:
