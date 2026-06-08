@@ -8,19 +8,19 @@ import {
 export const metadata: Metadata = {
   title: 'E-Numerak — E-Invoicing, Done Right',
   description:
-    'E-Numerak is an end-to-end compliance platform that centralizes invoicing across your business. UAE FTA-Certified, PEPPOL-Compliant. From invoice creation to FTA Validation — everything unified.',
+    'E-Numerak is an end-to-end compliance platform that centralizes invoicing across your business. UAE FTA-Certified, E-Invoice Compliant. From invoice creation to FTA Validation — everything unified.',
   keywords: [
     'UAE e-invoicing platform',
     'FTA certified e-invoice',
-    'PEPPOL-compliant platform UAE',
-    'PEPPOL BIS 3.0 UAE',
+    'E-Invoice compliant platform UAE',
+    'BIS 3.0 UAE',
     'VAT excise invoicing UAE',
     'e-invoicing Federal Decree-Law 16',
     'UAE digital economy invoicing',
   ],
   alternates: { canonical: '/' },
   openGraph: {
-    title: 'E-Numerak | UAE FTA-Certified, PEPPOL-Compliant Platform',
+    title: 'E-Numerak | UAE FTA-Certified, E-Invoice Compliant Platform',
     description:
       'Navigate UAE\'s e-Invoicing regulations with confidence. E-Numerak delivers full control, visibility, and speed — from invoice creation to FTA Validation.',
     url: '/',
@@ -30,8 +30,8 @@ export const metadata: Metadata = {
 const FEATURES = [
   {
     icon: <FileText className="h-6 w-6" />,
-    title: 'Automated PEPPOL Invoicing',
-    desc: 'The solution automatically creates PEPPOL invoices with no technical complexity. Fully FTA Audit File (FAF) compliant including all VAT and Excise data fields you need for certification.',
+    title: 'Automated E-Invoice Invoicing',
+    desc: 'The solution automatically creates E-Invoice invoices with no technical complexity. Fully FTA Audit File (FAF) compliant including all VAT and Excise data fields you need for certification.',
     color: 'text-blue-600 bg-blue-50',
   },
   {
@@ -51,7 +51,7 @@ const FEATURES = [
 const STATS = [
   { value: '5%',   label: 'UAE VAT Rate' },
   { value: '32',   label: 'FAF Data Elements' },
-  { value: '5',    label: 'PEPPOL Corners' },
+  { value: '5',    label: 'E-Invoice Corners' },
   { value: '100%', label: 'FTA Compliant' },
 ];
 
@@ -59,7 +59,7 @@ const COMPLIANCE = [
   'Federal Decree-Law No. 16 of 2024 (VAT)',
   'Federal Decree-Law No. 7 of 2017 (Excise)',
   'FTA Tax Accounting Software Certification',
-  'PEPPOL BIS Billing 3.0',
+  'BIS Billing 3.0',
   'UBL 2.1 XML Standard',
   'UAE Phase 1 & Phase 2 E-Invoicing',
 ];
@@ -87,11 +87,6 @@ export default function HomePage() {
         />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-semibold text-blue-200 mb-8">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              UAE FTA-Certified &bull; PEPPOL-Compliant Platform
-            </div>
-
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-4">
               E-Numerak —{' '}
               <span className="text-blue-300">E-Invoicing, Done Right</span>
@@ -125,7 +120,7 @@ export default function HomePage() {
             </div>
 
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2">
-              {['FTA Certified', 'PEPPOL BIS 3.0', 'VAT & Excise Ready', 'Secure & Compliant'].map((t) => (
+              {['FTA Certified', 'BIS 3.0', 'VAT & Excise Ready', 'Secure & Compliant'].map((t) => (
                 <span key={t} className="flex items-center gap-1.5 text-xs text-blue-200 font-medium">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />{t}
                 </span>
@@ -171,7 +166,7 @@ export default function HomePage() {
                   maintains security, and prepares them for what lies ahead.
                 </p>
                 <p>
-                  Designed for the UAE&apos;s, E-Numerak combines VAT, Excise and PEPPOL compliances
+                  Designed for the UAE&apos;s, E-Numerak combines VAT, Excise and E-Invoice compliances
                   into a single elegant platform. All of your invoices are formatted, authenticated
                   and transmitted securely to &amp; from the FTA, ensuring a smooth, fully compliant
                   invoicing process. The outcome is a more intelligent, more robust online invoicing
@@ -192,7 +187,7 @@ export default function HomePage() {
                 </div>
               </div>
               {[
-                'VAT, Excise & PEPPOL in one platform',
+                'VAT, Excise & E-Invoice in one platform',
                 'FTA-certified secure transmission',
                 'Authenticated invoice formatting',
                 'Fully compliant invoicing process',
@@ -225,7 +220,7 @@ export default function HomePage() {
                 highlights issues instantly, which enable immediate correction on the platform.
               </p>
               <p>
-                Approved invoices are then sent via the PEPPOL 5-corner network securely from your
+                Approved invoices are then sent via the 5-corner network securely from your
                 internal systems through the Access Point to the FTA. All steps are monitored, all
                 information is controlled, and all documents are stored ready for a potential audit
                 trail. A process designed not just for compliance, but to build confidence
@@ -238,7 +233,7 @@ export default function HomePage() {
             {[
               { step: '01', label: 'Create Invoice',     desc: 'Fully UAE-Compliant' },
               { step: '02', label: 'Real-Time Validate', desc: 'Instant error detection' },
-              { step: '03', label: 'Send via PEPPOL',    desc: '5-corner network' },
+              { step: '03', label: 'Send via E-Invoice',    desc: '5-corner network' },
               { step: '04', label: 'FTA Submission',     desc: 'Secure & certified' },
               { step: '05', label: 'Audit Trail',        desc: 'Full traceability' },
             ].map((p, i, arr) => (
@@ -308,7 +303,7 @@ export default function HomePage() {
                   Compliant with all regulations of Federal Decree-Law No. 16 of 2024 (VAT) and
                   Federal Decree-Law No. 7 of 2017 (Excise), the entire invoice processing is
                   compliant and can cater to UAE requirements. No one size fits all solution
-                  integration with PEPPOL BIS Billing 3.0 for global acumen, 5-corner model for
+                  integration with BIS Billing 3.0 for global acumen, 5-corner model for
                   end to end invoice visibility.
                 </p>
                 <p>
@@ -488,7 +483,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-2">
           <p className="text-white font-bold text-lg">E-Numerak</p>
           <p className="text-blue-300 text-sm leading-relaxed">
-            Built for businesses across the supply chain adopting PEPPOL 5-corner e-invoicing
+            Built for businesses across the supply chain adopting 5-corner e-invoicing
             platform for merchant establishments in UAE.
           </p>
           <p className="text-blue-400 text-sm leading-relaxed">

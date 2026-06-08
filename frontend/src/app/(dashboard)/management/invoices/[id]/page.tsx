@@ -110,7 +110,7 @@ function getActions(invoice: AdminInvoice): ActionDef[] {
       icon: ShieldCheck,
       color: 'bg-emerald-600 hover:bg-emerald-700 text-white',
       endpoint: `/admin/invoices/${invoice.id}/approve-asp/`,
-      confirm: `Mark invoice ${num} as validated by ASP?\n\nThis advances the PEPPOL flow through Corners 2, 3 and 4.`,
+      confirm: `Mark invoice ${num} as validated by ASP?\n\nThis advances the E-Invoice flow through Corners 2, 3 and 4.`,
     });
     actions.push({
       key: 'reject',
@@ -264,7 +264,7 @@ export default function AdminInvoiceDetailPage() {
           {actions.length > 0 && (
             <div className="bg-white rounded-xl border-2 border-blue-100 p-5 space-y-4">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Admin Actions — Advance PEPPOL Flow
+                Admin Actions — Advance E-Invoice Flow
               </p>
 
               {/* Progress stepper */}
@@ -323,11 +323,11 @@ export default function AdminInvoiceDetailPage() {
           {invoice?.status === 'validated' && invoice.fta_status === 'reported' && (
             <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 text-sm font-medium">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
-              Full 5-corner PEPPOL flow complete — invoice reported to FTA.
+              Full 5-corner E-Invoice flow complete — invoice reported to FTA.
             </div>
           )}
 
-          {/* ── PEPPOL 5-Corner Flow Tracker ───────────────────────────────── */}
+          {/* ── 5-Corner Flow Tracker ───────────────────────────────── */}
           {timeline?.flow && <FlowTracker flow={timeline.flow} />}
 
           {/* ── Invoice Metadata ───────────────────────────────────────────── */}

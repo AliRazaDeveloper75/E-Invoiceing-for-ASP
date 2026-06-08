@@ -3,6 +3,7 @@ Customer serializers.
 
 Input validation only. No business logic.
 """
+from django.core.validators import FileExtensionValidator
 from rest_framework import serializers
 from apps.common.constants import TRANSACTION_TYPE_CHOICES
 from .models import Customer
@@ -31,6 +32,8 @@ class CustomerSerializer(serializers.ModelSerializer):
             'trn', 'tin', 'vat_number',
             # PEPPOL
             'peppol_endpoint', 'is_peppol_connected',
+            # Documents
+            'trn_document', 'logo',
             # Address
             'street_address', 'city', 'state_province', 'postal_code', 'country',
             'formatted_address',
@@ -75,6 +78,20 @@ class CustomerCreateSerializer(serializers.Serializer):
 
     # PEPPOL
     peppol_endpoint = serializers.CharField(max_length=255, required=False, default='', allow_blank=True)
+
+    # Documents — mandatory on create
+    trn_document = serializers.FileField(
+        required=True,
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png'])],
+        error_messages={'required': 'TRN document (PDF/JPG/PNG) is required.'},
+        help_text='TRN / tax registration certificate — PDF, JPG or PNG.'
+    )
+    logo = serializers.ImageField(
+        required=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png'])],
+        error_messages={'required': 'Customer logo (JPG/PNG) is required.'},
+        help_text='Customer company logo — JPG or PNG.'
+    )
 
     # Address
     street_address = serializers.CharField(max_length=500, required=False, default='', allow_blank=True)

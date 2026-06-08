@@ -36,7 +36,7 @@ const FAQS = [
   },
   {
     q: 'How do I connect to the FTA network?',
-    a: 'The platform uses the PEPPOL 5-corner model. In production, you connect through a UAE-accredited ASP (Accredited Service Provider) who routes invoices to the FTA.',
+    a: 'The platform uses the 5-corner model. In production, you connect through a UAE-accredited ASP (Accredited Service Provider) who routes invoices to the FTA.',
   },
   {
     q: 'Can I have multiple companies?',
@@ -46,7 +46,7 @@ const FAQS = [
 
 const SUBJECTS = [
   { value: 'fta_compliance', label: 'FTA Compliance Question' },
-  { value: 'peppol',         label: 'PEPPOL Integration' },
+  { value: 'peppol',         label: 'E-Invoice Integration' },
   { value: 'support',        label: 'Platform Support' },
   { value: 'pricing',        label: 'Pricing / Demo' },
   { value: 'other',          label: 'Other' },
@@ -95,7 +95,7 @@ export default function ContactPage() {
             <p className="text-blue-300 text-sm font-semibold uppercase tracking-widest mb-3">Contact</p>
             <h1 className="text-4xl font-bold mb-4">Get in Touch</h1>
             <p className="text-blue-100 text-lg leading-relaxed">
-              Questions about UAE e-invoicing compliance, PEPPOL integration, or the platform?
+              Questions about UAE e-invoicing compliance, E-Invoice integration, or the platform?
               Our team is here to help.
             </p>
           </div>

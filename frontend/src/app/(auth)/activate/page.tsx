@@ -222,7 +222,7 @@ function ActivateForm() {
         </div>
 
         <div className="relative z-10 flex items-center gap-3 flex-wrap">
-          {['FTA Certified', 'PEPPOL BIS 3.0', 'UAE Compliant'].map((badge) => (
+          {['FTA Certified', 'BIS 3.0', 'UAE Compliant'].map((badge) => (
             <span
               key={badge}
               className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-white/10 text-white/70 border border-white/10"

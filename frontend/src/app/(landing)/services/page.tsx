@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowRight, FileText, BarChart3, Shield, Download, Zap, Users } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'E-Invoicing Services | Tax Invoice, FTA Audit Files & PEPPOL',
+  title: 'E-Invoicing Services | Tax Invoice, FTA Audit Files & E-Invoice',
   description:
     'E-Numerak services: tax invoice generation (UBL 380/381/480), FTA audit files (21 VAT FAF + 32 Excise fields), real-time validation, PDF/XML export, VAT reporting, and multi-company access.',
   keywords: [
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     'FTA audit file software',
     'VAT FAF UAE',
     'Excise FAF UAE',
-    'PEPPOL UBL 2.1 XML',
+    'UBL 2.1 XML',
     'e-invoice PDF export UAE',
     'VAT reporting UAE software',
     'multi-company invoicing UAE',
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'E-Numerak Services | UAE Tax Invoice & FTA Compliance',
     description:
-      'Tax invoice generation, FTA audit files, PEPPOL validation, PDF/XML export, and VAT reporting — fully FTA-compliant.',
+      'Tax invoice generation, FTA audit files, E-Invoice validation, PDF/XML export, and VAT reporting — fully FTA-compliant.',
     url: '/services',
   },
 };
@@ -29,7 +29,7 @@ const SERVICES = [
   {
     icon: <FileText className="h-7 w-7" />,
     title: 'Tax Invoice Generation',
-    desc: 'Create UAE-compliant Tax Invoices, Credit Notes, Commercial Invoices, and Continuous Supply invoices. PEPPOL UBL 2.1 XML auto-generated on every save.',
+    desc: 'Create UAE-compliant Tax Invoices, Credit Notes, Commercial Invoices, and Continuous Supply invoices. UBL 2.1 XML auto-generated on every save.',
     tags: ['Tax Invoice', 'Credit Note', 'Commercial', 'Continuous Supply'],
     color: 'blue',
   },
@@ -50,7 +50,7 @@ const SERVICES = [
   {
     icon: <Download className="h-7 w-7" />,
     title: 'PDF & XML Export',
-    desc: 'Download human-readable PDF invoices (xhtml2pdf) and machine-readable PEPPOL UBL XML files for any invoice in any status.',
+    desc: 'Download human-readable PDF invoices (xhtml2pdf) and machine-readable UBL XML files for any invoice in any status.',
     tags: ['PDF Download', 'UBL XML', 'A4 Format', 'On-Demand'],
     color: 'purple',
   },

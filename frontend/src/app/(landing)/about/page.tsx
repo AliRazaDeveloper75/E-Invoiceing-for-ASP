@@ -5,20 +5,20 @@ import { ArrowRight, Target, Users, Shield, Award } from 'lucide-react';
 export const metadata: Metadata = {
   title: 'About E-Numerak | UAE E-Invoicing for FTA Compliance',
   description:
-    'E-Numerak simplifies UAE e-invoicing under Federal Decree-Law No. 16 of 2024. FTA-certified, PEPPOL BIS 3.0, multi-company, role-based access — built for the UAE digital economy.',
+    'E-Numerak simplifies UAE e-invoicing under Federal Decree-Law No. 16 of 2024. FTA-certified, BIS 3.0, multi-company, role-based access — built for the UAE digital economy.',
   keywords: [
     'about E-Numerak',
     'UAE e-invoicing compliance',
     'FTA certified platform',
     'Federal Decree-Law 16 2024',
     'UAE VAT invoicing',
-    'PEPPOL UAE platform',
+    'E-Invoice UAE platform',
   ],
   alternates: { canonical: '/about' },
   openGraph: {
     title: 'About E-Numerak | UAE E-Invoicing for FTA Compliance',
     description:
-      'Built for the UAE digital economy — FTA-certified, PEPPOL BIS 3.0, VAT & Excise compliant e-invoicing platform.',
+      'Built for the UAE digital economy — FTA-certified, BIS 3.0, VAT & Excise compliant e-invoicing platform.',
     url: '/about',
   },
 };
@@ -35,7 +35,7 @@ const TIMELINE = [
   { year: '2019', event: 'VAT implementation — businesses required to register' },
   { year: '2022', event: 'Excise Tax expanded — energy drinks, tobacco, carbonated beverages' },
   { year: '2024', event: 'Federal Decree-Law No. 16 — e-invoicing mandated' },
-  { year: '2026', event: 'Phase 1 PEPPOL B2B/B2G e-invoicing goes live' },
+  { year: '2026', event: 'Phase 1 E-Invoice B2B/B2G e-invoicing goes live' },
 ];
 
 export default function AboutPage() {

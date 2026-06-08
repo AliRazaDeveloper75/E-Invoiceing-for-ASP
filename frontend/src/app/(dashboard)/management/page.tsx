@@ -516,7 +516,7 @@ export default function ManagementPage() {
                 />
                 <QueueCard
                   title="ASP Verification Queue"
-                  subtitle="Review draft invoices and submit to PEPPOL / ASP"
+                  subtitle="Review draft invoices and submit to E-Invoice / ASP"
                   count={inv?.asp_pending ?? 0}
                   urgent
                   href="/management/asp"

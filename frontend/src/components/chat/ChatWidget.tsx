@@ -63,7 +63,7 @@ const CHATBOT_TREE: ChatbotNode[] = [
         id: 'types',
         text: 'What invoice types are supported?',
         answer:
-          'The platform supports:\n• Tax Invoice (380)\n• Credit Note (381)\n• Commercial Invoice (480)\n• Continuous Supply Invoice (875)\n\nAll per the UAE PINT / PEPPOL BIS 3.0 standard.',
+          'The platform supports:\n• Tax Invoice (380)\n• Credit Note (381)\n• Commercial Invoice (480)\n• Continuous Supply Invoice (875)\n\nAll per the UAE PINT / BIS 3.0 standard.',
       },
       {
         id: 'status',
@@ -75,7 +75,7 @@ const CHATBOT_TREE: ChatbotNode[] = [
         id: 'xml',
         text: 'How do I download the UBL XML?',
         answer:
-          'Open the invoice detail page. Once status is Submitted or Validated, a "Download XML" button appears. Click it to download the PEPPOL UBL 2.1 XML file.',
+          'Open the invoice detail page. Once status is Submitted or Validated, a "Download XML" button appears. Click it to download the UBL 2.1 XML file.',
       },
       {
         id: 'credit_note',
@@ -103,9 +103,9 @@ const CHATBOT_TREE: ChatbotNode[] = [
       },
       {
         id: 'peppol',
-        text: 'What is PEPPOL / UAE PINT?',
+        text: 'What is E-Invoice / UAE PINT?',
         answer:
-          'PEPPOL (Pan-European Public Procurement On-Line) is a global e-invoicing network. UAE PINT is the UAE national profile based on PEPPOL BIS 3.0 and UBL 2.1, mandated by the UAE FTA for e-invoicing compliance.',
+          'E-Invoice is the UAE\'s standard electronic invoicing network. UAE PINT is the UAE national profile based on BIS 3.0 and UBL 2.1, mandated by the UAE FTA for e-invoicing compliance.',
       },
     ],
   },
@@ -153,7 +153,7 @@ const CHATBOT_TREE: ChatbotNode[] = [
         id: 'compliance',
         text: 'Is this platform FTA certified?',
         answer:
-          'Yes. E-Numerak is FTA-certified and fully compliant with Federal Decree-Law No. 16 of 2024. It generates PEPPOL BIS 3.0 / UBL 2.1 e-invoices and submits them to the Accredited Service Provider (ASP).',
+          'Yes. E-Numerak is FTA-certified and fully compliant with Federal Decree-Law No. 16 of 2024. It generates BIS 3.0 / UBL 2.1 e-invoices and submits them to the Accredited Service Provider (ASP).',
       },
       {
         id: 'pricing',
@@ -592,7 +592,7 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
             <Bot className="w-5 h-5 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm">E-Invoice Assistant</p>
-              <p className="text-xs text-blue-300 truncate">UAE PINT / PEPPOL support</p>
+              <p className="text-xs text-blue-300 truncate">UAE PINT / E-Invoice support</p>
             </div>
           </div>
 

@@ -734,16 +734,16 @@ function ReviewStep({ values, lineItems, hasBuyer, onSubmit, isSubmitting, submi
             <Send className="h-6 w-6 text-blue-300" />
           </div>
           <div>
-            <h3 className="text-base font-bold">Submit to PEPPOL via ASP</h3>
+            <h3 className="text-base font-bold">Submit to E-Invoice via ASP</h3>
             <p className="text-sm text-blue-300 mt-1">
-              This invoice will be submitted to the UAE FTA PEPPOL network through your Accredited Service Provider.
+              This invoice will be submitted to the UAE FTA E-Invoice network through your Accredited Service Provider.
               Ensure all details are correct before proceeding.
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-5">
-          {[['Standard', 'UAE PINT'], ['Network', 'PEPPOL'], ['Format', 'UBL 2.1']].map(([label, val]) => (
+          {[['Standard', 'UAE PINT'], ['Network', 'E-Invoice'], ['Format', 'UBL 2.1']].map(([label, val]) => (
             <div key={label} className="bg-white/10 rounded-xl px-3 py-2.5 text-center">
               <p className="text-[10px] text-blue-400 uppercase tracking-wider">{label}</p>
               <p className="text-sm font-black text-white mt-0.5">{val}</p>
@@ -989,7 +989,7 @@ function InvoicePreview({ values, lineItems, activeFieldId }: {
         {/* Compliance footer */}
         <div className="px-4 py-3 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
           <div>
-            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">UAE PINT · PEPPOL BIS 3.0</p>
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">UAE PINT · BIS 3.0</p>
             {v('IBT-001') && <p className="text-[8px] font-mono text-gray-300 mt-0.5">{v('IBT-001')}</p>}
           </div>
           <div className="flex gap-1">

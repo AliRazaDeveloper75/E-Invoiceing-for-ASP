@@ -64,7 +64,7 @@ function getEventConfig(event: TimelineEvent): EventConfig {
 const CORNER_LABEL: Record<number, string> = {
   1: 'C1 · Supplier',
   2: 'C2 · Sending ASP',
-  3: 'C3 · PEPPOL Network',
+  3: 'C3 · E-Invoice Network',
   4: 'C4 · Buyer',
   5: 'C5 · FTA',
 };

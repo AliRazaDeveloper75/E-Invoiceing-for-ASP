@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Create Account',
   description:
-    'Create a free E-Numerak account and start issuing UAE FTA-compliant e-invoices via PEPPOL BIS 3.0 today.',
+    'Create a free E-Numerak account and start issuing UAE FTA-compliant e-invoices via BIS 3.0 today.',
   alternates: { canonical: '/register' },
   openGraph: {
     title: 'Create Account | E-Numerak',

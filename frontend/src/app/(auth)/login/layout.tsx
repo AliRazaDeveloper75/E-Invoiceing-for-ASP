@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 export const metadata: Metadata = {
   title: 'Sign In',
   description:
-    'Sign in to your E-Numerak account to manage UAE FTA-compliant e-invoices, submit to PEPPOL, and track buyer payments.',
+    'Sign in to your E-Numerak account to manage UAE FTA-compliant e-invoices, submit to E-Invoice, and track buyer payments.',
   alternates: { canonical: '/login' },
   openGraph: {
     title: 'Sign In | E-Numerak',

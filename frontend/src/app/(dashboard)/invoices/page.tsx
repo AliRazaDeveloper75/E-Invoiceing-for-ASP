@@ -123,13 +123,8 @@ export default function InvoicesPage() {
         {!isAdmin && (
           <div className="flex items-center gap-2">
             <Link href="/invoices/new">
-              <Button variant="secondary">
-                <Plus className="h-4 w-4" /> Standard
-              </Button>
-            </Link>
-            <Link href="/invoices/pint-create">
               <Button>
-                <Plus className="h-4 w-4" /> PINT Invoice
+                <Plus className="h-4 w-4" /> Create Invoice
               </Button>
             </Link>
           </div>

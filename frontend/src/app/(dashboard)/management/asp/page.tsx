@@ -50,7 +50,7 @@ const TABS = [
     icon: ShieldCheck,
     color: 'text-orange-600',
     activeBg: 'bg-orange-50 border-orange-500',
-    description: 'Draft invoices ready to be submitted to the PEPPOL / ASP network',
+    description: 'Draft invoices ready to be submitted to the E-Invoice / ASP network',
     emptyText: 'No draft invoices in the ASP queue',
   },
   {
@@ -297,7 +297,7 @@ function AspPageInner() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">ASP & FTA Queues</h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          Submit invoices to PEPPOL / ASP and report validated invoices to the FTA
+          Submit invoices to E-Invoice / ASP and report validated invoices to the FTA
         </p>
       </div>
 

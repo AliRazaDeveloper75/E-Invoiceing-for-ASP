@@ -27,8 +27,8 @@ const FEATURES = [
   },
   {
     icon: Network,
-    title: 'PEPPOL 5-Corner',
-    desc: 'End-to-end transmission via accredited ASP through the OpenPEPPOL network.',
+    title: '5-Corner',
+    desc: 'End-to-end transmission via accredited ASP through the E-Invoice network.',
   },
   {
     icon: ShieldCheck,
@@ -99,7 +99,7 @@ export default function LoginPage() {
             </div>
             <span className="text-xl font-bold tracking-tight">E-Numerak</span>
           </div>
-          <p className="text-white/50 text-sm ml-12">PEPPOL 5-Corner Platform</p>
+          <p className="text-white/50 text-sm ml-12">5-Corner Platform</p>
         </div>
 
         {/* Hero text */}
@@ -110,7 +110,7 @@ export default function LoginPage() {
             </h2>
             <p className="mt-3 text-white/60 text-sm leading-relaxed max-w-sm">
               Issue, validate, and report tax invoices in full compliance with the UAE
-              FTA mandate — powered by the PEPPOL BIS 3.0 standard.
+              FTA mandate — powered by the BIS 3.0 standard.
             </p>
           </div>
 
@@ -132,7 +132,7 @@ export default function LoginPage() {
 
         {/* Footer badges */}
         <div className="relative z-10 flex items-center gap-3 flex-wrap">
-          {['FTA Certified', 'PEPPOL BIS 3.0', 'UBL 2.1', 'VAT Compliant'].map((badge) => (
+          {['FTA Certified', 'BIS 3.0', 'UBL 2.1', 'VAT Compliant'].map((badge) => (
             <span
               key={badge}
               className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-white/10 text-white/70 border border-white/10"
@@ -150,7 +150,7 @@ export default function LoginPage() {
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-2xl font-bold text-brand-900">E-Numerak</h1>
-            <p className="text-gray-500 mt-1 text-sm">PEPPOL 5-Corner Platform</p>
+            <p className="text-gray-500 mt-1 text-sm">5-Corner Platform</p>
           </div>
 
           <div className="mb-8">

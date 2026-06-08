@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import useSWR from 'swr';
+import QRCode from 'qrcode';
 import { api } from '@/lib/api';
 import { useCompany } from '@/hooks/useCompany';
 import { Button } from '@/components/ui/Button';
@@ -15,6 +16,7 @@ import {
   ArrowUpRight, ArrowDownRight, ShoppingBag, Minus,
   Building2, Package, CreditCard,
   Upload, Download, FileSpreadsheet, X,
+  QrCode, PenLine,
 } from 'lucide-react';
 import { AxiosError } from 'axios';
 import type { Customer } from '@/types';
@@ -328,7 +330,7 @@ function GroupHeading({ icon, title, subtitle }: { icon: React.ReactNode; title:
 
 // ─── Field wrapper ────────────────────────────────────────────────────────────
 
-function Field({ label, faf, hint, tooltip, required, error, children }: {
+function Field({ label, hint, tooltip, required, error, children }: {
   label: string; faf?: boolean; hint?: string; tooltip?: string;
   required?: boolean; error?: string; children: React.ReactNode;
 }) {
@@ -340,11 +342,6 @@ function Field({ label, faf, hint, tooltip, required, error, children }: {
           {label}
           {required && <span className="text-red-500 ml-0.5">*</span>}
         </label>
-        {faf && (
-          <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-indigo-50 text-indigo-600 border border-indigo-200 leading-none">
-            FAF
-          </span>
-        )}
         {info && <FieldTooltip content={info} />}
       </div>
       {children}
@@ -355,12 +352,21 @@ function Field({ label, faf, hint, tooltip, required, error, children }: {
 
 // ─── Section card ─────────────────────────────────────────────────────────────
 
-function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Section({ title, subtitle, icon, children }: {
+  title: string; subtitle?: string; icon?: React.ReactNode; children: React.ReactNode;
+}) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="px-5 py-3.5 border-b border-gray-100 bg-gray-50/70">
-        <p className="font-semibold text-gray-900 text-sm">{title}</p>
-        {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-gray-100 bg-gradient-to-r from-blue-50/60 to-white flex items-start gap-3">
+        {icon && (
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-600 shrink-0 mt-0.5">
+            {icon}
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="font-semibold text-gray-900 text-sm">{title}</p>
+          {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+        </div>
       </div>
       <div className="p-5 space-y-4">{children}</div>
     </div>
@@ -750,8 +756,8 @@ interface StepDef {
   done: boolean;
 }
 
-function FormStepper({ steps }: { steps: StepDef[] }) {
-  const activeIdx = steps.findIndex((s) => !s.done);
+function FormStepper({ steps, current }: { steps: StepDef[]; current?: number }) {
+  const activeIdx = current != null ? current : steps.findIndex((s) => !s.done);
   const allDone   = activeIdx === -1;
 
   return (
@@ -774,8 +780,8 @@ function FormStepper({ steps }: { steps: StepDef[] }) {
         {/* Step dots */}
         <div className="relative flex justify-between">
           {steps.map((step, i) => {
-            const isDone    = step.done;
-            const isActive  = !allDone && i === activeIdx;
+            const isDone    = current != null ? i < current : step.done;
+            const isActive  = current != null ? i === current : (!allDone && i === activeIdx);
             const isUpcoming = !isDone && !isActive;
             return (
               <div key={i} className="flex flex-col items-center gap-1.5 min-w-0">
@@ -1082,7 +1088,7 @@ function InvoicePreview({ card, companyName, customerName, issueDate, dueDate, c
               <span className="text-[9px] font-bold text-gray-500">FTA Certified</span>
             </div>
             <span className="text-gray-300">·</span>
-            <span className="text-[9px] text-gray-400">PEPPOL BIS 3.0</span>
+            <span className="text-[9px] text-gray-400">BIS 3.0</span>
             <span className="text-gray-300">·</span>
             <span className="text-[9px] text-gray-400">UBL 2.1</span>
           </div>
@@ -1117,7 +1123,7 @@ export default function NewInvoicePage() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const { register, control, handleSubmit, reset, watch, setValue,
+  const { register, control, handleSubmit, reset, watch, setValue, trigger,
     formState: { errors, isSubmitting } } = useForm<InvoiceForm>({
     defaultValues: {
       transaction_type: 'b2b', payment_means_code: '30', issue_date: today,
@@ -1171,6 +1177,29 @@ export default function NewInvoicePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCustomer?.id]);
 
+  // ── Payment / verification QR code (shown in the "Print Code" step) ──────────
+  const qrTotal = (watchedItems ?? []).reduce((sum, it) => {
+    const net  = (parseFloat(it.quantity) || 0) * (parseFloat(it.unit_price) || 0);
+    const rate = VAT_RATE_MAP[it.vat_rate_type] ?? 0;
+    return sum + net + net * rate / 100;
+  }, 0);
+  const qrText = [
+    'E-NUMERAK',
+    `INV:${invoiceNo}`,
+    `SELLER:${activeCompany?.name ?? ''}`,
+    `STRN:${activeCompany?.trn ?? ''}`,
+    `BUYER:${selectedCustomer?.name ?? ''}`,
+    `BTRN:${selectedCustomer?.trn ?? ''}`,
+    `TOTAL:${currency || 'AED'} ${qrTotal.toFixed(2)}`,
+    `DATE:${issueDate || ''}`,
+  ].join('|');
+  const [qrUrl, setQrUrl] = useState('');
+  useEffect(() => {
+    QRCode.toDataURL(qrText, { margin: 1, width: 220, errorCorrectionLevel: 'M' })
+      .then(setQrUrl)
+      .catch(() => setQrUrl(''));
+  }, [qrText]);
+
   // ── Stepper completion logic ──────────────────────────────────────────────
   const hasCustomer   = !!watchedCustomerId;
   const hasIssueDate  = !!issueDate;
@@ -1179,36 +1208,82 @@ export default function NewInvoicePage() {
   );
   const hasCurrency   = !!currency;
 
+  const readyToSubmit = hasCustomer && hasItems && hasCurrency && hasIssueDate;
+
+  // ── Wizard step navigation (each step gates Next on its required fields) ─────
+  const [step, setStep] = useState(0);
+  const TOTAL_STEPS = 7;
+
+  const stepFields = (s: number): (keyof InvoiceForm)[] => {
+    switch (s) {
+      case 0: return ['supplier_location', 'accounts_type'];   // Your Info
+      case 1: return ['customer_id', 'customer_location'];     // Buyer
+      case 2: return [];                                        // Product Catalog (items checked separately)
+      case 3: return [                                          // Payment & Sign
+        'issue_date', 'due_date', 'exchange_rate', 'discount_amount',
+        'gl_account_id', 'permit_number', 'transaction_id', 'purchase_order_number',
+        ...(needRef ? ['reference_number' as keyof InvoiceForm] : []),
+      ];
+      default: return [];
+    }
+  };
+
+  const goNext = async () => {
+    const ok = await trigger(stepFields(step), { shouldFocus: true });
+    if (!ok) {
+      setServerError('Please complete the required (*) fields in this step before continuing.');
+      return;
+    }
+    if (step === 2 && !hasItems) {
+      setServerError('Add at least one line item (name, quantity and price) before continuing.');
+      return;
+    }
+    setServerError('');
+    setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1));
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const goBack = () => {
+    setServerError('');
+    setStep((s) => Math.max(s - 1, 0));
+  };
+
   const STEPS: StepDef[] = [
     {
-      label: 'Type',
-      sub:   'Invoice type selected',
-      icon:  <FileText className="h-4 w-4" />,
+      label: 'Your Info',
+      sub:   'Supplier details',
+      icon:  <Building2 className="h-4 w-4" />,
       done:  true,
     },
     {
-      label: 'Parties',
-      sub:   'Select a customer',
+      label: 'Buyer',
+      sub:   'Select the customer',
       icon:  <Building2 className="h-4 w-4" />,
       done:  hasCustomer,
     },
     {
-      label: 'Dates',
-      sub:   'Set issue date',
-      icon:  <FileText className="h-4 w-4" />,
-      done:  hasIssueDate,
-    },
-    {
-      label: 'Items',
+      label: 'Product Catalog',
       sub:   'Add line items',
       icon:  <Package className="h-4 w-4" />,
       done:  hasItems,
     },
     {
-      label: 'Currency',
-      sub:   'Set currency',
-      icon:  <CreditCard className="h-4 w-4" />,
+      label: 'Payment & Sign',
+      sub:   'Currency & signature',
+      icon:  <PenLine className="h-4 w-4" />,
       done:  hasCurrency,
+    },
+    {
+      label: 'Print Code',
+      sub:   'QR / verification code',
+      icon:  <QrCode className="h-4 w-4" />,
+      done:  readyToSubmit,
+    },
+    {
+      label: 'Review',
+      sub:   'Check details',
+      icon:  <FileCheck className="h-4 w-4" />,
+      done:  readyToSubmit,
     },
     {
       label: 'Submit',
@@ -1344,7 +1419,6 @@ export default function NewInvoicePage() {
               <h1 className="text-xl font-bold text-gray-900">{selected.title}</h1>
               <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${accent.badge}`}>{selected.boxRef}</span>
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 border border-indigo-200">{selected.reqRef}</span>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-200">FAF Compliant</span>
             </div>
             <p className="text-sm text-gray-500 mt-0.5">{selected.subtitle}</p>
           </div>
@@ -1352,7 +1426,7 @@ export default function NewInvoicePage() {
       </div>
 
       {/* Progress stepper */}
-      <FormStepper steps={STEPS} />
+      <FormStepper steps={STEPS} current={step} />
 
       {/* Two-column layout: form + preview */}
       <div className="grid grid-cols-[1fr_360px] gap-6 items-start">
@@ -1360,71 +1434,86 @@ export default function NewInvoicePage() {
         {/* ── LEFT: Form ── */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 min-w-0" noValidate>
 
-          {/* Parties */}
-          <Section title="Parties" subtitle="FAF: Company name, TRN, locations of suppliers and customers, accounts receivable/payable">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <Field label="Customer (Buyer)" faf required
-                  tooltip="The business or person being invoiced. For B2B/B2G the customer must have a valid 15-digit TRN. Pick '+ Add new customer' to create one."
-                  error={errors.customer_id?.message}>
-                  <select
-                    className={inputCls(errors.customer_id?.message)}
-                    {...register('customer_id', { required: 'Customer is required' })}
-                    onChange={(e) => {
-                      if (e.target.value === '__add_customer__') {
-                        router.push('/customers/new');
-                      } else {
-                        setValue('customer_id', e.target.value, { shouldValidate: true });
-                      }
-                    }}
-                  >
-                    <option value="">Select a customer…</option>
-                    {customers.map((cu) => (
-                      <option key={cu.id} value={cu.id}>
-                        {cu.name}{cu.trn ? ` — TRN: ${cu.trn}` : ''}{cu.city ? ` (${cu.city})` : ''}
-                      </option>
-                    ))}
-                    <option value="__add_customer__">+ Add new customer</option>
+          {/* STEP 0 — Your Info (seller) */}
+          {step === 0 && (
+            <Section title="Your Info" icon={<Building2 className="h-4 w-4" />} subtitle="Your company (seller) details">
+              <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shrink-0">
+                  {(activeCompany?.name ?? 'CO').slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-gray-900 text-sm truncate">{activeCompany?.name ?? '—'}</p>
+                  <p className="text-xs text-gray-500">TRN: {activeCompany?.trn || '—'}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Supplier Location" required
+                  tooltip="Location of the supplier (your company). E.g. Dubai, UAE"
+                  error={errors.supplier_location?.message}>
+                  <input placeholder="e.g. Dubai, UAE" maxLength={120}
+                    className={inputCls(errors.supplier_location?.message)}
+                    {...register('supplier_location', {
+                      required: 'Supplier location is required',
+                      validate: (v) => limitWords(v, 'Supplier location'),
+                    })} />
+                </Field>
+                <Field label="Accounts Receivable / Payable" required
+                  error={errors.accounts_type?.message}>
+                  <select className={selectCls} {...register('accounts_type', { required: 'Required for audit file' })}>
+                    <option value="">— Select —</option>
+                    <option value="receivable">Accounts Receivable (AR)</option>
+                    <option value="payable">Accounts Payable (AP)</option>
+                  </select>
+                </Field>
+                <Field label="Transaction Type">
+                  <select className={selectCls} {...register('transaction_type')}>
+                    <option value="b2b">B2B — Business to Business</option>
+                    <option value="b2g">B2G — Business to Government</option>
+                  </select>
+                </Field>
+                <Field label="Payment Method" hint="UN/ECE UNCL 4461 — mandatory for UBL PaymentMeans element">
+                  <select className={selectCls} {...register('payment_means_code')}>
+                    <option value="30">30 — Credit Transfer</option>
+                    <option value="10">10 — Cash</option>
+                    <option value="20">20 — Cheque</option>
+                    <option value="48">48 — Bank Card</option>
+                    <option value="49">49 — Direct Debit</option>
+                    <option value="57">57 — Standing Order</option>
+                    <option value="58">58 — SEPA Credit Transfer</option>
                   </select>
                 </Field>
               </div>
-              <Field label="Transaction Type">
-                <select className={selectCls} {...register('transaction_type')}>
-                  <option value="b2b">B2B — Business to Business</option>
-                  <option value="b2g">B2G — Business to Government</option>
+            </Section>
+          )}
+
+          {/* STEP 1 — Buyer */}
+          {step === 1 && (
+            <Section title="Buyer" icon={<Building2 className="h-4 w-4" />} subtitle="Select the customer being invoiced">
+              <Field label="Customer (Buyer)" required
+                tooltip="The business or person being invoiced. For B2B/B2G the customer must have a valid 15-digit TRN. Pick '+ Add new customer' to create one."
+                error={errors.customer_id?.message}>
+                <select
+                  className={inputCls(errors.customer_id?.message)}
+                  {...register('customer_id', { required: 'Customer is required' })}
+                  onChange={(e) => {
+                    if (e.target.value === '__add_customer__') {
+                      router.push('/customers/new');
+                    } else {
+                      setValue('customer_id', e.target.value, { shouldValidate: true });
+                    }
+                  }}
+                >
+                  <option value="">Select a customer…</option>
+                  {customers.map((cu) => (
+                    <option key={cu.id} value={cu.id}>
+                      {cu.name}{cu.trn ? ` — TRN: ${cu.trn}` : ''}{cu.city ? ` (${cu.city})` : ''}
+                    </option>
+                  ))}
+                  <option value="__add_customer__">+ Add new customer</option>
                 </select>
               </Field>
-              <Field label="Payment Method" faf hint="UN/ECE UNCL 4461 — mandatory for UBL PaymentMeans element">
-                <select className={selectCls} {...register('payment_means_code')}>
-                  <option value="30">30 — Credit Transfer</option>
-                  <option value="10">10 — Cash</option>
-                  <option value="20">20 — Cheque</option>
-                  <option value="48">48 — Bank Card</option>
-                  <option value="49">49 — Direct Debit</option>
-                  <option value="57">57 — Standing Order</option>
-                  <option value="58">58 — SEPA Credit Transfer</option>
-                </select>
-              </Field>
-              <Field label="Accounts Receivable / Payable" faf required
-                error={errors.accounts_type?.message}>
-                <select className={selectCls} {...register('accounts_type', { required: 'Required for FAF' })}>
-                  <option value="">— Select —</option>
-                  <option value="receivable">Accounts Receivable (AR)</option>
-                  <option value="payable">Accounts Payable (AP)</option>
-                </select>
-              </Field>
-              <Field label="Supplier Location" faf required
-                tooltip="FAF: Location of the supplier. E.g. Dubai, UAE"
-                error={errors.supplier_location?.message}>
-                <input placeholder="e.g. Dubai, UAE" maxLength={120}
-                  className={inputCls(errors.supplier_location?.message)}
-                  {...register('supplier_location', {
-                    required: 'Supplier location is required',
-                    validate: (v) => limitWords(v, 'Supplier location'),
-                  })} />
-              </Field>
-              <Field label="Customer Location" faf required
-                tooltip="FAF: Location of the customer. E.g. Riyadh, Saudi Arabia"
+              <Field label="Customer Location" required
+                tooltip="Location of the customer. E.g. Riyadh, Saudi Arabia"
                 error={errors.customer_location?.message}>
                 <input placeholder="e.g. Riyadh, Saudi Arabia" maxLength={120}
                   className={inputCls(errors.customer_location?.message)}
@@ -1433,11 +1522,13 @@ export default function NewInvoicePage() {
                     validate: (v) => limitWords(v, 'Customer location'),
                   })} />
               </Field>
-            </div>
-          </Section>
+            </Section>
+          )}
 
+          {/* STEP 2 — Product Catalog (supply classification + line items) */}
+          {step === 2 && (<>
           {/* Supply Classification */}
-          <Section title="Supply Classification" subtitle={`UAE VAT Return ${selected.boxRef} — ${selected.reqRef}`}>
+          <Section title="Supply Classification" icon={<ShieldCheck className="h-4 w-4" />} subtitle={`UAE VAT Return ${selected.boxRef} — ${selected.reqRef}`}>
             <div className={`flex items-center gap-3 rounded-lg border p-3 ${accent.border} ${accent.bg}`}>
               <span className={accent.icon}>{selected.icon}</span>
               <div className="flex-1">
@@ -1462,9 +1553,12 @@ export default function NewInvoicePage() {
               {isReverse && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 shrink-0">RC Active</span>}
             </label>
           </Section>
+          </>)}
 
+          {/* STEP 3 — Payment & Sign (dates, references, currency) */}
+          {step === 3 && (<>
           {/* Invoice Dates */}
-          <Section title="Invoice Dates" subtitle="FAF: Invoice dates, transaction dates, tax payment dates">
+          <Section title="Invoice Dates" icon={<FileText className="h-4 w-4" />} subtitle="Invoice dates, transaction dates, tax payment dates">
             <div className="grid grid-cols-2 gap-4">
               <Field label="Issue Date" faf required
                 tooltip="The date this invoice is issued. Required by the FTA and must not be in the future."
@@ -1493,7 +1587,7 @@ export default function NewInvoicePage() {
           </Section>
 
           {/* Document References */}
-          <Section title="Document References" subtitle="FAF: Invoice numbers, permit numbers, transaction IDs, GL/ID">
+          <Section title="Document References" icon={<FileCheck className="h-4 w-4" />} subtitle="Invoice numbers, permit numbers, transaction IDs, GL/ID">
             {needRef && (
               <div className={`rounded-lg border ${accent.border} ${accent.bg} p-3 space-y-2`}>
                 <p className={`text-xs font-semibold ${accent.icon}`}>
@@ -1548,7 +1642,7 @@ export default function NewInvoicePage() {
           </Section>
 
           {/* Currency & Financials */}
-          <Section title="Currency & Financials" subtitle="FAF: VAT amounts in actual currency and AED">
+          <Section title="Currency & Financials" icon={<CreditCard className="h-4 w-4" />} subtitle="VAT amounts in actual currency and AED">
             <div className="grid grid-cols-3 gap-4">
               <Field label="Currency" required
                 tooltip="The currency this invoice is issued in. Non-AED invoices require an exchange rate to AED for FTA reporting.">
@@ -1596,9 +1690,11 @@ export default function NewInvoicePage() {
               </div>
             )}
           </Section>
+          </>)}
 
-          {/* Line Items */}
-          <Section title="Line Items" subtitle="FAF: Description, product/service references, tax codes, debit/credit amounts, VAT amounts">
+          {/* STEP 2 (cont.) — Line Items */}
+          {step === 2 && (
+          <Section title="Line Items" icon={<Package className="h-4 w-4" />} subtitle="Description, product/service references, tax codes, debit/credit amounts, VAT amounts">
 
             {/* Excel toolbar */}
             <div className="flex items-center justify-between gap-3 pb-2 border-b border-gray-100">
@@ -1637,14 +1733,71 @@ export default function NewInvoicePage() {
               <Plus className="h-4 w-4" /> Add Line Item
             </button>
           </Section>
+          )}
 
+          {/* STEP 5 — Review */}
+          {step === 5 && (<>
           {/* Notes */}
-          <Section title="Notes">
+          <Section title="Notes" icon={<FileText className="h-4 w-4" />}>
             <textarea rows={3} placeholder="Optional notes…"
               className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               {...register('notes')} />
-            <p className="text-xs text-gray-400">FAF metadata (GL/ID, permit, transaction ID, supply category) is automatically appended on save.</p>
+            <p className="text-xs text-gray-400">Audit metadata (GL/ID, permit, transaction ID, supply category) is automatically appended on save.</p>
           </Section>
+          <Section title="Review" icon={<FileCheck className="h-4 w-4" />} subtitle="Check the live preview on the right before submitting">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div><span className="text-gray-400 text-xs">Buyer</span><p className="font-medium text-gray-800">{selectedCustomer?.name ?? '—'}</p></div>
+              <div><span className="text-gray-400 text-xs">Invoice No.</span><p className="font-medium text-gray-800">{invoiceNo}</p></div>
+              <div><span className="text-gray-400 text-xs">Items</span><p className="font-medium text-gray-800">{watchedItems?.length ?? 0}</p></div>
+              <div><span className="text-gray-400 text-xs">Total</span><p className="font-medium text-gray-800">{currency || 'AED'} {qrTotal.toFixed(2)}</p></div>
+            </div>
+          </Section>
+          </>)}
+
+          {/* STEP 4 — Print Code */}
+          {step === 4 && (
+          <Section title="Print Code" icon={<QrCode className="h-4 w-4" />} subtitle="Scan-to-verify QR code — printed on the final invoice">
+            <div className="flex flex-col sm:flex-row items-center gap-5">
+              <div className="shrink-0 rounded-xl border-2 border-gray-100 bg-white p-3 shadow-sm">
+                {qrUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={qrUrl} alt="Invoice verification QR code" className="w-36 h-36" />
+                ) : (
+                  <div className="w-36 h-36 flex items-center justify-center text-gray-300">
+                    <QrCode className="h-10 w-10" />
+                  </div>
+                )}
+              </div>
+              <div className="text-sm text-gray-600 space-y-1.5 min-w-0">
+                <p className="font-semibold text-gray-800 flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 text-emerald-500" /> Verification code ready
+                </p>
+                <p className="text-xs leading-relaxed">
+                  This QR encodes the invoice number, seller &amp; buyer TRN, total amount and date.
+                  Anyone can scan it to verify the invoice is genuine.
+                </p>
+                <div className="text-xs text-gray-500 grid grid-cols-1 gap-0.5 pt-1">
+                  <span><span className="text-gray-400">Invoice:</span> <span className="font-medium text-gray-700">{invoiceNo}</span></span>
+                  <span><span className="text-gray-400">Total:</span> <span className="font-medium text-gray-700">{currency || 'AED'} {qrTotal.toFixed(2)}</span></span>
+                </div>
+                <p className="text-[11px] text-gray-400 pt-1">Review the code above, then continue.</p>
+              </div>
+            </div>
+          </Section>
+          )}
+
+          {/* STEP 6 — Submit */}
+          {step === 6 && (
+            <Section title="Submit" icon={<CheckCircle2 className="h-4 w-4" />} subtitle="Confirm and create the invoice">
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 flex items-start gap-2">
+                <ShieldCheck className="h-5 w-5 shrink-0" />
+                <div>
+                  <p className="font-semibold">Ready to create</p>
+                  <p className="text-xs mt-0.5">Review the live preview on the right, then click “Create Invoice” to generate and submit.</p>
+                </div>
+              </div>
+            </Section>
+          )}
 
           {/* Error */}
           {serverError && (
@@ -1659,23 +1812,30 @@ export default function NewInvoicePage() {
             </div>
           )}
 
-          {/* Submit */}
+          {/* Wizard navigation */}
           <div className="flex items-center justify-between pt-2">
-            <button type="button" onClick={() => router.back()}
+            <button type="button" onClick={step === 0 ? () => router.back() : goBack}
               className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">
-              Cancel
+              {step === 0 ? 'Cancel' : '← Back'}
             </button>
-            <Button type="submit" disabled={isSubmitting} className="px-8">
-              {isSubmitting
-                ? <span className="flex items-center gap-2"><RefreshCw className="h-4 w-4 animate-spin" /> Creating…</span>
-                : <span className="flex items-center gap-2"><FileText className="h-4 w-4" /> Create Invoice</span>
-              }
-            </Button>
+            {step < TOTAL_STEPS - 1 ? (
+              <button type="button" onClick={goNext}
+                className="px-8 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors">
+                Next →
+              </button>
+            ) : (
+              <Button type="submit" disabled={isSubmitting} className="px-8">
+                {isSubmitting
+                  ? <span className="flex items-center gap-2"><RefreshCw className="h-4 w-4 animate-spin" /> Creating…</span>
+                  : <span className="flex items-center gap-2"><FileText className="h-4 w-4" /> Create Invoice</span>
+                }
+              </Button>
+            )}
           </div>
         </form>
 
-        {/* ── RIGHT: Live preview (sticky) ── */}
-        <div className="sticky top-20">
+        {/* ── RIGHT: Live preview (sticky, stays in view while scrolling) ── */}
+        <div className="sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">Invoice Preview</p>

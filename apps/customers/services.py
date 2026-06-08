@@ -53,6 +53,8 @@ class CustomerService:
             email=data.get('email', '').strip(),
             phone=data.get('phone', '').strip(),
             notes=data.get('notes', '').strip(),
+            trn_document=data.get('trn_document'),
+            logo=data.get('logo'),
         )
 
         # Run model-level validation (clean method) before save

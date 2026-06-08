@@ -186,7 +186,7 @@ export function FlowTracker({ flow, compact = false }: FlowTrackerProps) {
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
         <div>
           <h2 className="text-sm font-semibold text-gray-800">
-            PEPPOL 5-Corner Flow
+            5-Corner Flow
           </h2>
           <p className="text-xs text-gray-400 mt-0.5">UAE e-invoicing transmission pipeline</p>
         </div>

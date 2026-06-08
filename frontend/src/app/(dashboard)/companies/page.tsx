@@ -53,7 +53,7 @@ function ViewModal({ company, onClose }: { company: Company; onClose: () => void
     { icon: Mail,    label: 'Email',            value: company.email },
     { icon: Globe,   label: 'Website',          value: company.website },
     { icon: Users,   label: 'Members',          value: company.member_count },
-    { icon: Hash,    label: 'PEPPOL Endpoint',  value: company.peppol_endpoint },
+    { icon: Hash,    label: 'E-Invoice Endpoint',  value: company.peppol_endpoint },
   ];
 
   return (

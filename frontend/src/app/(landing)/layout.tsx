@@ -10,7 +10,7 @@ const NAV_LINKS = [
   { label: 'Home',     href: '/' },
   { label: 'About',    href: '/about' },
   { label: 'Services', href: '/services' },
-  { label: 'PEPPOL',   href: '/peppol' },
+  { label: 'E-Invoice',   href: '/peppol' },
   { label: 'Contact',  href: '/contact' },
 ];
 
@@ -142,7 +142,7 @@ function Footer() {
               <span className="text-white font-bold text-sm">E-Numerak</span>
             </div>
             <p className="text-xs leading-relaxed text-blue-300 max-w-xs">
-              PEPPOL 5-Corner compliant e-invoicing solution for UAE businesses.
+              5-Corner compliant e-invoicing solution for UAE businesses.
               FTA-certified, VAT-ready, and built for the UAE digital economy.
             </p>
           </div>
@@ -157,15 +157,15 @@ function Footer() {
           <div>
             <p className="text-white text-xs font-semibold uppercase tracking-wider mb-3">Legal</p>
             <ul className="space-y-2 text-xs">
-              <li><span className="cursor-default">Privacy Policy</span></li>
-              <li><span className="cursor-default">Terms of Service</span></li>
-              <li><span className="cursor-default">FTA Compliance</span></li>
+              <li><Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
+              <li><Link href="/fta-compliance" className="hover:text-white transition-colors">FTA Compliance</Link></li>
             </ul>
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-blue-400">
           <span>&copy; {new Date().getFullYear()} E-Numerak. All rights reserved.</span>
-          <span>Federal Decree-Law No. 16 of 2024 &bull; PEPPOL BIS 3.0 &bull; UAE FTA Certified</span>
+          <span>Federal Decree-Law No. 16 of 2024 &bull; BIS 3.0 &bull; UAE FTA Certified</span>
         </div>
       </div>
     </footer>

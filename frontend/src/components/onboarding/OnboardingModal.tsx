@@ -21,7 +21,7 @@ const STEPS = [
     badge: 'bg-blue-600',
     title: 'Set up your company',
     description:
-      'Add your company details including your UAE Tax Registration Number (TRN). Your 15-digit TRN is mandatory to generate FTA-compliant PEPPOL invoices.',
+      'Add your company details including your UAE Tax Registration Number (TRN). Your 15-digit TRN is mandatory to generate FTA-compliant E-Invoice invoices.',
     checklist: [
       'Company trading name and legal name',
       'TRN — 15-digit UAE Tax Registration Number',
@@ -53,11 +53,11 @@ const STEPS = [
     badge: 'bg-emerald-600',
     title: 'Create your first invoice',
     description:
-      'Generate a PEPPOL BIS 3.0 tax invoice. Choose the document type, select a customer, add line items, and submit — the platform handles XML generation, digital signing, and FTA reporting.',
+      'Generate a BIS 3.0 tax invoice. Choose the document type, select a customer, add line items, and submit — the platform handles XML generation, digital signing, and FTA reporting.',
     checklist: [
       'Tax Invoice, Credit Note, or Debit Note',
       'VAT and Excise calculations included',
-      'Automatic submission to the FTA via PEPPOL',
+      'Automatic submission to the FTA via E-Invoice',
     ],
     action: { label: 'Create Invoice →', href: '/invoices/new' },
   },
@@ -165,14 +165,14 @@ export function OnboardingModal() {
                 </h2>
                 <p className="text-sm text-gray-500 mt-2 leading-relaxed">
                   You are now on the UAE&apos;s leading FTA-compliant e-invoicing platform.
-                  Complete 3 quick steps to start issuing PEPPOL invoices.
+                  Complete 3 quick steps to start issuing E-Invoice invoices.
                 </p>
               </div>
               <ul className="space-y-2.5 text-left">
                 {[
                   { icon: Building2,    text: 'Set up your company & TRN' },
                   { icon: Users,        text: 'Add your first customer' },
-                  { icon: FileText,     text: 'Create a PEPPOL invoice' },
+                  { icon: FileText,     text: 'Create a E-Invoice invoice' },
                 ].map(({ icon: Icon, text }) => (
                   <li key={text} className="flex items-center gap-3 text-sm text-gray-700">
                     <div className="h-7 w-7 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
@@ -183,7 +183,7 @@ export function OnboardingModal() {
                 ))}
               </ul>
               <div className="flex flex-wrap justify-center gap-1.5 pt-1">
-                {['FTA Certified', 'PEPPOL BIS 3.0', 'VAT Ready', 'Secure'].map(b => (
+                {['FTA Certified', 'BIS 3.0', 'VAT Ready', 'Secure'].map(b => (
                   <span key={b} className="px-2.5 py-0.5 text-[10px] font-semibold bg-gray-100 text-gray-500 rounded-full">
                     {b}
                   </span>
@@ -231,14 +231,14 @@ export function OnboardingModal() {
               <div>
                 <h2 className="text-xl font-bold text-gray-900">You&apos;re all set!</h2>
                 <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-                  Setup complete. Start creating FTA-compliant PEPPOL invoices and
+                  Setup complete. Start creating FTA-compliant E-Invoice invoices and
                   submit them to the UAE Federal Tax Authority today.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { icon: ShieldCheck, label: 'FTA Certified' },
-                  { icon: Globe,       label: 'PEPPOL BIS 3.0' },
+                  { icon: Globe,       label: 'BIS 3.0' },
                   { icon: Zap,         label: 'Auto-Validated' },
                   { icon: FileText,    label: 'UBL 2.1 XML' },
                 ].map(({ icon: Icon, label }) => (

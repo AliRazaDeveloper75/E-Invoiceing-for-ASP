@@ -33,6 +33,8 @@ interface CustomerForm {
   email: string;
   phone: string;
   notes: string;
+  trn_document: FileList;
+  logo: FileList;
 }
 
 export default function NewCustomerPage() {
@@ -59,6 +61,8 @@ export default function NewCustomerPage() {
   const customerType = watch('customer_type');
   const watchedCountry = watch('country');
   const watchedTrn = watch('trn');
+  const trnDoc = watch('trn_document');
+  const logoFile = watch('logo');
   // TRN is mandatory for every business customer (B2B / B2G), regardless of country.
   const needsTRN = customerType === 'b2b' || customerType === 'b2g';
   // VAT number stays optional — TRN is the required tax identifier.
@@ -76,10 +80,26 @@ export default function NewCustomerPage() {
       const phone = data.phone
         ? `${countryForm.dialCode}${data.phone}`.trim()
         : '';
-      await api.post('/customers/', {
-        ...data,
-        phone,
-        company_id: activeId,
+
+      // Files require multipart/form-data, not JSON.
+      const fd = new FormData();
+      fd.append('company_id', activeId ?? '');
+      fd.append('name', data.name);
+      fd.append('legal_name', data.legal_name || '');
+      fd.append('customer_type', data.customer_type);
+      fd.append('trn', data.trn || '');
+      fd.append('vat_number', data.vat_number || '');
+      fd.append('street_address', data.street_address || '');
+      fd.append('city', data.city || '');
+      fd.append('country', data.country);
+      fd.append('email', data.email || '');
+      fd.append('phone', phone);
+      fd.append('notes', data.notes || '');
+      if (data.trn_document?.[0]) fd.append('trn_document', data.trn_document[0]);
+      if (data.logo?.[0]) fd.append('logo', data.logo[0]);
+
+      await api.post('/customers/', fd, {
+        headers: { 'Content-Type': undefined },   // let the browser set the multipart boundary
       });
       router.push('/customers');
     } catch (err) {
@@ -166,7 +186,7 @@ export default function NewCustomerPage() {
             <Input
               label={needsTRN ? 'TRN' : 'TRN (optional)'}
               required={needsTRN}
-              tooltip="UAE Tax Registration Number issued by the Federal Tax Authority. Must be exactly 15 numeric digits. Required for UAE B2B and B2G customers."
+              tooltip="UAE Tax Registration Number (TRN) issued by the Federal Tax Authority — exactly 15 numeric digits. Mandatory for all B2B and B2G customers; optional for B2C (individual consumers)."
               placeholder="123456789012345"
               hint={needsTRN ? 'Required for UAE B2B / B2G — 15 digits' : '15-digit UAE Tax Registration Number'}
               error={errors.trn?.message || serverError.trn}
@@ -180,7 +200,7 @@ export default function NewCustomerPage() {
             <Input
               label={needsVAT ? 'VAT Number (international)' : 'VAT Number (international, optional)'}
               required={needsVAT}
-              tooltip="Tax identification number for non-UAE customers. Exactly 15 digits — same format as a TRN. Required for international B2B/B2G customers."
+              tooltip="Optional VAT / tax number for international (non-UAE) customers — 15 digits, same format as a TRN. Leave blank if not applicable, or tick 'Same as TRN'."
               placeholder="123456789012345"
               hint={needsVAT ? 'Required for non-UAE business customers — 15 digits' : '15-digit international VAT/tax number'}
               error={errors.vat_number?.message || serverError.vat_number}
@@ -208,6 +228,82 @@ export default function NewCustomerPage() {
             />
             VAT Number same as TRN
           </label>
+        </div>
+
+        {/* Documents */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm space-y-4">
+          <div>
+            <h2 className="font-semibold text-gray-800">Documents</h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Both documents are required to register a customer.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* TRN certificate */}
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">
+                TRN Certificate <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0
+                           file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-medium
+                           file:text-brand-700 hover:file:bg-brand-100 cursor-pointer"
+                {...register('trn_document', {
+                  required: 'TRN certificate is required',
+                  validate: (f) => {
+                    const file = f?.[0];
+                    if (!file) return 'TRN certificate is required';
+                    if (!/\.(pdf|jpg|jpeg|png)$/i.test(file.name))
+                      return 'Only PDF, JPG or PNG files are allowed';
+                    if (file.size > 5 * 1024 * 1024) return 'File must be 5MB or smaller';
+                    return true;
+                  },
+                })}
+              />
+              <p className="text-[11px] text-gray-400">Upload the customer&apos;s TRN / tax certificate — PDF, JPG or PNG (max 5MB).</p>
+              {trnDoc?.[0] && (
+                <p className="text-[11px] text-green-600 truncate">✓ {trnDoc[0].name}</p>
+              )}
+              {(errors.trn_document?.message || serverError.trn_document) && (
+                <p className="text-xs text-red-600">⚠ {errors.trn_document?.message || serverError.trn_document}</p>
+              )}
+            </div>
+
+            {/* Logo */}
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">
+                Customer Logo <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png"
+                className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0
+                           file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-medium
+                           file:text-brand-700 hover:file:bg-brand-100 cursor-pointer"
+                {...register('logo', {
+                  required: 'Customer logo is required',
+                  validate: (f) => {
+                    const file = f?.[0];
+                    if (!file) return 'Customer logo is required';
+                    if (!/\.(jpg|jpeg|png)$/i.test(file.name))
+                      return 'Only JPG or PNG images are allowed';
+                    if (file.size > 5 * 1024 * 1024) return 'Image must be 5MB or smaller';
+                    return true;
+                  },
+                })}
+              />
+              <p className="text-[11px] text-gray-400">Upload the customer&apos;s company logo — JPG or PNG (max 5MB).</p>
+              {logoFile?.[0] && (
+                <p className="text-[11px] text-green-600 truncate">✓ {logoFile[0].name}</p>
+              )}
+              {(errors.logo?.message || serverError.logo) && (
+                <p className="text-xs text-red-600">⚠ {errors.logo?.message || serverError.logo}</p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Address & Contact */}

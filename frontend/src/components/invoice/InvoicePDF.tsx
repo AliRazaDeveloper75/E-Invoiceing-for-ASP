@@ -797,7 +797,7 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
         {hasAsp && (
           <View style={S.refBox}>
             <View style={S.refHdr}>
-              <Text style={S.refHdrTxt}>ELECTRONIC SUBMISSION REFERENCES  ·  PEPPOL 5-CORNER MODEL</Text>
+              <Text style={S.refHdrTxt}>ELECTRONIC SUBMISSION REFERENCES  ·  E-Invoice 5-CORNER MODEL</Text>
             </View>
             <View style={S.refRow}>
               <Text style={S.refKey}>ASP Submission ID</Text>
@@ -825,7 +825,7 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
             </Text>
           </View>
           <View style={S.footerPills}>
-            {['PEPPOL BIS 3.0', 'UAE PINT', 'UBL 2.1', 'FTA'].map(lbl => (
+            {['BIS 3.0', 'UAE PINT', 'UBL 2.1', 'FTA'].map(lbl => (
               <View key={lbl} style={S.pill}>
                 <Text style={S.pillTxt}>{lbl}</Text>
               </View>

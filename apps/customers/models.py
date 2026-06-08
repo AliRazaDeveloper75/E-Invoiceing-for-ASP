@@ -137,6 +137,20 @@ class Customer(BaseModel):
         help_text='ISO 3166-1 alpha-2 country code.'
     )
 
+    # ── Documents ─────────────────────────────────────────────────────────────
+    trn_document = models.FileField(
+        upload_to='customer_trn/%Y/%m/',
+        blank=True,
+        null=True,
+        help_text='TRN / tax registration certificate (PDF, JPG or PNG).'
+    )
+    logo = models.ImageField(
+        upload_to='customer_logos/%Y/%m/',
+        blank=True,
+        null=True,
+        help_text='Customer company logo (JPG or PNG).'
+    )
+
     # ── Contact ───────────────────────────────────────────────────────────────
     email = models.EmailField(blank=True, default='')
     phone = models.CharField(max_length=20, blank=True, default='')

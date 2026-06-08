@@ -43,7 +43,7 @@ export default function OGImage() {
               E-Numerak
             </span>
             <span style={{ fontSize: '16px', color: '#64748b' }}>
-              PEPPOL 5-Corner Platform
+              5-Corner Platform
             </span>
           </div>
         </div>
@@ -72,13 +72,13 @@ export default function OGImage() {
             E-Invoicing Platform
           </div>
           <div style={{ fontSize: '26px', color: '#94a3b8' }}>
-            Generate · Validate · Submit via PEPPOL BIS 3.0
+            Generate · Validate · Submit via BIS 3.0
           </div>
         </div>
 
         {/* Badges */}
         <div style={{ display: 'flex', gap: '16px' }}>
-          {['FTA Certified', 'PEPPOL BIS 3.0', 'UBL 2.1', 'VAT Compliant'].map((b) => (
+          {['FTA Certified', 'BIS 3.0', 'UBL 2.1', 'VAT Compliant'].map((b) => (
             <div
               key={b}
               style={{

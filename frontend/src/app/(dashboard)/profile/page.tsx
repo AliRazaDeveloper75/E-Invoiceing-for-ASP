@@ -201,7 +201,7 @@ export default function ProfilePage() {
               { icon: Phone,   label: 'Phone',   value: activeCompany.phone },
               { icon: Mail,    label: 'Email',   value: activeCompany.email },
               { icon: Globe,   label: 'Website', value: activeCompany.website },
-              { icon: Hash,    label: 'PEPPOL Endpoint', value: activeCompany.peppol_endpoint },
+              { icon: Hash,    label: 'E-Invoice Endpoint', value: activeCompany.peppol_endpoint },
             ].filter(r => r.value).map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex items-start gap-3">
                 <Icon className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />

@@ -3,23 +3,23 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'PEPPOL 5-Corner E-Invoicing UAE | UBL 2.1 & FTA Network',
+  title: '5-Corner E-Invoicing UAE | UBL 2.1 & FTA Network',
   description:
-    'Learn how the PEPPOL 5-corner model works for UAE e-invoicing. E-Numerak acts as Corner 1 — generating UBL 2.1 XML invoices for FTA submission via UAE-accredited ASPs.',
+    'Learn how the 5-corner model works for UAE e-invoicing. E-Numerak acts as Corner 1 — generating UBL 2.1 XML invoices for FTA submission via UAE-accredited ASPs.',
   keywords: [
-    'PEPPOL 5-corner UAE',
-    'PEPPOL e-invoicing model',
+    '5-corner UAE',
+    'E-Invoice e-invoicing model',
     'UBL 2.1 XML UAE',
-    'FTA PEPPOL network',
+    'FTA E-Invoice network',
     'UAE ASP accredited service provider',
-    'PEPPOL BIS billing 3.0',
+    'E-Invoice BIS billing 3.0',
     'e-invoice FTA submission',
   ],
   alternates: { canonical: '/peppol' },
   openGraph: {
-    title: 'PEPPOL 5-Corner E-Invoicing UAE | E-Numerak',
+    title: '5-Corner E-Invoicing UAE | E-Numerak',
     description:
-      'Full PEPPOL 5-corner model for UAE e-invoicing — from your ERP (Corner 1) through the ASP to the FTA network (Corner 5).',
+      'Full 5-corner model for UAE e-invoicing — from your ERP (Corner 1) through the ASP to the FTA network (Corner 5).',
     url: '/peppol',
   },
 };
@@ -28,20 +28,20 @@ const CORNERS = [
   {
     num: 1,
     label: 'Supplier / ERP',
-    desc: 'The invoice originator. Your business creates and digitally signs the PEPPOL UBL 2.1 XML invoice document.',
+    desc: 'The invoice originator. Your business creates and digitally signs the UBL 2.1 XML invoice document.',
     color: 'bg-blue-600',
     tag: 'Your System',
   },
   {
     num: 2,
     label: 'Accredited Service Provider (ASP)',
-    desc: 'The supplier\'s ASP receives the XML, validates it against PEPPOL rules, and transmits it to the FTA network.',
+    desc: 'The supplier\'s ASP receives the XML, validates it against E-Invoice rules, and transmits it to the FTA network.',
     color: 'bg-indigo-600',
     tag: 'ASP / Corner 2',
   },
   {
     num: 3,
-    label: 'FTA / PEPPOL Network',
+    label: 'FTA / E-Invoice Network',
     desc: 'UAE Federal Tax Authority acts as the central hub — receiving, archiving, and routing invoices between corners.',
     color: 'bg-purple-600',
     tag: 'FTA Network',
@@ -82,10 +82,10 @@ export default function PeppolPage() {
       <section className="bg-gradient-to-br from-[#1e3a5f] to-[#1e4080] text-white py-14 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
-            <p className="text-blue-300 text-xs sm:text-sm font-semibold uppercase tracking-widest mb-3">PEPPOL Framework</p>
-            <h1 className="text-2xl sm:text-4xl font-bold mb-4">The PEPPOL 5-Corner Model</h1>
+            <p className="text-blue-300 text-xs sm:text-sm font-semibold uppercase tracking-widest mb-3">E-Invoice Framework</p>
+            <h1 className="text-2xl sm:text-4xl font-bold mb-4">The 5-Corner Model</h1>
             <p className="text-blue-100 text-sm sm:text-lg leading-relaxed">
-              UAE&apos;s mandatory e-invoicing infrastructure is built on the PEPPOL network —
+              UAE&apos;s mandatory e-invoicing infrastructure is built on the E-Invoice network —
               a secure, standardised way to exchange electronic business documents.
             </p>
           </div>
@@ -97,7 +97,7 @@ export default function PeppolPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">How the 5 Corners Work</h2>
           <p className="text-gray-500 text-sm mb-10 sm:mb-12 max-w-2xl">
-            The UAE FTA uses the PEPPOL 5-corner model to route e-invoices from the supplier to the buyer through certified intermediaries.
+            The UAE FTA uses the 5-corner model to route e-invoices from the supplier to the buyer through certified intermediaries.
           </p>
 
           {/* Mobile: vertical timeline */}
@@ -148,7 +148,7 @@ export default function PeppolPage() {
             <h3 className="font-bold text-base sm:text-lg mb-3">Where Our Platform Sits</h3>
             <p className="text-blue-100 text-sm leading-relaxed mb-4">
               We operate as <strong>Corner 1</strong> — the supplier-side system that creates, validates, and
-              packages your invoice into PEPPOL UBL 2.1 XML format.
+              packages your invoice into UBL 2.1 XML format.
               Our integration layer (Corner 2 ASP) handles submission to the FTA network.
               Currently using a MockASPClient for development; switch to a real UAE-accredited ASP for production.
             </p>
@@ -177,7 +177,7 @@ export default function PeppolPage() {
       <section className="py-14 sm:py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">UBL 2.1 XML Elements Generated</h2>
-          <p className="text-gray-500 text-sm mb-6 sm:mb-8">Every invoice generates a fully compliant PEPPOL BIS Billing 3.0 XML document including:</p>
+          <p className="text-gray-500 text-sm mb-6 sm:mb-8">Every invoice generates a fully compliant BIS Billing 3.0 XML document including:</p>
           <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden overflow-x-auto">
             <table className="w-full text-sm min-w-[480px]">
               <thead>
