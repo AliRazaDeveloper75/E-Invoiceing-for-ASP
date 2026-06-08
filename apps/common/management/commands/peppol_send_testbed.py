@@ -57,7 +57,7 @@ class Command(BaseCommand):
     help = 'Send an encrypted+signed AS4 message to the PEPPOL Testbed (TC2A.3).'
 
     def add_arguments(self, parser):
-        parser.add_argument('--endpoint', required=True, help='Testbed AS4 receiving URL.')
+        parser.add_argument('--endpoint', default='', help='Testbed AS4 URL (else resolved via SMP lookup).')
         parser.add_argument('--cert', default='', help='Recipient cert PEM/DER (else auto from capture).')
         parser.add_argument('--sender', default='0235:104132266800003', help='originalSender participant id.')
         parser.add_argument('--receiver', default='9922:OPTBCNTRLP1001', help='finalRecipient participant id.')
@@ -77,18 +77,7 @@ class Command(BaseCommand):
         sender_ap_id = _cn(signing_cert)
         self.stdout.write(f'Our AP (signer)   : {sender_ap_id}')
 
-        # 2. Recipient (testbed) cert
-        recipient_cert = self._load_recipient_cert(opts['cert'], signer)
-        if recipient_cert is None:
-            self.stdout.write(self.style.ERROR(
-                'Could not obtain recipient cert. Provide --cert, or run a TC2A.2B '
-                'reception first so a capture exists to extract it from.'))
-            return
-        recipient_ap_id = _cn(recipient_cert)
-        self.stdout.write(f'Recipient AP      : {recipient_ap_id}')
-        self.stdout.write(f'Endpoint          : {opts["endpoint"]}')
-
-        # 3. Payload
+        # 2. Payload (the exact SBD from the Testbed ZIP)
         if opts['payload']:
             payload = open(opts['payload'], 'rb').read()
             self.stdout.write(f'Payload           : {opts["payload"]} ({len(payload)} bytes)')
@@ -101,16 +90,62 @@ class Command(BaseCommand):
             payload = SAMPLE_INVOICE
             self.stdout.write('Payload           : sample invoice')
 
-        # 4. Build + send
+        # 3. Routing — prefer the SBDH inside the payload
+        doc_type, process_id = DOC_TYPE, PROCESS_ID
+        original_sender, final_recipient = opts['sender'], opts['receiver']
+        sbdh = self._parse_sbdh(payload)
+        if sbdh:
+            original_sender = sbdh.get('sender') or original_sender
+            final_recipient = sbdh.get('receiver') or final_recipient
+            doc_type = sbdh.get('doctype') or doc_type
+            process_id = sbdh.get('process') or process_id
+            self.stdout.write(f'SBDH route        : {original_sender} -> {final_recipient}')
+
+        # 4. Resolve endpoint + recipient cert (SMP lookup unless --endpoint given)
+        endpoint = opts['endpoint']
+        recipient_cert = None
+        if not endpoint:
+            self.stdout.write(f'\nSMP lookup for {final_recipient} ...')
+            try:
+                from services.smp_client import SMPClient
+                ep = SMPClient().lookup(final_recipient, doc_type)
+            except Exception as exc:
+                ep = None
+                self.stdout.write(self.style.ERROR(f'SMP lookup error: {exc}'))
+            if ep and ep.transport_url:
+                endpoint = ep.transport_url
+                self.stdout.write(self.style.SUCCESS(f'SMP endpoint      : {endpoint}'))
+                if ep.certificate_uid:
+                    import base64 as _b
+                    try:
+                        recipient_cert = x509.load_der_x509_certificate(
+                            _b.b64decode(ep.certificate_uid), default_backend())
+                    except Exception:
+                        recipient_cert = None
+            else:
+                self.stdout.write(self.style.ERROR(
+                    'SMP lookup did not resolve an endpoint. Pass --endpoint explicitly.'))
+                return
+
+        if recipient_cert is None:
+            recipient_cert = self._load_recipient_cert(opts['cert'], signer)
+        if recipient_cert is None:
+            self.stdout.write(self.style.ERROR('No recipient cert (SMP/--cert/capture).'))
+            return
+        recipient_ap_id = _cn(recipient_cert)
+        self.stdout.write(f'Recipient AP      : {recipient_ap_id}')
+        self.stdout.write(f'Endpoint          : {endpoint}')
+
+        # 5. Build + send
         self.stdout.write('\nBuilding encrypted + signed AS4 message...')
         body, content_type = as4sender.build_message(
             payload_xml=payload,
             sender_ap_id=sender_ap_id,
             recipient_ap_id=recipient_ap_id,
-            original_sender=opts['sender'],
-            final_recipient=opts['receiver'],
-            doc_type=DOC_TYPE,
-            process_id=PROCESS_ID,
+            original_sender=original_sender,
+            final_recipient=final_recipient,
+            doc_type=doc_type,
+            process_id=process_id,
             agreement_ref=AGREEMENT_REF,
             signing_cert=signing_cert,
             signing_key=signing_key,
@@ -120,7 +155,7 @@ class Command(BaseCommand):
 
         self.stdout.write('Sending...')
         try:
-            resp = as4sender.send(opts['endpoint'], body, content_type)
+            resp = as4sender.send(endpoint, body, content_type)
         except Exception as exc:
             self.stdout.write(self.style.ERROR(f'Send failed: {exc}'))
             return
@@ -158,3 +193,36 @@ class Command(BaseCommand):
         sig = security.find(f'{{{NS_DS}}}Signature')
         cert_bytes = signer._resolve_signing_cert(security, sig)
         return x509.load_der_x509_certificate(cert_bytes, default_backend()) if cert_bytes else None
+
+    @staticmethod
+    def _parse_sbdh(payload: bytes) -> dict:
+        """Extract sender/receiver/doctype/process from a StandardBusinessDocument header."""
+        SBDH = 'http://www.unece.org/cefact/namespaces/StandardBusinessDocumentHeader'
+        try:
+            root = etree.fromstring(payload)
+        except Exception:
+            return {}
+        hdr = root.find(f'{{{SBDH}}}StandardBusinessDocumentHeader')
+        if hdr is None:
+            return {}
+        out = {}
+        s = hdr.find(f'{{{SBDH}}}Sender/{{{SBDH}}}Identifier')
+        r = hdr.find(f'{{{SBDH}}}Receiver/{{{SBDH}}}Identifier')
+        if s is not None and s.text:
+            out['sender'] = s.text.strip()
+        if r is not None and r.text:
+            out['receiver'] = r.text.strip()
+        for scope in hdr.findall(f'{{{SBDH}}}BusinessScope/{{{SBDH}}}Scope'):
+            t = scope.find(f'{{{SBDH}}}Type')
+            ii = scope.find(f'{{{SBDH}}}InstanceIdentifier')
+            ident = scope.find(f'{{{SBDH}}}Identifier')
+            if t is None or ii is None:
+                continue
+            ttype = (t.text or '').strip()
+            val = (ii.text or '').strip()
+            if ttype == 'DOCUMENTID':
+                scheme = (ident.text.strip() if ident is not None and ident.text else 'busdox-docid-qns')
+                out['doctype'] = f'{scheme}::{val}'
+            elif ttype == 'PROCESSID':
+                out['process'] = val
+        return out
