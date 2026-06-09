@@ -98,7 +98,9 @@ class SMPClient:
         self._smp_base_url  = getattr(settings, 'PEPPOL_SMP_BASE_URL',        '')
         self._use_test_sml  = getattr(settings, 'PEPPOL_USE_TEST_SML',        True)
         self._cache_ttl     = getattr(settings, 'PEPPOL_SMP_CACHE_TTL_HOURS', DEFAULT_CACHE_TTL_HOURS)
-        self._sml_zone      = SML_ZONE_TEST if self._use_test_sml else SML_ZONE_PRODUCTION
+        # Explicit override wins (e.g. a Testbed SMK zone); else test/prod default.
+        self._sml_zone      = (getattr(settings, 'PEPPOL_SML_ZONE', '') or
+                               (SML_ZONE_TEST if self._use_test_sml else SML_ZONE_PRODUCTION))
 
     # ── Public API ────────────────────────────────────────────────────────────
 
@@ -183,15 +185,13 @@ class SMPClient:
         Returns the SMP hostname string or None if not found.
         """
         try:
-            # Participant ID format: 'scheme:identifier' (e.g. '0235:123456789012345')
+            # PEPPOL SML hash: MD5 of the lowercase FULL participant identifier in
+            # its URI-encoded form '<identifier-scheme>::<value>', where the
+            # identifier-scheme is always 'iso6523-actorid-upis' and the value is
+            # the participant id itself (e.g. '9922:OPTBCNTRLP1001').
+            #   hash_input = 'iso6523-actorid-upis::9922:optbcntrlp1001'
             normalized = participant_id.lower()
-            # PEPPOL BDXL: hash the full 'scheme::identifier' form
-            parts = normalized.split(':', 1)
-            if len(parts) == 2:
-                scheme, identifier = parts
-                hash_input = f'{scheme}::{identifier}'
-            else:
-                hash_input = normalized
+            hash_input = f'iso6523-actorid-upis::{normalized}'
 
             md5_hex = hashlib.md5(hash_input.encode('utf-8')).hexdigest()
             dns_name = f'B-{md5_hex}.iso6523-actorid-upis.{self._sml_zone}'

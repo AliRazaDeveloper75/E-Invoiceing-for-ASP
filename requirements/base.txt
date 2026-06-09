@@ -53,3 +53,5 @@ pdf2image==1.17.0
 # ─── Utilities ────────────────────────────────────────────────────────────────
 Pillow==10.3.0
 python-dateutil==2.9.0
+# PEPPOL SML/SMP dynamic discovery — CNAME resolution
+dnspython==2.7.0

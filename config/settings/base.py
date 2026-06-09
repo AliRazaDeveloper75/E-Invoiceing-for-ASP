@@ -355,6 +355,9 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = env.int('FILE_UPLOAD_MAX_MEMORY_SIZE', default=20 
 PEPPOL_SMP_BASE_URL = env('PEPPOL_SMP_BASE_URL', default='')
 # True = use PEPPOL test SML (acc.edelivery.tech.ec.europa.eu), False = production
 PEPPOL_USE_TEST_SML = env.bool('PEPPOL_USE_TEST_SML', default=True)
+# Explicit SML/SMK DNS zone override (e.g. the Testbed SMK). Empty = use the
+# test/production default above.
+PEPPOL_SML_ZONE = env('PEPPOL_SML_ZONE', default='')
 # SMP cache TTL in hours (0 = disable caching)
 PEPPOL_SMP_CACHE_TTL_HOURS = env.int('PEPPOL_SMP_CACHE_TTL_HOURS', default=24)
 
