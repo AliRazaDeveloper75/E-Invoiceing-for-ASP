@@ -163,14 +163,39 @@ class Command(BaseCommand):
         self.stdout.write(f'\nHTTP status       : {resp.status_code}')
         rb = resp.content or b''
         self.stdout.write(f'Response bytes    : {len(rb)}')
-        has_receipt = b'Receipt' in rb or b'SignalMessage' in rb
-        has_error = b'Error' in rb or b'Fault' in rb
-        if 200 <= resp.status_code < 300 and has_receipt and not has_error:
-            self.stdout.write(self.style.SUCCESS('RESULT: Receipt/SignalMessage received'))
+
+        # Parse the SOAP response: is it a Receipt (success) or an ebMS Error?
+        is_receipt = False
+        errors = []
+        try:
+            from lxml import etree as _et
+            rdoc = _et.fromstring(rb)
+            for el in rdoc.iter():
+                ln = _et.QName(el).localname
+                if ln == 'Receipt':
+                    is_receipt = True
+                elif ln == 'Error':
+                    errors.append({
+                        'code': el.get('errorCode', ''),
+                        'short': el.get('shortDescription', ''),
+                        'severity': el.get('severity', ''),
+                    })
+                elif ln in ('Description', 'ErrorDetail') and (el.text or '').strip():
+                    errors.append({'detail': el.text.strip()})
+        except Exception as exc:
+            self.stdout.write(self.style.WARNING(f'(could not parse response XML: {exc})'))
+
+        if is_receipt and not errors:
+            self.stdout.write(self.style.SUCCESS('RESULT: RECEIPT received — testbed accepted the message'))
+        elif errors:
+            self.stdout.write(self.style.ERROR('RESULT: ebMS ERROR returned by testbed:'))
+            for e in errors:
+                self.stdout.write(self.style.ERROR(f'  {e}'))
         else:
-            self.stdout.write(self.style.ERROR('RESULT: no valid receipt'))
-        self.stdout.write('\n--- response (first 1500 bytes) ---')
-        self.stdout.write(rb[:1500].decode('utf-8', 'replace'))
+            self.stdout.write(self.style.WARNING('RESULT: response is neither a clear Receipt nor Error'))
+
+        self.stdout.write('\n--- response (first 2500 bytes) ---')
+        self.stdout.write(rb[:2500].decode('utf-8', 'replace'))
 
     def _load_recipient_cert(self, cert_path, signer):
         if cert_path:
