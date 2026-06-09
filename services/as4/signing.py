@@ -134,10 +134,49 @@ class AS4MessageSigner:
                 logger.warning('AS4 inbound: could not resolve the signing certificate.')
                 return False
 
-            return self._verify_signature(envelope, sig_el, cert_bytes, attachments or {})
+            if not self._verify_signature(envelope, sig_el, cert_bytes, attachments or {}):
+                return False
+
+            # PEPPOL trust gate: a cryptographically-valid signature is not enough —
+            # the signer's certificate MUST chain to an OpenPEPPOL PKI trust anchor,
+            # be within its validity window, and NOT be revoked. Reject otherwise
+            # (PKI G3 "invalid certificate reception" / general network policy).
+            from django.conf import settings as _settings
+            if getattr(_settings, 'PEPPOL_AS4_VERIFY_SIGNER_TRUST', True):
+                if not self._verify_signer_trust(cert_bytes):
+                    return False
+
+            return True
 
         except Exception as exc:
             logger.error('AS4 signature verification error: %s', exc, exc_info=True)
+            return False
+
+    @staticmethod
+    def _verify_signer_trust(cert_bytes: bytes) -> bool:
+        """
+        Validate the inbound signer certificate against the OpenPEPPOL PKI:
+        trust-chain + validity window + CRL revocation. Returns True only when
+        the certificate is trusted, current and not revoked.
+        """
+        try:
+            from cryptography import x509
+            from cryptography.hazmat.backends import default_backend
+            try:
+                cert = x509.load_der_x509_certificate(cert_bytes, default_backend())
+            except Exception:
+                cert = x509.load_pem_x509_certificate(cert_bytes, default_backend())
+
+            from .cert_validation import validate_recipient_cert
+            vr = validate_recipient_cert(cert)
+            if not vr.valid:
+                logger.warning('AS4 inbound: signer certificate REJECTED — %s (subject=%s)',
+                               vr.reason, vr.subject)
+            else:
+                logger.info('AS4 inbound: signer certificate trusted (subject=%s)', vr.subject)
+            return vr.valid
+        except Exception as exc:
+            logger.warning('AS4 inbound: signer trust validation error: %s', exc)
             return False
 
     # ── Inbound verification helpers ────────────────────────────────────────────

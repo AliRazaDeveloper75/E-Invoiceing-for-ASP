@@ -334,6 +334,11 @@ PEPPOL_CERT_EXPIRY_WARNING_DAYS = env.int('PEPPOL_CERT_EXPIRY_WARNING_DAYS', def
 # Set PEPPOL_SIGNING_ENABLED=False in .env ONLY for local development without certs.
 PEPPOL_SIGNING_ENABLED = env.bool('PEPPOL_SIGNING_ENABLED', default=True)
 
+# Reject inbound AS4 messages whose signer certificate is not trusted (does not
+# chain to the OpenPEPPOL PKI, is expired, or is revoked). Required by the
+# network rules; only disable for isolated local testing.
+PEPPOL_AS4_VERIFY_SIGNER_TRUST = env.bool('PEPPOL_AS4_VERIFY_SIGNER_TRUST', default=True)
+
 # Enable PEPPOL XSD schema validation (can disable in dev if schemas not yet downloaded)
 PEPPOL_XSD_VALIDATION_ENABLED = env.bool('PEPPOL_XSD_VALIDATION_ENABLED', default=True)
 
