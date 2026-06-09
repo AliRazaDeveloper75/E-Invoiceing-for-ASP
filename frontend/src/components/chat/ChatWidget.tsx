@@ -1,5 +1,6 @@
 'use client';
-
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import {
   X,
@@ -17,10 +18,11 @@ function WhatsAppIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
 // External AI Agent endpoint (streaming). Override via NEXT_PUBLIC_AI_AGENT_URL.
 const AI_AGENT_URL =
   process.env.NEXT_PUBLIC_AI_AGENT_URL ??
-  'https://tax-data-assistant-backend-production.up.railway.app/chat';
+  'https://tax-data-assistant-backend-production.up.railway.app';
 
 // Base URL (without the trailing /chat) for /register, /chat and /clear-memory.
 const AI_AGENT_BASE = AI_AGENT_URL.replace(/\/chat\/?$/, '');
@@ -42,7 +44,6 @@ interface ChatbotNode {
 }
 
 interface ChatWidgetProps {
-  /** When true, hides the AI Agent tab (for public/unauthenticated pages) */
   publicMode?: boolean;
 }
 
@@ -191,12 +192,8 @@ function ChatbotTab() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Breadcrumb */}
       <div className="flex items-center gap-1 px-4 py-2 text-xs text-gray-500 border-b border-gray-100 flex-wrap min-h-[36px]">
-        <button
-          onClick={reset}
-          className="hover:text-blue-600 font-medium transition-colors"
-        >
+        <button onClick={reset} className="hover:text-blue-600 font-medium transition-colors">
           Home
         </button>
         {path.map((node, i) => (
@@ -264,8 +261,11 @@ const SUGGESTED = [
 
 // ─── AgentTab ─────────────────────────────────────────────────────────────────
 
-function AgentTab() {
-  // Session + registration
+interface AgentTabProps {
+  onClose: () => void;
+}
+
+function AgentTab({ onClose }: AgentTabProps) {
   const [sessionId, setSessionId] = useState('');
   const [registered, setRegistered] = useState(false);
   const [name, setName] = useState('');
@@ -273,14 +273,13 @@ function AgentTab() {
   const [regError, setRegError] = useState<string | null>(null);
   const [regLoading, setRegLoading] = useState(false);
 
-  // Chat
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Initialize session id + restore registration (client side only — no SSR issue)
+  // ── FIX 1: Properly restore email from localStorage ──────────────────────
   useEffect(() => {
     let id = localStorage.getItem('chat_session_id');
     if (!id) {
@@ -291,8 +290,12 @@ function AgentTab() {
 
     const reg = localStorage.getItem('chat_registered');
     const savedName = localStorage.getItem('chat_user_name');
-    if (reg === 'true' && savedName) {
+    const savedEmail = localStorage.getItem('chat_user_email'); // ← read email
+
+    if (reg === 'true' && savedName && savedEmail) {
       setRegistered(true);
+      setName(savedName);
+      setEmail(savedEmail); // ← FIX: set email state so send() can use it
       setMessages([{
         role: 'assistant',
         content: `Welcome back, ${savedName}! 👋 How can I assist you with UAE tax today?`,
@@ -321,10 +324,11 @@ function AgentTab() {
       if (res.ok) {
         localStorage.setItem('chat_registered', 'true');
         localStorage.setItem('chat_user_name', name.trim());
+        localStorage.setItem('chat_user_email', email.trim()); // ← save email
         setRegistered(true);
         setMessages([{
           role: 'assistant',
-          content: `Assalam o Alaikum, ${name.trim()}! 👋 I'm your E-Numerak Tax Assistant. How can I help you today?`,
+          content: `Hello, ${name.trim()}! 👋 I'm your E-Numerak Tax Assistant. How can I help you today?`,
         }]);
       } else {
         setRegError(data.detail || 'Registration failed. Please try again.');
@@ -349,11 +353,10 @@ function AgentTab() {
       const res = await fetch(`${AI_AGENT_BASE}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msgText, session_id: sessionId }),
+        body: JSON.stringify({ message: msgText, session_id: sessionId, email: email }), // ← email included
       });
       if (!res.ok || !res.body) throw new Error('Request failed');
 
-      // Stream the reply chunk-by-chunk into a single assistant message
       setMessages((m) => [...m, { role: 'assistant', content: '' }]);
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -384,6 +387,20 @@ function AgentTab() {
     setMessages([{ role: 'assistant', content: 'New conversation started! How can I help you? 😊' }]);
   }
 
+  // ── FIX 2: Exit / logout — clears localStorage and goes back to registration ──
+  function handleExit() {
+    localStorage.removeItem('chat_registered');
+    localStorage.removeItem('chat_user_name');
+    localStorage.removeItem('chat_user_email');
+    localStorage.removeItem('chat_session_id');
+    setRegistered(false);
+    setName('');
+    setEmail('');
+    setMessages([]);
+    setError(null);
+    setSessionId('');
+  }
+
   function handleKey(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -394,7 +411,16 @@ function AgentTab() {
   // ── Registration gate ──────────────────────────────────────────────────────
   if (!registered) {
     return (
-      <div className="flex flex-col h-full justify-center px-6 py-6 bg-gray-50">
+      <div className="flex flex-col h-full justify-center px-6 py-6 bg-gray-50 relative">
+        {/* ── FIX 3: Close/Exit button on registration screen ── */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors"
+          title="Close"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
         <div className="text-center mb-5">
           <div className="text-3xl mb-2">👋</div>
           <h2 className="text-gray-800 font-bold text-base">Welcome to E-Numerak</h2>
@@ -444,8 +470,16 @@ function AgentTab() {
   // ── Chat ────────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col h-full">
-      {/* New chat */}
-      <div className="flex justify-end px-3 pt-2">
+      <div className="flex justify-between items-center px-3 pt-2">
+        {/* Exit button — goes back to registration */}
+        <button
+          onClick={handleExit}
+          title="Switch account"
+          className="flex items-center gap-1 text-xs text-gray-500 hover:text-red-500 border border-gray-200 rounded-full px-2 py-0.5 hover:border-red-300 transition-colors"
+        >
+          <X className="w-3 h-3" /> Exit
+        </button>
+
         <button
           onClick={newChat}
           title="New chat"
@@ -464,7 +498,7 @@ function AgentTab() {
               <span className="text-sm font-medium">AI Tax Assistant</span>
             </div>
             <p className="text-xs text-gray-400 leading-relaxed">
-              Assalam o Alaikum! Ask me anything about tax invoices, VAT, TRN, or UAE e-invoicing on E-Numerak.
+              Hello! Ask me anything about tax invoices, VAT, TRN, or UAE e-invoicing on E-Numerak.
             </p>
             <div className="flex flex-wrap gap-1.5 mt-1">
               {SUGGESTED.map(q => (
@@ -481,27 +515,30 @@ function AgentTab() {
         )}
 
         {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[88%] ${msg.role === 'user' ? '' : 'space-y-1'}`}>
               <div
-                className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+               className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                   msg.role === 'user'
                     ? 'bg-blue-600 text-white rounded-br-sm'
                     : 'bg-gray-100 text-gray-800 rounded-bl-sm'
                 }`}
               >
-                {msg.content || (
-                  msg.role === 'assistant' && loading ? (
-                    <span className="flex gap-1 items-center h-4">
-                      <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" />
-                      <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0.2s]" />
-                      <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0.4s]" />
-                    </span>
-                  ) : null
-                )}
+                {msg.role === 'assistant' && msg.content ? (
+                <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+              </div>
+              ) : msg.role === 'user' ? (
+                msg.content
+              ) : (
+                loading ? (
+                  <span className="flex gap-1 items-center h-4">
+                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" />
+                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0.4s]" />
+                  </span>
+                ) : null
+              )}
               </div>
             </div>
           </div>
@@ -515,9 +552,7 @@ function AgentTab() {
           </div>
         )}
 
-        {error && (
-          <p className="text-center text-xs text-red-500">{error}</p>
-        )}
+        {error && <p className="text-center text-xs text-red-500">{error}</p>}
 
         <div ref={bottomRef} />
       </div>
@@ -551,17 +586,15 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>('chatbot');
 
-  // Both tabs are available everywhere — public landing pages and the dashboard.
   const tabs: { id: Tab; label: string }[] = [
     { id: 'chatbot', label: 'Help Topics' },
-    { id: 'agent',   label: 'AI Agent' },
+    { id: 'agent', label: 'AI Agent' },
   ];
 
   return (
     <>
       {/* Floating buttons */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-3">
-
         {/* WhatsApp */}
         <a
           href="https://wa.me/971506358421"
@@ -581,7 +614,6 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
         >
           {open ? <X className="w-6 h-6" /> : <Bot className="w-6 h-6" />}
         </button>
-
       </div>
 
       {/* Panel */}
@@ -615,7 +647,7 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
 
           {/* Body */}
           <div className="flex-1 overflow-hidden bg-gray-50">
-            {tab === 'chatbot' ? <ChatbotTab /> : <AgentTab />}
+            {tab === 'chatbot' ? <ChatbotTab /> : <AgentTab onClose={() => setOpen(false)} />}
           </div>
         </div>
       )}
