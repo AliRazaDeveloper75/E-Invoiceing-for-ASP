@@ -40,6 +40,7 @@ class EncryptionResult:
     encrypted_attachment: bytes   # IV || ciphertext || tag — goes in the MIME part
     encrypted_key: bytes          # RSA-OAEP encrypted AES key — EncryptedKey CipherValue
     aes_key: bytes                # the plaintext AES key (for debugging/tests only)
+    compressed: bytes             # gzip(plaintext) — what the SwA signature digest covers
 
 
 def encrypt_payload(plaintext: bytes, recipient_public_key) -> EncryptionResult:
@@ -68,7 +69,12 @@ def encrypt_payload(plaintext: bytes, recipient_public_key) -> EncryptionResult:
             label=None,
         ),
     )
-    return EncryptionResult(encrypted_attachment=attachment, encrypted_key=wrapped_key, aes_key=aes_key)
+    return EncryptionResult(
+        encrypted_attachment=attachment,
+        encrypted_key=wrapped_key,
+        aes_key=aes_key,
+        compressed=compressed,
+    )
 
 
 def decrypt_payload(encrypted_attachment: bytes, wrapped_key: bytes, recipient_private_key) -> bytes:

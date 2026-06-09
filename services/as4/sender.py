@@ -176,9 +176,12 @@ def build_message(
     body = etree.SubElement(env, f'{{{S12}}}Body')
     body.set(f'{{{WSU}}}Id', body_wsu_id)
 
-    # 5. Build the Signature skeleton (digests + empty SignatureValue)
+    # 5. Build the Signature skeleton (digests + empty SignatureValue).
+    #    The SwA Attachment-Content-Signature-Transform digest is computed over the
+    #    *decrypted* attachment content (the gzipped payload), NOT the ciphertext —
+    #    the receiver decrypts first, then verifies this digest.
     _build_sig_skeleton(security, messaging, body, msg_wsu_id, body_wsu_id,
-                        att_cid, enc.encrypted_attachment, sign_bst_id)
+                        att_cid, enc.compressed, sign_bst_id)
 
     # 6. Normalize namespaces (serialize + reparse), then sign the SignedInfo on
     #    the normalized tree so sign-time C14N matches what a verifier computes
