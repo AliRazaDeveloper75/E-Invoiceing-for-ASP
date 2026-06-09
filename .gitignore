@@ -11,6 +11,9 @@
 *.key
 certs/
 secrets/
+# Public OpenPEPPOL PKI trust anchors (CA certs, not secrets) — keep versioned
+!services/as4/trust_anchors/
+!services/as4/trust_anchors/*.pem
 
 # ─── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
