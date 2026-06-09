@@ -315,7 +315,7 @@ function AgentTab({ onClose }: AgentTabProps) {
 
     setRegLoading(true);
     try {
-      const res = await fetch(`${AI_AGENT_BASE}/register`, {
+      const res = await fetch(`${AI_AGENT_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), email: email.trim(), session_id: sessionId }),
@@ -350,7 +350,7 @@ function AgentTab({ onClose }: AgentTabProps) {
     setError(null);
 
     try {
-      const res = await fetch(`${AI_AGENT_BASE}/chat`, {
+      const res = await fetch(`${AI_AGENT_BASE}/chat/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: msgText, session_id: sessionId, email: email }), // ← email included
