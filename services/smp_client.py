@@ -175,42 +175,39 @@ class SMPClient:
 
     def _sml_dns_lookup(self, participant_id: str) -> Optional[str]:
         """
-        Derive the SMP hostname from a PEPPOL participant ID via SML DNS lookup.
+        Resolve the SMP base URL for a participant via PEPPOL BDXL (NAPTR).
 
-        Algorithm (PEPPOL BDXL spec):
-          1. Hash(lowercase(scheme + '::' + identifier)) with MD5
-          2. Construct DNS name: 'B-{md5_hex}.iso6523-actorid-upis.{sml_zone}'
-          3. Resolve CNAME → SMP hostname
+        Algorithm (PEPPOL Policy for use of Identifiers / BDXL):
+          1. host = base32( SHA-256( lowercase(participant value) ) )  [no padding]
+             e.g. SHA-256('9922:optbcntrlp1001')
+          2. dns_name = '{host}.iso6523-actorid-upis.{sml_zone}'
+          3. Query NAPTR; the "U" record's regexp '!.*!<SMP-URL>!' yields the SMP URL.
 
-        Returns the SMP hostname string or None if not found.
+        Returns the SMP base URL (e.g. 'https://smp-test.peppol.org') or None.
         """
         try:
-            # PEPPOL SML hash: MD5 of the lowercase FULL participant identifier in
-            # its URI-encoded form '<identifier-scheme>::<value>', where the
-            # identifier-scheme is always 'iso6523-actorid-upis' and the value is
-            # the participant id itself (e.g. '9922:OPTBCNTRLP1001').
-            #   hash_input = 'iso6523-actorid-upis::9922:optbcntrlp1001'
-            normalized = participant_id.lower()
-            hash_input = f'iso6523-actorid-upis::{normalized}'
+            import base64
+            import dns.resolver
 
-            md5_hex = hashlib.md5(hash_input.encode('utf-8')).hexdigest()
-            dns_name = f'B-{md5_hex}.iso6523-actorid-upis.{self._sml_zone}'
+            value = participant_id.lower()                      # '9922:optbcntrlp1001'
+            digest = hashlib.sha256(value.encode('utf-8')).digest()
+            host = base64.b32encode(digest).decode('ascii').rstrip('=').lower()
+            dns_name = f'{host}.iso6523-actorid-upis.{self._sml_zone}'
 
-            logger.debug('SML DNS lookup: %s', dns_name)
-
-            # CNAME resolution
-            results = socket.getaddrinfo(dns_name, None)
-            if results:
-                # The CNAME points to the SMP — derive hostname from DNS name
-                # In practice, use dnspython for CNAME resolution (more reliable)
-                smp_hostname = self._resolve_cname(dns_name)
-                logger.info('SML resolved %s → %s', participant_id, smp_hostname)
-                return smp_hostname
-
-        except (socket.gaierror, OSError) as exc:
-            logger.debug('SML DNS lookup failed for %s: %s', participant_id, exc)
+            logger.debug('BDXL NAPTR lookup: %s', dns_name)
+            answers = dns.resolver.resolve(dns_name, 'NAPTR')
+            for rec in answers:
+                regexp = rec.regexp.decode('utf-8', 'ignore') if isinstance(rec.regexp, bytes) else str(rec.regexp)
+                # regexp form: '!.*!https://smp-test.peppol.org!'
+                if regexp.startswith('!'):
+                    parts = regexp.split('!')
+                    if len(parts) >= 3 and parts[2].startswith('http'):
+                        smp_url = parts[2]
+                        logger.info('SML resolved %s -> %s', participant_id, smp_url)
+                        return smp_url
+            logger.info('SML: NAPTR found but no SMP URL for %s', participant_id)
         except Exception as exc:
-            logger.warning('SML DNS lookup error for %s: %s', participant_id, exc)
+            logger.info('SML BDXL lookup failed for %s: %s', participant_id, exc)
 
         return None
 
@@ -259,14 +256,16 @@ class SMPClient:
             logger.error('SMP HTTP lookup requires the requests library.')
             return None
 
-        scheme, identifier = (participant_id.split(':', 1) + [''])[:2]
-        doc_encoded = quote(document_type_id, safe='')
+        # smp_hostname is now the SMP base URL from the NAPTR record
+        # (e.g. 'https://smp-test.peppol.org'). The participant is addressed with
+        # its full identifier 'iso6523-actorid-upis::<value>', URL-encoded.
+        base = smp_hostname.rstrip('/')
+        if not base.startswith('http'):
+            base = f'https://{base}'
+        part_encoded = quote(f'iso6523-actorid-upis::{participant_id}', safe='')
+        doc_encoded  = quote(document_type_id, safe='')
 
-        url = (
-            f'http://{smp_hostname}'
-            f'/{scheme}::{identifier}'
-            f'/services/{doc_encoded}'
-        )
+        url = f'{base}/{part_encoded}/services/{doc_encoded}'
 
         logger.debug('SMP HTTP GET: %s', url)
 
@@ -301,40 +300,41 @@ class SMPClient:
         """
         from lxml import etree
 
-        # PEPPOL SMP namespaces
-        SMP_NS  = 'http://busdox.org/serviceMetadata/publishing/1.0/'
-        WSDL_NS = 'http://schemas.xmlsoap.org/wsdl/'
+        def _ln(el) -> str:
+            try:
+                return etree.QName(el).localname
+            except Exception:
+                return ''
 
         try:
             doc = etree.fromstring(xml_bytes)
 
-            # Find endpoints matching AS4 transport profile
-            endpoints = doc.findall(
-                f'.//{{{SMP_NS}}}Endpoint'
-            )
-
-            if not endpoints:
-                # Try BDXR SMP 2.0 namespace
-                BDXR_NS = 'http://www.peppol.eu/schema/pd/businesscard/20160112/'
-                endpoints = doc.findall(f'.//{{{BDXR_NS}}}Endpoint')
-
-            for ep in endpoints:
-                profile = ep.get('transportProfile', '')
+            # Namespace-agnostic: works for busdox SMP 1.0 and OASIS BDXR SMP 2.0.
+            for ep in doc.iter():
+                if _ln(ep) != 'Endpoint':
+                    continue
+                profile = (ep.get('transportProfile') or '')
                 if 'as4' not in profile.lower():
                     continue
 
-                uri_el   = ep.find(f'{{{SMP_NS}}}EndpointURI')
-                cert_el  = ep.find(f'{{{SMP_NS}}}Certificate')
-
-                transport_url = uri_el.text.strip() if uri_el is not None and uri_el.text else ''
-                cert_uid      = cert_el.text.strip() if cert_el is not None and cert_el.text else ''
+                transport_url = ''
+                cert_b64 = ''
+                for ch in ep.iter():
+                    ln = _ln(ch)
+                    txt = (ch.text or '').strip()
+                    if not txt:
+                        continue
+                    if ln in ('EndpointURI', 'EndpointReference', 'Address') and not transport_url:
+                        transport_url = txt
+                    elif ln == 'Certificate' and not cert_b64:
+                        cert_b64 = ''.join(txt.split())
 
                 if transport_url:
                     logger.info('SMP: resolved AS4 endpoint: %s', transport_url)
                     return SMPEndpoint(
                         transport_url=transport_url,
                         transport_profile=profile,
-                        certificate_uid=cert_uid,
+                        certificate_uid=cert_b64,
                     )
 
             logger.warning('SMP response contained no AS4 endpoint.')
