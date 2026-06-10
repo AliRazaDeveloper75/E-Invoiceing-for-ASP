@@ -618,7 +618,7 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
 
       {/* Panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-96 h-[560px] flex flex-col rounded-2xl shadow-2xl border border-gray-200 bg-white overflow-hidden">
+        <div className="fixed bottom-24 right-6 z-50 w-80 max-w-[calc(100vw-3rem)] h-[480px] max-h-[calc(100dvh-7rem)] flex flex-col rounded-2xl shadow-2xl border border-gray-200 bg-white overflow-hidden">
           {/* Header */}
           <div className="bg-[#1e3a5f] text-white px-4 py-3 flex items-center gap-3">
             <Bot className="w-5 h-5 shrink-0" />
@@ -634,7 +634,7 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+                className={`flex-1 py-2 text-xs font-medium transition-colors ${
                   tab === t.id
                     ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
                     : 'text-gray-500 hover:text-gray-700'
