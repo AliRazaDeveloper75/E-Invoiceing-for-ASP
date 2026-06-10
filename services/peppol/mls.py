@@ -316,18 +316,24 @@ def decide_response(info: ReceivedDocInfo) -> tuple:
     if not info.business_doc:
         return MLS_CODE_REJECTED, [{'code': 'SV', 'reason': 'No business document found in the received message.'}]
 
-    invoice_type = 'creditnote' if info.doc_local_name.lower() == 'creditnote' else 'invoice'
     try:
-        from services.peppol_validator import FullPEPPOLValidator
-        result = FullPEPPOLValidator().validate(info.business_doc, invoice_type=invoice_type)
+        from services.peppol.pint_ae.xslt_validator import validate_document
+        result = validate_document(info.business_doc, profile='billing')
     except Exception as exc:
-        logger.warning('MLS: validation raised, defaulting to RE: %s', exc)
+        logger.warning('MLS: PINT-AE validation raised, defaulting to RE: %s', exc)
         return MLS_CODE_REJECTED, [{'code': 'SV', 'reason': f'Validation error: {exc}'}]
+
+    if not result.ran:
+        # Validation could not run (Saxon/artifacts missing) — accept rather than
+        # wrongly reject a valid document; logged upstream.
+        logger.warning('MLS: PINT-AE validation did not run; defaulting to AB.')
+        return MLS_CODE_ACCEPTED, []
 
     if result.is_valid:
         return MLS_CODE_ACCEPTED, []
 
-    reasons = [{'code': 'BV', 'reason': e if isinstance(e, str) else str(e)} for e in result.errors[:5]]
+    reasons = [{'code': 'BV', 'reason': (e.get('id') + ': ' + e.get('text'))[:480]}
+               for e in result.errors[:5]]
     return MLS_CODE_REJECTED, reasons or [{'code': 'BV', 'reason': 'Document failed PINT-AE validation.'}]
 
 

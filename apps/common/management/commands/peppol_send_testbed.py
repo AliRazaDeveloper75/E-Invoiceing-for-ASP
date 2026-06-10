@@ -66,6 +66,11 @@ class Command(BaseCommand):
         parser.add_argument('--large', action='store_true', help='Send a ~10MB payload (TC2A.6).')
         parser.add_argument('--no-validate', action='store_true',
                             help='Skip recipient-certificate trust/revocation validation (NOT recommended).')
+        parser.add_argument('--validate-doc', action='store_true',
+                            help='Validate the business document against PINT-AE Schematron and '
+                                 'refuse to send invalid ones (PINT-AE Business Document Validation).')
+        parser.add_argument('--profile', default='billing', choices=['billing', 'selfbilling'],
+                            help='PINT-AE profile for --validate-doc (default billing).')
 
     def handle(self, *args, **opts):
         self.stdout.write(self.style.MIGRATE_HEADING('\n=== AS4 send to Testbed ===\n'))
@@ -166,6 +171,27 @@ class Command(BaseCommand):
         recipient_ap_id = _cn(recipient_cert)
         self.stdout.write(f'Recipient AP      : {recipient_ap_id}')
         self.stdout.write(f'Endpoint          : {endpoint}')
+
+        # ── Document gate: validate the PINT-AE business document before sending ──
+        # (PINT-AE "Business Document Validation" — refuse to transmit invalid docs.)
+        if opts.get('validate_doc'):
+            from services.peppol.mls import parse_received_sbd
+            from services.peppol.pint_ae.xslt_validator import validate_document
+            info = parse_received_sbd(payload)
+            if info.business_doc:
+                vd = validate_document(info.business_doc, profile=opts.get('profile', 'billing'))
+                if not vd.ran:
+                    self.stdout.write(self.style.WARNING(
+                        '  doc validation did NOT run (Saxon/artifacts missing) — sending anyway.'))
+                elif not vd.is_valid:
+                    self.stdout.write(self.style.ERROR(
+                        f'REJECTED — document failed PINT-AE validation ({len(vd.errors)} error(s)):'))
+                    for e in vd.errors[:6]:
+                        self.stdout.write(self.style.ERROR(f"    {e.get('id')}: {e.get('text')}"))
+                    self.stdout.write(self.style.ERROR('          Message will NOT be sent.'))
+                    return 'REJECTED-INVALID-DOC'
+                else:
+                    self.stdout.write(self.style.SUCCESS('Doc validation    : valid (PINT-AE Schematron)'))
 
         # ── Trust gate: validate the recipient cert before transmitting (TC2A.4) ──
         if not opts['no_validate']:

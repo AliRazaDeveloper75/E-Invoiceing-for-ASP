@@ -339,6 +339,9 @@ PEPPOL_SIGNING_ENABLED = env.bool('PEPPOL_SIGNING_ENABLED', default=True)
 # network rules; only disable for isolated local testing.
 PEPPOL_AS4_VERIFY_SIGNER_TRUST = env.bool('PEPPOL_AS4_VERIFY_SIGNER_TRUST', default=True)
 
+# PINT-AE validation artifact version (label). 1.0.4 → schemas/peppol/pint-ae/2026.5.
+PINT_AE_VERSION = env('PINT_AE_VERSION', default='1.0.4')
+
 # Enable PEPPOL XSD schema validation (can disable in dev if schemas not yet downloaded)
 PEPPOL_XSD_VALIDATION_ENABLED = env.bool('PEPPOL_XSD_VALIDATION_ENABLED', default=True)
 
