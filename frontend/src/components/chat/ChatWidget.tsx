@@ -35,7 +35,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
-
+// Update Chatbot Frontend
 interface ChatbotNode {
   id: string;
   text: string;
