@@ -24,6 +24,49 @@ from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
 
 
+# ─── MLS (Message Level Status) Task ──────────────────────────────────────────
+
+@shared_task(
+    bind=True,
+    max_retries=3,
+    name='tasks.as4_tasks.send_mls_for_received',
+    queue='peppol_transmission',
+    acks_late=True,
+)
+def send_mls_for_received(self, sbd_b64: str) -> dict:
+    """
+    Generate and transmit a Peppol MLS (ApplicationResponse) for a received
+    PINT-AE business document. ``sbd_b64`` is the base64-encoded received SBD.
+
+    Runs out-of-band from the AS4 reception so the synchronous AS4 receipt is
+    not delayed. The PINT-AE testbed waits up to 10 minutes for the MLS.
+    """
+    import base64
+    from services.peppol.mls import send_mls_for_received as _send
+
+    try:
+        sbd = base64.b64decode(sbd_b64)
+    except Exception as exc:
+        logger.error('MLS task: bad base64 payload: %s', exc)
+        return {'sent': False, 'error': 'bad payload'}
+
+    result = _send(sbd)
+    if not result.sent and result.errors:
+        logger.warning('MLS task: not sent (%s) — %s', result.response_code, result.errors)
+        # Retry transient failures (e.g. SMP/endpoint hiccup).
+        try:
+            raise self.retry(countdown=60, exc=RuntimeError('; '.join(result.errors)))
+        except self.MaxRetriesExceededError:
+            pass
+    return {
+        'sent': result.sent,
+        'response_code': result.response_code,
+        'receiver': result.receiver,
+        'endpoint': result.endpoint,
+        'errors': result.errors,
+    }
+
+
 # ─── AS4 Transmission Task ────────────────────────────────────────────────────
 
 @shared_task(

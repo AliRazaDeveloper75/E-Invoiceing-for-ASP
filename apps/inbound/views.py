@@ -115,12 +115,55 @@ class AS4ReceiveView(APIView):
         except Exception as exc:
             logger.exception('AS4 inbound: persistence failed for %s: %s', result.message_id, exc)
 
+        # PINT-AE: answer received Invoices/Credit Notes with a Message Level
+        # Status (MLS). Skip ApplicationResponses (received MLS) to avoid loops.
+        self._maybe_send_mls(result.payload_xml)
+
         logger.info('AS4 inbound accepted: msg=%s sender=%s', result.message_id, result.sender_id)
         return HttpResponse(
             result.receipt_xml or b'<ack/>',
             status=status.HTTP_200_OK,
             content_type='application/soap+xml',
         )
+
+    @staticmethod
+    def _maybe_send_mls(payload_xml) -> None:
+        """
+        Dispatch a Message Level Status for a received PINT-AE business document.
+
+        Runs asynchronously (Celery) so the AS4 receipt response is not delayed;
+        falls back to a synchronous send if Celery is unavailable. Received MLS
+        (ApplicationResponse) documents are ignored to prevent reply loops.
+        """
+        if not payload_xml:
+            return
+        try:
+            from lxml import etree as _et
+            root = _et.fromstring(payload_xml)
+            local_names = {_et.QName(el).localname for el in root.iter()}
+            # Only invoices and credit notes get an MLS reply.
+            if not ({'Invoice', 'CreditNote'} & local_names):
+                return
+            if 'ApplicationResponse' in local_names:
+                return
+        except Exception as exc:
+            logger.debug('AS4 inbound: could not inspect payload for MLS: %s', exc)
+            return
+
+        import base64
+        sbd_b64 = base64.b64encode(payload_xml).decode('ascii')
+        try:
+            from tasks.as4_tasks import send_mls_for_received as _mls_task
+            _mls_task.delay(sbd_b64)
+            logger.info('AS4 inbound: MLS dispatched (async).')
+        except Exception:
+            logger.warning('AS4 inbound: Celery unavailable — sending MLS synchronously.')
+            try:
+                from services.peppol.mls import send_mls_for_received as _send
+                r = _send(payload_xml)
+                logger.info('AS4 inbound: MLS %s sent=%s (%s)', r.response_code, r.sent, r.errors)
+            except Exception as exc:
+                logger.error('AS4 inbound: synchronous MLS send failed: %s', exc)
 
 
 # ─── Supplier Auth Mixin ──────────────────────────────────────────────────────
