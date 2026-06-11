@@ -10,7 +10,7 @@ import { FlowTracker } from '@/components/invoice/FlowTracker';
 import { InvoiceTimeline } from '@/components/invoice/InvoiceTimeline';
 import { PDFDownloadButton } from '@/components/invoice/PDFDownloadButton';
 import { useCompany } from '@/hooks/useCompany';
-import { Download, Send, XCircle, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Download, Send, XCircle, ArrowLeft, RefreshCw, Ban, FileMinus } from 'lucide-react';
 import { AxiosError } from 'axios';
 import type { Invoice, InvoiceTimeline as InvoiceTimelineType } from '@/types';
 
@@ -117,6 +117,8 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
   const { activeCompany } = useCompany();
   const [actionError, setActionError] = useState('');
   const [isActing, setIsActing] = useState(false);
+  const [showDeactivate, setShowDeactivate] = useState(false);
+  const [deactivateReason, setDeactivateReason] = useState('');
 
   const {
     data: invoice,
@@ -161,6 +163,37 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
     } catch (e) {
       const err = e as AxiosError<{ error?: { message?: string } }>;
       setActionError(err.response?.data?.error?.message ?? 'Cancellation failed.');
+    } finally { setIsActing(false); }
+  }
+
+  async function handleCreditNote() {
+    if (!confirm('Issue a credit note for this invoice? A draft credit note will be created that you can review and submit.')) return;
+    setIsActing(true); setActionError('');
+    try {
+      const res = await api.post<{ data: { id: string } }>(`/invoices/${params.id}/credit-note/`);
+      const newId = res.data?.data?.id;
+      if (newId) router.push(`/invoices/${newId}`);
+      else await mutateAll();
+    } catch (e) {
+      const err = e as AxiosError<{ error?: { message?: string } }>;
+      setActionError(err.response?.data?.error?.message ?? 'Could not create credit note.');
+    } finally { setIsActing(false); }
+  }
+
+  async function handleDeactivate() {
+    if (!deactivateReason.trim()) {
+      setActionError('Please provide a reason for deactivation.');
+      return;
+    }
+    setIsActing(true); setActionError('');
+    try {
+      await api.post(`/invoices/${params.id}/deactivate/`, { reason: deactivateReason.trim() });
+      setShowDeactivate(false);
+      setDeactivateReason('');
+      await mutateAll();
+    } catch (e) {
+      const err = e as AxiosError<{ error?: { message?: string } }>;
+      setActionError(err.response?.data?.error?.message ?? 'Deactivation failed.');
     } finally { setIsActing(false); }
   }
 
@@ -209,23 +242,27 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
 
         <div className="flex gap-2 flex-wrap justify-end">
           <PDFDownloadButton invoice={invoice} company={activeCompany} />
-          {invoice.xml_file && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => downloadFile(
-                `/invoices/${invoice.id}/download-xml/`,
-                `${invoice.invoice_number}.xml`,
-                'application/xml',
-                'XML file not available yet.',
-              )}
-            >
-              <Download className="h-4 w-4" /> XML
-            </Button>
-          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => downloadFile(
+              `/invoices/${invoice.id}/download-xml/`,
+              `${invoice.invoice_number}.xml`,
+              'application/xml',
+              'XML could not be generated for this invoice.',
+            )}
+          >
+            <Download className="h-4 w-4" /> XML
+          </Button>
           {invoice.is_submittable && (
             <Button size="sm" onClick={handleSubmit} loading={isActing}>
-              <Send className="h-4 w-4" /> Submit to ASP
+              <Send className="h-4 w-4" /> Submit
+            </Button>
+          )}
+          {invoice.invoice_type !== 'credit_note' &&
+            ['submitted', 'validated', 'paid', 'partially_paid'].includes(invoice.status) && (
+            <Button variant="secondary" size="sm" onClick={handleCreditNote} loading={isActing}>
+              <FileMinus className="h-4 w-4" /> Issue Credit Note
             </Button>
           )}
           {invoice.is_cancellable && (
@@ -233,8 +270,52 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
               <XCircle className="h-4 w-4" /> Cancel
             </Button>
           )}
+          {invoice.is_deactivatable && !invoice.is_cancellable && (
+            <Button variant="danger" size="sm" onClick={() => { setActionError(''); setShowDeactivate(true); }}>
+              <Ban className="h-4 w-4" /> Deactivate
+            </Button>
+          )}
         </div>
       </div>
+
+      {invoice.status === 'deactivated' && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+          <p className="font-semibold flex items-center gap-1.5"><Ban className="h-4 w-4" /> This invoice has been deactivated.</p>
+          {invoice.deactivation_reason && (
+            <p className="mt-1"><span className="font-medium">Reason:</span> {invoice.deactivation_reason}</p>
+          )}
+        </div>
+      )}
+
+      {showDeactivate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowDeactivate(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <Ban className="h-5 w-5 text-red-500" /> Deactivate invoice
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Provide a reason. The buyer will see the deactivated status and this reason.
+            </p>
+            <textarea
+              value={deactivateReason}
+              onChange={(e) => setDeactivateReason(e.target.value)}
+              rows={4}
+              autoFocus
+              placeholder="Reason for deactivating this invoice…"
+              className="mt-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+            />
+            {actionError && <p className="mt-2 text-sm text-red-600">{actionError}</p>}
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setShowDeactivate(false)} disabled={isActing}>
+                Cancel
+              </Button>
+              <Button variant="danger" size="sm" onClick={handleDeactivate} loading={isActing}>
+                Deactivate
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {actionError && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
@@ -246,12 +327,12 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
 
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm space-y-1.5">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Supplier (Corner 1)</h2>
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Supplier</h2>
           <p className="font-semibold text-gray-900">{invoice.company_name}</p>
           <p className="text-sm text-gray-500">TRN: <span className="font-mono">{invoice.company_trn}</span></p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm space-y-1.5">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Buyer (Corner 4)</h2>
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Buyer</h2>
           <p className="font-semibold text-gray-900">{invoice.customer_name}</p>
           {invoice.customer_trn && (
             <p className="text-sm text-gray-500">TRN: <span className="font-mono">{invoice.customer_trn}</span></p>

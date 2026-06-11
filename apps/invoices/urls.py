@@ -8,6 +8,8 @@ from .views import (
     InvoiceDetailView,
     InvoiceSubmitView,
     InvoiceCancelView,
+    InvoiceDeactivateView,
+    InvoiceCreditNoteView,
     InvoiceXMLDownloadView,
     InvoicePDFDownloadView,
     InvoiceVATSummaryView,
@@ -58,6 +60,14 @@ urlpatterns = [
     path('<uuid:invoice_id>/cancel/',
          InvoiceCancelView.as_view(),
          name='invoice-cancel'),
+
+    path('<uuid:invoice_id>/deactivate/',
+         InvoiceDeactivateView.as_view(),
+         name='invoice-deactivate'),
+
+    path('<uuid:invoice_id>/credit-note/',
+         InvoiceCreditNoteView.as_view(),
+         name='invoice-credit-note'),
 
     # ── Downloads ─────────────────────────────────────────────────────────────
     path('<uuid:invoice_id>/download-xml/',

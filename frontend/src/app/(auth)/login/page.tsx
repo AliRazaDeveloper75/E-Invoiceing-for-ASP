@@ -21,11 +21,6 @@ interface LoginForm {
 
 const FEATURES = [
   {
-    icon: FileText,
-    title: 'UAE FTA Compliant',
-    desc: 'Fully compliant with Federal Decree-Law No. 16 of 2024 e-invoicing mandate.',
-  },
-  {
     icon: Network,
     title: '5-Corner',
     desc: 'End-to-end transmission via accredited ASP through the E-Invoice network.',

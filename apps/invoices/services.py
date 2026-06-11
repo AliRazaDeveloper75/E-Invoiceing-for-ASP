@@ -16,7 +16,7 @@ from rest_framework.exceptions import ValidationError, PermissionDenied, NotFoun
 
 from apps.companies.models import Company, CompanyMember
 from apps.customers.models import Customer
-from .models import Invoice, InvoiceItem, VAT_RATE_MAP
+from .models import Invoice, InvoiceItem, InvoiceAuditLog, VAT_RATE_MAP
 
 logger = logging.getLogger(__name__)
 
@@ -505,6 +505,95 @@ class InvoiceService:
 
         logger.warning('Invoice cancelled: %s', invoice.invoice_number)
         return invoice
+
+    @staticmethod
+    def deactivate_invoice(invoice: Invoice, membership: CompanyMember, reason: str) -> Invoice:
+        """
+        Deactivate an invoice with a mandatory reason.
+
+        Unlike cancel (DRAFT/PENDING only), an invoice may be deactivated from any
+        live state. The buyer retains read-only visibility of the deactivated
+        status and the reason.
+        """
+        if not invoice.is_deactivatable:
+            raise ValidationError({
+                'status': f'Invoice "{invoice.invoice_number}" is already '
+                          f'{invoice.get_status_display().lower()} and cannot be deactivated.'
+            })
+
+        reason = (reason or '').strip()
+        if not reason:
+            raise ValidationError({'reason': 'A reason is required to deactivate an invoice.'})
+
+        invoice.status = 'deactivated'
+        invoice.deactivation_reason = reason
+        invoice.deactivated_at = timezone.now()
+        invoice.save(update_fields=['status', 'deactivation_reason', 'deactivated_at', 'updated_at'])
+
+        try:
+            InvoiceAuditLog.log(
+                invoice=invoice,
+                action=InvoiceAuditLog.ACTION_DEACTIVATED,
+                performed_by=getattr(membership, 'user', None),
+                description=f'Invoice deactivated. Reason: {reason}',
+            )
+        except Exception:
+            logger.exception('Failed to write deactivation audit log for %s', invoice.invoice_number)
+
+        logger.warning('Invoice deactivated: %s — %s', invoice.invoice_number, reason)
+        return invoice
+
+    @staticmethod
+    def create_credit_note(invoice: Invoice, membership: CompanyMember) -> Invoice:
+        """
+        Issue a Credit Note against a previously issued invoice.
+
+        Copies the customer + line items from the original, references the original
+        invoice number (UBL BillingReference), and starts in DRAFT so the user can
+        review/adjust amounts before submitting.
+        """
+        if membership.role not in ('admin', 'accountant'):
+            raise PermissionDenied('Admin or Accountant role required to issue credit notes.')
+
+        if invoice.status in ('draft', 'cancelled', 'deactivated'):
+            raise ValidationError({
+                'status': f'A credit note can only be issued against an issued invoice, '
+                          f'not one in "{invoice.get_status_display()}" status.'
+            })
+        if invoice.invoice_type == 'credit_note':
+            raise ValidationError({'invoice_type': 'Cannot issue a credit note against a credit note.'})
+
+        invoice_number, sequence = InvoiceNumberService.generate(invoice.company)
+        credit = Invoice.objects.create(
+            company=invoice.company,
+            customer=invoice.customer,
+            created_by=membership.user,
+            invoice_number=invoice_number,
+            invoice_sequence=sequence,
+            invoice_type='credit_note',
+            transaction_type=invoice.transaction_type,
+            issue_date=timezone.localdate(),
+            currency=invoice.currency,
+            discount_amount=invoice.discount_amount,
+            payment_means_code=invoice.payment_means_code,
+            reference_number=invoice.invoice_number,   # BillingReference → original invoice
+            notes=f'Credit note for invoice {invoice.invoice_number}.',
+        )
+
+        for item in invoice.items.filter(is_active=True).order_by('sort_order'):
+            InvoiceItemService.add_item(credit, membership, {
+                'item_name': item.item_name,
+                'description': item.description,
+                'quantity': str(item.quantity),
+                'unit': item.unit,
+                'unit_price': str(item.unit_price),
+                'vat_rate_type': item.vat_rate_type,
+                'sort_order': item.sort_order,
+            })
+
+        logger.info('Credit note %s issued for invoice %s',
+                    credit.invoice_number, invoice.invoice_number)
+        return credit
 
     # ── ASP Status Updates (called from integration layer) ────────────────────
 

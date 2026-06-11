@@ -39,6 +39,9 @@ NS = {
     'ext':   'urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2',
 }
 
+# Credit Notes are a distinct UBL document (CreditNote-2), not an Invoice.
+NS_CREDITNOTE = {**NS, None: 'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2'}
+
 CAC = 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2'
 CBC = 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2'
 
@@ -120,7 +123,10 @@ class UAEInvoiceXMLGenerator:
         """
         logger.info('Generating XML for invoice: %s', invoice.invoice_number)
 
-        root = etree.Element('Invoice', nsmap=NS)
+        if invoice.invoice_type == INVOICE_TYPE_CREDIT_NOTE:
+            root = etree.Element('CreditNote', nsmap=NS_CREDITNOTE)
+        else:
+            root = etree.Element('Invoice', nsmap=NS)
 
         self._add_header(root, invoice)
         self._add_accounting_supplier_party(root, invoice.company)
@@ -170,7 +176,8 @@ class UAEInvoiceXMLGenerator:
         cbc('ID', invoice.invoice_number)
         cbc('IssueDate', _fmt_date(invoice.issue_date))
 
-        if invoice.due_date:
+        # UBL CreditNote has no DueDate (no payment is due on a credit note).
+        if invoice.due_date and invoice.invoice_type != INVOICE_TYPE_CREDIT_NOTE:
             cbc('DueDate', _fmt_date(invoice.due_date))
 
         # InvoiceTypeCode per UAE PEPPOL:
@@ -183,7 +190,11 @@ class UAEInvoiceXMLGenerator:
             type_code = '480'
         else:
             type_code = '380'
-        cbc('InvoiceTypeCode', type_code)
+        # CreditNote uses cbc:CreditNoteTypeCode; Invoice uses cbc:InvoiceTypeCode.
+        type_tag = ('CreditNoteTypeCode'
+                    if invoice.invoice_type == INVOICE_TYPE_CREDIT_NOTE
+                    else 'InvoiceTypeCode')
+        cbc(type_tag, type_code)
 
         if invoice.notes:
             cbc('Note', invoice.notes)
@@ -378,15 +389,18 @@ class UAEInvoiceXMLGenerator:
     # ── Invoice Lines ──────────────────────────────────────────────────────────
 
     def _add_invoice_lines(self, root, invoice) -> None:
-        """One InvoiceLine element per active item."""
+        """One InvoiceLine (or CreditNoteLine) element per active item."""
+        is_credit = invoice.invoice_type == INVOICE_TYPE_CREDIT_NOTE
+        line_tag = 'CreditNoteLine' if is_credit else 'InvoiceLine'
+        qty_tag  = 'CreditedQuantity' if is_credit else 'InvoicedQuantity'
         for item in invoice.items.filter(is_active=True).order_by('sort_order'):
-            line = etree.SubElement(root, _cac('InvoiceLine'))
+            line = etree.SubElement(root, _cac(line_tag))
 
             id_el = etree.SubElement(line, _cbc('ID'))
             id_el.text = str(item.sort_order + 1)
 
             unit_code = _resolve_unit_code(item.unit)
-            qty = etree.SubElement(line, _cbc('InvoicedQuantity'), unitCode=unit_code)
+            qty = etree.SubElement(line, _cbc(qty_tag), unitCode=unit_code)
             qty.text = str(item.quantity.normalize())
 
             line_ext = etree.SubElement(line, _cbc('LineExtensionAmount'),

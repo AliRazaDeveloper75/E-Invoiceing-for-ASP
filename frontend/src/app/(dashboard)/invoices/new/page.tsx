@@ -357,14 +357,14 @@ function Section({ title, subtitle, icon, children }: {
 }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-      <div className="px-5 py-3.5 border-b border-gray-100 bg-gradient-to-r from-blue-50/60 to-white flex items-start gap-3">
+      <div className="px-5 py-3.5 border-b border-gray-100 bg-gradient-to-r from-blue-50 via-indigo-50/40 to-white flex items-start gap-3">
         {icon && (
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-600 shrink-0 mt-0.5">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm shadow-blue-200 shrink-0">
             {icon}
           </div>
         )}
         <div className="min-w-0">
-          <p className="font-semibold text-gray-900 text-sm">{title}</p>
+          <p className="font-bold text-gray-900 text-sm tracking-tight">{title}</p>
           {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
         </div>
       </div>
@@ -1212,7 +1212,7 @@ export default function NewInvoicePage() {
 
   // ── Wizard step navigation (each step gates Next on its required fields) ─────
   const [step, setStep] = useState(0);
-  const TOTAL_STEPS = 7;
+  const TOTAL_STEPS = 6;   // Review is the final step (it submits directly)
 
   const stepFields = (s: number): (keyof InvoiceForm)[] => {
     switch (s) {
@@ -1284,12 +1284,6 @@ export default function NewInvoicePage() {
       sub:   'Check details',
       icon:  <FileCheck className="h-4 w-4" />,
       done:  readyToSubmit,
-    },
-    {
-      label: 'Submit',
-      sub:   'Create invoice',
-      icon:  <CheckCircle2 className="h-4 w-4" />,
-      done:  submitted,
     },
   ];
 
@@ -1428,8 +1422,9 @@ export default function NewInvoicePage() {
       {/* Progress stepper */}
       <FormStepper steps={STEPS} current={step} />
 
-      {/* Two-column layout: form + preview */}
-      <div className="grid grid-cols-[1fr_360px] gap-6 items-start">
+      {/* Two-column layout: form + preview. On the Review step we go full-width
+          and show the invoice as one professional document instead. */}
+      <div className={step === 5 ? '' : 'grid grid-cols-[1fr_360px] gap-6 items-start'}>
 
         {/* ── LEFT: Form ── */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 min-w-0" noValidate>
@@ -1737,21 +1732,41 @@ export default function NewInvoicePage() {
 
           {/* STEP 5 — Review */}
           {step === 5 && (<>
-          {/* Notes */}
-          <Section title="Notes" icon={<FileText className="h-4 w-4" />}>
-            <textarea rows={3} placeholder="Optional notes…"
+          {/* Optional notes — compact, above the document */}
+          <Section title="Notes" icon={<FileText className="h-4 w-4" />} subtitle="Optional — appended to the invoice">
+            <textarea rows={2} placeholder="Optional notes…"
               className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               {...register('notes')} />
-            <p className="text-xs text-gray-400">Audit metadata (GL/ID, permit, transaction ID, supply category) is automatically appended on save.</p>
           </Section>
-          <Section title="Review" icon={<FileCheck className="h-4 w-4" />} subtitle="Check the live preview on the right before submitting">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-gray-400 text-xs">Buyer</span><p className="font-medium text-gray-800">{selectedCustomer?.name ?? '—'}</p></div>
-              <div><span className="text-gray-400 text-xs">Invoice No.</span><p className="font-medium text-gray-800">{invoiceNo}</p></div>
-              <div><span className="text-gray-400 text-xs">Items</span><p className="font-medium text-gray-800">{watchedItems?.length ?? 0}</p></div>
-              <div><span className="text-gray-400 text-xs">Total</span><p className="font-medium text-gray-800">{currency || 'AED'} {qrTotal.toFixed(2)}</p></div>
+
+          {/* Full-width professional invoice document */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm">
+                <FileCheck className="h-4 w-4" />
+              </span>
+              <h2 className="text-sm font-bold text-gray-900 tracking-tight">Review your invoice</h2>
+              <span className="text-xs text-gray-400">— confirm everything is correct, then submit</span>
             </div>
-          </Section>
+            <div className="rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-100 via-slate-50 to-white p-5 sm:p-10 flex justify-center">
+              <div className="w-full max-w-md">
+                <InvoicePreview
+                  card={selected}
+                  companyName={activeCompany?.name ?? ''}
+                  customerName={selectedCustomer?.name ?? ''}
+                  issueDate={issueDate}
+                  dueDate={dueDate}
+                  currency={currency}
+                  discount={discount}
+                  items={watchedItems}
+                  invoiceNo={invoiceNo}
+                />
+              </div>
+            </div>
+            <p className="text-[11px] text-gray-400 text-center mt-3">
+              Audit metadata (GL/ID, permit, transaction ID, supply category) is automatically appended on save.
+            </p>
+          </div>
           </>)}
 
           {/* STEP 4 — Print Code */}
@@ -1816,35 +1831,36 @@ export default function NewInvoicePage() {
           <div className="flex items-center justify-between pt-2">
             <button type="button" onClick={step === 0 ? () => router.back() : goBack}
               className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">
-              {step === 0 ? 'Cancel' : '← Back'}
+              {step === 0 ? 'Cancel' : step === 5 ? '← Edit' : '← Back'}
             </button>
-            {step < TOTAL_STEPS - 1 ? (
+            {step < 5 ? (
               <button type="button" onClick={goNext}
                 className="px-8 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors">
                 Next →
               </button>
             ) : (
-              <Button type="submit" disabled={isSubmitting} className="px-8">
-                {isSubmitting
+              <Button type="submit" disabled={isSubmitting || submitted} className="px-8">
+                {isSubmitting || submitted
                   ? <span className="flex items-center gap-2"><RefreshCw className="h-4 w-4 animate-spin" /> Creating…</span>
-                  : <span className="flex items-center gap-2"><FileText className="h-4 w-4" /> Create Invoice</span>
+                  : <span className="flex items-center gap-2"><FileText className="h-4 w-4" /> Submit &amp; Create Invoice</span>
                 }
               </Button>
             )}
           </div>
         </form>
 
-        {/* ── RIGHT: Live preview (sticky, stays in view while scrolling) ── */}
-        <div className="sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {/* ── RIGHT: Live preview — hidden on the Review step (shown full-width there). ── */}
+        {step !== 5 && (
+        <div className="sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50 via-indigo-50/40 to-white p-4 shadow-sm [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">Invoice Preview</p>
+              <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Invoice Preview</p>
               <span className="flex h-2 w-2 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
             </div>
-            <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Updates live</span>
+            <span className="text-[10px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-full shadow-sm">Updates live</span>
           </div>
           <InvoicePreview
             card={selected}
@@ -1858,6 +1874,7 @@ export default function NewInvoicePage() {
             invoiceNo={invoiceNo}
           />
         </div>
+        )}
 
       </div>
     </div>

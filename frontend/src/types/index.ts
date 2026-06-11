@@ -97,7 +97,8 @@ export type InvoiceStatus =
   | 'rejected'
   | 'cancelled'
   | 'paid'
-  | 'partially_paid';
+  | 'partially_paid'
+  | 'deactivated';
 
 export type InvoiceType = 'tax_invoice' | 'simplified' | 'credit_note' | 'commercial_invoice' | 'continuous_supply';
 export type TransactionType = 'b2b' | 'b2g' | 'b2c';
@@ -162,6 +163,9 @@ export interface Invoice {
   is_editable: boolean;
   is_submittable: boolean;
   is_cancellable: boolean;
+  is_deactivatable: boolean;
+  deactivation_reason: string;
+  deactivated_at: string | null;
   notes: string;
   created_at: string;
   updated_at: string;

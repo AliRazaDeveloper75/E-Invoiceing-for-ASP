@@ -10,6 +10,7 @@ const STATUS_STYLES: Record<InvoiceStatus, string> = {
   cancelled:      'bg-gray-200 text-gray-600',
   paid:           'bg-emerald-100 text-emerald-800',
   partially_paid: 'bg-orange-100 text-orange-800',
+  deactivated:    'bg-amber-100 text-amber-800',
 };
 
 const STATUS_LABELS: Record<InvoiceStatus, string> = {
@@ -21,6 +22,7 @@ const STATUS_LABELS: Record<InvoiceStatus, string> = {
   cancelled:      'Cancelled',
   paid:           'Paid',
   partially_paid: 'Partially Paid',
+  deactivated:    'Deactivated',
 };
 
 export function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {

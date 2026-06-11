@@ -26,6 +26,7 @@ from apps.common.constants import (
     CURRENCY_CHOICES, VAT_RATE_CHOICES, PAYMENT_MEANS_CHOICES,
     INVOICE_STATUS_DRAFT, INVOICE_TYPE_TAX, TRANSACTION_B2B, CURRENCY_AED,
     UAE_VAT_RATE, FTA_STATUS_CHOICES, PAYMENT_MEANS_CREDIT_TRANSFER,
+    INVOICE_STATUS_CANCELLED, INVOICE_STATUS_DEACTIVATED,
 )
 
 
@@ -101,6 +102,13 @@ class Invoice(BaseModel):
         default=INVOICE_STATUS_DRAFT,
         db_index=True,
     )
+
+    # ── Deactivation (user disables an invoice, with a reason) ──────────────────
+    deactivation_reason = models.TextField(
+        blank=True, default='',
+        help_text='Reason provided by the user when the invoice was deactivated.'
+    )
+    deactivated_at = models.DateTimeField(null=True, blank=True)
 
     # ── Dates ──────────────────────────────────────────────────────────────────
     issue_date = models.DateField(
@@ -270,6 +278,12 @@ class Invoice(BaseModel):
         """Can only cancel DRAFT or PENDING invoices."""
         return self.status in ('draft', 'pending')
 
+    @property
+    def is_deactivatable(self) -> bool:
+        """Any live invoice can be deactivated (with a reason) except ones
+        already cancelled or deactivated."""
+        return self.status not in (INVOICE_STATUS_CANCELLED, INVOICE_STATUS_DEACTIVATED)
+
 
 # ─── Invoice Item Model ───────────────────────────────────────────────────────
 
@@ -412,6 +426,7 @@ class InvoiceAuditLog(models.Model):
     ACTION_VALIDATED  = 'validated'
     ACTION_REJECTED   = 'rejected'
     ACTION_CANCELLED  = 'cancelled'
+    ACTION_DEACTIVATED = 'deactivated'
     ACTION_PAID       = 'paid'
     ACTION_XML_GEN    = 'xml_generated'
     ACTION_ASP_SENT   = 'asp_sent'
@@ -428,6 +443,7 @@ class InvoiceAuditLog(models.Model):
         (ACTION_VALIDATED,    'Validated by ASP'),
         (ACTION_REJECTED,     'Rejected'),
         (ACTION_CANCELLED,    'Cancelled'),
+        (ACTION_DEACTIVATED,  'Deactivated'),
         (ACTION_PAID,         'Marked Paid'),
         (ACTION_XML_GEN,      'XML Generated'),
         (ACTION_ASP_SENT,     'Sent to ASP'),

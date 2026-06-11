@@ -222,6 +222,40 @@ class InvoiceCancelView(APIView):
         )
 
 
+class InvoiceDeactivateView(APIView):
+    """POST /api/v1/invoices/{id}/deactivate/ — deactivate an invoice with a reason."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, invoice_id):
+        invoice, membership, err = _resolve_invoice(request, invoice_id)
+        if err:
+            return err
+
+        reason = (request.data.get('reason') or '').strip()
+        invoice = InvoiceService.deactivate_invoice(invoice, membership, reason)
+        return success_response(
+            data=InvoiceSerializer(invoice).data,
+            message=f'Invoice {invoice.invoice_number} has been deactivated.'
+        )
+
+
+class InvoiceCreditNoteView(APIView):
+    """POST /api/v1/invoices/{id}/credit-note/ — issue a credit note against an invoice."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, invoice_id):
+        invoice, membership, err = _resolve_invoice(request, invoice_id)
+        if err:
+            return err
+
+        credit = InvoiceService.create_credit_note(invoice, membership)
+        return success_response(
+            data=InvoiceSerializer(credit).data,
+            message=f'Credit note {credit.invoice_number} created for {invoice.invoice_number}.',
+            status_code=status.HTTP_201_CREATED,
+        )
+
+
 class InvoiceVATSummaryView(APIView):
     """GET /api/v1/invoices/{id}/vat-summary/ — VAT breakdown by rate type"""
     permission_classes = [IsAuthenticated]
@@ -332,24 +366,22 @@ class InvoiceXMLDownloadView(APIView):
         if err:
             return err
 
-        if not invoice.xml_file:
-            return error_response(
-                'XML has not been generated for this invoice yet. '
-                'The invoice must be submitted and processed before XML is available.',
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
-
         filename = f'{invoice.invoice_number}.xml'
         try:
-            response = HttpResponse(
-                invoice.xml_file.read(),
-                content_type='application/xml',
-            )
+            if invoice.xml_file:
+                # Use the stored, pipeline-generated XML when available.
+                xml_bytes = invoice.xml_file.read()
+            else:
+                # Generate the UBL 2.1 XML on-the-fly (drafts / not-yet-processed),
+                # mirroring the PDF download which is available for all statuses.
+                from services.xml_generator import UAEInvoiceXMLGenerator
+                xml_bytes = UAEInvoiceXMLGenerator().generate(invoice)
+            response = HttpResponse(xml_bytes, content_type='application/xml')
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             return response
         except Exception:
-            logger.exception('Failed to read XML file for invoice %s', invoice.invoice_number)
-            return error_response('XML file could not be read.', status_code=500)
+            logger.exception('Failed to produce XML for invoice %s', invoice.invoice_number)
+            return error_response('XML could not be generated for this invoice.', status_code=500)
 
 
 # ─── PDF Download ─────────────────────────────────────────────────────────────

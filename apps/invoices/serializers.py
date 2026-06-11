@@ -126,6 +126,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     is_editable     = serializers.BooleanField(read_only=True)
     is_submittable  = serializers.BooleanField(read_only=True)
     is_cancellable  = serializers.BooleanField(read_only=True)
+    is_deactivatable = serializers.BooleanField(read_only=True)
     items           = serializers.SerializerMethodField()
     item_count      = serializers.SerializerMethodField()
 
@@ -155,7 +156,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
             # Items
             'items', 'item_count',
             # Flags
-            'is_editable', 'is_submittable', 'is_cancellable',
+            'is_editable', 'is_submittable', 'is_cancellable', 'is_deactivatable',
+            # Deactivation
+            'deactivation_reason', 'deactivated_at',
             # Buyer engagement
             'buyer_viewed_at',
             # Meta

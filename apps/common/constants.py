@@ -46,6 +46,7 @@ INVOICE_STATUS_REJECTED        = 'rejected'         # ASP rejected
 INVOICE_STATUS_CANCELLED       = 'cancelled'        # Cancelled by user
 INVOICE_STATUS_PAID            = 'paid'             # Fully paid by buyer
 INVOICE_STATUS_PARTIALLY_PAID  = 'partially_paid'   # Partially paid by buyer
+INVOICE_STATUS_DEACTIVATED     = 'deactivated'      # Deactivated by user (with reason)
 
 INVOICE_STATUS_CHOICES = [
     (INVOICE_STATUS_DRAFT,          'Draft'),
@@ -57,6 +58,7 @@ INVOICE_STATUS_CHOICES = [
     (INVOICE_STATUS_CANCELLED,      'Cancelled'),
     (INVOICE_STATUS_PAID,           'Paid'),
     (INVOICE_STATUS_PARTIALLY_PAID, 'Partially Paid'),
+    (INVOICE_STATUS_DEACTIVATED,    'Deactivated'),
 ]
 
 # ─── Invoice Types (per UAE VAT law + PEPPOL PINT AE) ────────────────────────

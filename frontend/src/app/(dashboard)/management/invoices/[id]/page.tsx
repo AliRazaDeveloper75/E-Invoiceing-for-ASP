@@ -9,7 +9,7 @@ import type { InvoiceTimeline } from '@/types';
 import {
   ArrowLeft, RefreshCw, Send, ShieldCheck, ShieldX,
   Landmark, CheckCircle2, XCircle, Clock, FileText,
-  Building2, User, Calendar, Hash, AlertTriangle, Download,
+  Building2, User, Calendar, Hash, AlertTriangle, Download, Ban,
 } from 'lucide-react';
 
 async function downloadFile(url: string, filename: string, mimeType: string) {
@@ -49,6 +49,7 @@ interface AdminInvoice {
   fta_status: string | null;
   asp_submission_id: string | null;
   xml_file: string | null;
+  deactivation_reason?: string;
   created_by_name: string;
   created_at: string;
 }
@@ -62,6 +63,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   validated: { label: 'Validated', color: 'text-emerald-600', bg: 'bg-emerald-100', icon: CheckCircle2 },
   rejected:  { label: 'Rejected',  color: 'text-red-600',     bg: 'bg-red-100',     icon: XCircle },
   cancelled: { label: 'Cancelled', color: 'text-slate-500',   bg: 'bg-slate-100',   icon: XCircle },
+  deactivated: { label: 'Deactivated', color: 'text-amber-700', bg: 'bg-amber-100', icon: Ban },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -221,7 +223,7 @@ export default function AdminInvoiceDetailPage() {
               <FileText className="h-3.5 w-3.5" /> PDF
             </button>
           )}
-          {invoice?.xml_file && (
+          {invoice && (
             <button
               onClick={() => downloadFile(
                 `/invoices/${invoice.id}/download-xml/`,
@@ -257,6 +259,14 @@ export default function AdminInvoiceDetailPage() {
           {lastError && (
             <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
               <AlertTriangle className="h-4 w-4 shrink-0" /> {lastError}
+            </div>
+          )}
+          {invoice?.status === 'deactivated' && (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+              <p className="font-semibold flex items-center gap-1.5"><Ban className="h-4 w-4" /> This invoice has been deactivated.</p>
+              {invoice.deactivation_reason && (
+                <p className="mt-1"><span className="font-medium">Reason:</span> {invoice.deactivation_reason}</p>
+              )}
             </div>
           )}
 
@@ -335,7 +345,7 @@ export default function AdminInvoiceDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Supplier */}
               <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Supplier (Corner 1)</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Supplier</p>
                 <div className="flex items-start gap-3">
                   <Building2 className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
                   <div>
@@ -353,7 +363,7 @@ export default function AdminInvoiceDetailPage() {
 
               {/* Buyer */}
               <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Buyer (Corner 4)</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Buyer</p>
                 <div className="flex items-start gap-3">
                   <User className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
                   <p className="font-semibold text-gray-900">{invoice.customer_name || '—'}</p>

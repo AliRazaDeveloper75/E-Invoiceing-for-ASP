@@ -2,11 +2,11 @@
 
 import { clsx } from 'clsx';
 import {
-  Building2,
+  FileText,
   ShieldCheck,
-  Network,
-  Building,
-  Landmark,
+  Send,
+  Inbox,
+  Check,
   CheckCircle2,
   XCircle,
   Loader2,
@@ -14,38 +14,33 @@ import {
 } from 'lucide-react';
 import type { CornerFlowState, CornerFlowStatus } from '@/types';
 
-// ─── Corner Icons ─────────────────────────────────────────────────────────────
+// ─── Step Icons + generic labels ────────────────────────────────────────────
+// We intentionally present a neutral, status-oriented progress view here and do
+// NOT expose the underlying transmission architecture (corners / network / ASP).
 
-const CORNER_ICONS: Record<number, React.ComponentType<{ className?: string }>> = {
-  1: Building2,
+const STEP_ICONS: Record<number, React.ComponentType<{ className?: string }>> = {
+  1: FileText,
   2: ShieldCheck,
-  3: Network,
-  4: Building,
-  5: Landmark,
+  3: Send,
+  4: Inbox,
+  5: CheckCircle2,
+};
+
+const STEP_LABELS: Record<number, string> = {
+  1: 'Created',
+  2: 'Validated',
+  3: 'Sent',
+  4: 'Delivered',
+  5: 'Reported',
 };
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
-
-const STATUS_RING: Record<CornerFlowStatus, string> = {
-  idle:       'border-gray-200 bg-gray-50',
-  processing: 'border-brand-400 bg-brand-50',
-  complete:   'border-emerald-400 bg-emerald-50',
-  error:      'border-red-400 bg-red-50',
-};
 
 const STATUS_ICON_COLOR: Record<CornerFlowStatus, string> = {
   idle:       'text-gray-300',
   processing: 'text-brand-500',
   complete:   'text-emerald-500',
   error:      'text-red-500',
-};
-
-
-const STATUS_CONNECTOR: Record<CornerFlowStatus, string> = {
-  idle:       'bg-gray-200',
-  processing: 'bg-brand-300',
-  complete:   'bg-emerald-400',
-  error:      'bg-red-300',
 };
 
 const STATUS_BADGE: Record<CornerFlowStatus, { label: string; className: string }> = {
@@ -77,82 +72,82 @@ function formatTimestamp(ts: string): string {
   }
 }
 
+function genericStatusMessage(corner: CornerFlowState): string {
+  const label = STEP_LABELS[corner.corner] ?? corner.label;
+  switch (corner.status) {
+    case 'complete':   return 'Invoice fully processed.';
+    case 'error':      return `There was a problem at the “${label}” step.`;
+    case 'processing': return `${label} in progress…`;
+    default:           return `Next step: ${label}.`;
+  }
+}
+
 // ─── Corner Card ──────────────────────────────────────────────────────────────
 
 function CornerCard({ corner, isLast }: { corner: CornerFlowState; isLast: boolean }) {
-  const Icon = CORNER_ICONS[corner.corner] ?? Building2;
+  const Icon = STEP_ICONS[corner.corner] ?? FileText;
+  const label = STEP_LABELS[corner.corner] ?? corner.label;
   const badge = STATUS_BADGE[corner.status];
   const ts = formatTimestamp(corner.timestamp);
+  const { status } = corner;
 
   return (
-    <div className="flex items-start gap-0">
-      {/* Card */}
+    <div className="flex items-start flex-1 min-w-0">
+      {/* Step (icon + labels) */}
       <div className="flex flex-col items-center w-full">
-        {/* Circle + icon */}
+        {/* Circle */}
         <div
           className={clsx(
-            'relative flex items-center justify-center',
-            'w-14 h-14 rounded-full border-2 shadow-sm transition-all duration-300',
-            STATUS_RING[corner.status],
+            'relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300',
+            status === 'complete'   && 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-200',
+            status === 'processing' && 'bg-white text-brand-600 border-2 border-brand-500 ring-4 ring-brand-100',
+            status === 'error'      && 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-md shadow-red-200',
+            status === 'idle'       && 'bg-gray-100 text-gray-400 border border-gray-200',
           )}
         >
-          <Icon className={clsx('h-6 w-6 transition-colors', STATUS_ICON_COLOR[corner.status])} />
+          {status === 'complete'
+            ? <Check className="h-5 w-5" strokeWidth={3} />
+            : status === 'error'
+            ? <XCircle className="h-5 w-5" />
+            : <Icon className="h-5 w-5" />}
 
-          {/* Status overlay badge (top-right) */}
-          <span className="absolute -top-1 -right-1">
-            <StatusIcon status={corner.status} />
-          </span>
-
-          {/* Corner number badge (bottom-left) */}
-          <span
-            className={clsx(
-              'absolute -bottom-1 -left-1',
-              'flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold',
-              'border border-white shadow-sm',
-              corner.status === 'idle'       ? 'bg-gray-200 text-gray-500' :
-              corner.status === 'processing' ? 'bg-brand-500 text-white' :
-              corner.status === 'complete'   ? 'bg-emerald-500 text-white' :
-                                               'bg-red-500 text-white',
-            )}
-          >
-            {corner.corner}
-          </span>
+          {/* Live pulse on the current step */}
+          {status === 'processing' && (
+            <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-brand-500" />
+            </span>
+          )}
         </div>
 
-        {/* Text */}
-        <div className="mt-3 text-center px-1">
-          <p
-            className={clsx(
-              'text-xs font-semibold leading-tight transition-colors',
-              corner.status === 'idle' ? 'text-gray-400' : 'text-gray-800',
-            )}
-          >
-            {corner.label}
+        {/* Labels */}
+        <div className="mt-2.5 text-center px-1">
+          <p className={clsx(
+            'text-xs font-semibold leading-tight',
+            status === 'idle' ? 'text-gray-400' : 'text-gray-800',
+          )}>
+            {label}
           </p>
-          <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">{corner.sublabel}</p>
-          <span
-            className={clsx(
-              'inline-block mt-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium',
-              badge.className,
-            )}
-          >
+          <p className={clsx(
+            'text-[10px] font-medium mt-0.5',
+            status === 'complete'   ? 'text-emerald-600' :
+            status === 'processing' ? 'text-brand-600' :
+            status === 'error'      ? 'text-red-600' : 'text-gray-400',
+          )}>
             {badge.label}
-          </span>
-          {ts && (
-            <p className="text-[10px] text-gray-400 mt-1">{ts}</p>
-          )}
+          </p>
+          {ts && <p className="text-[10px] text-gray-300 mt-0.5">{ts}</p>}
         </div>
       </div>
 
-      {/* Connector line */}
+      {/* Connector — fills as the flow progresses */}
       {!isLast && (
-        <div className="flex items-center mt-7 flex-shrink-0 w-8 lg:w-12">
-          <div
-            className={clsx(
-              'h-0.5 w-full transition-colors duration-500',
-              STATUS_CONNECTOR[corner.status],
-            )}
-          />
+        <div className="flex-1 mt-6 px-1">
+          <div className={clsx(
+            'h-1 w-full rounded-full transition-colors duration-500',
+            status === 'complete' ? 'bg-emerald-400' :
+            status === 'error'    ? 'bg-red-300' : 'bg-gray-200',
+          )} />
         </div>
       )}
     </div>
@@ -186,26 +181,20 @@ export function FlowTracker({ flow, compact = false }: FlowTrackerProps) {
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
         <div>
           <h2 className="text-sm font-semibold text-gray-800">
-            5-Corner Flow
+            Invoice Progress
           </h2>
-          <p className="text-xs text-gray-400 mt-0.5">UAE e-invoicing transmission pipeline</p>
+          <p className="text-xs text-gray-400 mt-0.5">Current status of your invoice</p>
         </div>
         {/* Active step indicator */}
         <div className="text-right">
           <p className="text-xs text-gray-500">
-            Active: <span className="font-medium text-gray-700">{activeCorner?.label}</span>
+            Current: <span className="font-medium text-gray-700">{STEP_LABELS[activeCorner?.corner] ?? activeCorner?.label}</span>
           </p>
-          <p className="text-[10px] text-gray-400">{activeCorner?.sublabel}</p>
         </div>
       </div>
 
-      {/* Corner cards */}
-      <div
-        className={clsx(
-          'px-5 py-6 flex items-start justify-between',
-          compact ? 'gap-1' : 'gap-2',
-        )}
-      >
+      {/* Step cards */}
+      <div className="px-5 py-6 flex items-start">
         {flow.map((corner, idx) => (
           <CornerCard
             key={corner.corner}
@@ -215,8 +204,8 @@ export function FlowTracker({ flow, compact = false }: FlowTrackerProps) {
         ))}
       </div>
 
-      {/* Description bar for active corner */}
-      {activeCorner && activeCorner.description && (
+      {/* Status bar (generic — no architecture details exposed) */}
+      {activeCorner && (
         <div
           className={clsx(
             'px-5 py-3 border-t text-xs flex items-center gap-2',
@@ -230,7 +219,7 @@ export function FlowTracker({ flow, compact = false }: FlowTrackerProps) {
           )}
         >
           <StatusIcon status={activeCorner.status} />
-          <span>{activeCorner.description}</span>
+          <span>{genericStatusMessage(activeCorner)}</span>
         </div>
       )}
     </div>

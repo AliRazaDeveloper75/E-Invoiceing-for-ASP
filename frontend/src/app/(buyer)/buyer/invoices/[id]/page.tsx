@@ -9,7 +9,7 @@ import { api } from '@/lib/api';
 import {
   ArrowLeft, Download, FileText, CreditCard, CheckCircle2,
   Loader2, X, AlertCircle, Calendar, Receipt, Building2,
-  ChevronLeft,
+  ChevronLeft, Ban,
 } from 'lucide-react';
 import type { Invoice, Payment, PaymentSummary, PaymentMethod, PaymentConfig } from '@/types';
 
@@ -39,6 +39,7 @@ const STATUS_STYLES: Record<string, string> = {
   cancelled:      'bg-gray-100 text-gray-500',
   paid:           'bg-emerald-100 text-emerald-700',
   partially_paid: 'bg-orange-100 text-orange-700',
+  deactivated:    'bg-amber-100 text-amber-700',
 };
 
 const METHOD_LABELS: Record<string, string> = {
@@ -712,6 +713,18 @@ export default function BuyerInvoiceDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Deactivated notice (read-only for buyer) */}
+      {invoice.status === 'deactivated' && (
+        <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+          <p className="font-semibold flex items-center gap-1.5">
+            <Ban className="w-4 h-4" /> This invoice has been deactivated by the supplier.
+          </p>
+          {invoice.deactivation_reason && (
+            <p className="mt-1"><span className="font-medium">Reason:</span> {invoice.deactivation_reason}</p>
+          )}
+        </div>
+      )}
 
       {/* Payment Progress */}
       {(invoice.status === 'partially_paid' || invoice.status === 'paid') && (

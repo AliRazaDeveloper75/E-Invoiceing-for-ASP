@@ -278,14 +278,36 @@ class LogoutView(APIView):
         return success_response(message='Logged out successfully.')
 
 
+def _daily_logout_cutoff_ts() -> float:
+    """
+    Epoch timestamp of the most recent daily logout boundary.
+
+    Every user's MFA session is invalidated at a fixed local time each day
+    (default 12:00 noon Asia/Dubai, configurable via DAILY_LOGOUT_HOUR). Returns
+    today's boundary if it has already passed, else yesterday's — so any session
+    whose MFA was verified before it is considered expired.
+    """
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+    from django.conf import settings
+
+    tz = ZoneInfo(getattr(settings, 'TIME_ZONE', 'Asia/Dubai'))
+    hour = int(getattr(settings, 'DAILY_LOGOUT_HOUR', 12))
+    now = datetime.now(tz)
+    boundary = now.replace(hour=hour, minute=0, second=0, microsecond=0)
+    if now < boundary:
+        boundary -= timedelta(days=1)
+    return boundary.timestamp()
+
+
 class TokenRefreshAPIView(TokenRefreshView):
     """POST /api/v1/auth/token/refresh/
 
-    Extends SimpleJWT's refresh with a 24-hour MFA session check.
-    If the refresh token's mfa_verified_at claim is older than MFA_SESSION_HOURS,
-    the refresh is rejected and the client must re-authenticate with MFA.
+    Extends SimpleJWT's refresh with a fixed daily MFA-session cutoff: every
+    session is invalidated at DAILY_LOGOUT_HOUR local time (default 12:00 noon
+    Asia/Dubai). If the refresh token's mfa_verified_at predates the most recent
+    daily boundary, the refresh is rejected and the client must re-authenticate.
     """
-    MFA_SESSION_HOURS = 24
 
     def post(self, request, *args, **kwargs):
         refresh_str = request.data.get('refresh', '').strip()
@@ -293,14 +315,12 @@ class TokenRefreshAPIView(TokenRefreshView):
             try:
                 token = RefreshToken(refresh_str)
                 mfa_ts = token.payload.get('mfa_verified_at')
-                if mfa_ts is not None:
-                    age_hours = (time.time() - mfa_ts) / 3600
-                    if age_hours >= self.MFA_SESSION_HOURS:
-                        return error_response(
-                            'Your MFA session has expired. Please sign in again.',
-                            status_code=status.HTTP_401_UNAUTHORIZED,
-                            details={'mfa_expired': True},
-                        )
+                if mfa_ts is not None and mfa_ts < _daily_logout_cutoff_ts():
+                    return error_response(
+                        'Your session has expired (daily sign-out). Please sign in again.',
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        details={'mfa_expired': True},
+                    )
             except Exception:
                 pass
         return super().post(request, *args, **kwargs)
