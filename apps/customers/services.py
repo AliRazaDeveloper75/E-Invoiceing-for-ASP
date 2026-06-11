@@ -44,6 +44,8 @@ class CustomerService:
             customer_type=data.get('customer_type', 'b2b'),
             trn=trn,
             vat_number=data.get('vat_number', '').strip(),
+            trn_issue_date=data.get('trn_issue_date'),
+            trn_expiry_date=data.get('trn_expiry_date'),
             peppol_endpoint=data.get('peppol_endpoint', '').strip(),
             street_address=data.get('street_address', '').strip(),
             city=data.get('city', '').strip(),
@@ -82,7 +84,7 @@ class CustomerService:
 
         updatable_fields = [
             'name', 'legal_name', 'customer_type',
-            'trn', 'vat_number', 'peppol_endpoint',
+            'trn', 'vat_number', 'trn_issue_date', 'trn_expiry_date', 'peppol_endpoint',
             'street_address', 'city', 'state_province', 'postal_code', 'country',
             'email', 'phone', 'notes',
         ]

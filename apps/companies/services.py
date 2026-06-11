@@ -75,6 +75,7 @@ class CompanyService:
             'name', 'legal_name', 'street_address', 'city', 'emirate',
             'po_box', 'country', 'phone', 'email', 'website',
             'peppol_endpoint', 'is_vat_group',
+            'trn_issue_date', 'trn_expiry_date',
         ]
 
         changed_fields = []

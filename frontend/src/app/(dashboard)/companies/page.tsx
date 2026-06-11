@@ -35,6 +35,8 @@ interface CompanyForm {
   name: string;
   legal_name: string;
   trn: string;
+  trn_issue_date?: string;
+  trn_expiry_date?: string;
   street_address: string;
   city: string;
   country: string;
@@ -249,6 +251,8 @@ function CompanyFormPanel({
       name:           initial?.name           ?? '',
       legal_name:     initial?.legal_name     ?? '',
       trn:            initial?.trn            ?? '',
+      trn_issue_date:  initial?.trn_issue_date  ?? '',
+      trn_expiry_date: initial?.trn_expiry_date ?? '',
       street_address: initial?.street_address ?? '',
       city:           initial?.city           ?? '',
       country:        initial?.country        ?? 'AE',
@@ -330,6 +334,23 @@ function CompanyFormPanel({
             validate: (v) => validateTRN(v, true),
           })}
         />
+
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            label="TRN Issue Date"
+            type="date"
+            tooltip="Date your Tax Registration (TRN) was issued by the FTA."
+            error={errors.trn_issue_date?.message}
+            {...register('trn_issue_date')}
+          />
+          <Input
+            label="TRN Expiry Date"
+            type="date"
+            tooltip="TRN expiry / validity end date, if applicable."
+            error={errors.trn_expiry_date?.message}
+            {...register('trn_expiry_date')}
+          />
+        </div>
 
         <Input
           label="Street Address"

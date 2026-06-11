@@ -376,6 +376,20 @@ function Section({ title, subtitle, icon, children }: {
 const inputCls = (err?: string) =>
   `w-full text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${err ? 'border-red-400' : 'border-gray-300'}`;
 
+// Reusable text rule: at most 20 words, and each word at most 15 characters.
+// Blocks long gibberish strings while allowing normal multi-word text.
+const wordLimit = (label: string) => ({
+  validate: (v?: string) => {
+    const val = (v ?? '').trim();
+    if (!val) return true;
+    const words = val.split(/\s+/);
+    if (words.length > 20) return `${label}: maximum 20 words allowed.`;
+    const tooLong = words.find((w) => w.length > 15);
+    if (tooLong) return `${label}: each word must be 15 characters or fewer.`;
+    return true;
+  },
+});
+
 // Flatten a DRF error-details object (which may nest arrays/objects, e.g. per-item
 // errors) into readable "field: message" lines — never renders [object Object].
 function flattenServerErrors(details: unknown, prefix = ''): string[] {
@@ -663,11 +677,15 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, produc
             className={inputCls(errors.items?.[idx]?.item_name?.message)}
             {...register(`items.${idx}.item_name`, {
               maxLength: { value: 120, message: 'Max 120 characters' },
+              ...wordLimit('Item name'),
             })} />
         </Field>
         <Field label="Product / Service Reference" faf
+          error={errors.items?.[idx]?.product_reference?.message}
           tooltip="Your internal product code or SKU for this line — e.g. SKU-001 or SVC-REF.">
-          <input placeholder="e.g. SKU-001 or SVC-REF" maxLength={50} className={inputCls()} {...register(`items.${idx}.product_reference`)} />
+          <input placeholder="e.g. SKU-001 or SVC-REF" maxLength={50}
+            className={inputCls(errors.items?.[idx]?.product_reference?.message)}
+            {...register(`items.${idx}.product_reference`, { ...wordLimit('Reference') })} />
         </Field>
       </div>
 
@@ -680,6 +698,7 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, produc
           {...register(`items.${idx}.description`, {
             required: 'Description is required',
             maxLength: { value: 300, message: 'Description must be 300 characters or fewer' },
+            ...wordLimit('Description'),
           })}
         />
       </Field>
@@ -1218,7 +1237,7 @@ export default function NewInvoicePage() {
     switch (s) {
       case 0: return ['supplier_location', 'accounts_type'];   // Your Info
       case 1: return ['customer_id', 'customer_location'];     // Buyer
-      case 2: return [];                                        // Product Catalog (items checked separately)
+      case 2: return ['items'];                                 // Product Catalog — validate all line-item fields
       case 3: return [                                          // Payment & Sign
         'issue_date', 'due_date', 'exchange_rate', 'discount_amount',
         'gl_account_id', 'permit_number', 'transaction_id', 'purchase_order_number',

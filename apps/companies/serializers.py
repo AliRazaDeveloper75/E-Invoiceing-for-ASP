@@ -25,6 +25,7 @@ class CompanySerializer(serializers.ModelSerializer):
         model = Company
         fields = [
             'id', 'name', 'legal_name', 'trn', 'tin',
+            'trn_issue_date', 'trn_expiry_date',
             'is_vat_group',
             'street_address', 'city', 'emirate', 'po_box', 'country',
             'formatted_address',
@@ -123,6 +124,8 @@ class CompanyUpdateSerializer(serializers.Serializer):
         allow_blank=True,
     )
     peppol_endpoint = serializers.CharField(max_length=255, required=False)
+    trn_issue_date  = serializers.DateField(required=False, allow_null=True)
+    trn_expiry_date = serializers.DateField(required=False, allow_null=True)
 
     def validate(self, attrs):
         if not attrs:

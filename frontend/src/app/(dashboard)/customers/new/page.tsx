@@ -26,6 +26,8 @@ interface CustomerForm {
   legal_name: string;
   customer_type: string;
   trn: string;
+  trn_issue_date: string;
+  trn_expiry_date: string;
   vat_number: string;
   street_address: string;
   city: string;
@@ -88,6 +90,8 @@ export default function NewCustomerPage() {
       fd.append('legal_name', data.legal_name || '');
       fd.append('customer_type', data.customer_type);
       fd.append('trn', data.trn || '');
+      if (data.trn_issue_date)  fd.append('trn_issue_date', data.trn_issue_date);
+      if (data.trn_expiry_date) fd.append('trn_expiry_date', data.trn_expiry_date);
       fd.append('vat_number', data.vat_number || '');
       fd.append('street_address', data.street_address || '');
       fd.append('city', data.city || '');
@@ -216,6 +220,23 @@ export default function NewCustomerPage() {
                   return true;
                 },
               })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="TRN Issue Date"
+              type="date"
+              tooltip="Date the customer's Tax Registration (TRN) was issued by the FTA."
+              error={errors.trn_issue_date?.message}
+              {...register('trn_issue_date')}
+            />
+            <Input
+              label="TRN Expiry Date"
+              type="date"
+              tooltip="TRN expiry / validity end date, if applicable."
+              error={errors.trn_expiry_date?.message}
+              {...register('trn_expiry_date')}
             />
           </div>
 

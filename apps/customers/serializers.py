@@ -29,7 +29,7 @@ class CustomerSerializer(serializers.ModelSerializer):
             'company_name',
             'name', 'legal_name', 'customer_type', 'customer_type_display',
             # Tax
-            'trn', 'tin', 'vat_number',
+            'trn', 'tin', 'vat_number', 'trn_issue_date', 'trn_expiry_date',
             # PEPPOL
             'peppol_endpoint', 'is_peppol_connected',
             # Documents
@@ -75,6 +75,8 @@ class CustomerCreateSerializer(serializers.Serializer):
         allow_blank=True,
         help_text='VAT number for non-UAE (international) customers.'
     )
+    trn_issue_date  = serializers.DateField(required=False, allow_null=True)
+    trn_expiry_date = serializers.DateField(required=False, allow_null=True)
 
     # PEPPOL
     peppol_endpoint = serializers.CharField(max_length=255, required=False, default='', allow_blank=True)
@@ -157,6 +159,8 @@ class CustomerUpdateSerializer(serializers.Serializer):
     )
     trn = serializers.CharField(max_length=15, required=False, allow_blank=True)
     vat_number = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    trn_issue_date  = serializers.DateField(required=False, allow_null=True)
+    trn_expiry_date = serializers.DateField(required=False, allow_null=True)
     peppol_endpoint = serializers.CharField(max_length=255, required=False, allow_blank=True)
     street_address = serializers.CharField(max_length=500, required=False, allow_blank=True)
     city = serializers.CharField(max_length=100, required=False, allow_blank=True)

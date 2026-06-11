@@ -33,6 +33,8 @@ export interface Company {
   legal_name: string;
   trn: string;
   tin: string;
+  trn_issue_date?: string | null;
+  trn_expiry_date?: string | null;
   is_vat_group: boolean;
   street_address: string;
   city: string;
@@ -130,9 +132,13 @@ export interface Invoice {
   status_display: string;
   company_name: string;
   company_trn: string;
+  company_trn_issue_date: string | null;
+  company_trn_expiry_date: string | null;
   customer: string;
   customer_name: string;
   customer_trn: string;
+  customer_trn_issue_date: string | null;
+  customer_trn_expiry_date: string | null;
   customer_address?: string;
   customer_city?: string;
   customer_country?: string;

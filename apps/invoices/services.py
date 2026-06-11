@@ -463,6 +463,21 @@ class InvoiceService:
         if membership.role not in ('admin', 'accountant'):
             raise PermissionDenied('Admin or Accountant role required to submit invoices.')
 
+        # Completeness gate — block incomplete invoices BEFORE they enter the
+        # async pipeline (so the user gets a clear message instead of a later
+        # "Created step failed"). Validates seller/buyer TRN, addresses, dates,
+        # line items, VAT totals, etc.
+        from services.validation_service import InvoiceValidationService
+        vres = InvoiceValidationService().validate(invoice)
+        if not vres.is_valid:
+            shown = vres.errors[:6]
+            more = len(vres.errors) - len(shown)
+            raise ValidationError(
+                'This invoice is incomplete and cannot be submitted yet. Please complete: '
+                + ' | '.join(shown)
+                + (f'  …and {more} more.' if more > 0 else '')
+            )
+
         invoice.status = 'pending'
         invoice.save(update_fields=['status', 'updated_at'])
 

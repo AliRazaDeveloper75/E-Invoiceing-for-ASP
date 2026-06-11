@@ -119,8 +119,12 @@ class InvoiceSerializer(serializers.ModelSerializer):
     customer_country = serializers.CharField(source='customer.country',        read_only=True, default='')
     customer_phone   = serializers.CharField(source='customer.phone',          read_only=True, default='')
     customer_email   = serializers.EmailField(source='customer.email',         read_only=True, default='')
+    customer_trn_issue_date  = serializers.DateField(source='customer.trn_issue_date',  read_only=True, default=None)
+    customer_trn_expiry_date = serializers.DateField(source='customer.trn_expiry_date', read_only=True, default=None)
     company_name     = serializers.CharField(source='company.name',            read_only=True)
     company_trn      = serializers.CharField(source='company.trn',             read_only=True)
+    company_trn_issue_date  = serializers.DateField(source='company.trn_issue_date',  read_only=True, default=None)
+    company_trn_expiry_date = serializers.DateField(source='company.trn_expiry_date', read_only=True, default=None)
     status_display  = serializers.CharField(source='get_status_display',     read_only=True)
     type_display    = serializers.CharField(source='get_invoice_type_display', read_only=True)
     is_editable     = serializers.BooleanField(read_only=True)
@@ -136,8 +140,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'id', 'invoice_number', 'invoice_type', 'type_display',
             'transaction_type', 'status', 'status_display',
             # Parties
-            'company_name', 'company_trn',
+            'company_name', 'company_trn', 'company_trn_issue_date', 'company_trn_expiry_date',
             'customer', 'customer_name', 'customer_trn',
+            'customer_trn_issue_date', 'customer_trn_expiry_date',
             'customer_address', 'customer_city', 'customer_country', 'customer_phone', 'customer_email',
             # Dates
             'issue_date', 'due_date', 'supply_date', 'supply_date_end',

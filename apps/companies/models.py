@@ -116,6 +116,14 @@ class Company(BaseModel):
         db_index=True,
         help_text='Auto-derived: first 10 digits of TRN. Used as B2B business identifier.'
     )
+    trn_issue_date = models.DateField(
+        null=True, blank=True,
+        help_text='Date the Tax Registration (TRN) was issued.'
+    )
+    trn_expiry_date = models.DateField(
+        null=True, blank=True,
+        help_text='TRN expiry / validity end date (if applicable).'
+    )
     is_vat_group = models.BooleanField(
         default=False,
         help_text='True if this entity is a member of a VAT group (shares group TRN).'

@@ -102,6 +102,14 @@ class Customer(BaseModel):
         db_index=True,
         help_text='Auto-derived: first 10 digits of TRN. Used as B2B identifier.'
     )
+    trn_issue_date = models.DateField(
+        null=True, blank=True,
+        help_text='Date the customer\'s Tax Registration (TRN) was issued.'
+    )
+    trn_expiry_date = models.DateField(
+        null=True, blank=True,
+        help_text='Customer TRN expiry / validity end date (if applicable).'
+    )
     vat_number = models.CharField(
         max_length=20,
         blank=True,

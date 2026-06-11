@@ -119,6 +119,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
   const [isActing, setIsActing] = useState(false);
   const [showDeactivate, setShowDeactivate] = useState(false);
   const [deactivateReason, setDeactivateReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const {
     data: invoice,
@@ -144,14 +145,26 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
   }
 
   async function handleSubmit() {
-    setIsActing(true); setActionError('');
+    setIsActing(true); setActionError(''); setSubmitting(true);
     try {
       await api.post(`/invoices/${params.id}/submit/`);
-      await mutateAll();
     } catch (e) {
-      const err = e as AxiosError<{ error?: { message?: string } }>;
-      setActionError(err.response?.data?.error?.message ?? 'Submission failed.');
-    } finally { setIsActing(false); }
+      // The submission is processed asynchronously on the server. A slow gateway
+      // can time out the POST even though the backend already accepted it, so we
+      // re-check the real status before showing a failure to the user.
+      const fresh = await api
+        .get<{ data: Invoice }>(`/invoices/${params.id}/`)
+        .then((r) => r.data.data)
+        .catch(() => null);
+      if (!fresh || fresh.status === 'draft') {
+        const err = e as AxiosError<{ error?: { message?: string } }>;
+        setActionError(err.response?.data?.error?.message ?? 'Submission failed. Please try again.');
+      }
+    } finally {
+      await mutateAll();
+      setIsActing(false);
+      setSubmitting(false);
+    }
   }
 
   async function handleCancel() {
@@ -208,6 +221,21 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
   if (!invoice) return <p className="text-gray-500">Invoice not found.</p>;
 
   const isPolling = POLLING_STATUSES.has(invoice.status);
+
+  // Supplier details: use the active company only when it is the invoice's
+  // company (matched by TRN), so we never show the wrong address/logo.
+  const co = activeCompany?.trn === invoice.company_trn ? activeCompany : null;
+  const supplierAddr = co
+    ? [co.street_address,
+       [co.city, co.emirate].filter(Boolean).join(', '),
+       co.po_box ? `P.O. Box ${co.po_box}` : '',
+       co.country || 'United Arab Emirates'].filter(Boolean).join(', ')
+    : '';
+  const buyerAddr = [
+    invoice.customer_address,
+    invoice.customer_city,
+    invoice.customer_country,
+  ].filter(Boolean).join(', ');
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -287,6 +315,24 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
         </div>
       )}
 
+      {submitting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl px-8 py-7 max-w-sm w-full mx-4 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
+              <RefreshCw className="h-7 w-7 text-blue-600 animate-spin" />
+            </div>
+            <h3 className="text-base font-bold text-gray-900">Submitting your invoice…</h3>
+            <p className="text-sm text-gray-500 mt-1.5">
+              Securely transmitting and validating your invoice. This usually takes a few moments —
+              please don’t close this window.
+            </p>
+            <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+              <div className="h-full w-1/3 rounded-full bg-blue-500 animate-pulse" />
+            </div>
+          </div>
+        </div>
+      )}
+
       {showDeactivate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowDeactivate(false)}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
@@ -326,17 +372,61 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
       {timeline?.flow && <FlowTracker flow={timeline.flow} />}
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm space-y-1.5">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Supplier</h2>
-          <p className="font-semibold text-gray-900">{invoice.company_name}</p>
-          <p className="text-sm text-gray-500">TRN: <span className="font-mono">{invoice.company_trn}</span></p>
+        {/* Supplier — logo + full company details (from the active company, matched by TRN) */}
+        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Supplier</h2>
+          <div className="flex items-start gap-3">
+            {co?.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={co.logo_url} alt={`${invoice.company_name} logo`}
+                className="w-12 h-12 rounded-lg object-contain border border-gray-200 bg-white shrink-0" />
+            ) : (
+              <div className="w-12 h-12 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                {(invoice.company_name || '?').slice(0, 2).toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0 space-y-0.5">
+              <p className="font-semibold text-gray-900">{invoice.company_name}</p>
+              {co?.legal_name && co.legal_name !== invoice.company_name && (
+                <p className="text-xs text-gray-500">{co.legal_name}</p>
+              )}
+              <p className="text-sm text-gray-500">TRN: <span className="font-mono">{invoice.company_trn}</span></p>
+              {(invoice.company_trn_issue_date || invoice.company_trn_expiry_date) && (
+                <p className="text-xs text-gray-400">
+                  {invoice.company_trn_issue_date && <>TRN issued: {invoice.company_trn_issue_date}</>}
+                  {invoice.company_trn_expiry_date && <> · expires: {invoice.company_trn_expiry_date}</>}
+                </p>
+              )}
+              {supplierAddr && <p className="text-xs text-gray-500 leading-relaxed">{supplierAddr}</p>}
+              {co?.phone && <p className="text-xs text-gray-500">{co.phone}</p>}
+              {co?.email && <p className="text-xs text-gray-500">{co.email}</p>}
+            </div>
+          </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm space-y-1.5">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Buyer</h2>
-          <p className="font-semibold text-gray-900">{invoice.customer_name}</p>
-          {invoice.customer_trn && (
-            <p className="text-sm text-gray-500">TRN: <span className="font-mono">{invoice.customer_trn}</span></p>
-          )}
+
+        {/* Buyer */}
+        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Buyer</h2>
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+              {(invoice.customer_name || '?').slice(0, 2).toUpperCase()}
+            </div>
+            <div className="min-w-0 space-y-0.5">
+              <p className="font-semibold text-gray-900">{invoice.customer_name}</p>
+              {invoice.customer_trn && (
+                <p className="text-sm text-gray-500">TRN: <span className="font-mono">{invoice.customer_trn}</span></p>
+              )}
+              {(invoice.customer_trn_issue_date || invoice.customer_trn_expiry_date) && (
+                <p className="text-xs text-gray-400">
+                  {invoice.customer_trn_issue_date && <>TRN issued: {invoice.customer_trn_issue_date}</>}
+                  {invoice.customer_trn_expiry_date && <> · expires: {invoice.customer_trn_expiry_date}</>}
+                </p>
+              )}
+              {buyerAddr && <p className="text-xs text-gray-500 leading-relaxed">{buyerAddr}</p>}
+              {invoice.customer_phone && <p className="text-xs text-gray-500">{invoice.customer_phone}</p>}
+              {invoice.customer_email && <p className="text-xs text-gray-500">{invoice.customer_email}</p>}
+            </div>
+          </div>
         </div>
       </div>
 
