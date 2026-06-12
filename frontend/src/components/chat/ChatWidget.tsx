@@ -1,4 +1,5 @@
 'use client';
+
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
@@ -19,12 +20,10 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-// External AI Agent endpoint (streaming). Override via NEXT_PUBLIC_AI_AGENT_URL.
 const AI_AGENT_URL =
   process.env.NEXT_PUBLIC_AI_AGENT_URL ??
   'https://tax-data-assistant-backend-production.up.railway.app';
 
-// Base URL (without the trailing /chat) for /register, /chat and /clear-memory.
 const AI_AGENT_BASE = AI_AGENT_URL.replace(/\/chat\/?$/, '');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -35,7 +34,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
-// Update Chatbot Frontend
+
 interface ChatbotNode {
   id: string;
   text: string;
@@ -259,6 +258,26 @@ const SUGGESTED = [
   'What is a TRN?',
 ];
 
+// ─── Feedback SVG Icons ───────────────────────────────────────────────────────
+
+function ThumbUpIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z" />
+      <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+    </svg>
+  );
+}
+
+function ThumbDownIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z" />
+      <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" />
+    </svg>
+  );
+}
+
 // ─── AgentTab ─────────────────────────────────────────────────────────────────
 
 interface AgentTabProps {
@@ -277,9 +296,13 @@ function AgentTab({ onClose }: AgentTabProps) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ── Feedback state: maps assistant message index → 'like' | 'dislike' ──────
+  const [feedbacks, setFeedbacks] = useState<Record<number, 'like' | 'dislike'>>({});
+
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // ── FIX 1: Properly restore email from localStorage ──────────────────────
+  // Initialize and check registration state
   useEffect(() => {
     let id = localStorage.getItem('chat_session_id');
     if (!id) {
@@ -290,19 +313,22 @@ function AgentTab({ onClose }: AgentTabProps) {
 
     const reg = localStorage.getItem('chat_registered');
     const savedName = localStorage.getItem('chat_user_name');
-    const savedEmail = localStorage.getItem('chat_user_email'); // ← read email
+    const savedEmail = localStorage.getItem('chat_user_email');
 
     if (reg === 'true' && savedName && savedEmail) {
       setRegistered(true);
       setName(savedName);
-      setEmail(savedEmail); // ← FIX: set email state so send() can use it
-      setMessages([{
-        role: 'assistant',
-        content: `Welcome back, ${savedName}! 👋 How can I assist you with UAE tax today?`,
-      }]);
+      setEmail(savedEmail);
+      setMessages([
+        {
+          role: 'assistant',
+          content: `Welcome back, ${savedName}! 👋 How can I assist you with UAE tax today?`,
+        },
+      ]);
     }
   }, []);
 
+  // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
@@ -321,15 +347,18 @@ function AgentTab({ onClose }: AgentTabProps) {
         body: JSON.stringify({ name: name.trim(), email: email.trim(), session_id: sessionId }),
       });
       const data = await res.json().catch(() => ({}));
+
       if (res.ok) {
         localStorage.setItem('chat_registered', 'true');
         localStorage.setItem('chat_user_name', name.trim());
-        localStorage.setItem('chat_user_email', email.trim()); // ← save email
+        localStorage.setItem('chat_user_email', email.trim());
         setRegistered(true);
-        setMessages([{
-          role: 'assistant',
-          content: `Hello, ${name.trim()}! 👋 I'm your E-Numerak Tax Assistant. How can I help you today?`,
-        }]);
+        setMessages([
+          {
+            role: 'assistant',
+            content: `Hello, ${name.trim()}! 👋 I'm your E-Numerak Tax Assistant. How can I help you today?`,
+          },
+        ]);
       } else {
         setRegError(data.detail || 'Registration failed. Please try again.');
       }
@@ -353,7 +382,7 @@ function AgentTab({ onClose }: AgentTabProps) {
       const res = await fetch(`${AI_AGENT_BASE}/chat/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msgText, session_id: sessionId, email: email }), // ← email included
+        body: JSON.stringify({ message: msgText, session_id: sessionId, email: email }),
       });
       if (!res.ok || !res.body) throw new Error('Request failed');
 
@@ -361,7 +390,7 @@ function AgentTab({ onClose }: AgentTabProps) {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let reply = '';
-      // eslint-disable-next-line no-constant-condition
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -379,15 +408,49 @@ function AgentTab({ onClose }: AgentTabProps) {
     }
   }
 
+  // ── Submit feedback to backend ─────────────────────────────────────────────
+  async function submitFeedback(
+    assistantIndex: number,
+    rating: 'like' | 'dislike'
+  ) {
+    if (feedbacks[assistantIndex]) return; // already rated
+
+    const botResponse = messages[assistantIndex]?.content ?? '';
+    // The user message immediately before this assistant message
+    const userMessage = messages[assistantIndex - 1]?.content ?? '';
+
+    // Optimistically update UI
+    setFeedbacks((f) => ({ ...f, [assistantIndex]: rating }));
+
+    try {
+          await fetch(`${AI_AGENT_BASE}/chat/feedback`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            user_message: userMessage,
+            bot_response: botResponse,
+            rating: rating === 'like' ? 'thumbs_up' : 'thumbs_down',
+          }),
+        });
+    } catch {
+      // silent — feedback is best-effort, don't disrupt the chat
+    }
+  }
+
   async function newChat() {
     if (sessionId) {
-      try { await fetch(`${AI_AGENT_BASE}/clear-memory/${sessionId}`, { method: 'POST' }); } catch { /* ignore */ }
+      try {
+        await fetch(`${AI_AGENT_BASE}/clear-memory/${sessionId}`, { method: 'POST' });
+      } catch {
+        /* ignore */
+      }
     }
     setError(null);
+    setFeedbacks({});
     setMessages([{ role: 'assistant', content: 'New conversation started! How can I help you? 😊' }]);
   }
 
-  // ── FIX 2: Exit / logout — clears localStorage and goes back to registration ──
   function handleExit() {
     localStorage.removeItem('chat_registered');
     localStorage.removeItem('chat_user_name');
@@ -398,7 +461,9 @@ function AgentTab({ onClose }: AgentTabProps) {
     setEmail('');
     setMessages([]);
     setError(null);
+    setFeedbacks({});
     setSessionId('');
+    setSessionId(crypto.randomUUID());
   }
 
   function handleKey(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -412,7 +477,6 @@ function AgentTab({ onClose }: AgentTabProps) {
   if (!registered) {
     return (
       <div className="flex flex-col h-full justify-center px-6 py-6 bg-gray-50 relative">
-        {/* ── FIX 3: Close/Exit button on registration screen ── */}
         <button
           onClick={onClose}
           className="absolute top-3 right-3 p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors"
@@ -467,11 +531,10 @@ function AgentTab({ onClose }: AgentTabProps) {
     );
   }
 
-  // ── Chat ────────────────────────────────────────────────────────────────────
+  // ── Chat interface ─────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center px-3 pt-2">
-        {/* Exit button — goes back to registration */}
         <button
           onClick={handleExit}
           title="Switch account"
@@ -491,21 +554,77 @@ function AgentTab({ onClose }: AgentTabProps) {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {messages.length === 0 && (
-          <div className="flex flex-col items-start justify-start gap-3 text-gray-500 py-4">
-            <div className="flex items-center gap-2 text-blue-600">
-              <Bot className="w-5 h-5" />
-              <span className="text-sm font-medium">AI Tax Assistant</span>
+        {messages.map((msg, i) => (
+          <div
+            key={i}
+            className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+          >
+            <div className={`max-w-[88%] ${msg.role === 'user' ? '' : 'space-y-1'}`}>
+              {/* Message bubble */}
+              <div
+                className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                  msg.role === 'user'
+                    ? 'bg-blue-600 text-white rounded-br-sm'
+                    : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                }`}
+              >
+                {msg.role === 'assistant' && msg.content ? (
+                  <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  msg.content
+                )}
+              </div>
+
+              {/* Feedback buttons — only on completed assistant messages */}
+              {msg.role === 'assistant' && msg.content && !loading && (
+                <div className="flex items-center gap-1.5 mt-1 pl-1">
+                  <button
+                    onClick={() => submitFeedback(i, 'like')}
+                    disabled={!!feedbacks[i]}
+                    title="Helpful"
+                    className={`flex items-center justify-center w-6 h-6 rounded-full border transition-colors ${
+                      feedbacks[i] === 'like'
+                        ? 'bg-blue-100 border-blue-400 text-blue-600'
+                        : 'bg-white border-gray-200 text-gray-400 hover:border-blue-300 hover:text-blue-500'
+                    } disabled:cursor-default`}
+                  >
+                    <ThumbUpIcon />
+                  </button>
+                  <button
+                    onClick={() => submitFeedback(i, 'dislike')}
+                    disabled={!!feedbacks[i]}
+                    title="Not helpful"
+                    className={`flex items-center justify-center w-6 h-6 rounded-full border transition-colors ${
+                      feedbacks[i] === 'dislike'
+                        ? 'bg-red-100 border-red-400 text-red-500'
+                        : 'bg-white border-gray-200 text-gray-400 hover:border-red-300 hover:text-red-400'
+                    } disabled:cursor-default`}
+                  >
+                    <ThumbDownIcon />
+                  </button>
+                  {feedbacks[i] && (
+                    <span className="text-[10px] text-gray-400">
+                      {feedbacks[i] === 'like' ? 'Thanks!' : 'Got it'}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Hello! Ask me anything about tax invoices, VAT, TRN, or UAE e-invoicing on E-Numerak.
-            </p>
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {SUGGESTED.map(q => (
+          </div>
+        ))}
+
+        {/* Suggested queries — shown before first user message */}
+        {!messages.some((msg) => msg.role === 'user') && (
+          <div className="flex flex-col items-start gap-2 pt-1">
+            <p className="text-[11px] font-medium text-gray-400 pl-1">Suggested topics:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {SUGGESTED.map((q) => (
                 <button
                   key={q}
                   onClick={() => send(q)}
-                  className="text-xs px-3 py-1.5 bg-white border border-gray-200 rounded-full text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+                  className="text-xs text-left px-3 py-1.5 bg-white border border-gray-200 rounded-full text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors shadow-sm"
                 >
                   {q}
                 </button>
@@ -514,36 +633,7 @@ function AgentTab({ onClose }: AgentTabProps) {
           </div>
         )}
 
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[88%] ${msg.role === 'user' ? '' : 'space-y-1'}`}>
-              <div
-               className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                  msg.role === 'user'
-                    ? 'bg-blue-600 text-white rounded-br-sm'
-                    : 'bg-gray-100 text-gray-800 rounded-bl-sm'
-                }`}
-              >
-                {msg.role === 'assistant' && msg.content ? (
-                <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-              </div>
-              ) : msg.role === 'user' ? (
-                msg.content
-              ) : (
-                loading ? (
-                  <span className="flex gap-1 items-center h-4">
-                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" />
-                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0.2s]" />
-                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0.4s]" />
-                  </span>
-                ) : null
-              )}
-              </div>
-            </div>
-          </div>
-        ))}
-
+        {/* Loading indicator */}
         {loading && (
           <div className="flex justify-start">
             <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3">
@@ -557,7 +647,7 @@ function AgentTab({ onClose }: AgentTabProps) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
+      {/* Input bar */}
       <div className="border-t border-gray-100 p-3 flex gap-2 items-end">
         <textarea
           rows={1}
@@ -565,7 +655,7 @@ function AgentTab({ onClose }: AgentTabProps) {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKey}
           placeholder="Ask about invoices, VAT, payments…"
-          className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent max-h-32 overflow-y-auto"
+          className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent max-h-32 overflow-y-auto"
           style={{ minHeight: '40px' }}
         />
         <button
@@ -593,7 +683,7 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
 
   return (
     <>
-      {/* Floating buttons */}
+      {/* Floating Action Buttons */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-3">
         {/* WhatsApp */}
         <a
@@ -606,7 +696,7 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
           <WhatsAppIcon className="w-7 h-7" />
         </a>
 
-        {/* Help / Chat */}
+        {/* Chat toggle */}
         <button
           onClick={() => setOpen((o) => !o)}
           aria-label={open ? 'Close chat' : 'Open chat'}
@@ -616,7 +706,7 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
         </button>
       </div>
 
-      {/* Panel */}
+      {/* Chat drawer */}
       {open && (
         <div className="fixed bottom-24 right-6 z-50 w-80 max-w-[calc(100vw-3rem)] h-[480px] max-h-[calc(100dvh-7rem)] flex flex-col rounded-2xl shadow-2xl border border-gray-200 bg-white overflow-hidden">
           {/* Header */}
@@ -645,7 +735,7 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
             ))}
           </div>
 
-          {/* Body */}
+          {/* Tab content */}
           <div className="flex-1 overflow-hidden bg-gray-50">
             {tab === 'chatbot' ? <ChatbotTab /> : <AgentTab onClose={() => setOpen(false)} />}
           </div>
