@@ -1,0 +1,148 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<CreditNote xmlns="urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+  <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
+  <cbc:CustomizationID>urn:peppol:pint:billing-1@ae-1</cbc:CustomizationID>
+  <cbc:ProfileID>urn:peppol:bis:billing</cbc:ProfileID>
+  <cbc:ProfileExecutionID>00000000</cbc:ProfileExecutionID>
+  <cbc:ID>INV-202604-000001</cbc:ID>
+  <cbc:UUID>f689254b-f102-4950-bdc4-47e7d4522283</cbc:UUID>
+  <cbc:IssueDate>2026-04-11</cbc:IssueDate>
+  <cbc:CreditNoteTypeCode>381</cbc:CreditNoteTypeCode>
+  <cbc:Note>Correction of overcharged amount</cbc:Note>
+  <cbc:DocumentCurrencyCode>AED</cbc:DocumentCurrencyCode>
+  <cbc:BuyerReference>987987</cbc:BuyerReference>
+  <cac:DiscrepancyResponse>
+    <cbc:ResponseCode>DL8.61.1.A</cbc:ResponseCode>
+    <cbc:Description>Correction of overcharged amount</cbc:Description>
+  </cac:DiscrepancyResponse>
+  <cac:BillingReference>
+    <cac:InvoiceDocumentReference>
+      <cbc:ID>INV-202606-000002</cbc:ID>
+    </cac:InvoiceDocumentReference>
+  </cac:BillingReference>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0235">100000000000003</cbc:EndpointID>
+      <cac:PartyIdentification>
+        <cbc:ID schemeID="0235">100000000000003</cbc:ID>
+      </cac:PartyIdentification>
+      <cac:PartyName>
+        <cbc:Name>Raza LLC</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:StreetName>Sheikh Zayed Road, Trade Centre</cbc:StreetName>
+        <cbc:AdditionalStreetName>P.O. Box 2026</cbc:AdditionalStreetName>
+        <cbc:CityName>Dubai</cbc:CityName>
+        <cbc:CountrySubentity>Dubai</cbc:CountrySubentity>
+        <cac:Country>
+          <cbc:IdentificationCode>AE</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:RegistrationName>100000000000003</cbc:RegistrationName>
+        <cbc:CompanyID>100000000000003</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Raza LLC</cbc:RegistrationName>
+        <cbc:CompanyID schemeID="0235" schemeAgencyID="TL" schemeAgencyName="Department of Economic Development">CN-1234567</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0235">100123456700003</cbc:EndpointID>
+      <cac:PartyName>
+        <cbc:Name>ali</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:StreetName>Business Bay, Tower 1</cbc:StreetName>
+        <cbc:CityName>Dubai</cbc:CityName>
+        <cbc:CountrySubentity>Dubai</cbc:CountrySubentity>
+        <cac:Country>
+          <cbc:IdentificationCode>AE</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:RegistrationName>100123456700003</cbc:RegistrationName>
+        <cbc:CompanyID>100123456700003</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>ali</cbc:RegistrationName>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:PaymentMeans>
+    <cbc:PaymentMeansCode>30</cbc:PaymentMeansCode>
+    <cbc:PaymentDueDate>2026-04-13</cbc:PaymentDueDate>
+    <cac:PayeeFinancialAccount>
+      <cbc:ID>AE070331234567890123456</cbc:ID>
+      <cac:FinancialInstitutionBranch>
+        <cbc:ID>EBILAEAD</cbc:ID>
+      </cac:FinancialInstitutionBranch>
+    </cac:PayeeFinancialAccount>
+  </cac:PaymentMeans>
+  <cac:PaymentTerms>
+    <cbc:Note>Payment due by 2026-04-13</cbc:Note>
+  </cac:PaymentTerms>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="AED">55.00</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="AED">1100.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="AED">55.00</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>5.00</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="AED">1100.00</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="AED">1100.00</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="AED">1155.00</cbc:TaxInclusiveAmount>
+    <cbc:AllowanceTotalAmount currencyID="AED">0.00</cbc:AllowanceTotalAmount>
+    <cbc:PayableAmount currencyID="AED">1155.00</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:CreditNoteLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:CreditedQuantity unitCode="C62">1</cbc:CreditedQuantity>
+    <cbc:LineExtensionAmount currencyID="AED">1100.00</cbc:LineExtensionAmount>
+    <cac:TaxTotal>
+      <cbc:TaxAmount currencyID="AED">55.00</cbc:TaxAmount>
+    </cac:TaxTotal>
+    <cac:Item>
+      <cbc:Description>item 01</cbc:Description>
+      <cbc:Name>item 01</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>5.00</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="AED">1100.00</cbc:PriceAmount>
+      <cbc:BaseQuantity unitCode="C62">1</cbc:BaseQuantity>
+      <cac:AllowanceCharge>
+        <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
+        <cbc:Amount currencyID="AED">0.00</cbc:Amount>
+        <cbc:BaseAmount currencyID="AED">1100.00</cbc:BaseAmount>
+      </cac:AllowanceCharge>
+    </cac:Price>
+    <cac:ItemPriceExtension>
+      <cbc:Amount currencyID="AED">1100.00</cbc:Amount>
+      <cac:TaxTotal>
+        <cbc:TaxAmount currencyID="AED">55.00</cbc:TaxAmount>
+      </cac:TaxTotal>
+    </cac:ItemPriceExtension>
+  </cac:CreditNoteLine>
+</CreditNote>

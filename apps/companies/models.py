@@ -165,6 +165,25 @@ class Company(BaseModel):
         help_text='Type of legal registration document (TL=Trade License, CRN=CR Number, etc.). '
                   'Used as schemeID attribute on PartyLegalEntity/CompanyID.',
     )
+    legal_registration_authority = models.CharField(
+        max_length=150,
+        blank=True,
+        default='',
+        help_text='Issuing authority of the legal registration (BTAE-12). UAE rule '
+                  'ibr-172-ae requires this when the registration type is Trade License '
+                  '(e.g. "Department of Economic Development").',
+    )
+
+    # ── Banking / Payment (shown on invoice + UBL PayeeFinancialAccount) ───────
+    # UAE PINT rule ibr-192-ae: when the payment means is credit transfer (code
+    # 30) the payment account identifier (IBAN/account no.) MUST be provided.
+    bank_name = models.CharField(max_length=150, blank=True, default='')
+    bank_account_number = models.CharField(max_length=50, blank=True, default='')
+    iban = models.CharField(
+        max_length=34, blank=True, default='',
+        help_text='IBAN — used as UBL PayeeFinancialAccount/ID (IBT-084).',
+    )
+    swift_code = models.CharField(max_length=20, blank=True, default='')
 
     # ── PEPPOL / ASP ──────────────────────────────────────────────────────────
     peppol_endpoint = models.CharField(

@@ -45,6 +45,17 @@ NS_CREDITNOTE = {**NS, None: 'urn:oasis:names:specification:ubl:schema:xsd:Credi
 CAC = 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2'
 CBC = 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2'
 
+# Default credit-note reason code (BTAE-03 / DiscrepancyResponse/ResponseCode).
+# Required for credit notes (rule ibr-158-ae) and must come from the UAE
+# "Reasons for credit note" code list (rule ibr-001-ae): one of
+#   DL8.61.1.A / .B / .C / .D / .E  or  VD (void).
+# We default to DL8.61.1.A (most common — adjustment of the taxable amount).
+# 'VD' is avoided as it would forbid the preceding-invoice reference (ibr-055-ae).
+CREDIT_NOTE_VALID_REASON_CODES = (
+    'DL8.61.1.A', 'DL8.61.1.B', 'DL8.61.1.C', 'DL8.61.1.D', 'DL8.61.1.E', 'VD',
+)
+CREDIT_NOTE_DEFAULT_REASON_CODE = 'DL8.61.1.A'
+
 
 def _cac(tag: str) -> str:
     return f'{{{CAC}}}{tag}'
@@ -174,6 +185,11 @@ class UAEInvoiceXMLGenerator:
         cbc('ProfileExecutionID', profile_exec_id)
 
         cbc('ID', invoice.invoice_number)
+
+        # UUID — UAE unique identifier number (BTAE-07). Rule ibr-193-ae requires
+        # cbc:UUID to be present. We use the invoice's stable DB id.
+        cbc('UUID', str(invoice.id))
+
         cbc('IssueDate', _fmt_date(invoice.issue_date))
 
         # UBL CreditNote has no DueDate (no payment is due on a credit note).
@@ -208,12 +224,18 @@ class UAEInvoiceXMLGenerator:
                 end_el = etree.SubElement(period, _cbc('EndDate'))
                 end_el.text = _fmt_date(invoice.supply_date_end)
 
-        # Tax point (supply) date
-        supply_date = invoice.supply_date or invoice.issue_date
-        cbc('TaxPointDate', _fmt_date(supply_date))
+        # Tax point (supply) date — rule ibr-141-ae: when present it MUST be
+        # strictly before the issue date. Only emit when that actually holds
+        # (otherwise omit; TaxPointDate is optional).
+        if invoice.supply_date and invoice.supply_date < invoice.issue_date:
+            cbc('TaxPointDate', _fmt_date(invoice.supply_date))
 
         cbc('DocumentCurrencyCode', invoice.currency)
-        cbc('TaxCurrencyCode', 'AED')    # VAT always reported in AED
+        # VAT accounting currency (ibt-006). Rule ibr-077: it MUST differ from the
+        # document currency. UAE VAT is always accounted in AED, so we only emit
+        # TaxCurrencyCode when the invoice is in a non-AED currency.
+        if (invoice.currency or 'AED').upper() != 'AED':
+            cbc('TaxCurrencyCode', 'AED')
 
         # Buyer reference (PO number if available)
         if invoice.purchase_order_number:
@@ -225,12 +247,24 @@ class UAEInvoiceXMLGenerator:
             contract_id = etree.SubElement(contract_ref, _cbc('ID'))
             contract_id.text = invoice.contract_reference
 
-        # Reference to original invoice for credit notes
-        if invoice.invoice_type == INVOICE_TYPE_CREDIT_NOTE and invoice.reference_number:
-            billing_ref = etree.SubElement(root, _cac('BillingReference'))
-            inv_doc_ref = etree.SubElement(billing_ref, _cac('InvoiceDocumentReference'))
-            id_el = etree.SubElement(inv_doc_ref, _cbc('ID'))
-            id_el.text = invoice.reference_number
+        # Credit-note specifics (UBL order: DiscrepancyResponse then BillingReference)
+        if invoice.invoice_type == INVOICE_TYPE_CREDIT_NOTE:
+            # Credit note reason code (BTAE-03) — mandatory (rule ibr-158-ae).
+            disc = etree.SubElement(root, _cac('DiscrepancyResponse'))
+            resp_code = etree.SubElement(disc, _cbc('ResponseCode'))
+            resp_code.text = getattr(invoice, 'credit_note_reason_code', '') or CREDIT_NOTE_DEFAULT_REASON_CODE
+            reason_text = (invoice.notes or '').strip()
+            if reason_text:
+                desc = etree.SubElement(disc, _cbc('Description'))
+                desc.text = reason_text[:200]
+
+            # Preceding invoice reference (IBG-03) — mandatory for credit notes
+            # unless the reason code is 'VD' (rule ibr-055-ae).
+            if invoice.reference_number:
+                billing_ref = etree.SubElement(root, _cac('BillingReference'))
+                inv_doc_ref = etree.SubElement(billing_ref, _cac('InvoiceDocumentReference'))
+                id_el = etree.SubElement(inv_doc_ref, _cbc('ID'))
+                id_el.text = invoice.reference_number
 
     # ── Supplier Party ─────────────────────────────────────────────────────────
 
@@ -239,28 +273,27 @@ class UAEInvoiceXMLGenerator:
         party_root = etree.SubElement(root, _cac('AccountingSupplierParty'))
         party = etree.SubElement(party_root, _cac('Party'))
 
-        # PEPPOL endpoint — UAE scheme 0235 for TIN-based identification
-        if company.peppol_endpoint:
-            ep = etree.SubElement(party, _cbc('EndpointID'), schemeID='0088')
-            ep.text = company.peppol_endpoint
-        else:
-            # Fallback: use TIN with UAE PEPPOL scheme 0235
-            ep = etree.SubElement(party, _cbc('EndpointID'), schemeID='0235')
-            ep.text = company.tin or company.trn[:10]
+        # PEPPOL electronic address (ibt-034). UAE uses ISO 6523 scheme 0235 with
+        # the 15-digit TRN as the participant value — this is also what the UAE
+        # legal-registration rules key off (EndpointID/@schemeID = "0235").
+        endpoint_value = company.peppol_endpoint or company.trn
+        ep = etree.SubElement(party, _cbc('EndpointID'), schemeID='0235')
+        ep.text = endpoint_value
 
-        # Party identifier (TIN with UAE scheme 0235)
+        # Party identifier (TRN with UAE scheme 0235)
         party_id = etree.SubElement(party, _cac('PartyIdentification'))
         id_el = etree.SubElement(party_id, _cbc('ID'), schemeID='0235')
-        id_el.text = company.tin or company.trn[:10]
+        id_el.text = endpoint_value
 
         # Party name
         party_name = etree.SubElement(party, _cac('PartyName'))
         name_el = etree.SubElement(party_name, _cbc('Name'))
         name_el.text = company.legal_name or company.name
 
-        # Address
+        # Address — include the emirate as CountrySubentity (ibr-143-ae)
         _add_postal_address(party, company.street_address, company.city,
-                            company.po_box, UAE_COUNTRY_CODE)
+                            company.po_box, UAE_COUNTRY_CODE,
+                            country_subentity=company.get_emirate_display() if company.emirate else '')
 
         # TRN (Tax Registration Number)
         _add_party_tax_scheme(party, company.trn, UAE_COUNTRY_CODE)
@@ -271,6 +304,7 @@ class UAEInvoiceXMLGenerator:
             company.legal_name or company.name,
             registration_id=company.legal_registration_id or '',
             registration_scheme=company.legal_registration_type or '',
+            registration_authority=getattr(company, 'legal_registration_authority', '') or '',
         )
 
     # ── Customer Party ─────────────────────────────────────────────────────────
@@ -280,23 +314,27 @@ class UAEInvoiceXMLGenerator:
         party_root = etree.SubElement(root, _cac('AccountingCustomerParty'))
         party = etree.SubElement(party_root, _cac('Party'))
 
-        # PEPPOL endpoint (if buyer is on the PEPPOL network)
-        if customer.peppol_endpoint:
-            ep = etree.SubElement(party, _cbc('EndpointID'), schemeID='0088')
-            ep.text = customer.peppol_endpoint
+        # Buyer electronic address (ibt-049) — MANDATORY (rule ibr-080). UAE uses
+        # ISO 6523 scheme 0235 with the buyer's TRN; fall back to any registered
+        # Peppol endpoint or VAT number.
+        buyer_endpoint = customer.peppol_endpoint or customer.trn or customer.vat_number
+        if buyer_endpoint:
+            ep = etree.SubElement(party, _cbc('EndpointID'), schemeID='0235')
+            ep.text = buyer_endpoint
 
         # Party name
         party_name = etree.SubElement(party, _cac('PartyName'))
         name_el = etree.SubElement(party_name, _cbc('Name'))
         name_el.text = customer.legal_name or customer.name
 
-        # Address
+        # Address — buyer country subdivision is mandatory (ibr-144-ae)
         _add_postal_address(
             party,
             customer.street_address,
             customer.city,
             '',
             customer.country,
+            country_subentity=getattr(customer, 'state_province', '') or customer.city,
         )
 
         # TRN (UAE) or VAT number (international)
@@ -314,11 +352,28 @@ class UAEInvoiceXMLGenerator:
         PaymentMeansCode is a UN/ECE UNCL 4461 code (e.g. 30 = credit transfer).
         """
         pm = etree.SubElement(root, _cac('PaymentMeans'))
+        code = invoice.payment_means_code or '30'
         code_el = etree.SubElement(pm, _cbc('PaymentMeansCode'))
-        code_el.text = invoice.payment_means_code or '30'
+        code_el.text = code
         if invoice.due_date:
             pay_due = etree.SubElement(pm, _cbc('PaymentDueDate'))
             pay_due.text = _fmt_date(invoice.due_date)
+
+        # Payment account identifier (IBT-084). Rule ibr-192-ae: when the payment
+        # means is credit transfer (code 30) the payee financial account ID MUST
+        # be present. Use the company IBAN, else the bank account number.
+        company = getattr(invoice, 'company', None)
+        account_id = (getattr(company, 'iban', '') or
+                      getattr(company, 'bank_account_number', '')) if company else ''
+        if code == '30' and account_id:
+            fin_acct = etree.SubElement(pm, _cac('PayeeFinancialAccount'))
+            acct_id = etree.SubElement(fin_acct, _cbc('ID'))
+            acct_id.text = account_id
+            bank_name = getattr(company, 'bank_name', '') if company else ''
+            if bank_name:
+                branch = etree.SubElement(fin_acct, _cac('FinancialInstitutionBranch'))
+                branch_id = etree.SubElement(branch, _cbc('ID'))
+                branch_id.text = getattr(company, 'swift_code', '') or bank_name
 
     # ── Payment Terms ──────────────────────────────────────────────────────────
 
@@ -432,11 +487,38 @@ class UAEInvoiceXMLGenerator:
             scheme_id = etree.SubElement(scheme, _cbc('ID'))
             scheme_id.text = 'VAT'
 
-            # Unit price
+            # Unit price (net). Rule ibr-126-ae requires both the price base
+            # quantity (IBT-149) and a gross price (IBT-148, via Price/
+            # AllowanceCharge/BaseAmount).
             price = etree.SubElement(line, _cac('Price'))
             price_amt = etree.SubElement(price, _cbc('PriceAmount'),
                                          currencyID=invoice.currency)
             price_amt.text = _fmt_amount(item.unit_price)
+
+            base_qty = etree.SubElement(price, _cbc('BaseQuantity'), unitCode=unit_code)
+            base_qty.text = '1'
+
+            # Gross price = net price here (no per-unit price discount).
+            price_ac = etree.SubElement(price, _cac('AllowanceCharge'))
+            ci = etree.SubElement(price_ac, _cbc('ChargeIndicator'))
+            ci.text = 'false'
+            ac_amt = etree.SubElement(price_ac, _cbc('Amount'), currencyID=invoice.currency)
+            ac_amt.text = '0.00'
+            ac_base = etree.SubElement(price_ac, _cbc('BaseAmount'), currencyID=invoice.currency)
+            ac_base.text = _fmt_amount(item.unit_price)
+
+            # UAE AED line amounts: line net in AED (BTAE-10) + VAT in AED (BTAE-08).
+            # Rules ibr-104-ae / ibr-194-ae. For AED invoices these equal the line
+            # amounts; otherwise convert using the invoice exchange rate.
+            rate = Decimal(str(invoice.exchange_rate or '1'))
+            aed_amount = (Decimal(str(item.subtotal)) * rate).quantize(Decimal('0.01'))
+            aed_vat = (Decimal(str(item.vat_amount)) * rate).quantize(Decimal('0.01'))
+            ipe = etree.SubElement(line, _cac('ItemPriceExtension'))
+            ipe_amt = etree.SubElement(ipe, _cbc('Amount'), currencyID='AED')
+            ipe_amt.text = _fmt_amount(aed_amount)
+            ipe_tax = etree.SubElement(ipe, _cac('TaxTotal'))
+            ipe_tax_amt = etree.SubElement(ipe_tax, _cbc('TaxAmount'), currencyID='AED')
+            ipe_tax_amt.text = _fmt_amount(aed_vat)
 
 
 # ─── XML Helpers ──────────────────────────────────────────────────────────────
@@ -455,7 +537,15 @@ def _fmt_amount(value) -> str:
     return f'{Decimal(str(value)):.2f}'
 
 
-def _add_postal_address(party, street: str, city: str, po_box: str, country: str) -> None:
+def _add_postal_address(party, street: str, city: str, po_box: str, country: str,
+                        country_subentity: str = '') -> None:
+    """
+    UBL PostalAddress. UAE PINT rules ibr-143-ae / ibr-144-ae require, for both
+    seller and buyer, that address line 1 (StreetName), city (CityName) and the
+    country subdivision (CountrySubentity, e.g. the emirate) are all present.
+    Order matters in UBL: StreetName, AdditionalStreetName, CityName,
+    PostalZone, CountrySubentity, Country.
+    """
     addr = etree.SubElement(party, _cac('PostalAddress'))
     if street:
         el = etree.SubElement(addr, _cbc('StreetName'))
@@ -466,6 +556,9 @@ def _add_postal_address(party, street: str, city: str, po_box: str, country: str
     if city:
         el = etree.SubElement(addr, _cbc('CityName'))
         el.text = city
+    if country_subentity:
+        el = etree.SubElement(addr, _cbc('CountrySubentity'))
+        el.text = country_subentity
     country_el = etree.SubElement(addr, _cac('Country'))
     code_el = etree.SubElement(country_el, _cbc('IdentificationCode'))
     code_el.text = country or 'AE'
@@ -482,13 +575,35 @@ def _add_party_tax_scheme(party, tax_id: str, country: str) -> None:
     scheme_id.text = 'VAT'
 
 
-def _add_legal_entity(party, name: str, registration_id: str = '', registration_scheme: str = '') -> None:
+# UAE legal-registration type (BTAE-15). Rule ibr-173-ae only accepts the
+# schemeAgencyID values TL / EID / PAS / CD on PartyLegalEntity/CompanyID when
+# the seller is in AE with scheme 0235. Map our stored codes onto that set.
+_LEGAL_REG_AGENCY_MAP = {
+    'TL': 'TL', 'EID': 'EID', 'PAS': 'PAS', 'CD': 'CD',
+    'CRN': 'TL',           # Commercial Registration Number → treated as Trade License
+}
+
+
+def _add_legal_entity(party, name: str, registration_id: str = '', registration_scheme: str = '',
+                      registration_authority: str = '') -> None:
+    """
+    PartyLegalEntity. When a legal registration identifier (IBT-030, e.g. trade
+    licence number) is provided we emit it with:
+      * schemeID="0235"             → ISO 6523 ICD (rule ibr-cl-11)
+      * schemeAgencyID="TL|EID|…"   → registration type BTAE-15 (rules ibr-173/181-ae)
+      * schemeAgencyName="<auth>"   → issuing authority BTAE-12, required when
+                                      type is Trade License (rule ibr-172-ae)
+    If no registration id is available we omit CompanyID entirely (it is optional),
+    which keeps the document valid.
+    """
     legal = etree.SubElement(party, _cac('PartyLegalEntity'))
     reg_name = etree.SubElement(legal, _cbc('RegistrationName'))
     reg_name.text = name
     if registration_id:
-        attrs = {}
-        if registration_scheme:
-            attrs['schemeID'] = registration_scheme
+        agency = _LEGAL_REG_AGENCY_MAP.get((registration_scheme or '').upper(), 'TL')
+        attrs = {'schemeID': '0235', 'schemeAgencyID': agency}
+        # BTAE-12: Trade-License registrations MUST carry the issuing authority name.
+        if agency == 'TL':
+            attrs['schemeAgencyName'] = registration_authority or 'Department of Economic Development'
         company_id = etree.SubElement(legal, _cbc('CompanyID'), **attrs)
         company_id.text = registration_id
