@@ -6,6 +6,14 @@ import axios from "axios";
 
 const API_URL = process.env.NEXT_PUBLIC_AI_AGENT_URL;
 
+// ─── Date Formatter ───────────────────────────────────────────────────────────
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "—";
+  const normalized = dateStr.replace(" ", "T");
+  const date = new Date(normalized);
+  return isNaN(date.getTime()) ? "—" : date.toLocaleDateString();
+};
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Stats {
   total: number;
@@ -39,7 +47,9 @@ export default function AdminDashboard() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"overview" | "feedback" | "users">("overview");
   const [refreshing, setRefreshing] = useState(false);
-
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [loadingChat, setLoadingChat] = useState(false);
   // ─── Fetch All Data ──────────────────────────────────────────────────────
   const fetchData = async (adminSecret: string) => {
     setLoading(true);
@@ -79,6 +89,21 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchConversations = async (user: User) => {
+  setSelectedUser(user);
+  setLoadingChat(true);
+  try {
+    const res = await axios.get(
+      `${API_URL}/admin/conversations/${user.session_id}?secret=${secret}`
+    );
+    setConversations(res.data.messages || []);
+  } catch {
+    setConversations([]);
+  } finally {
+    setLoadingChat(false);
+  }
+};
+
   // ─── Login Screen ─────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
@@ -114,7 +139,7 @@ export default function AdminDashboard() {
     );
   }
 
-  // ─── Stats Cards ──────────────────────────────────────────────────────────
+  // ─── Stats ────────────────────────────────────────────────────────────────
   const satisfactionRate = stats && stats.total > 0
     ? Math.round((stats.thumbs_up / stats.total) * 100)
     : 0;
@@ -206,7 +231,6 @@ export default function AdminDashboard() {
         {/* Overview Tab */}
         {activeTab === "overview" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Recent Users */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
               <h3 className="text-white font-semibold mb-4">Recent Users</h3>
               <div className="space-y-3">
@@ -216,16 +240,13 @@ export default function AdminDashboard() {
                       <p className="text-white text-sm font-medium">{user.name}</p>
                       <p className="text-gray-400 text-xs">{user.email}</p>
                     </div>
-                    <span className="text-gray-500 text-xs">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </span>
+                    <span className="text-gray-500 text-xs">{formatDate(user.created_at)}</span>
                   </div>
                 ))}
                 {users.length === 0 && <p className="text-gray-500 text-sm">No users yet.</p>}
               </div>
             </div>
 
-            {/* Recent Feedback */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
               <h3 className="text-white font-semibold mb-4">Recent Feedback</h3>
               <div className="space-y-3">
@@ -234,9 +255,7 @@ export default function AdminDashboard() {
                     <span className="text-lg">{item.rating === "thumbs_up" ? "👍" : "👎"}</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-white text-sm truncate">{item.user_message}</p>
-                      <p className="text-gray-500 text-xs">
-                        {new Date(item.created_at).toLocaleDateString()}
-                      </p>
+                      <p className="text-gray-500 text-xs">{formatDate(item.created_at)}</p>
                     </div>
                   </div>
                 ))}
@@ -271,7 +290,7 @@ export default function AdminDashboard() {
                       <p className="text-gray-400 max-w-sm truncate">{item.bot_response}</p>
                     </td>
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
-                      {new Date(item.created_at).toLocaleDateString()}
+                      {formatDate(item.created_at)}
                     </td>
                   </tr>
                 ))}
@@ -287,34 +306,107 @@ export default function AdminDashboard() {
 
         {/* Users Tab */}
         {activeTab === "users" && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-800">
-                  <th className="text-left text-gray-400 px-4 py-3 font-medium">Name</th>
-                  <th className="text-left text-gray-400 px-4 py-3 font-medium">Email</th>
-                  <th className="text-left text-gray-400 px-4 py-3 font-medium">Registered</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.session_id} className="border-b border-gray-800 hover:bg-gray-800 transition-colors">
-                    <td className="px-4 py-3 text-white font-medium">{user.name}</td>
-                    <td className="px-4 py-3 text-gray-400">{user.email}</td>
-                    <td className="px-4 py-3 text-gray-500">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-                {users.length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="px-4 py-8 text-center text-gray-500">No users yet.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    {/* Users Table */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-800">
+              <th className="text-left text-gray-400 px-4 py-3 font-medium">Name</th>
+              <th className="text-left text-gray-400 px-4 py-3 font-medium">Email</th>
+              <th className="text-left text-gray-400 px-4 py-3 font-medium">Registered</th>
+              <th className="text-left text-gray-400 px-4 py-3 font-medium">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((user) => (
+              <tr
+                key={user.session_id}
+                className={`border-b border-gray-800 transition-colors ${
+                  selectedUser?.session_id === user.session_id
+                    ? "bg-blue-950"
+                    : "hover:bg-gray-800"
+                }`}
+              >
+                <td className="px-4 py-3 text-white font-medium">{user.name}</td>
+                <td className="px-4 py-3 text-gray-400">{user.email}</td>
+                <td className="px-4 py-3 text-gray-500">{formatDate(user.created_at)}</td>
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => fetchConversations(user)}
+                    className="text-blue-400 hover:text-blue-300 text-xs font-medium transition-colors"
+                  >
+                    View Chat
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {users.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                  No users yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Conversation Panel */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        {!selectedUser ? (
+          <div className="flex items-center justify-center h-full min-h-48">
+            <p className="text-gray-500 text-sm">← Select a user to view their chat</p>
           </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-white font-semibold">{selectedUser.name}</h3>
+                <p className="text-gray-400 text-xs">{selectedUser.email}</p>
+              </div>
+              <button
+                onClick={() => { setSelectedUser(null); setConversations([]); }}
+                className="text-gray-500 hover:text-white text-xs transition-colors"
+              >
+                Close
+              </button>
+            </div>
+
+            {loadingChat ? (
+              <p className="text-gray-500 text-sm text-center py-8">Loading chat...</p>
+            ) : conversations.length === 0 ? (
+              <p className="text-gray-500 text-sm text-center py-8">No conversations found.</p>
+            ) : (
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                {conversations.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-xs px-3 py-2 rounded-xl text-sm ${
+                        msg.role === "user"
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-800 text-gray-300"
+                      }`}
+                    >
+                      <p className="text-xs font-medium mb-1 opacity-70">
+                        {msg.role === "user" ? "User" : "Bot"}
+                      </p>
+                      <p className="leading-relaxed">{msg.message}</p>
+                      <p className="text-xs opacity-50 mt-1">{formatDate(msg.created_at)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
+      </div>
+    </div>
+  )}
       </div>
     </div>
   );
