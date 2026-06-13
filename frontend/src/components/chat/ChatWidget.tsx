@@ -465,7 +465,6 @@ function AgentTab({ onClose }: AgentTabProps) {
 
   if (!nextRating) return;
 
-  // Get the user message that came before this bot response
   const userMessage = messages[index - 1]?.content ?? '';
 
   try {
@@ -474,9 +473,9 @@ function AgentTab({ onClose }: AgentTabProps) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         session_id: sessionId,
-        user_message: userMessage,
-        bot_response: target.content,
-        rating: nextRating === 'like' ? 'thumbs_up' : 'thumbs_down',
+        user_message: userMessage,        // ← not "message"
+        bot_response: target.content,     // ← not missing
+        rating: nextRating === 'like' ? 'thumbs_up' : 'thumbs_down', // ← not "like"
       }),
     });
   } catch {
