@@ -395,6 +395,16 @@ def send_mls_for_received(sbd_bytes: bytes) -> MLSResult:
         status_reasons=status_reasons,
     )
 
+    # TEMP DIAGNOSTIC: dump what we parsed + the exact MLS SBD we are about to send,
+    # so we can compare against the eDEC MLS spec / testbed expectations.
+    logger.info(
+        'MLS BUILD DEBUG: instance_id=%r business_id=%r C1_sender=%r C4_us(receiver)=%r '
+        'C2_mls_to=%r recipient=%r response_code=%r',
+        info.instance_id, info.business_id, info.sender, info.receiver,
+        info.mls_to, recipient, response_code,
+    )
+    logger.info('MLS SBD XML >>>\n%s\n<<< MLS SBD XML', mls_sbd.decode('utf-8', 'replace')[:3500])
+
     # Load our signing credentials.
     from services.as4.signing import AS4MessageSigner
     signer = AS4MessageSigner()
