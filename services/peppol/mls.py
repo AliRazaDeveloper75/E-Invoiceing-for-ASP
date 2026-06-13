@@ -214,10 +214,13 @@ def build_application_response(
         if sr.get('reason'):
             cbc(status, 'StatusReason', sr['reason'][:500])
 
+    # The receiving AP correlates the MLS to the original transmission via the
+    # SBDH InstanceIdentifier of the received document. Per the eDEC MLS spec,
+    # cac:DocumentReference/cbc:ID MUST carry that InstanceIdentifier (NOT the
+    # business document's cbc:ID) — otherwise the testbed reports the MLS as
+    # "not received" because it cannot match it to the test transaction.
     doc_ref = cac(doc_resp, 'DocumentReference')
-    cbc(doc_ref, 'ID', reference_id or reference_instance_id or mls_id)
-    if reference_instance_id:
-        cbc(doc_ref, 'UUID', reference_instance_id)
+    cbc(doc_ref, 'ID', reference_instance_id or reference_id or mls_id)
 
     return etree.tostring(ar, xml_declaration=True, encoding='UTF-8')
 
