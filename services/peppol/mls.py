@@ -236,6 +236,7 @@ def wrap_in_sbd(
     standard: str,
     type_name: str,
     type_version: str,
+    country_c1: str = 'AE',
     instance_id: Optional[str] = None,
     now: Optional[datetime] = None,
 ) -> bytes:
@@ -267,15 +268,21 @@ def wrap_in_sbd(
     sbdh(di, 'Type', type_name)
     sbdh(di, 'CreationDateAndTime', now.strftime('%Y-%m-%dT%H:%M:%S') + 'Z')
 
+    # Peppol SBDH 2.0 requires at least 3 Scopes: DOCUMENTID, PROCESSID and
+    # COUNTRY_C1 (ISO country code of Corner 1). phase4 rejects the message with
+    # 'invalid-scope-count' / 'missing-country-c1' when COUNTRY_C1 is absent.
+    # COUNTRY_C1 carries only Type + InstanceIdentifier (no Identifier/scheme).
     scope_root = sbdh(hdr, 'BusinessScope')
     for stype, value, ident in (
         ('DOCUMENTID', doctype_value, doctype_scheme),
         ('PROCESSID', process_value, process_scheme),
+        ('COUNTRY_C1', country_c1, None),
     ):
         scope = sbdh(scope_root, 'Scope')
         sbdh(scope, 'Type', stype)
         sbdh(scope, 'InstanceIdentifier', value)
-        sbdh(scope, 'Identifier', ident)
+        if ident is not None:
+            sbdh(scope, 'Identifier', ident)
 
     # Append the business document (strip any XML declaration first).
     doc_el = etree.fromstring(business_doc)
