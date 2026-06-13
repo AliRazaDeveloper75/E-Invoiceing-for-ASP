@@ -459,11 +459,40 @@ def send_mls_for_received(sbd_bytes: bytes) -> MLSResult:
         res.errors.append(f'AS4 send failed: {exc}')
         return res
 
-    res.sent = 200 <= resp.status_code < 300
-    res.detail = f'HTTP {resp.status_code}'
+    # eDelivery/AS4 returns HTTP 200 EVEN for ebMS errors — a genuine success
+    # needs a signed AS4 Receipt (NonRepudiationInformation) in the SOAP response,
+    # not just a 2xx status. Inspect the response body and log it for diagnosis.
+    body_txt = (resp.content or b'')[:8000].decode('utf-8', 'replace')
+    has_receipt = ('Receipt' in body_txt) or ('NonRepudiationInformation' in body_txt)
+    err_summary = ''
+    try:
+        _renv = etree.fromstring(resp.content or b'')
+        _EB = 'http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/'
+        _parts = []
+        for _e in _renv.findall('.//{%s}Error' % _EB):
+            _d = _e.find('{%s}Description' % _EB)
+            _det = _e.find('{%s}ErrorDetail' % _EB)
+            _txt = ((_d.text if _d is not None else '') or '') + ' ' + ((_det.text if _det is not None else '') or '')
+            _parts.append('[%s/%s] %s: %s' % (
+                _e.get('errorCode', ''), _e.get('severity', ''),
+                _e.get('shortDescription', ''), _txt.strip()))
+        err_summary = ' || '.join(_parts)
+    except Exception as _ex:
+        err_summary = '(parse failed: %s)' % _ex
+    logger.error('MLS ebMS ERROR from phase4: %s', err_summary or '(no eb:Error element found)')
+    has_error = bool(err_summary) or ('eb:Error' in body_txt) or ('errorCode' in body_txt)
+    res.sent = (200 <= resp.status_code < 300) and has_receipt and not has_error
+    res.detail = f'HTTP {resp.status_code} receipt={has_receipt} error={has_error}'
+    logger.info(
+        'MLS AS4 response: HTTP %s receipt=%s error=%s endpoint=%s\n'
+        '--- MLS RESPONSE BODY ---\n%s\n--- END MLS RESPONSE ---',
+        resp.status_code, has_receipt, has_error, ep.transport_url, body_txt[:2500],
+    )
     if not res.sent:
-        res.errors.append(f'MLS send returned HTTP {resp.status_code}: '
-                          f'{(resp.content or b"")[:300].decode("utf-8", "replace")}')
+        res.errors.append(
+            f'MLS not acknowledged (HTTP {resp.status_code}, receipt={has_receipt}, '
+            f'error={has_error}): {body_txt[:400]}'
+        )
     else:
-        logger.info('MLS %s sent to %s (%s)', response_code, info.sender, ep.transport_url)
+        logger.info('MLS %s ACK received from %s (%s)', response_code, recipient, ep.transport_url)
     return res
