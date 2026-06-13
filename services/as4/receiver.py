@@ -119,7 +119,12 @@ class AS4Receiver:
         if payload_part is None:
             result.add_error('No invoice payload attachment found.', 'EBMS:0006')
             return result
-        result.payload_xml = payload_part
+        # AS4 commonly gzip-compresses the payload (ebMS PartProperties
+        # CompressionType=application/gzip). MIME transfer-decoding does NOT undo
+        # that. Signature verification above already ran on the compressed bytes
+        # (the cid digest covers the compressed attachment), so it is safe to
+        # inflate here before UBL parsing / persistence.
+        result.payload_xml = self._maybe_decompress(payload_part)
 
         # Build the signed AS4 Receipt to acknowledge non-repudiation
         try:
@@ -140,6 +145,24 @@ class AS4Receiver:
         return result
 
     # ── Helpers ─────────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _maybe_decompress(payload: bytes) -> bytes:
+        """
+        Inflate a gzip-compressed AS4 payload.
+
+        ebMS3/AS4 senders (incl. the PEPPOL Testbed / phase4) frequently compress
+        the business document with gzip and flag it via a PartProperties
+        ``CompressionType=application/gzip``. The gzip magic bytes are 0x1f 0x8b;
+        when present we decompress, otherwise the payload is returned unchanged.
+        """
+        if payload and payload[:2] == b'\x1f\x8b':
+            import gzip
+            try:
+                return gzip.decompress(payload)
+            except Exception as exc:
+                logger.warning('AS4 inbound: gzip decompress failed, using raw payload: %s', exc)
+        return payload
 
     @staticmethod
     def _split_multipart(content_type: str, raw_body: bytes) -> tuple[bytes, dict]:
