@@ -71,6 +71,7 @@ class ReceivedDocInfo:
     """The facts extracted from a received SBD needed to answer with an MLS."""
     sender: str = ''            # original sender participant (scheme:value) → MLS receiver
     receiver: str = ''          # original receiver (us) → MLS sender
+    mls_to: str = ''            # SBDH MLS_TO scope — the C2 Service-Provider ID the MLS MUST be addressed to
     instance_id: str = ''       # SBDH InstanceIdentifier of the received document
     doc_local_name: str = ''    # 'Invoice' | 'CreditNote'
     business_doc: Optional[bytes] = None   # the inner UBL document bytes
@@ -111,6 +112,16 @@ def parse_received_sbd(sbd_bytes: bytes) -> ReceivedDocInfo:
             ii = hdr.find(f'{{{NS_SBDH}}}DocumentIdentification/{{{NS_SBDH}}}InstanceIdentifier')
             if ii is not None and ii.text:
                 info.instance_id = ii.text.strip()
+            # Peppol MLS: the C2 Service-Provider ID to address the MLS to is carried
+            # in the SBDH BusinessScope as a Scope of Type 'MLS_TO'. This is the
+            # correct MLS receiver (NOT the C1 business sender).
+            for scope in hdr.findall(f'{{{NS_SBDH}}}BusinessScope/{{{NS_SBDH}}}Scope'):
+                st = scope.find(f'{{{NS_SBDH}}}Type')
+                if st is not None and (st.text or '').strip() == 'MLS_TO':
+                    iv = scope.find(f'{{{NS_SBDH}}}InstanceIdentifier')
+                    if iv is not None and iv.text:
+                        info.mls_to = iv.text.strip()
+                    break
         # The business document is the first non-SBDH child of the SBD.
         for child in root:
             if _ln(child) != 'StandardBusinessDocumentHeader':
@@ -357,12 +368,17 @@ def send_mls_for_received(sbd_bytes: bytes) -> MLSResult:
 
     response_code, status_reasons = decide_response(info)
     res.response_code = response_code
-    res.receiver = info.sender
 
-    # Build the MLS SBD (our participant → original sender).
+    # Peppol MLS is addressed to C2's Service-Provider ID (the SBDH MLS_TO scope),
+    # NOT the C1 business sender. Fall back to the original sender only if MLS_TO
+    # is absent.
+    recipient = info.mls_to or info.sender
+    res.receiver = recipient
+
+    # Build the MLS SBD (our participant → C2 service provider).
     mls_sbd = build_mls_sbd(
         sender_participant=info.receiver,
-        receiver_participant=info.sender,
+        receiver_participant=recipient,
         response_code=response_code,
         reference_id=info.business_id,
         reference_instance_id=info.instance_id,
@@ -385,12 +401,12 @@ def send_mls_for_received(sbd_bytes: bytes) -> MLSResult:
     # Discover the original sender's MLS receiving endpoint + certificate.
     from services.smp_client import SMPClient
     try:
-        ep = SMPClient().lookup(info.sender, MLS_DOCTYPE_SMP)
+        ep = SMPClient().lookup(recipient, MLS_DOCTYPE_SMP)
     except Exception as exc:
-        res.errors.append(f'SMP lookup failed for {info.sender}: {exc}')
+        res.errors.append(f'SMP lookup failed for {recipient}: {exc}')
         return res
     if ep is None or not ep.transport_url:
-        res.errors.append(f'No MLS receiving capability found in SMP for {info.sender}.')
+        res.errors.append(f'No MLS receiving capability found in SMP for {recipient}.')
         return res
     res.endpoint = ep.transport_url
 
