@@ -316,7 +316,6 @@ function ChatbotTab() {
 const SUGGESTED = [
   'How do I add a company?',
   'What is E-Numerak?',
-  'How do I create an invoice?',
   'What is a TRN?',
 ];
 
