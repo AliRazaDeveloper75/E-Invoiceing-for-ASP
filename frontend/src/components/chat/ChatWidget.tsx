@@ -6,11 +6,22 @@ import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import {
   X,
   Send,
-  Bot,
   ChevronRight,
+  ChevronLeft,
   RotateCcw,
   Loader2,
+  Sparkles,
+  FileText,
+  Receipt,
+  Building2,
+  UserCircle2,
+  LogOut,
+  ThumbsUp,
+  ThumbsDown,
+  Check,
 } from 'lucide-react';
+
+// ─── Custom Icons ─────────────────────────────────────────────────────────────
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -19,6 +30,19 @@ function WhatsAppIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
+// Professional geometric abstract logo representing E-Numerak (Secure E-Invoicing / Tax nodes)
+function ENumerakLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 2L2 7l10 5 10-5-10-5z" />
+      <path d="M2 17l10 5 10-5" />
+      <path d="M2 12l10 5 10-5" />
+    </svg>
+  );
+}
+
+// ─── Environment Setup ────────────────────────────────────────────────────────
 
 const AI_AGENT_URL =
   process.env.NEXT_PUBLIC_AI_AGENT_URL ??
@@ -33,6 +57,7 @@ type Tab = 'chatbot' | 'agent';
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  feedback?: 'like' | 'dislike' | null;
 }
 
 interface ChatbotNode {
@@ -47,6 +72,14 @@ interface ChatWidgetProps {
 }
 
 // ─── Chatbot option tree ──────────────────────────────────────────────────────
+
+const CATEGORY_ICONS: Record<string, React.ElementType> = {
+  invoices: Receipt,
+  vat: FileText,
+  company: Building2,
+  account: UserCircle2,
+  platform: Sparkles,
+};
 
 const CHATBOT_TREE: ChatbotNode[] = [
   {
@@ -105,7 +138,7 @@ const CHATBOT_TREE: ChatbotNode[] = [
         id: 'peppol',
         text: 'What is E-Invoice / UAE PINT?',
         answer:
-          'E-Invoice is the UAE\'s standard electronic invoicing network. UAE PINT is the UAE national profile based on BIS 3.0 and UBL 2.1, mandated by the UAE FTA for e-invoicing compliance.',
+          "E-Invoice is the UAE's standard electronic invoicing network. UAE PINT is the UAE national profile based on BIS 3.0 and UBL 2.1, mandated by the UAE FTA for e-invoicing compliance.",
       },
     ],
   },
@@ -189,21 +222,31 @@ function ChatbotTab() {
     setAnswer(null);
   }
 
+  function goBack() {
+    if (path.length === 0) return;
+    const next = path.slice(0, -1);
+    setPath(next);
+    setAnswer(null);
+  }
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-1 px-4 py-2 text-xs text-gray-500 border-b border-gray-100 flex-wrap min-h-[36px]">
-        <button onClick={reset} className="hover:text-blue-600 font-medium transition-colors">
-          Home
+    <div className="flex h-full flex-col">
+      <div className="flex min-h-[40px] flex-wrap items-center gap-1 border-b border-slate-100 px-4 py-2.5 text-xs text-slate-400">
+        <button
+          onClick={reset}
+          className="font-medium text-slate-500 transition-colors hover:text-slate-900"
+        >
+          Help topics
         </button>
         {path.map((node, i) => (
           <span key={node.id} className="flex items-center gap-1">
-            <ChevronRight className="w-3 h-3 text-gray-400" />
+            <ChevronRight className="h-3 w-3 text-slate-300" />
             <button
               onClick={() => {
                 setPath(path.slice(0, i + 1));
                 setAnswer(node.answer ?? null);
               }}
-              className="hover:text-blue-600 transition-colors truncate max-w-[100px]"
+              className="max-w-[110px] truncate transition-colors hover:text-slate-900"
             >
               {node.text}
             </button>
@@ -211,37 +254,56 @@ function ChatbotTab() {
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4">
         {answer ? (
-          <div className="space-y-3">
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-gray-800 whitespace-pre-line leading-relaxed">
-              {answer}
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-[13px] leading-relaxed text-slate-700 shadow-sm">
+              <p className="whitespace-pre-line">{answer}</p>
             </div>
-            <button
-              onClick={reset}
-              className="flex items-center gap-2 text-xs text-gray-400 hover:text-blue-600 transition-colors"
-            >
-              <RotateCcw className="w-3 h-3" />
-              Back to main menu
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={goBack}
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                Back
+              </button>
+              <button
+                onClick={reset}
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                All topics
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-xs text-gray-400 mb-3">
-              {path.length === 0 ? 'What can I help you with today?' : 'Choose a topic:'}
+            <p className="mb-3 px-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+              {path.length === 0 ? 'Browse by category' : 'Choose a topic'}
             </p>
-            {currentMenu.map((node) => (
-              <button
-                key={node.id}
-                onClick={() => select(node)}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-all text-sm text-left group"
-              >
-                <span className="text-gray-700 group-hover:text-blue-700 font-medium">
-                  {node.text}
-                </span>
-                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 shrink-0" />
-              </button>
-            ))}
+            {currentMenu.map((node) => {
+              const Icon = path.length === 0 ? CATEGORY_ICONS[node.id] : undefined;
+              return (
+                <button
+                  key={node.id}
+                  onClick={() => select(node)}
+                  className="group flex w-full items-center justify-between gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3 text-left text-sm shadow-sm transition-all hover:border-slate-900/10 hover:bg-slate-50 hover:shadow-md"
+                >
+                  <span className="flex items-center gap-3">
+                    {Icon && (
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900/5 text-slate-500 transition-colors group-hover:bg-slate-900 group-hover:text-white">
+                        <Icon className="h-4 w-4" />
+                      </span>
+                    )}
+                    <span className="font-medium text-slate-700 group-hover:text-slate-900">
+                      {node.text}
+                    </span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-500" />
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -257,26 +319,6 @@ const SUGGESTED = [
   'How do I create an invoice?',
   'What is a TRN?',
 ];
-
-// ─── Feedback SVG Icons ───────────────────────────────────────────────────────
-
-function ThumbUpIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z" />
-      <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-    </svg>
-  );
-}
-
-function ThumbDownIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z" />
-      <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" />
-    </svg>
-  );
-}
 
 // ─── AgentTab ─────────────────────────────────────────────────────────────────
 
@@ -296,13 +338,9 @@ function AgentTab({ onClose }: AgentTabProps) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // ── Feedback state: maps assistant message index → 'like' | 'dislike' ──────
-  const [feedbacks, setFeedbacks] = useState<Record<number, 'like' | 'dislike'>>({});
-
   const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Initialize and check registration state
   useEffect(() => {
     let id = localStorage.getItem('chat_session_id');
     if (!id) {
@@ -328,10 +366,16 @@ function AgentTab({ onClose }: AgentTabProps) {
     }
   }, []);
 
-  // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+  }, [input]);
 
   async function register() {
     setRegError(null);
@@ -347,7 +391,6 @@ function AgentTab({ onClose }: AgentTabProps) {
         body: JSON.stringify({ name: name.trim(), email: email.trim(), session_id: sessionId }),
       });
       const data = await res.json().catch(() => ({}));
-
       if (res.ok) {
         localStorage.setItem('chat_registered', 'true');
         localStorage.setItem('chat_user_name', name.trim());
@@ -390,7 +433,7 @@ function AgentTab({ onClose }: AgentTabProps) {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let reply = '';
-
+      
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -408,33 +451,33 @@ function AgentTab({ onClose }: AgentTabProps) {
     }
   }
 
-  // ── Submit feedback to backend ─────────────────────────────────────────────
-  async function submitFeedback(
-    assistantIndex: number,
-    rating: 'like' | 'dislike'
-  ) {
-    if (feedbacks[assistantIndex]) return; // already rated
+  async function sendFeedback(index: number, rating: 'like' | 'dislike') {
+    const target = messages[index];
+    if (!target || target.role !== 'assistant') return;
 
-    const botResponse = messages[assistantIndex]?.content ?? '';
-    // The user message immediately before this assistant message
-    const userMessage = messages[assistantIndex - 1]?.content ?? '';
+    const nextRating = target.feedback === rating ? null : rating;
 
-    // Optimistically update UI
-    setFeedbacks((f) => ({ ...f, [assistantIndex]: rating }));
+    setMessages((m) => {
+      const updated = [...m];
+      updated[index] = { ...updated[index], feedback: nextRating };
+      return updated;
+    });
+
+    if (!nextRating) return;
 
     try {
-          await fetch(`${AI_AGENT_BASE}/chat/feedback`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            session_id: sessionId,
-            user_message: userMessage,
-            bot_response: botResponse,
-            rating: rating === 'like' ? 'thumbs_up' : 'thumbs_down',
-          }),
-        });
+      await fetch(`${AI_AGENT_BASE}/chat/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          email,
+          message: target.content,
+          rating: nextRating,
+        }),
+      });
     } catch {
-      // silent — feedback is best-effort, don't disrupt the chat
+      /* feedback is best-effort */
     }
   }
 
@@ -447,7 +490,6 @@ function AgentTab({ onClose }: AgentTabProps) {
       }
     }
     setError(null);
-    setFeedbacks({});
     setMessages([{ role: 'assistant', content: 'New conversation started! How can I help you? 😊' }]);
   }
 
@@ -461,9 +503,7 @@ function AgentTab({ onClose }: AgentTabProps) {
     setEmail('');
     setMessages([]);
     setError(null);
-    setFeedbacks({});
     setSessionId('');
-    setSessionId(crypto.randomUUID());
   }
 
   function handleKey(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -473,158 +513,127 @@ function AgentTab({ onClose }: AgentTabProps) {
     }
   }
 
-  // ── Registration gate ──────────────────────────────────────────────────────
   if (!registered) {
     return (
-      <div className="flex flex-col h-full justify-center px-6 py-6 bg-gray-50 relative">
+      <div className="relative flex h-full flex-col justify-center bg-gradient-to-b from-white to-slate-50 px-6 py-6">
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors"
+          className="absolute right-3 top-3 rounded-full p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
           title="Close"
         >
-          <X className="w-4 h-4" />
+          <X className="h-4 w-4" />
         </button>
 
-        <div className="text-center mb-5">
-          <div className="text-3xl mb-2">👋</div>
-          <h2 className="text-gray-800 font-bold text-base">Welcome to E-Numerak</h2>
-          <p className="text-gray-500 text-xs mt-1">Your UAE Tax Assistant — here to help 24/7</p>
+        <div className="mb-6 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm">
+            <ENumerakLogo className="h-6 w-6" />
+          </div>
+          <h2 className="text-base font-semibold tracking-tight text-slate-900">
+            Welcome to E-Numerak
+          </h2>
+          <p className="mt-1 text-[13px] text-slate-500">
+            Your UAE tax assistant — here to help 24/7
+          </p>
         </div>
 
         <div className="space-y-3">
           <div>
-            <label className="text-xs font-semibold text-gray-600 mb-1 block">Full Name</label>
+            <label className="mb-1.5 block text-xs font-medium text-slate-600">
+              Full name
+            </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && register()}
               placeholder="Enter your name"
-              className="w-full text-sm text-gray-800 border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-blue-400 bg-white transition-colors"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/5"
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-600 mb-1 block">Email Address</label>
+            <label className="mb-1.5 block text-xs font-medium text-slate-600">
+              Email address
+            </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && register()}
               placeholder="Enter your email"
-              className="w-full text-sm text-gray-800 border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-blue-400 bg-white transition-colors"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/5"
             />
           </div>
 
-          {regError && <p className="text-red-500 text-xs text-center">{regError}</p>}
+          {regError && (
+            <p className="text-center text-xs font-medium text-rose-500">{regError}</p>
+          )}
 
           <button
             onClick={register}
             disabled={regLoading}
-            className="w-full bg-blue-600 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors mt-1"
+            className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {regLoading ? 'Starting…' : 'Start Chatting →'}
+            {regLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Starting…
+              </>
+            ) : (
+              'Start chatting'
+            )}
           </button>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-4">🔒 Your data is safe and private</p>
+        <p className="mt-5 text-center text-[11px] text-slate-400">
+          🔒 Your data is safe and private
+        </p>
       </div>
     );
   }
 
-  // ── Chat interface ─────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex justify-between items-center px-3 pt-2">
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2">
         <button
           onClick={handleExit}
           title="Switch account"
-          className="flex items-center gap-1 text-xs text-gray-500 hover:text-red-500 border border-gray-200 rounded-full px-2 py-0.5 hover:border-red-300 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-500 transition-colors hover:border-rose-200 hover:text-rose-500"
         >
-          <X className="w-3 h-3" /> Exit
+          <LogOut className="h-3 w-3" />
+          Exit
         </button>
 
         <button
           onClick={newChat}
           title="New chat"
-          className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600 border border-gray-200 rounded-full px-2 py-0.5 hover:border-blue-400 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-500 transition-colors hover:border-slate-400 hover:text-slate-900"
         >
-          <RotateCcw className="w-3 h-3" /> New chat
+          <RotateCcw className="h-3 w-3" />
+          New chat
         </button>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
-          >
-            <div className={`max-w-[88%] ${msg.role === 'user' ? '' : 'space-y-1'}`}>
-              {/* Message bubble */}
-              <div
-                className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                  msg.role === 'user'
-                    ? 'bg-blue-600 text-white rounded-br-sm'
-                    : 'bg-gray-100 text-gray-800 rounded-bl-sm'
-                }`}
-              >
-                {msg.role === 'assistant' && msg.content ? (
-                  <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-                  </div>
-                ) : (
-                  msg.content
-                )}
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        {messages.length === 0 && (
+          <div className="flex flex-col gap-4 py-2">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">
+                <ENumerakLogo className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">AI Tax Assistant</p>
+                <p className="text-xs text-slate-400">Usually replies instantly</p>
               </div>
-
-              {/* Feedback buttons — only on completed assistant messages */}
-              {msg.role === 'assistant' && msg.content && !loading && (
-                <div className="flex items-center gap-1.5 mt-1 pl-1">
-                  <button
-                    onClick={() => submitFeedback(i, 'like')}
-                    disabled={!!feedbacks[i]}
-                    title="Helpful"
-                    className={`flex items-center justify-center w-6 h-6 rounded-full border transition-colors ${
-                      feedbacks[i] === 'like'
-                        ? 'bg-blue-100 border-blue-400 text-blue-600'
-                        : 'bg-white border-gray-200 text-gray-400 hover:border-blue-300 hover:text-blue-500'
-                    } disabled:cursor-default`}
-                  >
-                    <ThumbUpIcon />
-                  </button>
-                  <button
-                    onClick={() => submitFeedback(i, 'dislike')}
-                    disabled={!!feedbacks[i]}
-                    title="Not helpful"
-                    className={`flex items-center justify-center w-6 h-6 rounded-full border transition-colors ${
-                      feedbacks[i] === 'dislike'
-                        ? 'bg-red-100 border-red-400 text-red-500'
-                        : 'bg-white border-gray-200 text-gray-400 hover:border-red-300 hover:text-red-400'
-                    } disabled:cursor-default`}
-                  >
-                    <ThumbDownIcon />
-                  </button>
-                  {feedbacks[i] && (
-                    <span className="text-[10px] text-gray-400">
-                      {feedbacks[i] === 'like' ? 'Thanks!' : 'Got it'}
-                    </span>
-                  )}
-                </div>
-              )}
             </div>
-          </div>
-        ))}
-
-        {/* Suggested queries — shown before first user message */}
-        {!messages.some((msg) => msg.role === 'user') && (
-          <div className="flex flex-col items-start gap-2 pt-1">
-            <p className="text-[11px] font-medium text-gray-400 pl-1">Suggested topics:</p>
+            <p className="text-[13px] leading-relaxed text-slate-500">
+              Ask me anything about tax invoices, VAT, TRNs, or UAE e-invoicing on E-Numerak.
+            </p>
             <div className="flex flex-wrap gap-1.5">
               {SUGGESTED.map((q) => (
                 <button
                   key={q}
                   onClick={() => send(q)}
-                  className="text-xs text-left px-3 py-1.5 bg-white border border-gray-200 rounded-full text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors shadow-sm"
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-900/20 hover:bg-slate-50 hover:text-slate-900"
                 >
                   {q}
                 </button>
@@ -633,38 +642,120 @@ function AgentTab({ onClose }: AgentTabProps) {
           </div>
         )}
 
-        {/* Loading indicator */}
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3">
-              <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-            </div>
+        <div className="space-y-3">
+          {messages.map((msg, i) => {
+            const isLastAssistant = msg.role === 'assistant' && i === messages.length - 1;
+            const showTyping = isLastAssistant && loading && !msg.content;
+            const showFeedback = msg.role === 'assistant' && !showTyping && msg.content.length > 0;
+
+            return (
+              <div
+                key={i}
+                className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+              >
+                <div
+                  className={`max-w-[88%] rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed shadow-sm ${
+                    msg.role === 'user'
+                      ? 'rounded-br-md bg-slate-900 text-white'
+                      : 'rounded-bl-md border border-slate-100 bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  {msg.role === 'assistant' ? (
+                    showTyping ? (
+                      <span className="flex h-4 items-center gap-1">
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:0.15s]" />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:0.3s]" />
+                      </span>
+                    ) : (
+                      <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-headings:text-slate-900 prose-strong:text-slate-900">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                      </div>
+                    )
+                  ) : (
+                    msg.content
+                  )}
+                </div>
+
+                {showFeedback && (
+                  <div className="mt-1 flex items-center gap-1 px-1">
+                    <button
+                      onClick={() => sendFeedback(i, 'like')}
+                      aria-label="Good response"
+                      title="Good response"
+                      className={`rounded-md p-1 transition-colors ${
+                        msg.feedback === 'like' ? 'text-emerald-600' : 'text-slate-300 hover:text-slate-500'
+                      }`}
+                    >
+                      <ThumbsUp className="h-3.5 w-3.5" fill={msg.feedback === 'like' ? 'currentColor' : 'none'} />
+                    </button>
+                    <button
+                      onClick={() => sendFeedback(i, 'dislike')}
+                      aria-label="Bad response"
+                      title="Bad response"
+                      className={`rounded-md p-1 transition-colors ${
+                        msg.feedback === 'dislike' ? 'text-rose-500' : 'text-slate-300 hover:text-slate-500'
+                      }`}
+                    >
+                      <ThumbsDown className="h-3.5 w-3.5" fill={msg.feedback === 'dislike' ? 'currentColor' : 'none'} />
+                    </button>
+                    {msg.feedback && (
+                      <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                        <Check className="h-3 w-3" />
+                        Thanks for the feedback
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {!loading && messages.length <= 1 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {SUGGESTED.map((q) => (
+              <button
+                key={q}
+                onClick={() => send(q)}
+                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-900/20 hover:bg-slate-50 hover:text-slate-900"
+              >
+                {q}
+              </button>
+            ))}
           </div>
         )}
 
-        {error && <p className="text-center text-xs text-red-500">{error}</p>}
+        {error && (
+          <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-center text-xs font-medium text-rose-500">
+            {error}
+          </p>
+        )}
 
         <div ref={bottomRef} />
       </div>
 
-      {/* Input bar */}
-      <div className="border-t border-gray-100 p-3 flex gap-2 items-end">
-        <textarea
-          rows={1}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKey}
-          placeholder="Ask about invoices, VAT, payments…"
-          className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent max-h-32 overflow-y-auto"
-          style={{ minHeight: '40px' }}
-        />
-        <button
-          onClick={() => send()}
-          disabled={!input.trim() || loading}
-          className="p-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
-        >
-          <Send className="w-4 h-4" />
-        </button>
+      <div className="border-t border-slate-100 bg-white p-3">
+        <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 transition-colors focus-within:border-slate-300 focus-within:bg-white">
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKey}
+            placeholder="Ask about invoices, VAT, payments…"
+            className="max-h-32 flex-1 resize-none bg-transparent px-2.5 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400"
+            style={{ minHeight: '36px' }}
+          />
+          <button
+            onClick={() => send()}
+            disabled={!input.trim() || loading}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Send message"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -677,57 +768,68 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
   const [tab, setTab] = useState<Tab>('chatbot');
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'chatbot', label: 'Help Topics' },
-    { id: 'agent', label: 'AI Agent' },
+    { id: 'chatbot', label: 'Help topics' },
+    { id: 'agent', label: 'AI agent' },
   ];
 
   return (
     <>
-      {/* Floating Action Buttons */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-3">
-        {/* WhatsApp */}
         <a
           href="https://wa.me/971506358421"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Chat on WhatsApp"
-          className="flex items-center justify-center w-14 h-14 rounded-full bg-[#25D366] text-white shadow-lg hover:bg-[#1da851] hover:scale-105 active:scale-95 transition-all"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-emerald-900/15 transition-all hover:scale-105 hover:bg-[#1da851] active:scale-95"
         >
-          <WhatsAppIcon className="w-7 h-7" />
+          <WhatsAppIcon className="h-6 w-6" />
         </a>
 
-        {/* Chat toggle */}
         <button
           onClick={() => setOpen((o) => !o)}
           aria-label={open ? 'Close chat' : 'Open chat'}
-          className="flex items-center justify-center w-14 h-14 rounded-full bg-[#1e3a5f] text-white shadow-lg hover:bg-[#1e4080] hover:scale-105 active:scale-95 transition-all"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg shadow-slate-900/20 transition-all hover:scale-105 hover:bg-slate-800 active:scale-95"
         >
-          {open ? <X className="w-6 h-6" /> : <Bot className="w-6 h-6" />}
+          {open ? <X className="h-6 w-6" /> : <ENumerakLogo className="h-6 w-6" />}
         </button>
       </div>
 
-      {/* Chat drawer */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 max-w-[calc(100vw-3rem)] h-[480px] max-h-[calc(100dvh-7rem)] flex flex-col rounded-2xl shadow-2xl border border-gray-200 bg-white overflow-hidden">
+        <div
+          className="fixed bottom-24 right-6 z-50 flex h-[520px] max-h-[calc(100dvh-7rem)] w-[380px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10"
+          role="dialog"
+          aria-label="Chat support"
+        >
           {/* Header */}
-          <div className="bg-[#1e3a5f] text-white px-4 py-3 flex items-center gap-3">
-            <Bot className="w-5 h-5 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">E-Invoice Assistant</p>
-              <p className="text-xs text-blue-300 truncate">UAE PINT / E-Invoice support</p>
+          <div className="flex items-center gap-3 bg-slate-900 px-4 py-3.5 text-white">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
+              <ENumerakLogo className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-sm font-semibold tracking-tight text-white">
+                E-Numerak Support
+              </h1>
+              <p className="text-[11px] text-slate-400">Compliance & Tax Assistant</p>
             </div>
+            <button
+              onClick={() => setOpen(false)}
+              className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+              aria-label="Minimize chat"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
 
-          {/* Tabs */}
-          <div className="flex border-b border-gray-100 bg-gray-50">
+          {/* Navigation Tabs */}
+          <div className="flex border-b border-slate-100 bg-slate-50 p-1">
             {tabs.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`flex-1 py-2 text-xs font-medium transition-colors ${
+                className={`flex-1 rounded-xl py-1.5 text-center text-xs font-semibold transition-all ${
                   tab === t.id
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
                 }`}
               >
                 {t.label}
@@ -735,8 +837,8 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
             ))}
           </div>
 
-          {/* Tab content */}
-          <div className="flex-1 overflow-hidden bg-gray-50">
+          {/* Content Views */}
+          <div className="min-h-0 flex-1 bg-white">
             {tab === 'chatbot' ? <ChatbotTab /> : <AgentTab onClose={() => setOpen(false)} />}
           </div>
         </div>

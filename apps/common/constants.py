@@ -134,11 +134,13 @@ PEPPOL_CUSTOMIZATION_ID_SELFBILL = 'urn:peppol:pint:selfbilling-1@ae-1'  # self-
 # Legacy EU BIS 3.0 id — kept only for reference / fallback if ever needed.
 PEPPOL_CUSTOMIZATION_ID_EU_BIS = 'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0'
 
-PEPPOL_PROFILE_ID = 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0'
+# Business process (ibt-023). PINT-AE rule aligned-ibrp-002-ae requires this to
+# be 'urn:peppol:bis:billing' (NOT the legacy EU poacc billing process id).
+PEPPOL_PROFILE_ID = 'urn:peppol:bis:billing'
 
 # Active PINT-AE spec version. 1.0.3 is mandatory until 7 Jun 2026; 1.0.4 from
 # 8 Jun 2026. Override with env PINT_AE_VERSION to flip without a code change.
-PINT_AE_VERSION = os.getenv('PINT_AE_VERSION', '1.0.3')
+PINT_AE_VERSION = os.getenv('PINT_AE_VERSION', '1.0.4')
 PINT_AE_SUPPORTED_VERSIONS = ('1.0.3', '1.0.4')
 
 UAE_COUNTRY_CODE = 'AE'

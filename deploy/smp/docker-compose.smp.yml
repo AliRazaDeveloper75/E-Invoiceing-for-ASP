@@ -1,0 +1,22 @@
+## phoss SMP — E-Numerak (UAE PINT-AE, TEST)
+## Deploy on the server:
+##   cd /opt/smp && docker compose -f docker-compose.smp.yml up -d
+##
+## Directory layout expected on the server (/opt/smp):
+##   /opt/smp/docker-compose.smp.yml
+##   /opt/smp/config/application.properties
+##   /opt/smp/config/smp-keystore.p12
+##   /opt/smp/config/data/            (created automatically; persistent XML store)
+
+services:
+  phoss-smp:
+    image: phelger/phoss-smp-xml:latest
+    container_name: phoss-smp
+    restart: unless-stopped
+    ports:
+      # host:container — nginx will reverse-proxy 443 → 127.0.0.1:8888
+      - "127.0.0.1:8888:8080"
+    environment:
+      - CONFIG_FILE=/config/application.properties
+    volumes:
+      - ./config:/config

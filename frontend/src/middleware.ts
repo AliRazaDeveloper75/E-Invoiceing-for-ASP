@@ -4,8 +4,8 @@ import { NextRequest, NextResponse } from 'next/server';
 const PUBLIC_EXACT = new Set([
   '/', '/about', '/peppol', '/services', '/contact',
   '/privacy-policy', '/terms', '/fta-compliance',
+  '/bot-admin',  // ← add this
 ]);
-
 // Always public — accessible whether logged in or not (no redirect either way)
 const ALWAYS_PUBLIC = ['/activate', '/verify-email', '/buyer/accept-invite', '/accept-invite'];
 
