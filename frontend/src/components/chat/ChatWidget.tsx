@@ -452,34 +452,37 @@ function AgentTab({ onClose }: AgentTabProps) {
   }
 
   async function sendFeedback(index: number, rating: 'like' | 'dislike') {
-    const target = messages[index];
-    if (!target || target.role !== 'assistant') return;
+  const target = messages[index];
+  if (!target || target.role !== 'assistant') return;
 
-    const nextRating = target.feedback === rating ? null : rating;
+  const nextRating = target.feedback === rating ? null : rating;
 
-    setMessages((m) => {
-      const updated = [...m];
-      updated[index] = { ...updated[index], feedback: nextRating };
-      return updated;
+  setMessages((m) => {
+    const updated = [...m];
+    updated[index] = { ...updated[index], feedback: nextRating };
+    return updated;
+  });
+
+  if (!nextRating) return;
+
+  // Get the user message that came before this bot response
+  const userMessage = messages[index - 1]?.content ?? '';
+
+  try {
+    await fetch(`${AI_AGENT_BASE}/chat/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: sessionId,
+        user_message: userMessage,
+        bot_response: target.content,
+        rating: nextRating === 'like' ? 'thumbs_up' : 'thumbs_down',
+      }),
     });
-
-    if (!nextRating) return;
-
-    try {
-      await fetch(`${AI_AGENT_BASE}/chat/feedback`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: sessionId,
-          email,
-          message: target.content,
-          rating: nextRating,
-        }),
-      });
-    } catch {
-      /* feedback is best-effort */
-    }
+  } catch {
+    /* feedback is best-effort */
   }
+}
 
   async function newChat() {
     if (sessionId) {
