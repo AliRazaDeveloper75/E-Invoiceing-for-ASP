@@ -453,7 +453,10 @@ def send_mls_for_received(sbd_bytes: bytes) -> MLSResult:
             sender_ap_id=sender_ap_id,
             recipient_ap_id=recipient_ap_id,
             original_sender=info.receiver,
-            final_recipient=info.sender,
+            # Peppol MLS is an SP-to-SP message: the AS4 finalRecipient must equal
+            # the SBDH Receiver (C2's Service-Provider ID), NOT the original business
+            # sender — phase4 rejects a finalRecipient vs SBDH identifier mismatch.
+            final_recipient=recipient,
             doc_type=MLS_DOCTYPE_SMP,
             process_id=MLS_PROCESS_VALUE,
             agreement_ref='urn:fdc:peppol.eu:2017:agreements:tia:ap_provider',
