@@ -119,12 +119,13 @@ class AS4Receiver:
         if payload_part is None:
             result.add_error('No invoice payload attachment found.', 'EBMS:0006')
             return result
-        # AS4 commonly gzip-compresses the payload (ebMS PartProperties
-        # CompressionType=application/gzip). MIME transfer-decoding does NOT undo
-        # that. Signature verification above already ran on the compressed bytes
-        # (the cid digest covers the compressed attachment), so it is safe to
-        # inflate here before UBL parsing / persistence.
-        result.payload_xml = self._maybe_decompress(payload_part)
+        # eDelivery/Peppol AS4 ENCRYPTS the payload (WS-Security XML Encryption:
+        # xenc:EncryptedKey RSA-OAEP wrapping an AES key + xenc:EncryptedData over
+        # the cid attachment, AES-GCM). When present we RSA-unwrap the key and
+        # AES-GCM decrypt (which also gunzips). If there is no encryption we fall
+        # back to (optionally gzip) plaintext. Signature verification above already
+        # ran on the on-the-wire (encrypted/compressed) bytes.
+        result.payload_xml = self._decrypt_or_decompress(envelope, payload_part)
 
         # Build the signed AS4 Receipt to acknowledge non-repudiation
         try:
@@ -145,6 +146,41 @@ class AS4Receiver:
         return result
 
     # ── Helpers ─────────────────────────────────────────────────────────────────
+
+    def _decrypt_or_decompress(self, envelope, payload_part: bytes) -> bytes:
+        """
+        Decrypt an AES-GCM encrypted payload (eDelivery AS4) if the SOAP carries a
+        WS-Security xenc:EncryptedKey; otherwise gzip-inflate (or return as-is).
+        """
+        wrapped_key = self._extract_wrapped_key(envelope)
+        if wrapped_key is not None:
+            try:
+                self._signer._load_credentials()
+                from .encryption import decrypt_payload
+                xml = decrypt_payload(payload_part, wrapped_key, self._signer._key)
+                logger.info('AS4 inbound: payload decrypted (%d bytes UBL)', len(xml))
+                return xml
+            except Exception as exc:
+                logger.error('AS4 inbound: payload decryption failed: %s', exc)
+                # fall through — maybe it was only compressed after all
+        return self._maybe_decompress(payload_part)
+
+    @staticmethod
+    def _extract_wrapped_key(envelope) -> Optional[bytes]:
+        """RSA-OAEP wrapped AES key from xenc:EncryptedKey/.../CipherValue, or None."""
+        import base64
+        ns_xenc = 'http://www.w3.org/2001/04/xmlenc#'
+        ek = envelope.find(f'.//{{{ns_xenc}}}EncryptedKey')
+        if ek is None:
+            return None
+        cv = ek.find(f'.//{{{ns_xenc}}}CipherData/{{{ns_xenc}}}CipherValue')
+        if cv is None or not (cv.text or '').strip():
+            return None
+        try:
+            return base64.b64decode(cv.text.strip())
+        except Exception as exc:
+            logger.warning('AS4 inbound: could not decode EncryptedKey CipherValue: %s', exc)
+            return None
 
     @staticmethod
     def _maybe_decompress(payload: bytes) -> bytes:
