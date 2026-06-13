@@ -385,9 +385,15 @@ def send_mls_for_received(sbd_bytes: bytes) -> MLSResult:
     recipient = info.mls_to or info.sender
     res.receiver = recipient
 
-    # Build the MLS SBD (our participant → C2 service provider).
+    # C3 (us) is identified by our Peppol Service Provider ID (SPID, scheme 0242),
+    # NOT our business participant. The eDEC MLS Schematron (SCH-MLS-09/11) requires
+    # the SBDH Sender + ApplicationResponse SenderParty to be this SPID.
+    from django.conf import settings as _settings
+    sp_id = getattr(_settings, 'PEPPOL_SP_ID', '') or info.receiver
+
+    # Build the MLS SBD (our SP → C2 service provider).
     mls_sbd = build_mls_sbd(
-        sender_participant=info.receiver,
+        sender_participant=sp_id,
         receiver_participant=recipient,
         response_code=response_code,
         reference_id=info.business_id,
@@ -465,7 +471,7 @@ def send_mls_for_received(sbd_bytes: bytes) -> MLSResult:
             payload_xml=mls_sbd,
             sender_ap_id=sender_ap_id,
             recipient_ap_id=recipient_ap_id,
-            original_sender=info.receiver,
+            original_sender=sp_id,
             # Peppol MLS is an SP-to-SP message: the AS4 finalRecipient must equal
             # the SBDH Receiver (C2's Service-Provider ID), NOT the original business
             # sender — phase4 rejects a finalRecipient vs SBDH identifier mismatch.

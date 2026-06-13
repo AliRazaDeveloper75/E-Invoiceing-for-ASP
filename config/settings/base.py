@@ -369,6 +369,12 @@ PEPPOL_SML_ZONE = env('PEPPOL_SML_ZONE', default='')
 # SMP cache TTL in hours (0 = disable caching)
 PEPPOL_SMP_CACHE_TTL_HOURS = env.int('PEPPOL_SMP_CACHE_TTL_HOURS', default=24)
 
+# Our Peppol Service Provider ID (C3) — used as the MLS SBDH Sender and the
+# ApplicationResponse SenderParty. Per the eDEC MLS Schematron it MUST be a
+# Peppol SPID: schemeID '0242' + a 6-digit value (optionally suffixed),
+# e.g. '0242:001147' for AP seat PAE001147. NOT the business participant.
+PEPPOL_SP_ID = env('PEPPOL_SP_ID', default='0242:001147')
+
 # Admin email(s) to notify on certificate expiry
 PEPPOL_ALERT_EMAILS = env.list('PEPPOL_ALERT_EMAILS', default=[])
 
