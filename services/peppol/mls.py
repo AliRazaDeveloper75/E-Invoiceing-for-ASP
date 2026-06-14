@@ -192,13 +192,14 @@ def build_application_response(
     cbc(ar, 'IssueTime', now.strftime('%H:%M:%S') + 'Z')
 
     def party(tag, participant):
+        # Per the eDEC MLS spec example, SenderParty/ReceiverParty carry ONLY
+        # cbc:EndpointID (schemeID=0242 + SPID). Extra PartyIdentification is
+        # omitted to exactly match the expected MLS structure.
         p = cac(ar, tag)
         scheme, _, value = participant.partition(':')
         if not value:
             value, scheme = scheme, ''
         cbc(p, 'EndpointID', value, schemeID=scheme)
-        pid = cac(p, 'PartyIdentification')
-        cbc(pid, 'ID', value, schemeID=scheme)
         return p
 
     party('SenderParty', sender_participant)
