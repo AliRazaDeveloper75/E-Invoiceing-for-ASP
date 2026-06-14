@@ -44,6 +44,7 @@ class AS4ReceiveResult:
     message_id: str = ''                       # ebMS MessageId of the received UserMessage
     sender_id: str = ''                         # From/PartyId (e.g. 0235:1001...)
     receiver_id: str = ''                       # To/PartyId
+    conversation_id: str = ''                   # ebMS ConversationId (echoed back in the MLS)
     payload_xml: Optional[bytes] = None         # The extracted UBL invoice bytes
     signature_valid: bool = False
     receipt_xml: Optional[bytes] = None         # Signed AS4 Receipt to return in the response
@@ -97,6 +98,7 @@ class AS4Receiver:
         result.message_id  = self._xpath_text(envelope, './/eb:UserMessage/eb:MessageInfo/eb:MessageId')
         result.sender_id   = self._xpath_text(envelope, './/eb:PartyInfo/eb:From/eb:PartyId')
         result.receiver_id = self._xpath_text(envelope, './/eb:PartyInfo/eb:To/eb:PartyId')
+        result.conversation_id = self._xpath_text(envelope, './/eb:CollaborationInfo/eb:ConversationId')
 
         if not result.message_id:
             result.add_error('Missing ebMS MessageId.', 'EBMS:0004')

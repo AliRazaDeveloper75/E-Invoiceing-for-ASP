@@ -33,7 +33,7 @@ logger = get_task_logger(__name__)
     queue='peppol_transmission',
     acks_late=True,
 )
-def send_mls_for_received(self, sbd_b64: str) -> dict:
+def send_mls_for_received(self, sbd_b64: str, conversation_id: str = '') -> dict:
     """
     Generate and transmit a Peppol MLS (ApplicationResponse) for a received
     PINT-AE business document. ``sbd_b64`` is the base64-encoded received SBD.
@@ -50,7 +50,7 @@ def send_mls_for_received(self, sbd_b64: str) -> dict:
         logger.error('MLS task: bad base64 payload: %s', exc)
         return {'sent': False, 'error': 'bad payload'}
 
-    result = _send(sbd)
+    result = _send(sbd, conversation_id=conversation_id)
     if not result.sent and result.errors:
         logger.warning('MLS task: not sent (%s) — %s', result.response_code, result.errors)
         # Retry transient failures (e.g. SMP/endpoint hiccup).

@@ -75,6 +75,7 @@ def build_message(
     signing_cert,             # cryptography x509.Certificate (ours)
     signing_key,              # our private key
     recipient_cert,           # cryptography x509.Certificate (testbed) for encryption
+    conversation_id: str = '',  # echo the original message's ConversationId (MLS); else new
 ) -> tuple[bytes, str]:
     """Build the MTOM body + Content-Type for an encrypted+signed AS4 UserMessage."""
     message_id   = f'{uuid.uuid4()}@e-numerak.ae'
@@ -162,7 +163,7 @@ def build_message(
     etree.SubElement(ci, f'{{{EB}}}AgreementRef').text = agreement_ref
     svc = etree.SubElement(ci, f'{{{EB}}}Service'); svc.set('type', 'cenbii-procid-ubl'); svc.text = process_id
     etree.SubElement(ci, f'{{{EB}}}Action').text = doc_type
-    etree.SubElement(ci, f'{{{EB}}}ConversationId').text = str(uuid.uuid4())
+    etree.SubElement(ci, f'{{{EB}}}ConversationId').text = conversation_id or str(uuid.uuid4())
     mp = etree.SubElement(um, f'{{{EB}}}MessageProperties')
     p1 = etree.SubElement(mp, f'{{{EB}}}Property'); p1.set('name', 'originalSender'); p1.set('type', 'iso6523-actorid-upis'); p1.text = original_sender
     p2 = etree.SubElement(mp, f'{{{EB}}}Property'); p2.set('name', 'finalRecipient'); p2.set('type', 'iso6523-actorid-upis'); p2.text = final_recipient

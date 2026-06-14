@@ -360,7 +360,7 @@ def decide_response(info: ReceivedDocInfo) -> tuple:
 
 # ─── Full orchestration: received document → send MLS ───────────────────────────
 
-def send_mls_for_received(sbd_bytes: bytes) -> MLSResult:
+def send_mls_for_received(sbd_bytes: bytes, conversation_id: str = '') -> MLSResult:
     """
     Given a received SBD, validate it, build the appropriate MLS, discover the
     original sender's MLS endpoint via SMP, and transmit it over AS4.
@@ -482,6 +482,9 @@ def send_mls_for_received(sbd_bytes: bytes) -> MLSResult:
             signing_cert=signer._cert,
             signing_key=signer._key,
             recipient_cert=recipient_cert,
+            # Echo the original message's ConversationId so the receiving AP /
+            # testbed can correlate the MLS to the original transmission.
+            conversation_id=conversation_id,
         )
         resp = as4sender.send(ep.transport_url, body, content_type)
     except Exception as exc:
