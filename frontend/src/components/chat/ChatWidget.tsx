@@ -15,10 +15,12 @@ import {
   Receipt,
   Building2,
   UserCircle2,
-  LogOut,
   ThumbsUp,
   ThumbsDown,
   Check,
+  ArrowRight,
+  Mail,
+  User,
 } from 'lucide-react';
 
 // ─── Custom Icons ─────────────────────────────────────────────────────────────
@@ -31,28 +33,40 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-// Professional geometric abstract logo representing E-Numerak (Secure E-Invoicing / Tax nodes)
+// E-Numerak mark — a tax seal / official stamp motif: a ringed badge
+// enclosing a folded-document glyph, evoking certified e-invoices.
 function ENumerakLogo({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M12 2L2 7l10 5 10-5-10-5z" />
-      <path d="M2 17l10 5 10-5" />
-      <path d="M2 12l10 5 10-5" />
+    <svg viewBox="0 0 32 32" fill="none" className={className} aria-hidden="true">
+      <circle cx="16" cy="16" r="14.5" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="16" cy="16" r="11" stroke="currentColor" strokeWidth="1" strokeDasharray="1.5 2.5" opacity="0.5" />
+      <path
+        d="M12 9.5h6l3 3v9.5a1 1 0 01-1 1H12a1 1 0 01-1-1V10.5a1 1 0 011-1z"
+        fill="currentColor"
+        opacity="0.12"
+      />
+      <path
+        d="M12 9.5h6l3 3v9.5a1 1 0 01-1 1H12a1 1 0 01-1-1V10.5a1 1 0 011-1z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path d="M18 9.5v3h3" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M13 16h6M13 18.5h6M13 21h3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   );
 }
 
 // ─── Environment Setup ────────────────────────────────────────────────────────
 
-const AI_AGENT_URL =
-  process.env.NEXT_PUBLIC_AI_AGENT_URL ??
-  'https://tax-data-assistant-backend-production.up.railway.app';
+const AI_AGENT_URL ='https://tax-data-assistant-backend-production.up.railway.app';
 
 const AI_AGENT_BASE = AI_AGENT_URL.replace(/\/chat\/?$/, '');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Tab = 'chatbot' | 'agent';
+type AuthView = 'login' | 'register' | 'chat';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -72,6 +86,7 @@ interface ChatWidgetProps {
 }
 
 // ─── Chatbot option tree ──────────────────────────────────────────────────────
+// (Unchanged — left exactly as-is per request.)
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   invoices: Receipt,
@@ -199,6 +214,7 @@ const CHATBOT_TREE: ChatbotNode[] = [
 ];
 
 // ─── ChatbotTab ───────────────────────────────────────────────────────────────
+// (Unchanged — left exactly as-is per request.)
 
 function ChatbotTab() {
   const [path, setPath] = useState<ChatbotNode[]>([]);
@@ -326,44 +342,28 @@ interface AgentTabProps {
 }
 
 function AgentTab({ onClose }: AgentTabProps) {
-  const [sessionId, setSessionId] = useState('');
-  const [registered, setRegistered] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  // ── Auth state ──
+  const [view, setView] = useState<AuthView>('login');
+  const [userId, setUserId] = useState<number | null>(null);
+  const [userName, setUserName] = useState('');
+
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  const [regName, setRegName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
   const [regError, setRegError] = useState<string | null>(null);
   const [regLoading, setRegLoading] = useState(false);
 
+  // ── Chat state ──
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    let id = localStorage.getItem('chat_session_id');
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem('chat_session_id', id);
-    }
-    setSessionId(id);
-
-    const reg = localStorage.getItem('chat_registered');
-    const savedName = localStorage.getItem('chat_user_name');
-    const savedEmail = localStorage.getItem('chat_user_email');
-
-    if (reg === 'true' && savedName && savedEmail) {
-      setRegistered(true);
-      setName(savedName);
-      setEmail(savedEmail);
-      setMessages([
-        {
-          role: 'assistant',
-          content: `Welcome back, ${savedName}! 👋 How can I assist you with UAE tax today?`,
-        },
-      ]);
-    }
-  }, []);
+  const loginEmailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -376,31 +376,82 @@ function AgentTab({ onClose }: AgentTabProps) {
     el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
   }, [input]);
 
+  useEffect(() => {
+    if (view === 'login') loginEmailRef.current?.focus();
+  }, [view]);
+
+  // ── Login: email only. If the email isn't registered, send to Register
+  // pre-filled with that email. ──
+  async function login() {
+    setLoginError(null);
+    const email = loginEmail.trim();
+    if (!email || !email.includes('@')) {
+      setLoginError('Enter a valid email address.');
+      return;
+    }
+
+    setLoginLoading(true);
+    try {
+      const res = await fetch(`${AI_AGENT_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.success) {
+        setUserId(data.user_id);
+        setUserName(data.name);
+        setMessages([
+          {
+            role: 'assistant',
+            content: `Welcome back, ${data.name}. How can I help with your UAE tax or invoicing questions today?`,
+          },
+        ]);
+        setView('chat');
+      } else if (res.status === 401) {
+        // Not registered yet — move to register, carry the email forward.
+        setRegEmail(email);
+        setRegError(null);
+        setView('register');
+      } else {
+        setLoginError(data.detail || 'Something went wrong. Please try again.');
+      }
+    } catch {
+      setLoginError('Connection failed. Please check your internet.');
+    } finally {
+      setLoginLoading(false);
+    }
+  }
+
+  // ── Register: name + email. On success, go straight to chat. ──
   async function register() {
     setRegError(null);
-    if (!sessionId) return setRegError('Please wait and try again.');
-    if (!name.trim()) return setRegError('Please enter your name.');
-    if (!email.trim() || !email.includes('@')) return setRegError('Please enter a valid email.');
+    const name = regName.trim();
+    const email = regEmail.trim();
+
+    if (!name) return setRegError('Enter your name.');
+    if (!email || !email.includes('@')) return setRegError('Enter a valid email address.');
 
     setRegLoading(true);
     try {
       const res = await fetch(`${AI_AGENT_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), email: email.trim(), session_id: sessionId }),
+        body: JSON.stringify({ name, email }),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        localStorage.setItem('chat_registered', 'true');
-        localStorage.setItem('chat_user_name', name.trim());
-        localStorage.setItem('chat_user_email', email.trim());
-        setRegistered(true);
+
+      if (res.ok && data.success) {
+        setUserId(data.user_id);
+        setUserName(data.name);
         setMessages([
           {
             role: 'assistant',
-            content: `Hello, ${name.trim()}! 👋 I'm your E-Numerak Tax Assistant. How can I help you today?`,
+            content: `Hello, ${data.name}. I'm your E-Numerak tax assistant — ask me anything about VAT, TRNs, or e-invoicing on the platform.`,
           },
         ]);
+        setView('chat');
       } else {
         setRegError(data.detail || 'Registration failed. Please try again.');
       }
@@ -413,7 +464,7 @@ function AgentTab({ onClose }: AgentTabProps) {
 
   async function send(text?: string) {
     const msgText = (text ?? input).trim();
-    if (!msgText || loading || !sessionId) return;
+    if (!msgText || loading || userId === null) return;
 
     setMessages((m) => [...m, { role: 'user', content: msgText }]);
     setInput('');
@@ -424,7 +475,7 @@ function AgentTab({ onClose }: AgentTabProps) {
       const res = await fetch(`${AI_AGENT_BASE}/chat/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msgText, session_id: sessionId, email: email }),
+        body: JSON.stringify({ user_id: userId, message: msgText }),
       });
       if (!res.ok || !res.body) throw new Error('Request failed');
 
@@ -432,7 +483,7 @@ function AgentTab({ onClose }: AgentTabProps) {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let reply = '';
-      
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -451,60 +502,49 @@ function AgentTab({ onClose }: AgentTabProps) {
   }
 
   async function sendFeedback(index: number, rating: 'like' | 'dislike') {
-  const target = messages[index];
-  if (!target || target.role !== 'assistant') return;
+    const target = messages[index];
+    if (!target || target.role !== 'assistant' || userId === null) return;
 
-  const nextRating = target.feedback === rating ? null : rating;
+    const nextRating = target.feedback === rating ? null : rating;
 
-  setMessages((m) => {
-    const updated = [...m];
-    updated[index] = { ...updated[index], feedback: nextRating };
-    return updated;
-  });
-
-  if (!nextRating) return;
-
-  const userMessage = messages[index - 1]?.content ?? '';
-
-  try {
-    await fetch(`${AI_AGENT_BASE}/chat/feedback`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        session_id: sessionId,
-        user_message: userMessage,        // ← not "message"
-        bot_response: target.content,     // ← not missing
-        rating: nextRating === 'like' ? 'thumbs_up' : 'thumbs_down', // ← not "like"
-      }),
+    setMessages((m) => {
+      const updated = [...m];
+      updated[index] = { ...updated[index], feedback: nextRating };
+      return updated;
     });
-  } catch {
-    /* feedback is best-effort */
+
+    if (!nextRating) return;
+
+    const userMessage = messages[index - 1]?.content ?? '';
+
+    try {
+      await fetch(`${AI_AGENT_BASE}/feedback/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          user_message: userMessage,
+          bot_response: target.content,
+          rating: nextRating === 'like' ? 'thumbs_up' : 'thumbs_down',
+        }),
+      });
+    } catch {
+      /* feedback is best-effort */
+    }
   }
-}
 
   async function newChat() {
-    if (sessionId) {
+    if (userId !== null) {
       try {
-        await fetch(`${AI_AGENT_BASE}/clear-memory/${sessionId}`, { method: 'POST' });
+        await fetch(`${AI_AGENT_BASE}/chat/clear-memory/${userId}`, { method: 'POST' });
       } catch {
         /* ignore */
       }
     }
     setError(null);
-    setMessages([{ role: 'assistant', content: 'New conversation started! How can I help you? 😊' }]);
-  }
-
-  function handleExit() {
-    localStorage.removeItem('chat_registered');
-    localStorage.removeItem('chat_user_name');
-    localStorage.removeItem('chat_user_email');
-    localStorage.removeItem('chat_session_id');
-    setRegistered(false);
-    setName('');
-    setEmail('');
-    setMessages([]);
-    setError(null);
-    setSessionId('');
+    setMessages([
+      { role: 'assistant', content: 'New conversation started. How can I help you?' },
+    ]);
   }
 
   function handleKey(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -514,55 +554,142 @@ function AgentTab({ onClose }: AgentTabProps) {
     }
   }
 
-  if (!registered) {
+  // ── Login view ──
+  if (view === 'login') {
     return (
-      <div className="relative flex h-full flex-col justify-center bg-gradient-to-b from-white to-slate-50 px-6 py-6">
+      <div className="relative flex h-full flex-col justify-center px-6 py-6" style={{ background: 'linear-gradient(180deg, #FBF7F2 0%, #FFFFFF 60%)' }}>
         <button
           onClick={onClose}
-          className="absolute right-3 top-3 rounded-full p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+          className="absolute right-3 top-3 rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
           title="Close"
         >
           <X className="h-4 w-4" />
         </button>
 
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm">
-            <ENumerakLogo className="h-6 w-6" />
+          <div
+            className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-sm"
+            style={{ background: '#C2410C' }}
+          >
+            <ENumerakLogo className="h-7 w-7" />
           </div>
-          <h2 className="text-base font-semibold tracking-tight text-slate-900">
-            Welcome to E-Numerak
+          <h2 className="text-base font-semibold tracking-tight text-stone-900">
+            Sign in to E-Numerak
           </h2>
-          <p className="mt-1 text-[13px] text-slate-500">
+          <p className="mt-1 text-[13px] text-stone-500">
             Your UAE tax assistant — here to help 24/7
           </p>
         </div>
 
         <div className="space-y-3">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-600">
-              Full name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && register()}
-              placeholder="Enter your name"
-              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/5"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-600">
+            <label className="mb-1.5 block text-xs font-medium text-stone-600">
               Email address
             </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && register()}
-              placeholder="Enter your email"
-              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/5"
-            />
+            <div className="relative">
+              <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+              <input
+                ref={loginEmailRef}
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && login()}
+                placeholder="you@company.com"
+                className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-orange-300 focus:ring-2 focus:ring-orange-900/5"
+              />
+            </div>
+          </div>
+
+          {loginError && (
+            <p className="text-center text-xs font-medium text-rose-500">{loginError}</p>
+          )}
+
+          <button
+            onClick={login}
+            disabled={loginLoading}
+            className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            style={{ background: '#1C1917' }}
+          >
+            {loginLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Checking…
+              </>
+            ) : (
+              <>
+                Continue
+                <ArrowRight className="h-4 w-4" />
+              </>
+            )}
+          </button>
+        </div>
+
+        <p className="mt-5 text-center text-[11px] text-stone-400">
+          New here? Enter your email and we'll get you set up.
+        </p>
+      </div>
+    );
+  }
+
+  // ── Register view ──
+  if (view === 'register') {
+    return (
+      <div className="relative flex h-full flex-col justify-center px-6 py-6" style={{ background: 'linear-gradient(180deg, #FBF7F2 0%, #FFFFFF 60%)' }}>
+        <button
+          onClick={onClose}
+          className="absolute right-3 top-3 rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+          title="Close"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <div className="mb-6 text-center">
+          <div
+            className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-sm"
+            style={{ background: '#C2410C' }}
+          >
+            <ENumerakLogo className="h-7 w-7" />
+          </div>
+          <h2 className="text-base font-semibold tracking-tight text-stone-900">
+            Create your account
+          </h2>
+          <p className="mt-1 text-[13px] text-stone-500">
+            We couldn't find that email — let's get you set up.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-stone-600">
+              Full name
+            </label>
+            <div className="relative">
+              <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+              <input
+                type="text"
+                value={regName}
+                onChange={(e) => setRegName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && register()}
+                placeholder="Enter your name"
+                className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-orange-300 focus:ring-2 focus:ring-orange-900/5"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-stone-600">
+              Email address
+            </label>
+            <div className="relative">
+              <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+              <input
+                type="email"
+                value={regEmail}
+                onChange={(e) => setRegEmail(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && register()}
+                placeholder="you@company.com"
+                className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-orange-300 focus:ring-2 focus:ring-orange-900/5"
+              />
+            </div>
           </div>
 
           {regError && (
@@ -572,42 +699,46 @@ function AgentTab({ onClose }: AgentTabProps) {
           <button
             onClick={register}
             disabled={regLoading}
-            className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            style={{ background: '#1C1917' }}
           >
             {regLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Starting…
+                Creating account…
               </>
             ) : (
-              'Start chatting'
+              'Create account & start chatting'
             )}
           </button>
-        </div>
 
-        <p className="mt-5 text-center text-[11px] text-slate-400">
-          🔒 Your data is safe and private
-        </p>
+          <button
+            onClick={() => {
+              setRegError(null);
+              setView('login');
+            }}
+            className="flex w-full items-center justify-center gap-1.5 py-1 text-xs font-medium text-stone-400 transition-colors hover:text-stone-600"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Back to sign in
+          </button>
+        </div>
       </div>
     );
   }
 
+  // ── Chat view ──
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2">
-        <button
-          onClick={handleExit}
-          title="Switch account"
-          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-500 transition-colors hover:border-rose-200 hover:text-rose-500"
-        >
-          <LogOut className="h-3 w-3" />
-          Exit
-        </button>
+      <div className="flex items-center justify-between border-b border-stone-100 px-3 py-2">
+        <span className="px-2 text-xs font-medium text-stone-400">
+          Signed in as <span className="text-stone-600">{userName}</span>
+        </span>
 
         <button
           onClick={newChat}
           title="New chat"
-          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-500 transition-colors hover:border-slate-400 hover:text-slate-900"
+          className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 px-2.5 py-1 text-xs font-medium text-stone-500 transition-colors hover:border-stone-400 hover:text-stone-900"
         >
           <RotateCcw className="h-3 w-3" />
           New chat
@@ -618,15 +749,18 @@ function AgentTab({ onClose }: AgentTabProps) {
         {messages.length === 0 && (
           <div className="flex flex-col gap-4 py-2">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">
+              <span
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-white"
+                style={{ background: '#C2410C' }}
+              >
                 <ENumerakLogo className="h-5 w-5" />
               </span>
               <div>
-                <p className="text-sm font-semibold text-slate-900">AI Tax Assistant</p>
-                <p className="text-xs text-slate-400">Usually replies instantly</p>
+                <p className="text-sm font-semibold text-stone-900">AI Tax Assistant</p>
+                <p className="text-xs text-stone-400">Usually replies instantly</p>
               </div>
             </div>
-            <p className="text-[13px] leading-relaxed text-slate-500">
+            <p className="text-[13px] leading-relaxed text-stone-500">
               Ask me anything about tax invoices, VAT, TRNs, or UAE e-invoicing on E-Numerak.
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -634,7 +768,7 @@ function AgentTab({ onClose }: AgentTabProps) {
                 <button
                   key={q}
                   onClick={() => send(q)}
-                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-900/20 hover:bg-slate-50 hover:text-slate-900"
+                  className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:border-orange-300 hover:bg-orange-50 hover:text-orange-900"
                 >
                   {q}
                 </button>
@@ -657,19 +791,20 @@ function AgentTab({ onClose }: AgentTabProps) {
                 <div
                   className={`max-w-[88%] rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed shadow-sm ${
                     msg.role === 'user'
-                      ? 'rounded-br-md bg-slate-900 text-white'
-                      : 'rounded-bl-md border border-slate-100 bg-slate-50 text-slate-700'
+                      ? 'rounded-br-md text-white'
+                      : 'rounded-bl-md border border-stone-100 bg-stone-50 text-stone-700'
                   }`}
+                  style={msg.role === 'user' ? { background: '#1C1917' } : undefined}
                 >
                   {msg.role === 'assistant' ? (
                     showTyping ? (
                       <span className="flex h-4 items-center gap-1">
-                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" />
-                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:0.15s]" />
-                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:0.3s]" />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-stone-400" />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-stone-400 [animation-delay:0.15s]" />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-stone-400 [animation-delay:0.3s]" />
                       </span>
                     ) : (
-                      <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-headings:text-slate-900 prose-strong:text-slate-900">
+                      <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-headings:text-stone-900 prose-strong:text-stone-900">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                       </div>
                     )
@@ -685,7 +820,7 @@ function AgentTab({ onClose }: AgentTabProps) {
                       aria-label="Good response"
                       title="Good response"
                       className={`rounded-md p-1 transition-colors ${
-                        msg.feedback === 'like' ? 'text-emerald-600' : 'text-slate-300 hover:text-slate-500'
+                        msg.feedback === 'like' ? 'text-emerald-600' : 'text-stone-300 hover:text-stone-500'
                       }`}
                     >
                       <ThumbsUp className="h-3.5 w-3.5" fill={msg.feedback === 'like' ? 'currentColor' : 'none'} />
@@ -695,13 +830,13 @@ function AgentTab({ onClose }: AgentTabProps) {
                       aria-label="Bad response"
                       title="Bad response"
                       className={`rounded-md p-1 transition-colors ${
-                        msg.feedback === 'dislike' ? 'text-rose-500' : 'text-slate-300 hover:text-slate-500'
+                        msg.feedback === 'dislike' ? 'text-rose-500' : 'text-stone-300 hover:text-stone-500'
                       }`}
                     >
                       <ThumbsDown className="h-3.5 w-3.5" fill={msg.feedback === 'dislike' ? 'currentColor' : 'none'} />
                     </button>
                     {msg.feedback && (
-                      <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                      <span className="flex items-center gap-1 text-[11px] text-stone-400">
                         <Check className="h-3 w-3" />
                         Thanks for the feedback
                       </span>
@@ -719,7 +854,7 @@ function AgentTab({ onClose }: AgentTabProps) {
               <button
                 key={q}
                 onClick={() => send(q)}
-                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-900/20 hover:bg-slate-50 hover:text-slate-900"
+                className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:border-orange-300 hover:bg-orange-50 hover:text-orange-900"
               >
                 {q}
               </button>
@@ -736,8 +871,8 @@ function AgentTab({ onClose }: AgentTabProps) {
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-t border-slate-100 bg-white p-3">
-        <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 transition-colors focus-within:border-slate-300 focus-within:bg-white">
+      <div className="border-t border-stone-100 bg-white p-3">
+        <div className="flex items-end gap-2 rounded-2xl border border-stone-200 bg-stone-50 p-1.5 transition-colors focus-within:border-orange-200 focus-within:bg-white">
           <textarea
             ref={textareaRef}
             rows={1}
@@ -745,13 +880,14 @@ function AgentTab({ onClose }: AgentTabProps) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKey}
             placeholder="Ask about invoices, VAT, payments…"
-            className="max-h-32 flex-1 resize-none bg-transparent px-2.5 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400"
+            className="max-h-32 flex-1 resize-none bg-transparent px-2.5 py-2 text-sm text-stone-800 outline-none placeholder:text-stone-400"
             style={{ minHeight: '36px' }}
           />
           <button
             onClick={() => send()}
             disabled={!input.trim() || loading}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-30"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white transition-colors disabled:cursor-not-allowed disabled:opacity-30"
+            style={{ background: '#1C1917' }}
             aria-label="Send message"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -789,32 +925,36 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
         <button
           onClick={() => setOpen((o) => !o)}
           aria-label={open ? 'Close chat' : 'Open chat'}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg shadow-slate-900/20 transition-all hover:scale-105 hover:bg-slate-800 active:scale-95"
+          className="flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-all hover:scale-105 active:scale-95"
+          style={{ background: '#1C1917', boxShadow: '0 10px 25px -5px rgba(28, 25, 23, 0.35)' }}
         >
-          {open ? <X className="h-6 w-6" /> : <ENumerakLogo className="h-6 w-6" />}
+          {open ? <X className="h-6 w-6" /> : <ENumerakLogo className="h-7 w-7" />}
         </button>
       </div>
 
       {open && (
         <div
-          className="fixed bottom-24 right-6 z-50 flex h-[520px] max-h-[calc(100dvh-7rem)] w-[380px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10"
+          className="fixed bottom-24 right-6 z-50 flex h-[520px] max-h-[calc(100dvh-7rem)] w-[380px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl shadow-stone-900/10"
           role="dialog"
           aria-label="Chat support"
         >
           {/* Header */}
-          <div className="flex items-center gap-3 bg-slate-900 px-4 py-3.5 text-white">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
-              <ENumerakLogo className="h-5 w-5" />
+          <div className="flex items-center gap-3 px-4 py-3.5 text-white" style={{ background: '#1C1917' }}>
+            <span
+              className="flex h-9 w-9 items-center justify-center rounded-xl"
+              style={{ background: 'rgba(194, 65, 12, 0.25)' }}
+            >
+              <ENumerakLogo className="h-5 w-5"/>
             </span>
             <div className="min-w-0 flex-1">
               <h1 className="truncate text-sm font-semibold tracking-tight text-white">
                 E-Numerak Support
               </h1>
-              <p className="text-[11px] text-slate-400">Compliance & Tax Assistant</p>
+              <p className="text-[11px] text-stone-400">Compliance & Tax Assistant</p>
             </div>
             <button
               onClick={() => setOpen(false)}
-              className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+              className="rounded-lg p-1 text-stone-400 transition-colors hover:bg-white/10 hover:text-white"
               aria-label="Minimize chat"
             >
               <X className="h-4 w-4" />
@@ -822,15 +962,15 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex border-b border-slate-100 bg-slate-50 p-1">
+          <div className="flex border-b border-stone-100 bg-stone-50 p-1">
             {tabs.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 className={`flex-1 rounded-xl py-1.5 text-center text-xs font-semibold transition-all ${
                   tab === t.id
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+                    ? 'bg-white text-stone-900 shadow-sm'
+                    : 'text-stone-500 hover:bg-stone-100 hover:text-stone-900'
                 }`}
               >
                 {t.label}
