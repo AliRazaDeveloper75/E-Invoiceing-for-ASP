@@ -486,6 +486,20 @@ def send_mls_for_received(sbd_bytes: bytes, conversation_id: str = '') -> MLSRes
             # testbed can correlate the MLS to the original transmission.
             conversation_id=conversation_id,
         )
+        # TEMP DIAGNOSTIC: log the outgoing MLS AS4 SOAP envelope (From/To party,
+        # Service, Action, ConversationId, MessageProperties) to verify routing.
+        try:
+            import re as _re_dbg
+            _m = _re_dbg.search(rb'<S12:Envelope.*?</S12:Envelope>', body, _re_dbg.S)
+            logger.info(
+                'MLS OUTGOING: sender_ap=%s recipient_ap=%s conv_id=%r endpoint=%s',
+                sender_ap_id, recipient_ap_id, conversation_id, ep.transport_url,
+            )
+            if _m:
+                logger.info('MLS OUTGOING SOAP >>>\n%s\n<<< MLS OUTGOING SOAP',
+                            _m.group(0).decode('utf-8', 'replace')[:2800])
+        except Exception as _dbg_exc:
+            logger.warning('MLS outgoing dump failed: %s', _dbg_exc)
         resp = as4sender.send(ep.transport_url, body, content_type)
     except Exception as exc:
         res.errors.append(f'AS4 send failed: {exc}')
