@@ -162,16 +162,98 @@ class InboundInvoiceService:
         )
         cls._log(invoice, '', INBOUND_STATUS_RECEIVED, 'Invoice received via PEPPOL AS4', actor=None)
         logger.info('AS4 ingest: stored inbound invoice %s (msg=%s)', invoice.id, message_id)
+
+        # Parse the received UBL line items so the review screen + validation engine
+        # have the full document (AS4 invoices need items just like API submissions).
+        try:
+            n = cls._parse_and_store_as4_items(invoice, payload_xml)
+            logger.info('AS4 ingest: parsed %d line item(s) for %s', n, invoice.id)
+        except Exception as exc:
+            logger.warning('AS4 ingest: line-item parse failed for %s: %s', message_id, exc)
+
+        # Run the inbound validation engine → populates score, observations and
+        # moves status received → pending_review / validation_failed, so the
+        # dashboard shows the full processing result. No supplier email for AS4.
+        try:
+            cls.run_validation(invoice, send_email=False)
+        except Exception as exc:
+            logger.warning('AS4 ingest: validation failed for %s: %s', message_id, exc)
+
+        invoice.refresh_from_db()
         return invoice
+
+    @classmethod
+    def _parse_and_store_as4_items(cls, invoice, payload_xml) -> int:
+        """
+        Extract UBL InvoiceLine / CreditNoteLine rows from the received document
+        into InboundInvoiceItem records. Namespace-agnostic (works whether or not
+        the payload is still wrapped in an SBD).
+        """
+        from decimal import Decimal, InvalidOperation
+        from lxml import etree
+
+        def _dec(val, default='0'):
+            try:
+                return Decimal((str(val).strip() if val is not None else '') or default)
+            except (InvalidOperation, ValueError):
+                return Decimal(default)
+
+        root = etree.fromstring(payload_xml)
+        lines = root.xpath(
+            "//*[local-name()='InvoiceLine'] | //*[local-name()='CreditNoteLine']"
+        )
+
+        items = []
+        for idx, line in enumerate(lines, start=1):
+            def first(path):
+                found = line.xpath(path)
+                return found[0] if found else None
+
+            id_el    = first("./*[local-name()='ID']")
+            qty_el   = first("./*[local-name()='InvoicedQuantity'] | ./*[local-name()='CreditedQuantity']")
+            amt_el   = first("./*[local-name()='LineExtensionAmount']")
+            name_el  = first(".//*[local-name()='Item']/*[local-name()='Name']")
+            price_el = first(".//*[local-name()='Price']/*[local-name()='PriceAmount']")
+            pct_el   = first(".//*[local-name()='ClassifiedTaxCategory']/*[local-name()='Percent']")
+
+            line_no = idx
+            if id_el is not None and (id_el.text or '').strip().isdigit():
+                line_no = int(id_el.text.strip())
+
+            qty        = _dec(qty_el.text if qty_el is not None else '1', '1')
+            unit       = (qty_el.get('unitCode') if qty_el is not None else '') or ''
+            subtotal   = _dec(amt_el.text if amt_el is not None else '0')
+            unit_price = _dec(price_el.text if price_el is not None else '0')
+            vat_rate   = _dec(pct_el.text if pct_el is not None else '0')
+            desc       = (name_el.text.strip() if (name_el is not None and name_el.text) else 'Item')
+
+            if unit_price == 0 and qty:
+                unit_price = subtotal / qty
+            vat_amount   = (subtotal * vat_rate / Decimal('100')).quantize(Decimal('0.01'))
+            total_amount = (subtotal + vat_amount).quantize(Decimal('0.01'))
+
+            items.append(InboundInvoiceItem(
+                invoice=invoice, line_number=line_no, description=desc[:500],
+                quantity=qty, unit=unit[:20], unit_price=unit_price,
+                vat_rate=vat_rate, vat_amount=vat_amount,
+                subtotal=subtotal, total_amount=total_amount,
+            ))
+
+        if items:
+            InboundInvoiceItem.objects.bulk_create(items)
+        return len(items)
 
     # ── Validation ────────────────────────────────────────────────────────────
 
     @classmethod
-    def run_validation(cls, invoice: InboundInvoice):
+    def run_validation(cls, invoice: InboundInvoice, send_email: bool = True):
         """
         Run validation engine synchronously.
         Updates invoice status to PENDING_REVIEW or VALIDATION_FAILED.
-        Called from Celery task.
+        Called from Celery task (supplier submissions) and AS4 ingest.
+
+        send_email=False skips the supplier observation email — used for AS4/PEPPOL
+        reception where the sender is a network participant, not a mailbox.
         """
         from_status = invoice.status
         invoice.status = INBOUND_STATUS_VALIDATING
@@ -201,7 +283,7 @@ class InboundInvoiceService:
                          'critical': result.critical_count})
 
         # Send observation email if there are findings to share
-        if result.findings:
+        if send_email and result.findings:
             sendable = [f for f in result.findings
                         if f.severity in (SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM)]
             if sendable:
