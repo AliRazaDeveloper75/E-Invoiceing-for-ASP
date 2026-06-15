@@ -220,11 +220,13 @@ class LoginView(APIView):
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
-        # If the user verified MFA within the last 24 hours, skip MFA challenge
-        # and issue tokens immediately so they are not prompted every login.
+        # If the user verified MFA within the rolling session window, skip the MFA
+        # challenge and issue tokens immediately so they are not prompted every login.
         if user.mfa_enabled and user.mfa_verified_at:
+            from django.conf import settings as _mfa_settings
+            window = timedelta(hours=int(getattr(_mfa_settings, 'MFA_SESSION_HOURS', 24)))
             age = timezone.now() - user.mfa_verified_at
-            if age < timedelta(hours=24):
+            if age < window:
                 access, refresh = _issue_tokens(user, mfa_verified_at=user.mfa_verified_at)
                 return success_response(
                     data={
@@ -278,35 +280,26 @@ class LogoutView(APIView):
         return success_response(message='Logged out successfully.')
 
 
-def _daily_logout_cutoff_ts() -> float:
+def _mfa_session_cutoff_ts() -> float:
     """
-    Epoch timestamp of the most recent daily logout boundary.
+    Epoch timestamp before which an MFA verification is considered expired.
 
-    Every user's MFA session is invalidated at a fixed local time each day
-    (default 12:00 noon Asia/Dubai, configurable via DAILY_LOGOUT_HOUR). Returns
-    today's boundary if it has already passed, else yesterday's — so any session
-    whose MFA was verified before it is considered expired.
+    The MFA session is a ROLLING window (default 24 hours, configurable via
+    MFA_SESSION_HOURS): the user only re-verifies their authenticator once the
+    window since their last verification elapses — NOT at a fixed daily clock
+    time. So a fresh sign-in always lasts the full window.
     """
-    from datetime import datetime, timedelta
-    from zoneinfo import ZoneInfo
     from django.conf import settings
-
-    tz = ZoneInfo(getattr(settings, 'TIME_ZONE', 'Asia/Dubai'))
-    hour = int(getattr(settings, 'DAILY_LOGOUT_HOUR', 12))
-    now = datetime.now(tz)
-    boundary = now.replace(hour=hour, minute=0, second=0, microsecond=0)
-    if now < boundary:
-        boundary -= timedelta(days=1)
-    return boundary.timestamp()
+    hours = int(getattr(settings, 'MFA_SESSION_HOURS', 24))
+    return timezone.now().timestamp() - hours * 3600
 
 
 class TokenRefreshAPIView(TokenRefreshView):
     """POST /api/v1/auth/token/refresh/
 
-    Extends SimpleJWT's refresh with a fixed daily MFA-session cutoff: every
-    session is invalidated at DAILY_LOGOUT_HOUR local time (default 12:00 noon
-    Asia/Dubai). If the refresh token's mfa_verified_at predates the most recent
-    daily boundary, the refresh is rejected and the client must re-authenticate.
+    Extends SimpleJWT's refresh with a rolling MFA-session window: if the refresh
+    token's mfa_verified_at is older than MFA_SESSION_HOURS (default 24h), the
+    refresh is rejected and the client must re-authenticate with their MFA code.
     """
 
     def post(self, request, *args, **kwargs):
@@ -315,9 +308,9 @@ class TokenRefreshAPIView(TokenRefreshView):
             try:
                 token = RefreshToken(refresh_str)
                 mfa_ts = token.payload.get('mfa_verified_at')
-                if mfa_ts is not None and mfa_ts < _daily_logout_cutoff_ts():
+                if mfa_ts is not None and mfa_ts < _mfa_session_cutoff_ts():
                     return error_response(
-                        'Your session has expired (daily sign-out). Please sign in again.',
+                        'Your session has expired. Please sign in again.',
                         status_code=status.HTTP_401_UNAUTHORIZED,
                         details={'mfa_expired': True},
                     )
