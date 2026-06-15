@@ -78,6 +78,7 @@ export default function ProfilePage() {
       await api.post('/auth/change-password/', {
         old_password: pwForm.old_password,
         new_password: pwForm.new_password,
+        confirm_new_password: pwForm.confirm_password,
       });
       setPwMsg({ type: 'success', text: 'Password changed successfully.' });
       setPwForm({ old_password: '', new_password: '', confirm_password: '' });
