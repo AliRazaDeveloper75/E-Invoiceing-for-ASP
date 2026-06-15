@@ -1,5 +1,5 @@
 "use client";
-
+import ReactMarkdown from "react-markdown";
 import { useState } from "react";
 import {
   Users, MessageSquare, ThumbsUp, ThumbsDown,
@@ -637,9 +637,9 @@ export default function AdminDashboard() {
                           border: msg.role === "user" ? "none" : "1px solid #1e1e2e",
                           boxShadow: msg.role === "user" ? "0 4px 12px rgba(99,102,241,0.2)" : "none"
                         }}>
-                          <p style={{ margin: "0 0 4px", fontSize: "13px", color: msg.role === "user" ? "white" : "#cbd5e1", lineHeight: "1.5" }}>
-                            {msg.message}
-                          </p>
+                          <div className="chat-md" style={{ fontSize: "13px", color: msg.role === "user" ? "white" : "#cbd5e1", lineHeight: "1.5", marginBottom: "4px" }}>
+                            <ReactMarkdown>{msg.message}</ReactMarkdown>
+                          </div>
                           <p style={{ margin: 0, fontSize: "10px", color: msg.role === "user" ? "rgba(255,255,255,0.5)" : "#334155" }}>
                             {formatTime(msg.created_at)}
                           </p>
@@ -667,6 +667,13 @@ export default function AdminDashboard() {
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #0a0a0f; }
         ::-webkit-scrollbar-thumb { background: #1e1e2e; border-radius: 999px; }
+
+        .chat-md p { margin: 0; }
+        .chat-md p + p { margin-top: 6px; }
+        .chat-md strong { font-weight: 700; }
+        .chat-md ul, .chat-md ol { margin: 4px 0; padding-left: 18px; }
+        .chat-md li { margin-bottom: 2px; }
+        .chat-md a { color: #60a5fa; text-decoration: underline; }
       `}</style>
     </div>
   );
