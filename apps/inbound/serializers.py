@@ -142,6 +142,9 @@ class InboundInvoiceListSerializer(serializers.ModelSerializer):
     supplier_trn      = serializers.CharField(source='supplier.trn', read_only=True)
     company_name      = serializers.CharField(source='receiving_company.name', read_only=True)
     observation_count = serializers.IntegerField(read_only=True)
+    # Inline findings so the list can explain *why* an invoice is pending/failed
+    # without opening the review screen.
+    observations      = ObservationSerializer(many=True, read_only=True)
 
     class Meta:
         model  = InboundInvoice
@@ -151,6 +154,7 @@ class InboundInvoiceListSerializer(serializers.ModelSerializer):
             'issue_date', 'currency', 'total_amount', 'total_vat',
             'status', 'channel', 'received_at',
             'validation_score', 'has_critical_errors', 'observation_count',
+            'observations',
         ]
 
 

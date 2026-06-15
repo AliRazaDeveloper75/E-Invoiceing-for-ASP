@@ -267,7 +267,10 @@ class InboundInvoiceListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        qs = InboundInvoice.objects.select_related('supplier', 'receiving_company').all()
+        qs = (InboundInvoice.objects
+              .select_related('supplier', 'receiving_company')
+              .prefetch_related('observations')
+              .all())
 
         # Inbound suppliers only see their own invoices
         if request.user.role == 'inbound_supplier':

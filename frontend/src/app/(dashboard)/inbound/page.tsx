@@ -1,16 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { useCompany } from '@/hooks/useCompany';
 import {
   Inbox, CheckCircle2, XCircle, AlertTriangle, Clock,
-  ChevronRight, Search, RefreshCw, Filter, UserPlus, X, Copy, Eye, EyeOff,
+  ChevronRight, ChevronDown, Search, RefreshCw, Filter, UserPlus, X, Copy, Eye, EyeOff,
+  Info, AlertCircle,
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Observation {
+  id: string;
+  rule_code: string;
+  severity: 'critical' | 'high' | 'medium' | 'info';
+  field_name: string;
+  message: string;
+  suggestion: string;
+  line_number: number | null;
+}
 
 interface InboundInvoice {
   id: string;
@@ -28,7 +39,16 @@ interface InboundInvoice {
   validation_score: number | null;
   has_critical_errors: boolean;
   observation_count: number;
+  observations: Observation[];
 }
+
+// Severity → icon + colours for the inline findings panel
+const SEV: Record<string, { icon: React.ElementType; color: string; bg: string; border: string }> = {
+  critical: { icon: XCircle,       color: 'text-red-700',    bg: 'bg-red-50',    border: 'border-red-200' },
+  high:     { icon: AlertTriangle, color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-200' },
+  medium:   { icon: AlertCircle,   color: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-200' },
+  info:     { icon: Info,          color: 'text-blue-700',   bg: 'bg-blue-50',   border: 'border-blue-200' },
+};
 
 interface InboundStats {
   total: number;
@@ -270,6 +290,7 @@ export default function InboundPage() {
   const [search, setSearch]               = useState('');
   const [page, setPage]                   = useState(1);
   const [showAddSupplier, setShowAddSupplier] = useState(false);
+  const [expanded, setExpanded]           = useState<string | null>(null);
 
   const listParams = new URLSearchParams({
     page: String(page),
@@ -400,63 +421,117 @@ export default function InboundPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {invoices.map((inv) => (
-                <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <span className="font-mono text-xs font-semibold text-gray-800">
-                      {inv.supplier_invoice_number}
-                    </span>
-                    {inv.has_critical_errors && (
-                      <span className="ml-2 inline-flex items-center gap-0.5 text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-200">
-                        <AlertTriangle className="h-2.5 w-2.5" /> Critical
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-gray-900">{inv.supplier_name}</p>
-                    <p className="text-[11px] text-gray-400 font-mono">TRN: {inv.supplier_trn}</p>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{inv.issue_date}</td>
-                  <td className="px-4 py-3 text-right">
-                    <p className="font-semibold text-gray-900">{fmtAmt(inv.total_amount)} {inv.currency}</p>
-                    <p className="text-[11px] text-gray-400">VAT: {fmtAmt(inv.total_vat)}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={inv.status} />
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {inv.validation_score !== null ? (
-                      <span className={`font-bold text-sm ${
-                        inv.validation_score >= 80 ? 'text-emerald-600' :
-                        inv.validation_score >= 50 ? 'text-orange-500' : 'text-red-600'
-                      }`}>
-                        {inv.validation_score}
-                      </span>
-                    ) : (
-                      <span className="text-gray-300">—</span>
-                    )}
-                    {inv.observation_count > 0 && (
-                      <span className="ml-1 text-[10px] text-gray-400">
-                        ({inv.observation_count})
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-gray-400 text-xs">
-                    {new Date(inv.received_at).toLocaleDateString('en-AE', {
-                      day: '2-digit', month: 'short', year: 'numeric',
-                    })}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/inbound/${inv.id}`}
-                      className="flex items-center gap-1 text-xs font-semibold text-[#1e3a5f]
-                                 hover:text-blue-700 transition-colors"
+              {invoices.map((inv) => {
+                const isOpen = expanded === inv.id;
+                const hasFindings = (inv.observations?.length ?? 0) > 0;
+                return (
+                  <Fragment key={inv.id}>
+                    <tr
+                      className={`transition-colors ${hasFindings ? 'cursor-pointer hover:bg-gray-50' : 'hover:bg-gray-50'} ${isOpen ? 'bg-gray-50' : ''}`}
+                      onClick={() => hasFindings && setExpanded(isOpen ? null : inv.id)}
                     >
-                      Review <ChevronRight className="h-3.5 w-3.5" />
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          {hasFindings ? (
+                            isOpen
+                              ? <ChevronDown className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                              : <ChevronRight className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                          ) : (
+                            <span className="w-3.5 shrink-0" />
+                          )}
+                          <span className="font-mono text-xs font-semibold text-gray-800">
+                            {inv.supplier_invoice_number}
+                          </span>
+                          {inv.has_critical_errors && (
+                            <span className="ml-1 inline-flex items-center gap-0.5 text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-200">
+                              <AlertTriangle className="h-2.5 w-2.5" /> Critical
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-900">{inv.supplier_name}</p>
+                        <p className="text-[11px] text-gray-400 font-mono">TRN: {inv.supplier_trn}</p>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{inv.issue_date}</td>
+                      <td className="px-4 py-3 text-right">
+                        <p className="font-semibold text-gray-900">{fmtAmt(inv.total_amount)} {inv.currency}</p>
+                        <p className="text-[11px] text-gray-400">VAT: {fmtAmt(inv.total_vat)}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={inv.status} />
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {inv.validation_score !== null ? (
+                          <span className={`font-bold text-sm ${
+                            inv.validation_score >= 80 ? 'text-emerald-600' :
+                            inv.validation_score >= 50 ? 'text-orange-500' : 'text-red-600'
+                          }`}>
+                            {inv.validation_score}
+                          </span>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
+                        {inv.observation_count > 0 && (
+                          <span className="ml-1 text-[10px] text-gray-400">
+                            ({inv.observation_count})
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-gray-400 text-xs">
+                        {new Date(inv.received_at).toLocaleDateString('en-AE', {
+                          day: '2-digit', month: 'short', year: 'numeric',
+                        })}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/inbound/${inv.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center gap-1 text-xs font-semibold text-[#1e3a5f]
+                                     hover:text-blue-700 transition-colors"
+                        >
+                          Review <ChevronRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </td>
+                    </tr>
+
+                    {isOpen && hasFindings && (
+                      <tr className="bg-gray-50">
+                        <td colSpan={8} className="px-4 pb-4 pt-1">
+                          <div className="pl-6 space-y-2">
+                            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                              Why “{STATUS_CONFIG[inv.status]?.label ?? inv.status}” — {inv.observations.length} finding{inv.observations.length !== 1 ? 's' : ''}
+                            </p>
+                            {inv.observations.map((obs) => {
+                              const cfg = SEV[obs.severity] ?? SEV.info;
+                              const Icon = cfg.icon;
+                              return (
+                                <div key={obs.id} className={`rounded-lg border p-2.5 ${cfg.bg} ${cfg.border}`}>
+                                  <div className="flex items-start gap-2">
+                                    <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${cfg.color}`} />
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className={`text-[11px] font-bold ${cfg.color}`}>[{obs.severity.toUpperCase()}]</span>
+                                        <span className="text-[11px] font-mono text-gray-500">{obs.rule_code}</span>
+                                        {obs.field_name && <span className="text-[11px] text-gray-400">· {obs.field_name}</span>}
+                                        {obs.line_number && <span className="text-[11px] text-gray-400">· Line {obs.line_number}</span>}
+                                      </div>
+                                      <p className="text-xs text-gray-700 mt-0.5">{obs.message}</p>
+                                      {obs.suggestion && (
+                                        <p className="text-xs text-gray-500 mt-0.5 italic">Action: {obs.suggestion}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
         )}
