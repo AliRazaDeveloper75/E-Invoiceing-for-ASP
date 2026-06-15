@@ -21,6 +21,8 @@ import {
   ArrowRight,
   Mail,
   User,
+  Phone,
+  AlertCircle,
 } from 'lucide-react';
 
 // ─── Custom Icons ─────────────────────────────────────────────────────────────
@@ -33,8 +35,6 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-// E-Numerak mark — a tax seal / official stamp motif: a ringed badge
-// enclosing a folded-document glyph, evoking certified e-invoices.
 function ENumerakLogo({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" fill="none" className={className} aria-hidden="true">
@@ -57,10 +57,172 @@ function ENumerakLogo({ className }: { className?: string }) {
   );
 }
 
+// ─── UAE Phone Validation ─────────────────────────────────────────────────────
+// UAE numbers: +971 followed by:
+//   - Mobile: 5X XXXXXXX (9 digits after 971) → 05X XXXXXXX
+//   - Landline: 2/3/4/6/7/9 XXXXXXX (7 digits) → 02/03/04...
+// We store digits only (no spaces, dashes) for the local part after the country code
+
+const UAE_DIAL_CODE = '+971';
+
+// After +971: mobile starts with 5 (then 8 more digits = 9 total), landline starts with 2/3/4/6/7/9 (then 7 more = 8 total)
+// So valid local: 9 digits (mobile) e.g. 501234567 or 8 digits (landline) e.g. 21234567
+function validateUAEPhone(digits: string): { valid: boolean; message: string } {
+  if (!digits) return { valid: false, message: 'Phone number is required' };
+  if (digits.length < 8) return { valid: false, message: 'Number is too short' };
+  if (digits.length > 9) return { valid: false, message: 'Number is too long' };
+
+  const mobilePattern = /^5[0-9]{8}$/;
+  const landlinePattern = /^[2-4|6-7|9][0-9]{7}$/;
+
+  if (digits.length === 9 && mobilePattern.test(digits)) return { valid: true, message: '' };
+  if (digits.length === 8 && landlinePattern.test(digits)) return { valid: true, message: '' };
+
+  if (digits[0] === '5' && digits.length < 9) return { valid: false, message: `Mobile needs ${9 - digits.length} more digit(s)` };
+  if (digits[0] !== '5') return { valid: false, message: 'Enter a valid UAE mobile or landline number' };
+
+  return { valid: false, message: 'Enter a valid UAE number' };
+}
+
+function validateName(name: string): { valid: boolean; message: string } {
+  const trimmed = name.trim();
+  if (!trimmed) return { valid: false, message: 'Full name is required' };
+  if (trimmed.length < 2) return { valid: false, message: 'Name must be at least 2 characters' };
+  if (trimmed.length > 60) return { valid: false, message: 'Name must be under 60 characters' };
+  if (!/^[a-zA-Z\u0600-\u06FF\s'-]+$/.test(trimmed)) return { valid: false, message: 'Name can only contain letters, spaces, hyphens, apostrophes' };
+  return { valid: true, message: '' };
+}
+
+function validateEmail(email: string): { valid: boolean; message: string } {
+  const trimmed = email.trim();
+  if (!trimmed) return { valid: false, message: 'Email address is required' };
+  if (trimmed.length > 100) return { valid: false, message: 'Email must be under 100 characters' };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmed)) return { valid: false, message: 'Enter a valid email address' };
+  return { valid: true, message: '' };
+}
+
+// ─── Field Components ─────────────────────────────────────────────────────────
+
+interface FieldProps {
+  label: string;
+  error?: string;
+  touched?: boolean;
+  children: React.ReactNode;
+  hint?: string;
+}
+
+function Field({ label, error, touched, children, hint }: FieldProps) {
+  const hasError = touched && error;
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-xs font-semibold tracking-wide text-stone-600 uppercase" style={{ letterSpacing: '0.06em', fontSize: '10px' }}>
+        {label} <span className="text-orange-500">*</span>
+      </label>
+      {children}
+      {hasError ? (
+        <p className="flex items-center gap-1 text-[11px] font-medium text-rose-500">
+          <AlertCircle className="h-3 w-3 shrink-0" />
+          {error}
+        </p>
+      ) : hint ? (
+        <p className="text-[11px] text-stone-400">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  icon: React.ElementType;
+  hasError?: boolean;
+  suffix?: React.ReactNode;
+}
+
+function StyledInput({ icon: Icon, hasError, suffix, className = '', ...props }: InputProps) {
+  return (
+    <div className={`relative flex items-center overflow-hidden rounded-xl border transition-all ${
+      hasError
+        ? 'border-rose-300 bg-rose-50 ring-2 ring-rose-100'
+        : 'border-stone-200 bg-white focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100'
+    }`}>
+      <Icon className="pointer-events-none absolute left-3 h-4 w-4 text-stone-400 shrink-0" />
+      <input
+        className={`w-full bg-transparent py-2.5 pl-9 pr-3 text-sm text-stone-800 outline-none placeholder:text-stone-400 ${suffix ? 'pr-16' : ''} ${className}`}
+        {...props}
+      />
+      {suffix && (
+        <span className="absolute right-3 text-[11px] font-medium text-stone-400 select-none">{suffix}</span>
+      )}
+    </div>
+  );
+}
+
+// ─── UAE Phone Input ──────────────────────────────────────────────────────────
+
+interface PhoneInputProps {
+  value: string;
+  onChange: (digits: string) => void;
+  hasError?: boolean;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+}
+
+function UAEPhoneInput({ value, onChange, hasError, onKeyDown }: PhoneInputProps) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    // Strip anything non-numeric
+    const raw = e.target.value.replace(/\D/g, '');
+    // Max 9 digits (mobile: 5XXXXXXXX)
+    const capped = raw.slice(0, 9);
+    onChange(capped);
+  }
+
+  // Format for display: add spaces e.g. 50 123 4567
+  function formatDisplay(digits: string) {
+    if (!digits) return '';
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 5) return `${digits.slice(0, 2)} ${digits.slice(2)}`;
+    return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5)}`;
+  }
+
+  return (
+    <div className={`flex overflow-hidden rounded-xl border transition-all ${
+      hasError
+        ? 'border-rose-300 ring-2 ring-rose-100'
+        : 'border-stone-200 focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100'
+    }`}>
+      {/* Dial code prefix */}
+      <div className={`flex shrink-0 items-center gap-1.5 border-r px-3 py-2.5 ${
+        hasError ? 'border-rose-200 bg-rose-50' : 'border-stone-200 bg-stone-50'
+      }`}>
+        <span className="text-base leading-none" role="img" aria-label="UAE flag">🇦🇪</span>
+        <span className="text-sm font-medium text-stone-500 select-none">{UAE_DIAL_CODE}</span>
+      </div>
+      <div className="relative flex flex-1 items-center">
+        <Phone className="pointer-events-none absolute left-3 h-4 w-4 text-stone-400" />
+        <input
+          type="tel"
+          inputMode="numeric"
+          value={formatDisplay(value)}
+          onChange={handleChange}
+          onKeyDown={onKeyDown}
+          placeholder="50 123 4567"
+          maxLength={11} // formatted with spaces: 2+1+3+1+4 = 11
+          className={`w-full bg-transparent py-2.5 pl-9 pr-3 text-sm text-stone-800 outline-none placeholder:text-stone-400 tracking-wide ${
+            hasError ? 'bg-rose-50' : 'bg-white'
+          }`}
+          aria-label="UAE phone number"
+        />
+        {value.length > 0 && (
+          <span className="absolute right-3 text-[10px] font-medium text-stone-400 select-none tabular-nums">
+            {value.length}/9
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Environment Setup ────────────────────────────────────────────────────────
 
-const AI_AGENT_URL ='https://tax-data-assistant-backend-production.up.railway.app';
-
+const AI_AGENT_URL = 'https://tax-data-assistant-backend-production.up.railway.app';
 const AI_AGENT_BASE = AI_AGENT_URL.replace(/\/chat\/?$/, '');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -86,7 +248,6 @@ interface ChatWidgetProps {
 }
 
 // ─── Chatbot option tree ──────────────────────────────────────────────────────
-// (Unchanged — left exactly as-is per request.)
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   invoices: Receipt,
@@ -214,7 +375,6 @@ const CHATBOT_TREE: ChatbotNode[] = [
 ];
 
 // ─── ChatbotTab ───────────────────────────────────────────────────────────────
-// (Unchanged — left exactly as-is per request.)
 
 function ChatbotTab() {
   const [path, setPath] = useState<ChatbotNode[]>([]);
@@ -342,7 +502,6 @@ interface AgentTabProps {
 }
 
 function AgentTab({ onClose }: AgentTabProps) {
-  // ── Auth state ──
   const [view, setView] = useState<AuthView>('login');
   const [userId, setUserId] = useState<number | null>(null);
   const [userName, setUserName] = useState('');
@@ -351,12 +510,20 @@ function AgentTab({ onClose }: AgentTabProps) {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
 
+  // Register fields
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState(''); // digits only after +971
   const [regError, setRegError] = useState<string | null>(null);
   const [regLoading, setRegLoading] = useState(false);
 
-  // ── Chat state ──
+  // Field-level touched state for inline validation
+  const [touched, setTouched] = useState({ name: false, email: false, phone: false });
+
+  const nameValidation = validateName(regName);
+  const emailValidation = validateEmail(regEmail);
+  const phoneValidation = validateUAEPhone(regPhone);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -380,8 +547,11 @@ function AgentTab({ onClose }: AgentTabProps) {
     if (view === 'login') loginEmailRef.current?.focus();
   }, [view]);
 
-  // ── Login: email only. If the email isn't registered, send to Register
-  // pre-filled with that email. ──
+  // Reset touched when switching views
+  useEffect(() => {
+    setTouched({ name: false, email: false, phone: false });
+  }, [view]);
+
   async function login() {
     setLoginError(null);
     const email = loginEmail.trim();
@@ -410,7 +580,6 @@ function AgentTab({ onClose }: AgentTabProps) {
         ]);
         setView('chat');
       } else if (res.status === 401) {
-        // Not registered yet — move to register, carry the email forward.
         setRegEmail(email);
         setRegError(null);
         setView('register');
@@ -424,21 +593,23 @@ function AgentTab({ onClose }: AgentTabProps) {
     }
   }
 
-  // ── Register: name + email. On success, go straight to chat. ──
   async function register() {
+    // Touch all fields to show errors
+    setTouched({ name: true, email: true, phone: true });
     setRegError(null);
-    const name = regName.trim();
-    const email = regEmail.trim();
 
-    if (!name) return setRegError('Enter your name.');
-    if (!email || !email.includes('@')) return setRegError('Enter a valid email address.');
+    if (!nameValidation.valid || !emailValidation.valid || !phoneValidation.valid) {
+      return;
+    }
+
+    const fullPhone = `${UAE_DIAL_CODE}${regPhone}`;
 
     setRegLoading(true);
     try {
       const res = await fetch(`${AI_AGENT_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email }),
+        body: JSON.stringify({ name: regName.trim(), email: regEmail.trim(), phone: fullPhone }),
       });
       const data = await res.json().catch(() => ({}));
 
@@ -448,7 +619,7 @@ function AgentTab({ onClose }: AgentTabProps) {
         setMessages([
           {
             role: 'assistant',
-            content: `Hello, ${data.name}. I'm your E-Numerak tax assistant — ask me anything about VAT, TRNs, or e-invoicing on the platform.`,
+            content: `Hello, ${data.name}! I'm your E-Numerak tax assistant — ask me anything about VAT, TRNs, or e-invoicing on the platform.`,
           },
         ]);
         setView('chat');
@@ -554,10 +725,15 @@ function AgentTab({ onClose }: AgentTabProps) {
     }
   }
 
+  const allFieldsValid = nameValidation.valid && emailValidation.valid && phoneValidation.valid;
+
   // ── Login view ──
   if (view === 'login') {
     return (
-      <div className="relative flex h-full flex-col justify-center px-6 py-6" style={{ background: 'linear-gradient(180deg, #FBF7F2 0%, #FFFFFF 60%)' }}>
+      <div
+        className="relative flex h-full flex-col justify-center px-6 py-6"
+        style={{ background: 'linear-gradient(180deg, #FBF7F2 0%, #FFFFFF 60%)' }}
+      >
         <button
           onClick={onClose}
           className="absolute right-3 top-3 rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
@@ -583,8 +759,8 @@ function AgentTab({ onClose }: AgentTabProps) {
 
         <div className="space-y-3">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-stone-600">
-              Email address
+            <label className="mb-1.5 block" style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#78716c' }}>
+              Email address <span className="text-orange-500">*</span>
             </label>
             <div className="relative">
               <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
@@ -595,13 +771,16 @@ function AgentTab({ onClose }: AgentTabProps) {
                 onChange={(e) => setLoginEmail(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && login()}
                 placeholder="you@company.com"
-                className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-orange-300 focus:ring-2 focus:ring-orange-900/5"
+                className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-stone-800 outline-none transition-all placeholder:text-stone-400 focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
               />
             </div>
           </div>
 
           {loginError && (
-            <p className="text-center text-xs font-medium text-rose-500">{loginError}</p>
+            <p className="flex items-center gap-1 rounded-lg bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              {loginError}
+            </p>
           )}
 
           <button
@@ -634,7 +813,10 @@ function AgentTab({ onClose }: AgentTabProps) {
   // ── Register view ──
   if (view === 'register') {
     return (
-      <div className="relative flex h-full flex-col justify-center px-6 py-6" style={{ background: 'linear-gradient(180deg, #FBF7F2 0%, #FFFFFF 60%)' }}>
+      <div
+        className="relative flex h-full flex-col justify-center overflow-y-auto px-6 py-5"
+        style={{ background: 'linear-gradient(180deg, #FBF7F2 0%, #FFFFFF 60%)' }}
+      >
         <button
           onClick={onClose}
           className="absolute right-3 top-3 rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
@@ -643,7 +825,8 @@ function AgentTab({ onClose }: AgentTabProps) {
           <X className="h-4 w-4" />
         </button>
 
-        <div className="mb-6 text-center">
+        {/* Header */}
+        <div className="mb-5 text-center">
           <div
             className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-sm"
             style={{ background: '#C2410C' }}
@@ -654,53 +837,121 @@ function AgentTab({ onClose }: AgentTabProps) {
             Create your account
           </h2>
           <p className="mt-1 text-[13px] text-stone-500">
-            We couldn't find that email — let's get you set up.
+            Let's get you set up — takes just a moment.
           </p>
         </div>
 
-        <div className="space-y-3">
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-stone-600">
-              Full name
-            </label>
+        <div className="space-y-4">
+          {/* Full Name */}
+          <Field
+            label="Full name"
+            error={nameValidation.message}
+            touched={touched.name}
+          >
             <div className="relative">
               <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
               <input
                 type="text"
                 value={regName}
-                onChange={(e) => setRegName(e.target.value)}
+                onChange={(e) => {
+                  // Block numeric-only input; allow letters, spaces, hyphens, apostrophes
+                  const val = e.target.value;
+                  if (val.length <= 60) setRegName(val);
+                }}
+                onBlur={() => setTouched((t) => ({ ...t, name: true }))}
                 onKeyDown={(e) => e.key === 'Enter' && register()}
-                placeholder="Enter your name"
-                className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-orange-300 focus:ring-2 focus:ring-orange-900/5"
+                placeholder="e.g. Ahmed Al Mansouri"
+                maxLength={60}
+                className={`w-full rounded-xl border px-3.5 py-2.5 pl-9 text-sm text-stone-800 outline-none transition-all placeholder:text-stone-400 ${
+                  touched.name && !nameValidation.valid
+                    ? 'border-rose-300 bg-rose-50 ring-2 ring-rose-100'
+                    : 'border-stone-200 bg-white focus:border-orange-300 focus:ring-2 focus:ring-orange-100'
+                }`}
               />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium tabular-nums text-stone-300 select-none">
+                {regName.length}/60
+              </span>
             </div>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-stone-600">
-              Email address
-            </label>
+          </Field>
+
+          {/* Email */}
+          <Field
+            label="Email address"
+            error={emailValidation.message}
+            touched={touched.email}
+          >
             <div className="relative">
               <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
               <input
                 type="email"
                 value={regEmail}
-                onChange={(e) => setRegEmail(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 100) setRegEmail(e.target.value);
+                }}
+                onBlur={() => setTouched((t) => ({ ...t, email: true }))}
                 onKeyDown={(e) => e.key === 'Enter' && register()}
                 placeholder="you@company.com"
-                className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-orange-300 focus:ring-2 focus:ring-orange-900/5"
+                maxLength={100}
+                className={`w-full rounded-xl border px-3.5 py-2.5 pl-9 pr-16 text-sm text-stone-800 outline-none transition-all placeholder:text-stone-400 ${
+                  touched.email && !emailValidation.valid
+                    ? 'border-rose-300 bg-rose-50 ring-2 ring-rose-100'
+                    : 'border-stone-200 bg-white focus:border-orange-300 focus:ring-2 focus:ring-orange-100'
+                }`}
               />
             </div>
-          </div>
+          </Field>
 
+          {/* UAE Phone */}
+          <Field
+            label="UAE phone number"
+            error={phoneValidation.message}
+            touched={touched.phone}
+            hint={!touched.phone ? 'Mobile: 05X XXXXXXX · Landline: 0X XXXXXXX' : undefined}
+          >
+            <UAEPhoneInput
+              value={regPhone}
+              onChange={(digits) => {
+                setRegPhone(digits);
+                if (!touched.phone && digits.length > 0) {
+                  setTouched((t) => ({ ...t, phone: true }));
+                }
+              }}
+              hasError={touched.phone && !phoneValidation.valid}
+              onKeyDown={(e) => e.key === 'Enter' && register()}
+            />
+          </Field>
+
+          {/* Server-level error */}
           {regError && (
-            <p className="text-center text-xs font-medium text-rose-500">{regError}</p>
+            <p className="flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              {regError}
+            </p>
           )}
+
+          {/* Progress indicator: show how many fields are filled */}
+          <div className="flex items-center gap-1.5">
+            {[nameValidation.valid, emailValidation.valid, phoneValidation.valid].map((v, i) => (
+              <div
+                key={i}
+                className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                  v ? 'bg-emerald-400' : 'bg-stone-200'
+                }`}
+              />
+            ))}
+            <span className="ml-1 text-[10px] font-medium text-stone-400 tabular-nums">
+              {[nameValidation.valid, emailValidation.valid, phoneValidation.valid].filter(Boolean).length}/3
+            </span>
+          </div>
 
           <button
             onClick={register}
             disabled={regLoading}
-            className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-            style={{ background: '#1C1917' }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:cursor-not-allowed disabled:opacity-50"
+            style={{
+              background: allFieldsValid && !regLoading ? '#1C1917' : '#78716c',
+              transition: 'background 0.2s',
+            }}
           >
             {regLoading ? (
               <>
@@ -708,7 +959,10 @@ function AgentTab({ onClose }: AgentTabProps) {
                 Creating account…
               </>
             ) : (
-              'Create account & start chatting'
+              <>
+                Create account & start chatting
+                <ArrowRight className="h-4 w-4" />
+              </>
             )}
           </button>
 
@@ -934,7 +1188,7 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
 
       {open && (
         <div
-          className="fixed bottom-24 right-6 z-50 flex h-[520px] max-h-[calc(100dvh-7rem)] w-[380px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl shadow-stone-900/10"
+          className="fixed bottom-24 right-6 z-50 flex h-[560px] max-h-[calc(100dvh-7rem)] w-[380px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl shadow-stone-900/10"
           role="dialog"
           aria-label="Chat support"
         >
@@ -944,7 +1198,7 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
               className="flex h-9 w-9 items-center justify-center rounded-xl"
               style={{ background: 'rgba(194, 65, 12, 0.25)' }}
             >
-              <ENumerakLogo className="h-5 w-5"/>
+              <ENumerakLogo className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
               <h1 className="truncate text-sm font-semibold tracking-tight text-white">
