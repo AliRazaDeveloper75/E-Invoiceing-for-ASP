@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/hooks/useCompany';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Plus, Building2, Mail, X, Loader2, CheckCircle2 } from 'lucide-react';
+import { Plus, Building2, Mail, X, Loader2, CheckCircle2, Search } from 'lucide-react';
 import type { Customer } from '@/types';
 
 async function fetcher(url: string) {
@@ -134,12 +134,15 @@ export default function CustomersPage() {
   const isAdmin = user?.role === 'admin';
 
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
   const [inviteTarget, setInviteTarget] = useState<Customer | null>(null);
 
+  const qp = new URLSearchParams({ page: String(page) });
+  if (search.trim()) qp.set('search', search.trim());
   const url = isAdmin
-    ? `/customers/?page=${page}`
+    ? `/customers/?${qp.toString()}`
     : activeId
-      ? `/customers/?company_id=${activeId}&page=${page}`
+      ? `/customers/?company_id=${activeId}&${qp.toString()}`
       : null;
 
   const { data, isLoading } = useSWR(url, fetcher);
@@ -163,6 +166,18 @@ export default function CustomersPage() {
             <Button><Plus className="h-4 w-4" /> New Customer</Button>
           </Link>
         )}
+      </div>
+
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          placeholder={isAdmin ? 'Search all customers by name, TRN, or email…' : 'Search by name, TRN, or email…'}
+          className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg
+                     focus:outline-none focus:ring-2 focus:ring-brand-500"
+        />
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
