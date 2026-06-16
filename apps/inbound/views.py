@@ -442,38 +442,34 @@ def _send_supplier_activation_email(supplier, activation_token: str):
     """Send activation email with a link for the supplier to set their password."""
     frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
     activation_link = f'{frontend_url}/activate?token={activation_token}&supplier={supplier.id}'
-    subject = f'Activate your UAE E-Invoicing Supplier Portal account'
-    body = f"""Hello {supplier.name},
-
-You have been registered as an inbound supplier on the UAE E-Invoicing Platform.
-
-To activate your account and set your password, please click the link below:
-
-  {activation_link}
-
-This link is valid for 7 days.
-
-Once activated, you can:
-  - Log in to your Supplier Portal dashboard
-  - Track the status of invoices you have submitted
-  - View validation observations and feedback
-
-Your API Key for programmatic invoice submission will be provided separately.
-
-If you did not expect this invitation, please ignore this email.
-
-UAE E-Invoicing Platform
-"""
-    try:
-        send_mail(
-            subject=subject,
-            message=body,
-            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@uae-einvoicing.ae'),
-            recipient_list=[supplier.email],
-            fail_silently=False,
-        )
-    except Exception as exc:
-        logger.warning('Failed to send activation email to %s: %s', supplier.email, exc)
+    body_html = """
+      <p style="margin:0;">You have been registered as an inbound supplier on the E-Numerak
+      e-invoicing platform. Activate your account to set your password and access your Supplier Portal.</p>
+      <p style="margin:16px 0 6px;font-weight:600;color:#0f172a;">Once activated, you can:</p>
+      <ul style="margin:0;padding-left:18px;color:#334155;">
+        <li>Log in to your Supplier Portal dashboard</li>
+        <li>Track the status of invoices you have submitted</li>
+        <li>View validation observations and feedback</li>
+      </ul>
+      <p style="margin:16px 0 0;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 6px 6px 0;
+                padding:10px 14px;font-size:13px;color:#92400e;">
+        This activation link is valid for <strong>7 days</strong>.
+      </p>
+      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">
+        Your API key for programmatic submission will be provided separately. If you did not expect this
+        invitation, please ignore this email.</p>"""
+    from services.emails import send_branded_email
+    if not send_branded_email(
+        subject='Activate your E-Numerak Supplier Portal account',
+        to=supplier.email,
+        heading='Activate your Supplier Portal account',
+        intro=f'Hello {supplier.name},',
+        body_html=body_html,
+        cta_label='Activate Account',
+        cta_url=activation_link,
+        preheader='Activate your E-Numerak Supplier Portal account.',
+    ):
+        logger.warning('Failed to send activation email to %s', supplier.email)
 
 
 class SupplierListCreateView(APIView):

@@ -307,79 +307,68 @@ class InboundInvoiceService:
         if not supplier_email:
             return
 
-        subject = (
-            f'[Action Required] Invoice {invoice.supplier_invoice_number} — '
-            f'Validation Observations'
-        )
-
-        # Build plain-text body
-        lines = [
-            f'Dear {invoice.supplier.name},',
-            '',
-            f'We have received your invoice {invoice.supplier_invoice_number} '
-            f'dated {invoice.issue_date}.',
-            '',
-        ]
+        obs_list = list(observations)
+        sev_color = {'critical': '#dc2626', 'high': '#ea580c', 'medium': '#ca8a00', 'info': '#2563eb'}
+        obs_html = ''
+        for obs in obs_list:
+            c = sev_color.get(obs.severity, '#2563eb')
+            meta = obs.field_name or ''
+            if obs.line_number:
+                meta = f'{meta} · Line {obs.line_number}'.strip(' ·')
+            obs_html += (
+                f'<div style="margin:0 0 10px;border:1px solid #e2e8f0;border-left:3px solid {c};'
+                f'border-radius:0 8px 8px 0;padding:11px 14px;">'
+                f'<div style="font-size:12px;font-weight:700;color:{c};">[{obs.severity.upper()}] '
+                f'<span style="font-family:monospace;color:#64748b;">{obs.rule_code}</span>'
+                f'{(" · " + meta) if meta else ""}</div>'
+                f'<div style="font-size:14px;color:#334155;margin-top:3px;">{obs.message}</div>'
+                + (f'<div style="font-size:13px;color:#64748b;margin-top:3px;font-style:italic;">'
+                   f'Action: {obs.suggestion}</div>' if obs.suggestion else '')
+                + '</div>'
+            )
 
         if invoice.has_critical_errors:
-            lines += [
-                'IMPORTANT: Your invoice contains critical issues that must be resolved before',
-                'it can be processed. Please correct the issues below and resubmit.',
-            ]
+            heading = f'Action required — {invoice.supplier_invoice_number}'
+            intro_line = ('Your invoice contains <strong>critical issues</strong> that must be resolved '
+                          'before it can be processed. Please correct the items below and resubmit.')
         else:
-            lines += [
-                'Your invoice has been received successfully. However, we have noted the',
-                'following observations that you may wish to review:',
-            ]
+            heading = f'Validation observations — {invoice.supplier_invoice_number}'
+            intro_line = ('Your invoice was received successfully. We noted the following observations '
+                          'that you may wish to review.')
 
-        if custom_message:
-            lines += ['', custom_message, '']
+        custom_block = (
+            f'<p style="margin:0 0 16px;background:#f0f9ff;border-left:3px solid #0ea5e9;'
+            f'border-radius:0 6px 6px 0;padding:11px 15px;font-size:14px;color:#0c4a6e;">{custom_message}</p>'
+        ) if custom_message else ''
 
-        lines += ['', '─' * 60, 'OBSERVATIONS', '─' * 60, '']
+        body_html = (
+            f'<p style="margin:0 0 6px;">We have received your invoice '
+            f'<strong>{invoice.supplier_invoice_number}</strong> dated {invoice.issue_date}.</p>'
+            f'<p style="margin:0 0 16px;">{intro_line}</p>'
+            f'{custom_block}'
+            f'<p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#64748b;'
+            f'text-transform:uppercase;letter-spacing:0.5px;">Observations ({len(obs_list)})</p>'
+            f'{obs_html}'
+            f'<p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">If you have any questions, '
+            f'reply to this email or contact our support team.</p>'
+        )
 
-        for obs in observations:
-            lines += [
-                f'[{obs.severity.upper()}] {obs.rule_code}',
-                f'Field:   {obs.field_name or "N/A"}',
-                f'Issue:   {obs.message}',
-            ]
-            if obs.suggestion:
-                lines.append(f'Action:  {obs.suggestion}')
-            if obs.line_number:
-                lines.append(f'Line:    {obs.line_number}')
-            lines.append('')
-
-        lines += [
-            '─' * 60,
-            '',
-            'If you have questions, please contact us by replying to this email.',
-            '',
-            'Regards,',
-            getattr(settings, 'COMPANY_NAME', 'UAE E-Invoicing Platform'),
-            getattr(settings, 'SUPPORT_EMAIL', ''),
-        ]
-
-        body = '\n'.join(lines)
-
-        try:
-            send_mail(
-                subject      = subject,
-                message      = body,
-                from_email   = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@einvoicing.ae'),
-                recipient_list = [supplier_email],
-                fail_silently= False,
-            )
-            # Mark observations as sent and update timestamp
+        from services.emails import send_branded_email
+        sent = send_branded_email(
+            subject=f'[Action Required] Invoice {invoice.supplier_invoice_number} — Validation Observations',
+            to=supplier_email,
+            heading=heading,
+            intro=f'Dear {invoice.supplier.name},',
+            body_html=body_html,
+            preheader=f'{len(obs_list)} validation observation(s) on invoice {invoice.supplier_invoice_number}.',
+        )
+        if sent:
             observations.update(included_in_email=True)
             invoice.observation_sent_at = timezone.now()
             invoice.save(update_fields=['observation_sent_at', 'updated_at'])
-        except Exception as exc:
-            # Log but don't raise — email failure should not block the workflow
-            import logging
-            logging.getLogger(__name__).error(
-                'Failed to send observation email for invoice %s: %s',
-                invoice.supplier_invoice_number, exc
-            )
+        else:
+            logger.error('Failed to send observation email for invoice %s',
+                         invoice.supplier_invoice_number)
 
     # ── Approval / Rejection ─────────────────────────────────────────────────
 
@@ -425,23 +414,27 @@ class InboundInvoiceService:
     @classmethod
     def _send_rejection_notice(cls, invoice: InboundInvoice, notes: str):
         """Email the supplier about the rejection."""
-        try:
-            send_mail(
-                subject      = f'Invoice {invoice.supplier_invoice_number} — Rejected',
-                message      = (
-                    f'Dear {invoice.supplier.name},\n\n'
-                    f'Your invoice {invoice.supplier_invoice_number} has been rejected.\n\n'
-                    f'Reason:\n{notes}\n\n'
-                    f'Please contact us if you have questions.\n\n'
-                    f'Regards,\n'
-                    f'{getattr(settings, "COMPANY_NAME", "UAE E-Invoicing Platform")}'
-                ),
-                from_email   = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@einvoicing.ae'),
-                recipient_list = [invoice.supplier.email],
-                fail_silently= True,
-            )
-        except Exception:
-            pass
+        if not invoice.supplier.email:
+            return
+        notes_block = (
+            f'<p style="margin:16px 0 0;background:#fef2f2;border-left:3px solid #dc2626;'
+            f'border-radius:0 6px 6px 0;padding:12px 15px;font-size:14px;color:#991b1b;">'
+            f'<strong>Reason:</strong><br>{notes}</p>'
+        ) if notes else ''
+        from services.emails import send_branded_email
+        send_branded_email(
+            subject=f'Invoice {invoice.supplier_invoice_number} — Rejected',
+            to=invoice.supplier.email,
+            heading='Invoice rejected',
+            intro=f'Dear {invoice.supplier.name},',
+            body_html=(
+                f'<p style="margin:0;">Your invoice <strong>{invoice.supplier_invoice_number}</strong> '
+                f'has been rejected after review.</p>{notes_block}'
+                f'<p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">Please contact us if you have '
+                f'any questions or need to resubmit a corrected invoice.</p>'
+            ),
+            preheader=f'Invoice {invoice.supplier_invoice_number} was rejected.',
+        )
 
     # ── Audit ─────────────────────────────────────────────────────────────────
 

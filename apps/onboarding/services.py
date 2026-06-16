@@ -77,75 +77,32 @@ class InvitationService:
             f'Hello {invite.first_name or "there"},\n\n'
             f'{inviter_name} has invited you to join E-Numerak, the UAE FTA-compliant e-invoicing platform.\n\n'
             f'Complete your registration here:\n{link}\n\n'
-            f'This link expires in 1 hour.\n\n'
-            f'If you did not expect this email, you can safely ignore it.\n\n'
-            f'-- E-Numerak Team\ne-numerak.com'
+            f'This link expires in 1 hour. If you did not expect this email, you can safely ignore it.'
         )
         personal_note = (
-            f'<p style="background:#f0f9ff;border-left:3px solid #0ea5e9;padding:12px 16px;'
-            f'border-radius:4px;font-size:14px;color:#0c4a6e;font-style:italic;">{invite.message}</p>'
+            f'<p style="margin:16px 0 0;background:#f0f9ff;border-left:3px solid #0ea5e9;padding:12px 16px;'
+            f'border-radius:0 6px 6px 0;font-size:14px;color:#0c4a6e;font-style:italic;">{invite.message}</p>'
         ) if invite.message else ''
 
-        html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <meta name="x-apple-disable-message-reformatting"/>
-  <title>You are invited to E-Numerak</title>
-</head>
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:48px 20px;">
-  <tr><td align="center">
-    <table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;">
-      <tr>
-        <td style="background:#1a3050;padding:32px 48px;text-align:center;">
-          <p style="margin:0 0 4px;font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:2px;text-transform:uppercase;">E-Numerak</p>
-          <h1 style="margin:0;font-size:24px;font-weight:700;color:#ffffff;">You have been invited</h1>
-          <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.6);">UAE FTA-Compliant E-Invoicing Platform</p>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:36px 48px 28px;">
-          <p style="margin:0 0 14px;font-size:15px;color:#374151;">Hello{' ' + invite.first_name if invite.first_name else ''},</p>
-          <p style="margin:0 0 22px;font-size:15px;color:#374151;line-height:1.7;">
-            <strong>{inviter_name}</strong> has invited you to register your company on E-Numerak
-            and start issuing UAE FTA-compliant e-invoices.
-          </p>
+        body_html = f"""
+          <p style="margin:0;"><strong>{inviter_name}</strong> has invited you to register your company on
+          E-Numerak and start issuing UAE FTA-compliant e-invoices.</p>
           {personal_note}
-          <table cellpadding="0" cellspacing="0" style="margin:28px 0;">
-            <tr>
-              <td style="border-radius:8px;background:#1a3050;">
-                <a href="{link}" style="display:inline-block;padding:14px 36px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
-                  Complete Registration
-                </a>
-              </td>
-            </tr>
-          </table>
-          <p style="margin:0 0 8px;font-size:13px;color:#6b7280;">
-            Or copy this link into your browser:
-          </p>
-          <p style="margin:0 0 24px;font-size:12px;color:#2563eb;word-break:break-all;">
-            {link}
-          </p>
-          <p style="margin:0;font-size:12px;color:#9ca3af;border-top:1px solid #f3f4f6;padding-top:16px;">
+          <p style="margin:18px 0 0;font-size:13px;color:#94a3b8;">
             This invitation link expires in <strong>1 hour</strong>. If you did not expect this email, please ignore it.
-          </p>
-        </td>
-      </tr>
-      <tr>
-        <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:16px 48px;text-align:center;">
-          <p style="margin:0;font-size:11px;color:#9ca3af;">
-            E-Numerak &bull; UAE E-Invoicing Platform &bull; e-numerak.com
-          </p>
-        </td>
-      </tr>
-    </table>
-  </td></tr>
-</table>
-{track_pixel_tag}
-</body>
-</html>"""
+          </p>"""
+
+        from services.emails import render_branded_email
+        html = render_branded_email(
+            heading='You have been invited',
+            intro=f'Hello{" " + invite.first_name if invite.first_name else ""},',
+            body_html=body_html,
+            cta_label='Complete Registration',
+            cta_url=link,
+            preheader=f'{inviter_name} invited you to join E-Numerak.',
+        )
+        if track_pixel_tag:
+            html = html.replace('</body>', f'{track_pixel_tag}</body>')
 
         try:
             msg = EmailMultiAlternatives(
@@ -316,20 +273,21 @@ class OnboardingService:
     def _send_welcome_email(user, company) -> None:
         frontend_url  = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
         dashboard_url = f'{frontend_url}/dashboard'
-        subject = f'Welcome to E-Numerak — {company.name} is registered!'
-        plain = (
-            f'Hello {user.full_name},\n\n'
-            f'Your company "{company.name}" has been registered on E-Numerak.\n\n'
-            f'Your account is under review. You will be notified once approved.\n\n'
-            f'Dashboard: {dashboard_url}\n\nE-Numerak Team'
+        body_html = f"""
+          <p style="margin:0;">Your company <strong>{company.name}</strong> has been registered on E-Numerak.</p>
+          <p style="margin:16px 0 0;">Your account is currently <strong>under review</strong>. You'll be notified
+          by email as soon as it's approved — after which you can start issuing FTA-compliant e-invoices.</p>"""
+        from services.emails import send_branded_email
+        send_branded_email(
+            subject=f'Welcome to E-Numerak — {company.name} is registered',
+            to=user.email,
+            heading='Welcome aboard 🎉',
+            intro=f'Hello {user.full_name},',
+            body_html=body_html,
+            cta_label='Open Dashboard',
+            cta_url=dashboard_url,
+            preheader=f'{company.name} has been registered on E-Numerak.',
         )
-        msg = EmailMultiAlternatives(
-            subject=subject,
-            body=plain,
-            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@e-numerak.ae'),
-            to=[user.email],
-        )
-        msg.send(fail_silently=True)
 
     @staticmethod
     @transaction.atomic
@@ -364,20 +322,35 @@ class OnboardingService:
         admin_email = company.contact_person_email or company.email
         if not admin_email:
             return
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
         subject_map = {
-            'approve':         f'✅ {company.name} — Registration Approved',
-            'reject':          f'❌ {company.name} — Registration Requires Attention',
-            'request_changes': f'📋 {company.name} — Changes Requested',
+            'approve':         f'{company.name} — Registration Approved',
+            'reject':          f'{company.name} — Registration Requires Attention',
+            'request_changes': f'{company.name} — Changes Requested',
+        }
+        heading_map = {
+            'approve':         'Registration approved ✅',
+            'reject':          'Registration needs attention',
+            'request_changes': 'Changes requested',
         }
         body_map = {
-            'approve':         'Your company registration has been approved. You can now issue invoices.',
-            'reject':          'Your company registration has been rejected.',
-            'request_changes': 'Changes have been requested for your company registration.',
+            'approve':         'Your company registration has been <strong>approved</strong>. You can now sign in and start issuing FTA-compliant e-invoices.',
+            'reject':          'Your company registration could not be approved at this time. Please review the notes below and contact us if you need any help.',
+            'request_changes': 'We need a few changes to your company registration before it can be approved. Please review the notes below and resubmit.',
         }
-        msg = EmailMultiAlternatives(
+        notes_block = (
+            f'<p style="margin:18px 0 0;background:#f8fafc;border-left:3px solid #94a3b8;'
+            f'border-radius:0 6px 6px 0;padding:12px 15px;font-size:14px;color:#334155;">'
+            f'<strong>Reviewer notes:</strong><br>{notes}</p>'
+        ) if notes else ''
+        from services.emails import send_branded_email
+        send_branded_email(
             subject=subject_map[action],
-            body=f"{body_map[action]}\n\n{notes or ''}".strip(),
-            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@e-numerak.ae'),
-            to=[admin_email],
+            to=admin_email,
+            heading=heading_map[action],
+            intro=f'Dear {company.name},',
+            body_html=f'<p style="margin:0;">{body_map[action]}</p>{notes_block}',
+            cta_label='Open Dashboard' if action == 'approve' else '',
+            cta_url=f'{frontend_url}/dashboard' if action == 'approve' else '',
+            preheader=subject_map[action],
         )
-        msg.send(fail_silently=True)

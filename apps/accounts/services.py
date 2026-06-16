@@ -107,122 +107,35 @@ class AuthService:
         if _settings.DEBUG:
             logger.info('DEV — verification code for %s: %s', user.email, code)
 
-        subject = 'Your UAE E-Invoicing verification code'
+        subject = f'Your {getattr(settings, "COMPANY_NAME", "E-Numerak")} verification code'
 
-        # Plain-text fallback
-        plain = (
-            f"Hello {user.full_name},\n\n"
-            f"Your verification code is: {code}\n\n"
-            f"Enter it on the verification page. Valid for 15 minutes.\n\n"
-            f"If you did not create this account, ignore this email.\n\n"
-            f"UAE E-Invoicing Platform"
-        )
+        body_html = f"""
+          <p style="margin:0 0 18px;">Enter this 6-digit code to verify your email and activate your account:</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
+            <tr><td style="background:#eff6ff;border-radius:10px;padding:16px 30px;
+                           font-family:'Courier New',Courier,monospace;font-size:30px;font-weight:800;
+                           color:#1e40af;letter-spacing:8px;">{code}</td></tr>
+          </table>
+          <p style="margin:0;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 6px 6px 0;
+                    padding:10px 14px;font-size:13px;color:#92400e;">
+            Expires in <strong>15 minutes</strong> — do not share this code with anyone.
+          </p>
+          <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">
+            If you did not create this account, you can safely ignore this email.
+          </p>"""
 
-        # Raw code rendered with CSS letter-spacing — compact and copyable
-
-        html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Verify your email</title>
-</head>
-<body style="margin:0;padding:0;background:#f0f4f8;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4f8;padding:48px 0;">
-    <tr>
-      <td align="center">
-        <table width="500" cellpadding="0" cellspacing="0"
-               style="background:#ffffff;border-radius:12px;overflow:hidden;
-                      box-shadow:0 4px 24px rgba(0,0,0,0.07);">
-
-          <!-- Header -->
-          <tr>
-            <td align="center"
-                style="background:linear-gradient(135deg,#1e3a5f 0%,#1e4080 100%);
-                       padding:32px 40px 28px;">
-              <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.3px;">
-                E-Numerak
-              </p>
-              <p style="margin:5px 0 0;color:rgba(255,255,255,0.55);font-size:11px;letter-spacing:0.8px;text-transform:uppercase;">
-                UAE E-Invoicing Platform
-              </p>
-            </td>
-          </tr>
-
-          <!-- Body -->
-          <tr>
-            <td style="padding:40px 48px 32px;">
-
-              <p style="margin:0 0 6px;font-size:21px;font-weight:700;color:#0f172a;">
-                Verify your email address
-              </p>
-              <p style="margin:0 0 32px;font-size:14px;color:#64748b;line-height:1.65;">
-                Hi <strong style="color:#0f172a;">{user.full_name}</strong> — enter the
-                6-digit code below to activate your account.
-              </p>
-
-              <!-- Code block — compact, centered, easy to copy -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-                <tr>
-                  <td align="center"
-                      style="background:#eff6ff;border-radius:10px;padding:18px 24px;">
-                    <p style="margin:0;font-family:'Courier New',Courier,monospace;
-                               font-size:28px;font-weight:800;color:#1e40af;
-                               letter-spacing:6px;line-height:1;text-align:center;">
-                      {code}
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Expiry notice -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-                <tr>
-                  <td style="background:#fffbeb;border-left:3px solid #f59e0b;
-                             border-radius:0 8px 8px 0;padding:11px 14px;">
-                    <p style="margin:0;font-size:13px;color:#92400e;">
-                      Expires in <strong>15 minutes</strong> — do not share this code.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.6;">
-                If you did not create this account, you can safely ignore this email.
-              </p>
-
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background:#f8fafc;border-top:1px solid #e2e8f0;
-                       padding:16px 48px;text-align:center;">
-              <p style="margin:0;font-size:11px;color:#94a3b8;letter-spacing:0.3px;">
-                E-Numerak &nbsp;&middot;&nbsp; PEPPOL BIS 3.0 &nbsp;&middot;&nbsp; FTA Certified
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>"""
-
-        try:
-            send_mail(
-                subject=subject,
-                message=plain,
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@uae-einvoicing.ae'),
-                recipient_list=[user.email],
-                html_message=html,
-                fail_silently=False,
-            )
+        from services.emails import send_branded_email
+        if send_branded_email(
+            subject=subject,
+            to=user.email,
+            heading='Verify your email address',
+            intro=f'Hi {user.full_name}, please confirm your email to finish setting up your account.',
+            body_html=body_html,
+            preheader=f'Your verification code is {code}',
+        ):
             logger.info('Verification email sent to %s', user.email)
-        except Exception as exc:
-            logger.warning('Failed to send verification email to %s: %s', user.email, exc)
+        else:
+            logger.warning('Failed to send verification email to %s', user.email)
 
     @staticmethod
     def verify_email(code: str) -> User:
@@ -271,118 +184,34 @@ class AuthService:
         frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
         reset_url = f"{frontend_url}/reset-password?token={record.token}"
 
-        subject = 'Reset your UAE E-Invoicing password'
-        plain = (
-            f"Hello {user.full_name},\n\n"
-            f"We received a request to reset your password.\n\n"
-            f"Click the link below to set a new password (valid for 30 minutes):\n"
-            f"{reset_url}\n\n"
-            f"If you did not request this, you can safely ignore this email.\n\n"
-            f"UAE E-Invoicing Platform"
-        )
-        html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reset your password</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0;">
-    <tr>
-      <td align="center">
-        <table width="560" cellpadding="0" cellspacing="0"
-               style="background:#ffffff;border-radius:16px;overflow:hidden;
-                      box-shadow:0 2px 12px rgba(0,0,0,0.08);">
-          <tr>
-            <td align="center"
-                style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);
-                       padding:36px 40px 32px;">
-              <div style="display:inline-block;background:rgba(255,255,255,0.15);
-                          border-radius:12px;padding:10px 16px;margin-bottom:16px;">
-                <span style="font-size:22px;font-weight:700;color:#ffffff;
-                             letter-spacing:0.5px;">UAE E-Invoicing</span>
-              </div>
-              <p style="margin:0;color:rgba(255,255,255,0.7);font-size:13px;">
-                PEPPOL 5-Corner Platform
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:40px 48px 32px;">
-              <p style="margin:0 0 6px;font-size:22px;font-weight:700;color:#111827;">
-                Reset your password
-              </p>
-              <p style="margin:0 0 28px;font-size:15px;color:#6b7280;line-height:1.6;">
-                Hi <strong style="color:#111827;">{user.full_name}</strong>,
-                we received a request to reset the password for your account.
-                Click the button below to choose a new password.
-              </p>
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-                <tr>
-                  <td align="center">
-                    <a href="{reset_url}"
-                       style="display:inline-block;padding:14px 36px;
-                              background:linear-gradient(135deg,#2563eb,#1e40af);
-                              color:#ffffff;font-size:15px;font-weight:700;
-                              text-decoration:none;border-radius:10px;
-                              box-shadow:0 4px 14px rgba(37,99,235,0.35);">
-                      Reset Password
-                    </a>
-                  </td>
-                </tr>
-              </table>
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-                <tr>
-                  <td style="background:#fefce8;border-left:4px solid #fbbf24;
-                             border-radius:0 8px 8px 0;padding:12px 16px;">
-                    <p style="margin:0;font-size:13px;color:#92400e;">
-                      ⏱ This link expires in <strong>30 minutes</strong>.
-                      Do not share it with anyone.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-              <p style="margin:0 0 8px;font-size:12px;color:#9ca3af;">
-                If the button doesn't work, copy and paste this URL into your browser:
-              </p>
-              <p style="margin:0;font-size:11px;color:#6b7280;word-break:break-all;">
-                {reset_url}
-              </p>
-              <p style="margin:24px 0 0;font-size:13px;color:#9ca3af;line-height:1.6;">
-                If you did not request a password reset, you can safely ignore this email.
-                Your password will not be changed.
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="background:#f9fafb;border-top:1px solid #e5e7eb;
-                       padding:20px 48px;text-align:center;">
-              <p style="margin:0;font-size:12px;color:#9ca3af;">
-                UAE E-Invoicing Platform &nbsp;·&nbsp; Powered by PEPPOL BIS 3.0
-                &nbsp;·&nbsp; FTA Certified
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>"""
+        subject = f'Reset your {getattr(settings, "COMPANY_NAME", "E-Numerak")} password'
 
-        try:
-            send_mail(
-                subject=subject,
-                message=plain,
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@uae-einvoicing.ae'),
-                recipient_list=[user.email],
-                html_message=html,
-                fail_silently=False,
-            )
+        body_html = f"""
+          <p style="margin:0;">We received a request to reset the password for your account.
+          Click the button below to choose a new password.</p>
+          <p style="margin:18px 0 0;background:#fefce8;border-left:4px solid #fbbf24;
+                    border-radius:0 6px 6px 0;padding:11px 15px;font-size:13px;color:#92400e;">
+            This link expires in <strong>30 minutes</strong>. Do not share it with anyone.
+          </p>
+          <p style="margin:18px 0 0;font-size:13px;color:#94a3b8;">
+            If you did not request a password reset, you can safely ignore this email —
+            your password will not be changed.
+          </p>"""
+
+        from services.emails import send_branded_email
+        if send_branded_email(
+            subject=subject,
+            to=user.email,
+            heading='Reset your password',
+            intro=f'Hi {user.full_name},',
+            body_html=body_html,
+            cta_label='Reset Password',
+            cta_url=reset_url,
+            preheader='Reset your password — link valid for 30 minutes.',
+        ):
             logger.info('Password reset email sent to %s', user.email)
-        except Exception as exc:
-            logger.warning('Failed to send password reset email to %s: %s', user.email, exc)
+        else:
+            logger.warning('Failed to send password reset email to %s', user.email)
 
     @staticmethod
     def reset_password(token: str, new_password: str) -> None:

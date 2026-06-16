@@ -298,6 +298,17 @@ UAE_VAT_EXEMPT = None        # None = exempt (no VAT)
 # ─── Frontend URL ─────────────────────────────────────────────────────────────
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
 
+# ─── Brand / Email identity (used by services.emails for all transactional mail) ─
+COMPANY_NAME          = env('COMPANY_NAME',          default='E-Numerak')
+COMPANY_LEGAL_NAME    = env('COMPANY_LEGAL_NAME',    default='AL MERAK TAX CONSULTANT L.L.C')
+COMPANY_TAGLINE       = env('COMPANY_TAGLINE',       default='UAE FTA-Compliant E-Invoicing Platform')
+COMPANY_ADDRESS       = env('COMPANY_ADDRESS',       default='Dubai, United Arab Emirates')
+COMPANY_WEBSITE       = env('COMPANY_WEBSITE',       default='https://e-numerak.com')
+SUPPORT_EMAIL         = env('SUPPORT_EMAIL',         default='support@e-numerak.com')
+BRAND_PRIMARY_COLOR   = env('BRAND_PRIMARY_COLOR',   default='#1e3a5f')
+BRAND_ACCENT_COLOR    = env('BRAND_ACCENT_COLOR',    default='#2563eb')
+DEFAULT_FROM_EMAIL    = env('DEFAULT_FROM_EMAIL',    default='E-Numerak <no-reply@e-numerak.com>')
+
 # ─── Payment Gateways ─────────────────────────────────────────────────────────
 STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY', default='')
 STRIPE_PUBLISHABLE_KEY = env('STRIPE_PUBLISHABLE_KEY', default='')
