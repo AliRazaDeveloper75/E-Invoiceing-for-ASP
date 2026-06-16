@@ -126,6 +126,7 @@ class CompanyUpdateSerializer(serializers.Serializer):
     peppol_endpoint = serializers.CharField(max_length=255, required=False)
     trn_issue_date  = serializers.DateField(required=False, allow_null=True)
     trn_expiry_date = serializers.DateField(required=False, allow_null=True)
+    logo            = serializers.ImageField(required=False, allow_null=True)
 
     def validate(self, attrs):
         if not attrs:

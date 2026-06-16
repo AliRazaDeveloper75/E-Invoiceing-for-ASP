@@ -76,6 +76,8 @@ class CompanyService:
             'po_box', 'country', 'phone', 'email', 'website',
             'peppol_endpoint', 'is_vat_group',
             'trn_issue_date', 'trn_expiry_date',
+            'legal_registration_id', 'legal_registration_type',
+            'logo',
         ]
 
         changed_fields = []

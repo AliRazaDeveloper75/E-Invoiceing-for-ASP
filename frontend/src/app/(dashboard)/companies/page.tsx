@@ -237,6 +237,8 @@ function CompanyFormPanel({
 }) {
   const [serverError, setServerError] = useState('');
   const countryForm = useCountryForm(initial?.country || 'AE');
+  const [logoFile, setLogoFile]       = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>(initial?.logo_url ?? '');
 
   const {
     register,
@@ -270,11 +272,20 @@ function CompanyFormPanel({
       const phone = data.phone
         ? `${countryForm.dialCode}${data.phone}`.trim()
         : '';
+      const payload = { ...data, phone };
+      const url    = mode === 'create' ? '/companies/' : `/companies/${initial!.id}/`;
+      const method = mode === 'create' ? 'post' : 'put';
 
-      if (mode === 'create') {
-        await api.post('/companies/', { ...data, phone });
+      if (logoFile) {
+        // Multipart so the company logo file is uploaded alongside the fields.
+        const fd = new FormData();
+        Object.entries(payload).forEach(([k, v]) => {
+          if (v !== undefined && v !== null && v !== '') fd.append(k, String(v));
+        });
+        fd.append('logo', logoFile);
+        await api[method](url, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       } else {
-        await api.put(`/companies/${initial!.id}/`, { ...data, phone });
+        await api[method](url, payload);
       }
       onSaved();
       onClose();
@@ -297,6 +308,36 @@ function CompanyFormPanel({
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Company logo */}
+        <div className="flex items-center gap-4">
+          {logoPreview ? (
+            <img src={logoPreview} alt="Company logo"
+                 className="h-16 w-16 rounded-xl object-cover border border-gray-200" />
+          ) : (
+            <div className="h-16 w-16 rounded-xl bg-gray-100 border border-gray-200
+                            flex items-center justify-center text-[10px] text-gray-400 text-center">
+              No logo
+            </div>
+          )}
+          <div>
+            <label className="inline-block cursor-pointer">
+              <span className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+                {logoPreview ? 'Change logo' : 'Upload logo'}
+              </span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) { setLogoFile(f); setLogoPreview(URL.createObjectURL(f)); }
+                }}
+              />
+            </label>
+            <p className="mt-1 text-xs text-gray-400">PNG or JPG · appears on your invoices.</p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <Input
             label="Trading Name"

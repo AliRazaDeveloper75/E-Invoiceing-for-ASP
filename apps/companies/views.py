@@ -14,6 +14,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from apps.common.utils import success_response, error_response
 from .models import Company, CompanyMember
@@ -95,10 +96,11 @@ class CompanyListCreateView(APIView):
 class CompanyDetailView(APIView):
     """
     GET    /api/v1/companies/{id}/  — Get company details (any member)
-    PUT    /api/v1/companies/{id}/  — Update company (admin only)
+    PUT    /api/v1/companies/{id}/  — Update company (admin only; accepts multipart for logo)
     DELETE /api/v1/companies/{id}/  — Soft-delete company (admin only)
     """
     permission_classes = [IsAuthenticated]
+    parser_classes     = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request, company_id):
         company, _ = _get_company_and_membership(request, company_id)
