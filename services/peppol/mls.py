@@ -357,12 +357,29 @@ def decide_response(info: ReceivedDocInfo) -> tuple:
     if not info.business_doc:
         return MLS_CODE_REJECTED, [{'code': 'SV', 'reason': 'No business document found in the received message.'}]
 
+    from services.peppol.pint_ae.xslt_validator import validate_xsd, validate_document
+
+    # ── Stage 1: XSD (syntax) validation ──────────────────────────────────────────
+    # The Peppol pipeline is XSD first, Schematron second. A syntax-invalid document
+    # is rejected with SV issues and is NOT business-validated — otherwise the
+    # Schematron misfires spurious BV rules on the broken structure (the testbed
+    # expects e.g. 1 SV / 0 BV, not N BV).
     try:
-        from services.peppol.pint_ae.xslt_validator import validate_document
+        _xsd_ran, xsd_errors = validate_xsd(info.business_doc)
+    except Exception as exc:
+        logger.warning('MLS: XSD validation raised: %s', exc)
+        xsd_errors = []
+    if xsd_errors:
+        reasons = [{'code': 'SV', 'reason': (e.get('text') or 'Syntax error')[:480]} for e in xsd_errors]
+        logger.info('MLS validation: %d SYNTAX issue(s) (SV) — XSD-invalid, Schematron skipped', len(reasons))
+        return MLS_CODE_REJECTED, reasons
+
+    # ── Stage 2: Schematron (business) validation ─────────────────────────────────
+    try:
         result = validate_document(info.business_doc, profile='billing')
     except Exception as exc:
         logger.warning('MLS: PINT-AE validation raised, defaulting to RE: %s', exc)
-        return MLS_CODE_REJECTED, [{'code': 'SV', 'reason': f'Validation error: {exc}'}]
+        return MLS_CODE_REJECTED, [{'code': 'BV', 'reason': f'Validation error: {exc}'}]
 
     if not result.ran:
         # Validation could not run (Saxon/artifacts missing) — accept rather than
@@ -373,20 +390,12 @@ def decide_response(info: ReceivedDocInfo) -> tuple:
     if result.is_valid:
         return MLS_CODE_ACCEPTED, []
 
-    # Report EVERY firing assertion as its own Issue (cac:LineResponse). The testbed
-    # diff-compares the PER-CODE issue count against its own validation, so we must
-    # NOT cap the list, and we must classify each issue correctly:
-    #   * SV (syntax)   — not-well-formed / XSD-level errors (validator id 'SYNTAX')
-    #   * BV (business) — Schematron rule failures
-    reasons = []
-    for e in result.errors:
-        eid = str(e.get('id') or '')
-        code = 'SV' if eid.upper() == 'SYNTAX' else 'BV'
-        reasons.append({'code': code,
-                        'reason': (eid + ': ' + str(e.get('text') or '')).strip(': ')[:480]})
-    logger.info('MLS validation: %d issue(s) — codes=%s ids=%s',
-                len(reasons), [r['code'] for r in reasons],
-                [str(e.get('id') or '')[:40] for e in result.errors])
+    # Every firing Schematron assertion is a business issue (BV). The testbed
+    # diff-compares the per-code issue count, so do NOT cap the list.
+    reasons = [{'code': 'BV', 'reason': (str(e.get('id') or '') + ': ' + str(e.get('text') or '')).strip(': ')[:480]}
+               for e in result.errors]
+    logger.info('MLS validation: %d BV issue(s) — ids=%s',
+                len(reasons), [str(e.get('id') or '')[:40] for e in result.errors][:25])
     return MLS_CODE_REJECTED, reasons or [{'code': 'BV', 'reason': 'Document failed PINT-AE validation.'}]
 
 

@@ -166,3 +166,59 @@ def validate_document(xml_bytes: bytes, *, profile: str = 'billing',
 
     res.is_valid = len(res.errors) == 0
     return res
+
+
+# ─── XSD (syntax) validation — the first gate before Schematron ──────────────────
+
+_UBL_XSD_ROOT = os.path.join(os.path.dirname(__file__), '..', '..', '..',
+                             'schemas', 'ubl', '2.1', 'maindoc')
+_UBL_FILES = {'Invoice': 'UBL-Invoice-2.1.xsd', 'CreditNote': 'UBL-CreditNote-2.1.xsd'}
+_UBL_SCHEMAS: dict = {}
+
+
+def _load_ubl_schema(root_localname: str):
+    fname = _UBL_FILES.get(root_localname)
+    if not fname:
+        return None
+    sch = _UBL_SCHEMAS.get(root_localname)
+    if sch is None:
+        path = os.path.normpath(os.path.join(_UBL_XSD_ROOT, fname))
+        if not os.path.exists(path):
+            logger.warning('XSD: UBL schema missing: %s', path)
+            return None
+        sch = etree.XMLSchema(etree.parse(path))
+        _UBL_SCHEMAS[root_localname] = sch
+    return sch
+
+
+def validate_xsd(xml_bytes: bytes):
+    """
+    UBL XML-Schema (syntax) validation — the first gate before Schematron.
+
+    Returns ``(ran: bool, errors: list[{'id','text','location'}])``. A not-well-formed
+    document yields one SYNTAX error. ``ran=False`` means XSD could not be applied
+    (unknown document type / schema unavailable) and the caller should fall through.
+    """
+    if isinstance(xml_bytes, str):
+        xml_bytes = xml_bytes.encode('utf-8')
+    try:
+        doc = etree.fromstring(xml_bytes)
+    except Exception as exc:
+        return True, [{'id': 'SYNTAX', 'text': f'Document is not well-formed: {exc}'[:480], 'location': ''}]
+
+    schema = _load_ubl_schema(etree.QName(doc).localname)
+    if schema is None:
+        return False, []
+    if schema.validate(doc):
+        return True, []
+
+    seen, errors = set(), []
+    for e in schema.error_log:
+        msg = (e.message or '').strip()
+        key = (e.line, msg)
+        if key in seen:
+            continue
+        seen.add(key)
+        errors.append({'id': 'SYNTAX', 'text': msg[:480],
+                       'location': (f'line {e.line}' if e.line else '')})
+    return True, errors
