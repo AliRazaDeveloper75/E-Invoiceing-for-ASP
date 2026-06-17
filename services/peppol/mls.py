@@ -495,10 +495,11 @@ def send_mls_for_received(sbd_bytes: bytes, conversation_id: str = '',
             # Echo the original message's ConversationId so the receiving AP /
             # testbed can correlate the MLS to the original transmission.
             conversation_id=conversation_id,
-            # ebMS RefToMessageId = the original business message's MessageId. This
-            # is how phase4 / the testbed match the async MLS back to the document
-            # it sent — without it the MLS is valid but "not received" (uncorrelated).
-            ref_to_message_id=ref_to_message_id,
+            # NOTE: deliberately NOT setting RefToMessageId. Peppol AS4 uses the
+            # One-Way/Push MEP, whose UserMessage MUST NOT carry RefToMessageId —
+            # phase4 rejects the MLS with an ebMS Error if it is present. The MLS is
+            # correlated to the original document at the BUSINESS level, via the
+            # ApplicationResponse DocumentReference (= received SBDH InstanceIdentifier).
         )
         # TEMP DIAGNOSTIC: log the outgoing MLS AS4 SOAP envelope (From/To party,
         # Service, Action, ConversationId, MessageProperties) to verify routing.
@@ -506,8 +507,8 @@ def send_mls_for_received(sbd_bytes: bytes, conversation_id: str = '',
             import re as _re_dbg
             _m = _re_dbg.search(rb'<S12:Envelope.*?</S12:Envelope>', body, _re_dbg.S)
             logger.info(
-                'MLS OUTGOING: sender_ap=%s recipient_ap=%s conv_id=%r ref_to_msg=%r endpoint=%s',
-                sender_ap_id, recipient_ap_id, conversation_id, ref_to_message_id, ep.transport_url,
+                'MLS OUTGOING: sender_ap=%s recipient_ap=%s conv_id=%r endpoint=%s',
+                sender_ap_id, recipient_ap_id, conversation_id, ep.transport_url,
             )
             if _m:
                 logger.info('MLS OUTGOING SOAP >>>\n%s\n<<< MLS OUTGOING SOAP',
