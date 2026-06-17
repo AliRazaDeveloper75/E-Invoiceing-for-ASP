@@ -388,9 +388,28 @@ def send_mls_for_received(sbd_bytes: bytes, conversation_id: str = '') -> MLSRes
 
     # C3 (us) is identified by our Peppol Service Provider ID (SPID, scheme 0242),
     # NOT our business participant. The eDEC MLS Schematron (SCH-MLS-09/11) requires
-    # the SBDH Sender + ApplicationResponse SenderParty to be this SPID.
+    # the SBDH Sender + ApplicationResponse SenderParty to be this SPID, and the
+    # testbed correlates the MLS to the AP CERTIFICATE that signs the AS4 message.
+    # Derive the SPID from the signing-cert CN (e.g. "PAE001147" -> "0242:001147")
+    # so it can never drift from a misconfigured PEPPOL_SP_ID env var (the SMP cert
+    # "001138" is a DIFFERENT cert and must NOT be used here).
     from django.conf import settings as _settings
-    sp_id = getattr(_settings, 'PEPPOL_SP_ID', '') or info.receiver
+    from services.as4.signing import AS4MessageSigner
+    from cryptography.x509.oid import NameOID
+    signer = AS4MessageSigner()
+    signer._load_credentials()
+    if signer._cert is None or signer._key is None:
+        res.errors.append('Signing credentials not configured (keystore).')
+        return res
+    try:
+        sender_ap_id = signer._cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
+    except Exception:
+        sender_ap_id = ''
+    import re as _re
+    _m = _re.match(r'^[A-Za-z]{2,4}(\d{4,}.*)$', (sender_ap_id or '').strip())
+    spid_from_cert = f'0242:{_m.group(1)}' if _m else ''
+    sp_id = spid_from_cert or getattr(_settings, 'PEPPOL_SP_ID', '') or info.receiver
+    logger.info('MLS SPID resolved: cert_cn=%r -> sp_id=%r', sender_ap_id, sp_id)
 
     # Build the MLS SBD (our SP → C2 service provider).
     mls_sbd = build_mls_sbd(
@@ -412,18 +431,7 @@ def send_mls_for_received(sbd_bytes: bytes, conversation_id: str = '') -> MLSRes
     )
     logger.info('MLS SBD XML >>>\n%s\n<<< MLS SBD XML', mls_sbd.decode('utf-8', 'replace')[:3500])
 
-    # Load our signing credentials.
-    from services.as4.signing import AS4MessageSigner
-    signer = AS4MessageSigner()
-    signer._load_credentials()
-    if signer._cert is None or signer._key is None:
-        res.errors.append('Signing credentials not configured (keystore).')
-        return res
-    from cryptography.x509.oid import NameOID
-    try:
-        sender_ap_id = signer._cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
-    except Exception:
-        sender_ap_id = ''
+    # Signing credentials + sender AP id (sender_ap_id) already loaded above.
 
     # Discover the original sender's MLS receiving endpoint + certificate.
     from services.smp_client import SMPClient
