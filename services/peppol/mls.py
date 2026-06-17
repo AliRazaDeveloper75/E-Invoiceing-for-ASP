@@ -373,8 +373,11 @@ def decide_response(info: ReceivedDocInfo) -> tuple:
     if result.is_valid:
         return MLS_CODE_ACCEPTED, []
 
-    reasons = [{'code': 'BV', 'reason': (e.get('id') + ': ' + e.get('text'))[:480]}
-               for e in result.errors[:5]]
+    # Report EVERY firing assertion as its own Issue (cac:LineResponse). The testbed
+    # diff-compares the issue count against its own validation, so we must NOT cap
+    # the list (it expects e.g. 22 BV issues, not a truncated 5).
+    reasons = [{'code': 'BV', 'reason': (str(e.get('id') or '') + ': ' + str(e.get('text') or '')).strip(': ')[:480]}
+               for e in result.errors]
     return MLS_CODE_REJECTED, reasons or [{'code': 'BV', 'reason': 'Document failed PINT-AE validation.'}]
 
 
