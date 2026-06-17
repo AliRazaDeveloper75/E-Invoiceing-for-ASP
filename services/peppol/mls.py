@@ -374,10 +374,19 @@ def decide_response(info: ReceivedDocInfo) -> tuple:
         return MLS_CODE_ACCEPTED, []
 
     # Report EVERY firing assertion as its own Issue (cac:LineResponse). The testbed
-    # diff-compares the issue count against its own validation, so we must NOT cap
-    # the list (it expects e.g. 22 BV issues, not a truncated 5).
-    reasons = [{'code': 'BV', 'reason': (str(e.get('id') or '') + ': ' + str(e.get('text') or '')).strip(': ')[:480]}
-               for e in result.errors]
+    # diff-compares the PER-CODE issue count against its own validation, so we must
+    # NOT cap the list, and we must classify each issue correctly:
+    #   * SV (syntax)   — not-well-formed / XSD-level errors (validator id 'SYNTAX')
+    #   * BV (business) — Schematron rule failures
+    reasons = []
+    for e in result.errors:
+        eid = str(e.get('id') or '')
+        code = 'SV' if eid.upper() == 'SYNTAX' else 'BV'
+        reasons.append({'code': code,
+                        'reason': (eid + ': ' + str(e.get('text') or '')).strip(': ')[:480]})
+    logger.info('MLS validation: %d issue(s) — codes=%s ids=%s',
+                len(reasons), [r['code'] for r in reasons],
+                [str(e.get('id') or '')[:40] for e in result.errors])
     return MLS_CODE_REJECTED, reasons or [{'code': 'BV', 'reason': 'Document failed PINT-AE validation.'}]
 
 
