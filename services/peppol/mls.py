@@ -208,20 +208,39 @@ def build_application_response(
     doc_resp = cac(ar, 'DocumentResponse')
     response = cac(doc_resp, 'Response')
     cbc(response, 'ResponseCode', response_code)
-    for sr in (status_reasons or []):
-        status = cac(response, 'Status')
-        if sr.get('code'):
-            cbc(status, 'StatusReasonCode', sr['code'])
-        if sr.get('reason'):
-            cbc(status, 'StatusReason', sr['reason'][:500])
 
-    # The receiving AP correlates the MLS to the original transmission via the
-    # SBDH InstanceIdentifier of the received document. Per the eDEC MLS spec,
-    # cac:DocumentReference/cbc:ID MUST carry that InstanceIdentifier (NOT the
-    # business document's cbc:ID) — otherwise the testbed reports the MLS as
-    # "not received" because it cannot match it to the test transaction.
+    is_negative = (response_code == MLS_CODE_REJECTED)
+    reasons = list(status_reasons or [])
+    if is_negative and not reasons:
+        reasons = [{'code': 'BV', 'reason': 'Document failed PINT-AE validation.'}]
+
+    if is_negative:
+        # SCH-MLS-20/21: a negative MLS MUST carry a non-empty overall Description
+        # on the document-level Response (order: ResponseCode then Description).
+        summary = '; '.join(r.get('reason', '') for r in reasons if r.get('reason'))
+        cbc(response, 'Description', (summary or 'Document failed PINT-AE validation.')[:1000])
+
+    # SCH-MLS-22: exactly one DocumentReference. Its cbc:ID MUST be the SBDH
+    # InstanceIdentifier of the received document (the testbed's correlation key),
+    # NOT the inner business document's cbc:ID.
     doc_ref = cac(doc_resp, 'DocumentReference')
     cbc(doc_ref, 'ID', reference_instance_id or reference_id or mls_id)
+
+    if is_negative:
+        # SCH-MLS-23: a negative MLS MUST contain at least one Issue (cac:LineResponse).
+        # SCH-MLS-24: at least one Issue MUST be a failure — a Status whose
+        # StatusReasonCode is BV/FD/SV. UBL requires LineReference/LineID per line.
+        for i, r in enumerate(reasons, start=1):
+            line_resp = cac(doc_resp, 'LineResponse')
+            line_ref = cac(line_resp, 'LineReference')
+            cbc(line_ref, 'LineID', str(i))
+            lr_response = cac(line_resp, 'Response')
+            if r.get('reason'):
+                cbc(lr_response, 'Description', r['reason'][:500])
+            status = cac(lr_response, 'Status')
+            cbc(status, 'StatusReasonCode', r.get('code') or 'BV')
+            if r.get('reason'):
+                cbc(status, 'StatusReason', r['reason'][:500])
 
     return etree.tostring(ar, xml_declaration=True, encoding='UTF-8')
 
