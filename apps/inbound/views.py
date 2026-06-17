@@ -157,14 +157,30 @@ class AS4ReceiveView(APIView):
             _mls_task.delay(sbd_b64, conversation_id, ref_to_message_id)
             logger.info('AS4 inbound: MLS dispatched (async).')
         except Exception:
-            logger.warning('AS4 inbound: Celery unavailable — sending MLS synchronously.')
-            try:
-                from services.peppol.mls import send_mls_for_received as _send
-                r = _send(payload_xml, conversation_id=conversation_id,
-                          ref_to_message_id=ref_to_message_id)
-                logger.info('AS4 inbound: MLS %s sent=%s (%s)', r.response_code, r.sent, r.errors)
-            except Exception as exc:
-                logger.error('AS4 inbound: synchronous MLS send failed: %s', exc)
+            # Celery unavailable. Do NOT send the MLS inline — that would block the
+            # AS4 receipt and, critically, deliver the MLS to the sender BEFORE it
+            # has received our receipt for the business document. The testbed only
+            # arms its "awaiting MLS" state after our receipt is processed, so an
+            # MLS that arrives first is discarded → "MLS not received". Defer the
+            # send to a background thread with a short delay so the receipt goes
+            # out (and is processed by C2) first.
+            import threading, time
+            from django.conf import settings as _settings
+            delay = getattr(_settings, 'MLS_SEND_DELAY_SECONDS', 10)
+
+            def _deferred_send():
+                time.sleep(delay)
+                try:
+                    from services.peppol.mls import send_mls_for_received as _send
+                    r = _send(payload_xml, conversation_id=conversation_id,
+                              ref_to_message_id=ref_to_message_id)
+                    logger.info('AS4 inbound: MLS %s sent=%s (%s)', r.response_code, r.sent, r.errors)
+                except Exception as exc:
+                    logger.error('AS4 inbound: deferred MLS send failed: %s', exc)
+
+            logger.warning('AS4 inbound: Celery unavailable — sending MLS via background thread '
+                           '(delay=%ss, after receipt).', delay)
+            threading.Thread(target=_deferred_send, daemon=True).start()
 
 
 # ─── Supplier Auth Mixin ──────────────────────────────────────────────────────
