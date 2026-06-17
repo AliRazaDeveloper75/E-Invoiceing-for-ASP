@@ -76,6 +76,7 @@ def build_message(
     signing_key,              # our private key
     recipient_cert,           # cryptography x509.Certificate (testbed) for encryption
     conversation_id: str = '',  # echo the original message's ConversationId (MLS); else new
+    ref_to_message_id: str = '',  # ebMS RefToMessageId — original message's MessageId (MLS correlation)
 ) -> tuple[bytes, str]:
     """Build the MTOM body + Content-Type for an encrypted+signed AS4 UserMessage."""
     message_id   = f'{uuid.uuid4()}@e-numerak.ae'
@@ -152,6 +153,10 @@ def build_message(
     mi = etree.SubElement(um, f'{{{EB}}}MessageInfo')
     etree.SubElement(mi, f'{{{EB}}}Timestamp').text = ts
     etree.SubElement(mi, f'{{{EB}}}MessageId').text = message_id
+    # RefToMessageId correlates a response (MLS) to the original request message.
+    # phase4 / the testbed match the async MLS to the sent business document via this.
+    if ref_to_message_id:
+        etree.SubElement(mi, f'{{{EB}}}RefToMessageId').text = ref_to_message_id
     pi = etree.SubElement(um, f'{{{EB}}}PartyInfo')
     frm = etree.SubElement(pi, f'{{{EB}}}From')
     fpid = etree.SubElement(frm, f'{{{EB}}}PartyId'); fpid.set('type', AP_PARTY_TYPE); fpid.text = sender_ap_id

@@ -117,7 +117,7 @@ class AS4ReceiveView(APIView):
 
         # PINT-AE: answer received Invoices/Credit Notes with a Message Level
         # Status (MLS). Skip ApplicationResponses (received MLS) to avoid loops.
-        self._maybe_send_mls(result.payload_xml, result.conversation_id)
+        self._maybe_send_mls(result.payload_xml, result.conversation_id, result.message_id)
 
         logger.info('AS4 inbound accepted: msg=%s sender=%s', result.message_id, result.sender_id)
         return HttpResponse(
@@ -127,7 +127,7 @@ class AS4ReceiveView(APIView):
         )
 
     @staticmethod
-    def _maybe_send_mls(payload_xml, conversation_id: str = '') -> None:
+    def _maybe_send_mls(payload_xml, conversation_id: str = '', ref_to_message_id: str = '') -> None:
         """
         Dispatch a Message Level Status for a received PINT-AE business document.
 
@@ -154,13 +154,14 @@ class AS4ReceiveView(APIView):
         sbd_b64 = base64.b64encode(payload_xml).decode('ascii')
         try:
             from tasks.as4_tasks import send_mls_for_received as _mls_task
-            _mls_task.delay(sbd_b64, conversation_id)
+            _mls_task.delay(sbd_b64, conversation_id, ref_to_message_id)
             logger.info('AS4 inbound: MLS dispatched (async).')
         except Exception:
             logger.warning('AS4 inbound: Celery unavailable — sending MLS synchronously.')
             try:
                 from services.peppol.mls import send_mls_for_received as _send
-                r = _send(payload_xml, conversation_id=conversation_id)
+                r = _send(payload_xml, conversation_id=conversation_id,
+                          ref_to_message_id=ref_to_message_id)
                 logger.info('AS4 inbound: MLS %s sent=%s (%s)', r.response_code, r.sent, r.errors)
             except Exception as exc:
                 logger.error('AS4 inbound: synchronous MLS send failed: %s', exc)

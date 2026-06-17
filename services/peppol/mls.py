@@ -361,7 +361,8 @@ def decide_response(info: ReceivedDocInfo) -> tuple:
 
 # ─── Full orchestration: received document → send MLS ───────────────────────────
 
-def send_mls_for_received(sbd_bytes: bytes, conversation_id: str = '') -> MLSResult:
+def send_mls_for_received(sbd_bytes: bytes, conversation_id: str = '',
+                          ref_to_message_id: str = '') -> MLSResult:
     """
     Given a received SBD, validate it, build the appropriate MLS, discover the
     original sender's MLS endpoint via SMP, and transmit it over AS4.
@@ -494,6 +495,10 @@ def send_mls_for_received(sbd_bytes: bytes, conversation_id: str = '') -> MLSRes
             # Echo the original message's ConversationId so the receiving AP /
             # testbed can correlate the MLS to the original transmission.
             conversation_id=conversation_id,
+            # ebMS RefToMessageId = the original business message's MessageId. This
+            # is how phase4 / the testbed match the async MLS back to the document
+            # it sent — without it the MLS is valid but "not received" (uncorrelated).
+            ref_to_message_id=ref_to_message_id,
         )
         # TEMP DIAGNOSTIC: log the outgoing MLS AS4 SOAP envelope (From/To party,
         # Service, Action, ConversationId, MessageProperties) to verify routing.
@@ -501,8 +506,8 @@ def send_mls_for_received(sbd_bytes: bytes, conversation_id: str = '') -> MLSRes
             import re as _re_dbg
             _m = _re_dbg.search(rb'<S12:Envelope.*?</S12:Envelope>', body, _re_dbg.S)
             logger.info(
-                'MLS OUTGOING: sender_ap=%s recipient_ap=%s conv_id=%r endpoint=%s',
-                sender_ap_id, recipient_ap_id, conversation_id, ep.transport_url,
+                'MLS OUTGOING: sender_ap=%s recipient_ap=%s conv_id=%r ref_to_msg=%r endpoint=%s',
+                sender_ap_id, recipient_ap_id, conversation_id, ref_to_message_id, ep.transport_url,
             )
             if _m:
                 logger.info('MLS OUTGOING SOAP >>>\n%s\n<<< MLS OUTGOING SOAP',
