@@ -54,6 +54,7 @@ _CUSTOM_CONTENT_MAP = {'aedtotal-incl-vat': 'BTAE-20'}
 
 # Code-list values
 TDD_TYPE_SUBMIT = 'S'
+TDD_TYPE_FAILED = 'F'
 TDD_SCOPE_DOMESTIC = 'D'
 TDD_ROLE_SENDER = '01'
 TDD_ROLE_RECEIVER = '02'
@@ -177,6 +178,16 @@ def build_tdd(sbd_or_invoice: bytes, *,
     rt = _sub(root, NS_PXS, 'ReportedTransaction')
     if transport_header_id:
         _sub(rt, NS_PXS, 'TransportHeaderID', transport_header_id)
+
+    # Failed report (Tax Data Status, DocumentTypeCode='F'): ReportedDocument and
+    # CustomContent are omitted (optional for F — ibr-tdd-22); only the
+    # TransportHeaderID + the full SourceDocument are carried.
+    if document_type_code == 'F':
+        src = _sub(rt, NS_PXS, 'SourceDocument')
+        ext = _sub(src, NS_CEC, 'ExtensionContent')
+        import copy
+        ext.append(copy.deepcopy(inv))
+        return etree.tostring(root, xml_declaration=True, encoding='UTF-8', pretty_print=True)
 
     rd = _sub(rt, NS_PXS, 'ReportedDocument')
     _sub(rd, NS_CBC, 'CustomizationID', itext('cbc:CustomizationID'))   # ibr-tdd-24
@@ -404,11 +415,32 @@ def submit_tdd_for_received(sbd_bytes: bytes, *,
     representative = (f'0242:{m.group(1)}' if m
                      else getattr(_settings, 'PEPPOL_SP_ID', '') or '0242:000000')
 
-    # 1. Build the TDD.
+    # Decide S (valid invoice -> full TDD) vs F (invalid invoice -> Tax Data Status)
+    # by validating the received business document against the PINT-AE pipeline
+    # (XSD syntax first, then schematron) — same gate as the MLS.
+    doc_type_code = TDD_TYPE_SUBMIT
+    try:
+        from services.peppol.pint_ae.xslt_validator import validate_xsd, validate_document
+        _iid, _inv = extract_business_doc(sbd_bytes)
+        if _inv is not None:
+            _bd = etree.tostring(_inv)
+            _ran, _xsd_err = validate_xsd(_bd)
+            if _xsd_err:
+                doc_type_code = TDD_TYPE_FAILED
+            else:
+                _vd = validate_document(_bd, profile='billing')
+                if _vd.ran and not _vd.is_valid:
+                    doc_type_code = TDD_TYPE_FAILED
+        if doc_type_code == TDD_TYPE_FAILED:
+            logger.info('TDD: received document is INVALID -> Tax Data Status (F).')
+    except Exception as exc:
+        logger.warning('TDD: source validation error, defaulting to S: %s', exc)
+
+    # 1. Build the TDD / TDS.
     try:
         tdd = build_tdd(sbd_bytes, reporter=reporter, receiver=c5_receiver,
                         representative=representative, reporter_role=reporter_role,
-                        document_scope=document_scope)
+                        document_scope=document_scope, document_type_code=doc_type_code)
     except Exception as exc:
         res.errors.append(f'TDD build failed: {exc}')
         return res
