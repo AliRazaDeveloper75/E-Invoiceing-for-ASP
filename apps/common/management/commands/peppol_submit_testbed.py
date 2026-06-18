@@ -155,7 +155,7 @@ class Command(BaseCommand):
             doctype_value=doctype_value, doctype_scheme=DOCTYPE_SCHEME,
             process_value=PROCESS_VALUE, process_scheme=PROCESS_SCHEME,
             standard=kind['standard'], type_name=kind['type'], type_version='2.1',
-            country_c1='AE',
+            country_c1='AE', mls_type='ALWAYS_SEND',
         )
 
         msg, ct = as4sender.build_message(

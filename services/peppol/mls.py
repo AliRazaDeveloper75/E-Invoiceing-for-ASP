@@ -260,10 +260,16 @@ def wrap_in_sbd(
     type_name: str,
     type_version: str,
     country_c1: str = 'AE',
+    mls_type: str = '',
     instance_id: Optional[str] = None,
     now: Optional[datetime] = None,
 ) -> bytes:
-    """Wrap a UBL business document in a StandardBusinessDocument (SBDH)."""
+    """Wrap a UBL business document in a StandardBusinessDocument (SBDH).
+
+    ``mls_type`` (optional) adds an MLS_TYPE BusinessScope (e.g. 'ALWAYS_SEND' or
+    'FAILURE_ONLY') instructing the receiver's SP when to return an MLS. The Peppol
+    testbed submission tests require MLS_TYPE='ALWAYS_SEND' on the sent SBD.
+    """
     now = now or datetime.now(timezone.utc)
     instance_id = instance_id or str(uuid.uuid4())
 
@@ -306,6 +312,13 @@ def wrap_in_sbd(
         sbdh(scope, 'InstanceIdentifier', value)
         if ident is not None:
             sbdh(scope, 'Identifier', ident)
+
+    # Optional MLS_TYPE scope (Type + InstanceIdentifier only). The testbed
+    # submission tests require 'ALWAYS_SEND' so it always returns an MLS.
+    if mls_type:
+        scope = sbdh(scope_root, 'Scope')
+        sbdh(scope, 'Type', 'MLS_TYPE')
+        sbdh(scope, 'InstanceIdentifier', mls_type)
 
     # Append the business document (strip any XML declaration first).
     doc_el = etree.fromstring(business_doc)
