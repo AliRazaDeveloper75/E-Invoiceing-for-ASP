@@ -417,30 +417,30 @@ def submit_tdd_for_received(sbd_bytes: bytes, *,
     representative = (f'0242:{m.group(1)}' if m
                      else getattr(_settings, 'PEPPOL_SP_ID', '') or '0242:000000')
 
-    # Two independent decisions from validating the received document:
-    #   document_type_code: 'S' if the document is VALID, 'F' (failed/TDS) if it
-    #     fails EITHER UBL XSD or the PINT-AE schematron.
-    #   include_reported_document: True if the document is READABLE (XSD-valid, so
-    #     its fields can be extracted), False only when XSD-invalid/not well-formed.
-    # => valid: S + ReportedDocument; schematron-invalid: F + ReportedDocument;
-    #    syntax/XSD-invalid: F + no ReportedDocument.
+    # DocumentTypeCode: 'S' if the received document is VALID, 'F' (failed/TDS) if it
+    # fails EITHER UBL XSD or the PINT-AE schematron. The full ReportedDocument +
+    # CustomContent are ALWAYS included as long as the fields can be extracted — the
+    # testbed expects them even for syntax/schematron-invalid (but readable) docs.
+    # (include_reported_document=False is reserved for a genuinely unreadable doc,
+    # which never occurs for these well-formed testbed invoices.)
     doc_type_code = TDD_TYPE_SUBMIT
     include_rd = True
     try:
         from services.peppol.pint_ae.xslt_validator import validate_xsd, validate_document
         _iid, _inv = extract_business_doc(sbd_bytes)
-        if _inv is not None:
+        if _inv is None:
+            include_rd = False
+        else:
             _bd = etree.tostring(_inv)
             _ran, _xsd_err = validate_xsd(_bd)
             if _xsd_err:
-                doc_type_code, include_rd = TDD_TYPE_FAILED, False
+                doc_type_code = TDD_TYPE_FAILED
             else:
                 _vd = validate_document(_bd, profile='billing')
                 if _vd.ran and not _vd.is_valid:
                     doc_type_code = TDD_TYPE_FAILED
         if doc_type_code == TDD_TYPE_FAILED:
-            logger.info('TDD: received document INVALID -> Tax Data Status (F, reported_doc=%s).',
-                        include_rd)
+            logger.info('TDD: received document INVALID -> Tax Data Status (F).')
     except Exception as exc:
         logger.warning('TDD: source validation error, defaulting to S: %s', exc)
 
