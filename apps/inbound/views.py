@@ -119,6 +119,11 @@ class AS4ReceiveView(APIView):
         # Status (MLS). Skip ApplicationResponses (received MLS) to avoid loops.
         self._maybe_send_mls(result.payload_xml, result.conversation_id, result.message_id)
 
+        # UAE 5-corner (AE TDD): after receiving a PINT-AE invoice, generate a Tax
+        # Data Document and submit it to the Tax Authority (C5). Skipped for
+        # ApplicationResponse/TaxData payloads.
+        self._maybe_submit_tdd(result.payload_xml)
+
         logger.info('AS4 inbound accepted: msg=%s sender=%s', result.message_id, result.sender_id)
         return HttpResponse(
             result.receipt_xml or b'<ack/>',
@@ -181,6 +186,45 @@ class AS4ReceiveView(APIView):
             logger.warning('AS4 inbound: Celery unavailable — sending MLS via background thread '
                            '(delay=%ss, after receipt).', delay)
             threading.Thread(target=_deferred_send, daemon=True).start()
+
+    @staticmethod
+    def _maybe_submit_tdd(payload_xml) -> None:
+        """
+        Generate an AE Tax Data Document for a received PINT-AE invoice and submit
+        it to the Tax Authority (C5). Runs in a background thread so the AS4 receipt
+        is not delayed. Only invoices/credit notes trigger a TDD; ApplicationResponse
+        (MLS) and TaxData payloads are ignored.
+        """
+        if not payload_xml:
+            return
+        from django.conf import settings as _settings
+        if not getattr(_settings, 'PEPPOL_TDD_ENABLED', True):
+            return
+        try:
+            from lxml import etree as _et
+            root = _et.fromstring(payload_xml)
+            local_names = {_et.QName(el).localname for el in root.iter()}
+            if not ({'Invoice', 'CreditNote'} & local_names):
+                return
+            if {'ApplicationResponse', 'TaxData'} & local_names:
+                return
+        except Exception as exc:
+            logger.debug('AS4 inbound: could not inspect payload for TDD: %s', exc)
+            return
+
+        import threading
+
+        def _deferred_tdd():
+            try:
+                from services.peppol.tdd import submit_tdd_for_received
+                r = submit_tdd_for_received(payload_xml)
+                logger.info('AS4 inbound: TDD built=%s valid=%s sent=%s receipt=%s (%s)',
+                            r.built, r.valid, r.sent, r.receipt, r.errors)
+            except Exception as exc:
+                logger.error('AS4 inbound: TDD submission failed: %s', exc)
+
+        logger.info('AS4 inbound: submitting AE TDD to C5 via background thread.')
+        threading.Thread(target=_deferred_tdd, daemon=True).start()
 
 
 # ─── Supplier Auth Mixin ──────────────────────────────────────────────────────

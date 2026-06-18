@@ -137,17 +137,35 @@ class Command(BaseCommand):
             process_id = sbdh.get('process') or process_id
             self.stdout.write(f'SBDH route        : {original_sender} -> {final_recipient}')
 
-        # Resolve endpoint + recipient cert (SMP lookup unless --endpoint given)
+        # Resolve endpoint + recipient cert (SMP lookup unless --endpoint given).
+        # The testbed registers its receiver under a WILDCARD doctype (e.g.
+        # billing-1@ae-1* or billing-1*), not the exact value carried in the SBDH,
+        # so try the exact doctype first then the wildcard candidates. The AS4
+        # Action / SBDH keep the EXACT doctype — only endpoint discovery falls back.
         endpoint = opts['endpoint']
         recipient_cert = None
         if not endpoint:
-            self.stdout.write(f'SMP lookup for {final_recipient} ...')
-            try:
-                from services.smp_client import SMPClient
-                ep = SMPClient().lookup(final_recipient, doc_type)
-            except Exception as exc:
-                ep = None
-                self.stdout.write(self.style.ERROR(f'SMP lookup error: {exc}'))
+            from services.smp_client import SMPClient
+            candidates = [doc_type]
+            if '##' in doc_type:
+                head, tail = doc_type.split('##', 1)
+                if '::' in tail:
+                    cust, ver = tail.rsplit('::', 1)
+                    for alt in (cust + '*', cust.split('@', 1)[0] + '*'):
+                        cand = f'{head}##{alt}::{ver}'
+                        if cand not in candidates:
+                            candidates.append(cand)
+            ep = None
+            for cand in candidates:
+                self.stdout.write(f'SMP lookup for {final_recipient} [{cand.rsplit("##", 1)[-1]}] ...')
+                try:
+                    c = SMPClient().lookup(final_recipient, cand)
+                except Exception as exc:
+                    c = None
+                    self.stdout.write(self.style.ERROR(f'  SMP lookup error: {exc}'))
+                if c and c.transport_url:
+                    ep = c
+                    break
             if ep and ep.transport_url:
                 endpoint = ep.transport_url
                 self.stdout.write(self.style.SUCCESS(f'SMP endpoint      : {endpoint}'))
