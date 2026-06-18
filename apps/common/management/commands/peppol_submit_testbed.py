@@ -103,6 +103,9 @@ class Command(BaseCommand):
                                  'registered in the SML/SMP with MLS receiving capability.')
         parser.add_argument('--set-endpoints', action='store_true',
                             help='Rewrite supplier/customer EndpointID to --sender/--receiver.')
+        parser.add_argument('--with-tdd', action='store_true',
+                            help='Also generate + submit a corresponding AE TDD (as sender, '
+                                 'ReporterRole=01) to the Tax Authority C5 (AE TDD suite).')
 
     def handle(self, *args, **o):
         kind = KINDS[o['kind']]
@@ -203,3 +206,19 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING('RESULT: unclear response'))
         self.stdout.write('--- response (first 1200 bytes) ---')
         self.stdout.write(rb[:1200].decode('utf-8', 'replace'))
+
+        # AE TDD suite: after submitting the invoice, also generate + submit a TDD
+        # to the Tax Authority (C5) as the SENDER (ReporterRole=01), referencing the
+        # invoice we just sent (its SBDH InstanceIdentifier becomes the TDD
+        # TransportHeaderID). The TDD always goes to C5, regardless of --receiver.
+        if o.get('with_tdd'):
+            from services.peppol.tdd import submit_tdd_for_received, TDD_ROLE_SENDER
+            self.stdout.write('\nSubmitting AE TDD (sender, ReporterRole=01) to C5 ...')
+            tres = submit_tdd_for_received(sbd, reporter=o['sender'], reporter_role=TDD_ROLE_SENDER)
+            if tres.receipt:
+                self.stdout.write(self.style.SUCCESS(
+                    f'TDD RESULT: RECEIPT — C5 accepted the TDD ({tres.endpoint})'))
+            else:
+                self.stdout.write(self.style.ERROR(
+                    f'TDD RESULT: built={tres.built} valid={tres.valid} sent={tres.sent} '
+                    f'errors={tres.errors}'))
