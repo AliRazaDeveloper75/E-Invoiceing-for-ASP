@@ -373,6 +373,16 @@ def build_mls_sbd(
 
 # ─── Validation → response-code decision ────────────────────────────────────────
 
+def _detect_profile(business_doc: bytes) -> str:
+    """Return 'selfbilling' or 'billing' from the document's CustomizationID."""
+    try:
+        root = etree.fromstring(business_doc)
+        cust = (root.findtext(f'{{{NS_CBC}}}CustomizationID') or '').lower()
+    except Exception:
+        return 'billing'
+    return 'selfbilling' if 'selfbilling' in cust else 'billing'
+
+
 def decide_response(info: ReceivedDocInfo) -> tuple:
     """
     Validate the received business document and decide the MLS response code.
@@ -400,8 +410,13 @@ def decide_response(info: ReceivedDocInfo) -> tuple:
         return MLS_CODE_REJECTED, reasons
 
     # ── Stage 2: Schematron (business) validation ─────────────────────────────────
+    # Pick the PINT-AE profile from the document's CustomizationID: a self-billing
+    # invoice/credit note (urn:peppol:pint:selfbilling-1@ae-1) must be validated
+    # against the self-billing rules, not the billing ones — otherwise valid
+    # self-billing documents misfire BV asserts and we wrongly return RE.
+    profile = _detect_profile(info.business_doc)
     try:
-        result = validate_document(info.business_doc, profile='billing')
+        result = validate_document(info.business_doc, profile=profile)
     except Exception as exc:
         logger.warning('MLS: PINT-AE validation raised, defaulting to RE: %s', exc)
         return MLS_CODE_REJECTED, [{'code': 'BV', 'reason': f'Validation error: {exc}'}]
