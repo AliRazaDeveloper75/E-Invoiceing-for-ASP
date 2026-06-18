@@ -415,24 +415,21 @@ def submit_tdd_for_received(sbd_bytes: bytes, *,
     representative = (f'0242:{m.group(1)}' if m
                      else getattr(_settings, 'PEPPOL_SP_ID', '') or '0242:000000')
 
-    # Decide S (valid invoice -> full TDD) vs F (invalid invoice -> Tax Data Status)
-    # by validating the received business document against the PINT-AE pipeline
-    # (XSD syntax first, then schematron) — same gate as the MLS.
+    # Decide S (full TDD) vs F (Tax Data Status). F is used ONLY when the document
+    # could not be read — i.e. it is not well-formed / fails UBL XSD (the "syntax
+    # errors" case). A document with only SCHEMATRON (business-rule) errors is still
+    # readable, so it is reported as a normal 'S' TDD (the negative MLS to C2 already
+    # signals the validation failure); the testbed's expected TDD still carries the
+    # full ReportedDocument + CustomContent in that case.
     doc_type_code = TDD_TYPE_SUBMIT
     try:
-        from services.peppol.pint_ae.xslt_validator import validate_xsd, validate_document
+        from services.peppol.pint_ae.xslt_validator import validate_xsd
         _iid, _inv = extract_business_doc(sbd_bytes)
         if _inv is not None:
-            _bd = etree.tostring(_inv)
-            _ran, _xsd_err = validate_xsd(_bd)
+            _ran, _xsd_err = validate_xsd(etree.tostring(_inv))
             if _xsd_err:
                 doc_type_code = TDD_TYPE_FAILED
-            else:
-                _vd = validate_document(_bd, profile='billing')
-                if _vd.ran and not _vd.is_valid:
-                    doc_type_code = TDD_TYPE_FAILED
-        if doc_type_code == TDD_TYPE_FAILED:
-            logger.info('TDD: received document is INVALID -> Tax Data Status (F).')
+                logger.info('TDD: received document not readable (XSD) -> Tax Data Status (F).')
     except Exception as exc:
         logger.warning('TDD: source validation error, defaulting to S: %s', exc)
 
