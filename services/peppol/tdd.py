@@ -47,6 +47,11 @@ TDD_DOCTYPE = ('busdox-docid-qns::urn:peppol:schema:taxdata:1.0::TaxData'
 TDD_PROCESS = 'urn:peppol:taxreporting'
 TDD_PROCESS_SCHEME = 'cenbii-procid-ubl'
 
+# Invoice AdditionalDocumentReference DocumentTypeCode -> TDD CustomContent BTAE id.
+# BTAE-20 = Invoice total amount with VAT in AED (present when doc currency != AED
+# and tax currency = AED). The testbed's expected TDD carries this as CustomContent.
+_CUSTOM_CONTENT_MAP = {'aedtotal-incl-vat': 'BTAE-20'}
+
 # Code-list values
 TDD_TYPE_SUBMIT = 'S'
 TDD_SCOPE_DOMESTIC = 'D'
@@ -203,6 +208,21 @@ def build_tdd(sbd_or_invoice: bytes, *,
     mt = _sub(rd, NS_PXS, 'MonetaryTotal')
     tea = _find_amount(inv, 'cac:LegalMonetaryTotal/cbc:TaxExclusiveAmount', dcc)
     _sub(mt, NS_CBC, 'TaxExclusiveAmount', tea or '0', currencyID=dcc)
+
+    # Custom content — UAE business terms not carried by the standard
+    # ReportedDocument. The testbed diff-compares these. BTAE-20 (Invoice total
+    # with VAT in AED) lives in the invoice as AdditionalDocumentReference
+    # [DocumentTypeCode='aedtotal-incl-vat']/DocumentDescription. (ibr-tdd-55)
+    for adr in inv.findall('cac:AdditionalDocumentReference', {'cac': NS_CAC}):
+        code = (adr.findtext('cbc:DocumentTypeCode', namespaces={'cbc': NS_CBC}) or '').strip()
+        btae_id = _CUSTOM_CONTENT_MAP.get(code)
+        if not btae_id:
+            continue
+        val = (adr.findtext('cbc:DocumentDescription', namespaces={'cbc': NS_CBC}) or '').strip()
+        if val:
+            cc = _sub(rt, NS_PXS, 'CustomContent')
+            _sub(cc, NS_CBC, 'ID', btae_id)
+            _sub(cc, NS_CBC, 'Value', val)
 
     # Source document — full original invoice inside cec:ExtensionContent (ibr-tdd-23, 56, 57)
     src = _sub(rt, NS_PXS, 'SourceDocument')
