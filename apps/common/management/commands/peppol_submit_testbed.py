@@ -156,6 +156,10 @@ class Command(BaseCommand):
             process_value=PROCESS_VALUE, process_scheme=PROCESS_SCHEME,
             standard=kind['standard'], type_name=kind['type'], type_version='2.1',
             country_c1='AE', mls_type='ALWAYS_SEND',
+            # Tell the testbed to address the return MLS to our registered business
+            # participant (resolvable in the SML with MLS receiving capability).
+            # Our SP id (0242:001147) is NOT registered, so default routing fails.
+            mls_to=o['sender'],
         )
 
         msg, ct = as4sender.build_message(

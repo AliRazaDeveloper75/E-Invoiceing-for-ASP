@@ -261,6 +261,7 @@ def wrap_in_sbd(
     type_version: str,
     country_c1: str = 'AE',
     mls_type: str = '',
+    mls_to: str = '',
     instance_id: Optional[str] = None,
     now: Optional[datetime] = None,
 ) -> bytes:
@@ -269,6 +270,11 @@ def wrap_in_sbd(
     ``mls_type`` (optional) adds an MLS_TYPE BusinessScope (e.g. 'ALWAYS_SEND' or
     'FAILURE_ONLY') instructing the receiver's SP when to return an MLS. The Peppol
     testbed submission tests require MLS_TYPE='ALWAYS_SEND' on the sent SBD.
+
+    ``mls_to`` (optional) adds an MLS_TO BusinessScope telling the receiver which
+    identifier to address the MLS to. Set this to a participant/SPID that is
+    registered (in the SML) with MLS receiving capability — otherwise the receiver
+    cannot resolve where to deliver the MLS.
     """
     now = now or datetime.now(timezone.utc)
     instance_id = instance_id or str(uuid.uuid4())
@@ -319,6 +325,12 @@ def wrap_in_sbd(
         scope = sbdh(scope_root, 'Scope')
         sbdh(scope, 'Type', 'MLS_TYPE')
         sbdh(scope, 'InstanceIdentifier', mls_type)
+
+    # Optional MLS_TO scope — the identifier the receiver must address the MLS to.
+    if mls_to:
+        scope = sbdh(scope_root, 'Scope')
+        sbdh(scope, 'Type', 'MLS_TO')
+        sbdh(scope, 'InstanceIdentifier', mls_to)
 
     # Append the business document (strip any XML declaration first).
     doc_el = etree.fromstring(business_doc)
