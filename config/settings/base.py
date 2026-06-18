@@ -350,6 +350,12 @@ PEPPOL_SIGNING_ENABLED = env.bool('PEPPOL_SIGNING_ENABLED', default=True)
 # network rules; only disable for isolated local testing.
 PEPPOL_AS4_VERIFY_SIGNER_TRUST = env.bool('PEPPOL_AS4_VERIFY_SIGNER_TRUST', default=True)
 
+# UAE 5-corner: after receiving a PINT-AE invoice, auto-generate + submit an AE
+# Tax Data Document (TDD) to the Tax Authority (C5). Required ONLY for the
+# "& AE TDD" testbed suites; MUST be False for the plain Billing/Self-Billing
+# suites (they reject an unexpected TDD). Toggle via .env + restart.
+PEPPOL_TDD_ENABLED = env.bool('PEPPOL_TDD_ENABLED', default=True)
+
 # PINT-AE validation artifact version (label). 1.0.4 → schemas/peppol/pint-ae/2026.5.
 PINT_AE_VERSION = env('PINT_AE_VERSION', default='1.0.4')
 
