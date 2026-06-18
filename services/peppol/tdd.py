@@ -113,6 +113,7 @@ def build_tdd(sbd_or_invoice: bytes, *,
               reporter_role: str = TDD_ROLE_RECEIVER,
               document_scope: str = TDD_SCOPE_DOMESTIC,
               document_type_code: str = TDD_TYPE_SUBMIT,
+              include_reported_document: bool = True,
               transport_header_id: str = '') -> bytes:
     """
     Build an AE TDD (``pxs:TaxData``) from a received PINT-AE Invoice/CreditNote.
@@ -179,10 +180,11 @@ def build_tdd(sbd_or_invoice: bytes, *,
     if transport_header_id:
         _sub(rt, NS_PXS, 'TransportHeaderID', transport_header_id)
 
-    # Failed report (Tax Data Status, DocumentTypeCode='F'): ReportedDocument and
-    # CustomContent are omitted (optional for F — ibr-tdd-22); only the
-    # TransportHeaderID + the full SourceDocument are carried.
-    if document_type_code == 'F':
+    # Unreadable document (e.g. UBL-XSD invalid): ReportedDocument + CustomContent
+    # are omitted (optional — ibr-tdd-22); only TransportHeaderID + SourceDocument.
+    # Note: a readable-but-invalid (schematron) document is still 'F' BUT keeps the
+    # full ReportedDocument, so this is gated on readability, not on the type code.
+    if not include_reported_document:
         src = _sub(rt, NS_PXS, 'SourceDocument')
         ext = _sub(src, NS_CEC, 'ExtensionContent')
         import copy
@@ -415,21 +417,30 @@ def submit_tdd_for_received(sbd_bytes: bytes, *,
     representative = (f'0242:{m.group(1)}' if m
                      else getattr(_settings, 'PEPPOL_SP_ID', '') or '0242:000000')
 
-    # Decide S (full TDD) vs F (Tax Data Status). F is used ONLY when the document
-    # could not be read — i.e. it is not well-formed / fails UBL XSD (the "syntax
-    # errors" case). A document with only SCHEMATRON (business-rule) errors is still
-    # readable, so it is reported as a normal 'S' TDD (the negative MLS to C2 already
-    # signals the validation failure); the testbed's expected TDD still carries the
-    # full ReportedDocument + CustomContent in that case.
+    # Two independent decisions from validating the received document:
+    #   document_type_code: 'S' if the document is VALID, 'F' (failed/TDS) if it
+    #     fails EITHER UBL XSD or the PINT-AE schematron.
+    #   include_reported_document: True if the document is READABLE (XSD-valid, so
+    #     its fields can be extracted), False only when XSD-invalid/not well-formed.
+    # => valid: S + ReportedDocument; schematron-invalid: F + ReportedDocument;
+    #    syntax/XSD-invalid: F + no ReportedDocument.
     doc_type_code = TDD_TYPE_SUBMIT
+    include_rd = True
     try:
-        from services.peppol.pint_ae.xslt_validator import validate_xsd
+        from services.peppol.pint_ae.xslt_validator import validate_xsd, validate_document
         _iid, _inv = extract_business_doc(sbd_bytes)
         if _inv is not None:
-            _ran, _xsd_err = validate_xsd(etree.tostring(_inv))
+            _bd = etree.tostring(_inv)
+            _ran, _xsd_err = validate_xsd(_bd)
             if _xsd_err:
-                doc_type_code = TDD_TYPE_FAILED
-                logger.info('TDD: received document not readable (XSD) -> Tax Data Status (F).')
+                doc_type_code, include_rd = TDD_TYPE_FAILED, False
+            else:
+                _vd = validate_document(_bd, profile='billing')
+                if _vd.ran and not _vd.is_valid:
+                    doc_type_code = TDD_TYPE_FAILED
+        if doc_type_code == TDD_TYPE_FAILED:
+            logger.info('TDD: received document INVALID -> Tax Data Status (F, reported_doc=%s).',
+                        include_rd)
     except Exception as exc:
         logger.warning('TDD: source validation error, defaulting to S: %s', exc)
 
@@ -437,7 +448,8 @@ def submit_tdd_for_received(sbd_bytes: bytes, *,
     try:
         tdd = build_tdd(sbd_bytes, reporter=reporter, receiver=c5_receiver,
                         representative=representative, reporter_role=reporter_role,
-                        document_scope=document_scope, document_type_code=doc_type_code)
+                        document_scope=document_scope, document_type_code=doc_type_code,
+                        include_reported_document=include_rd)
     except Exception as exc:
         res.errors.append(f'TDD build failed: {exc}')
         return res
