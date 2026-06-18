@@ -97,6 +97,10 @@ class Command(BaseCommand):
         parser.add_argument('--kind', default='invoice', choices=['invoice', 'creditnote'])
         parser.add_argument('--sender', default='0235:104132266800003')
         parser.add_argument('--receiver', default='9922:OPTBCNTRLP1004')
+        parser.add_argument('--mls-to', default='',
+                            help='SPID (scheme 0242) to receive the return MLS. '
+                                 'Default: derived from the signing-cert CN. MUST be '
+                                 'registered in the SML/SMP with MLS receiving capability.')
         parser.add_argument('--set-endpoints', action='store_true',
                             help='Rewrite supplier/customer EndpointID to --sender/--receiver.')
 
@@ -115,7 +119,14 @@ class Command(BaseCommand):
         if signer._cert is None or signer._key is None:
             self.stderr.write('Signing credentials not configured (keystore).'); return
         sender_ap_id = _cn(signer._cert)
-        self.stdout.write(f'Our AP (signer): {sender_ap_id}')
+
+        # The return MLS must be addressed to our Service-Provider ID (scheme 0242),
+        # derived from the signing-cert CN (e.g. PAE001147 -> 0242:001147). This SPID
+        # MUST be registered in the SML/SMP with MLS receiving capability.
+        import re as _re
+        _m = _re.match(r'^[A-Za-z]{2,4}(\d{4,}.*)$', (sender_ap_id or '').strip())
+        our_spid = o['mls_to'] or (f'0242:{_m.group(1)}' if _m else '')
+        self.stdout.write(f'Our AP (signer): {sender_ap_id}   MLS_TO (SPID): {our_spid}')
 
         # SMP lookup: try the candidate doctype values (the testbed registers the
         # broad 'billing-1*' wildcard). The SBDH + AS4 Action always carry the EXACT
@@ -156,10 +167,10 @@ class Command(BaseCommand):
             process_value=PROCESS_VALUE, process_scheme=PROCESS_SCHEME,
             standard=kind['standard'], type_name=kind['type'], type_version='2.1',
             country_c1='AE', mls_type='ALWAYS_SEND',
-            # Tell the testbed to address the return MLS to our registered business
-            # participant (resolvable in the SML with MLS receiving capability).
-            # Our SP id (0242:001147) is NOT registered, so default routing fails.
-            mls_to=o['sender'],
+            # Return MLS is addressed to our SPID (scheme 0242). The testbed rejects
+            # any other scheme ("Expected 0242"), and resolves this SPID in the SML
+            # to deliver the MLS — so 0242:00xxxx MUST be registered in our SMP/SML.
+            mls_to=our_spid,
         )
 
         msg, ct = as4sender.build_message(
