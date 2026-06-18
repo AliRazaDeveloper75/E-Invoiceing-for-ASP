@@ -36,19 +36,34 @@ DOCTYPE_SCHEME = 'peppol-doctype-wildcard'
 NS_CBC = 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2'
 NS_CAC = 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2'
 
+# For each kind:
+#   doctype  = the EXACT document type we put in the SBDH + AS4 Action (the document
+#              we send is a billing-1@ae-1 invoice).
+#   lookup   = candidate doctype VALUES to try against the receiver's SMP, in order.
+#              The testbed registers the broad wildcard 'billing-1*' (NOT
+#              'billing-1@ae-1'), so that must be in the candidate list.
 KINDS = {
     'invoice': {
         'standard': 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
         'type': 'Invoice',
-        # {star} = '' for exact, '*' for wildcard
         'doctype': ('urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice'
-                    '##urn:peppol:pint:billing-1@ae-1{star}::2.1'),
+                    '##urn:peppol:pint:billing-1@ae-1::2.1'),
+        'lookup': [
+            'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1*::2.1',
+            'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1::2.1',
+            'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1*::2.1',
+        ],
     },
     'creditnote': {
         'standard': 'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2',
         'type': 'CreditNote',
         'doctype': ('urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote'
-                    '##urn:peppol:pint:billing-1@ae-1{star}::2.1'),
+                    '##urn:peppol:pint:billing-1@ae-1::2.1'),
+        'lookup': [
+            'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1*::2.1',
+            'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1::2.1',
+            'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1*::2.1',
+        ],
     },
 }
 
@@ -102,23 +117,26 @@ class Command(BaseCommand):
         sender_ap_id = _cn(signer._cert)
         self.stdout.write(f'Our AP (signer): {sender_ap_id}')
 
-        # SMP lookup: try EXACT then WILDCARD doctype value.
-        ep = None; doctype_value = None
-        for star in ('', '*'):
-            dv = kind['doctype'].format(star=star)
+        # SMP lookup: try the candidate doctype values (the testbed registers the
+        # broad 'billing-1*' wildcard). The SBDH + AS4 Action always carry the EXACT
+        # document type; only the SMP endpoint discovery uses the matching candidate.
+        ep = None
+        for dv in kind['lookup']:
             try:
                 cand = SMPClient().lookup(o['receiver'], f'{DOCTYPE_SCHEME}::{dv}')
             except Exception as exc:
                 cand = None
-                self.stdout.write(f'  lookup ({"wildcard" if star else "exact"}) error: {exc}')
+                self.stdout.write(f'  lookup error [{dv.rsplit("##", 1)[-1]}]: {exc}')
             if cand and cand.transport_url:
-                ep, doctype_value = cand, dv
+                ep = cand
                 self.stdout.write(self.style.SUCCESS(
-                    f'SMP resolved ({"wildcard" if star else "exact"}): {cand.transport_url}'))
+                    f'SMP resolved via [{dv.rsplit("##", 1)[-1]}]: {cand.transport_url}'))
                 break
         if not ep:
-            self.stderr.write('SMP did not resolve the receiver for this doctype. '
+            self.stderr.write('SMP did not resolve the receiver for any candidate doctype. '
                               'Press START on the testbed test first, then re-run.'); return
+
+        doctype_value = kind['doctype']  # EXACT type for SBDH DOCUMENTID + AS4 Action
 
         recipient_cert = None
         if ep.certificate_uid:
