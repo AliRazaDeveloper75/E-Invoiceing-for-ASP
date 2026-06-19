@@ -198,7 +198,7 @@ class AS4ReceiveView(APIView):
         if not payload_xml:
             return
         from django.conf import settings as _settings
-        if not getattr(_settings, 'PEPPOL_TDD_ENABLED', False):
+        if not getattr(_settings, 'PEPPOL_TDD_ENABLED', True):
             return
         try:
             from lxml import etree as _et
