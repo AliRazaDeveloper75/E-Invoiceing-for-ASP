@@ -30,42 +30,44 @@ from services.peppol.mls import wrap_in_sbd
 
 AGREEMENT_REF  = 'urn:fdc:peppol.eu:2017:agreements:tia:ap_provider'
 PROCESS_SCHEME = 'cenbii-procid-ubl'
-PROCESS_VALUE  = 'urn:peppol:bis:billing'
 DOCTYPE_SCHEME = 'peppol-doctype-wildcard'
 
 NS_CBC = 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2'
 NS_CAC = 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2'
 
-# For each kind:
-#   doctype  = the EXACT document type we put in the SBDH + AS4 Action (the document
-#              we send is a billing-1@ae-1 invoice).
-#   lookup   = candidate doctype VALUES to try against the receiver's SMP, in order.
-#              The testbed registers the broad wildcard 'billing-1*' (NOT
-#              'billing-1@ae-1'), so that must be in the candidate list.
-KINDS = {
-    'invoice': {
-        'standard': 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
-        'type': 'Invoice',
-        'doctype': ('urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice'
-                    '##urn:peppol:pint:billing-1@ae-1::2.1'),
-        'lookup': [
-            'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1*::2.1',
-            'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1::2.1',
-            'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1*::2.1',
-        ],
-    },
-    'creditnote': {
-        'standard': 'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2',
-        'type': 'CreditNote',
-        'doctype': ('urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote'
-                    '##urn:peppol:pint:billing-1@ae-1::2.1'),
-        'lookup': [
-            'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1*::2.1',
-            'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1::2.1',
-            'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1*::2.1',
-        ],
-    },
+# PINT-AE profile → (PINT customization id stem, Peppol process value).
+PROFILES = {
+    'billing':     ('billing-1@ae-1',     'urn:peppol:bis:billing'),
+    'selfbilling': ('selfbilling-1@ae-1', 'urn:peppol:bis:selfbilling'),
 }
+_STD = {
+    'invoice':    ('urn:oasis:names:specification:ubl:schema:xsd:Invoice-2', 'Invoice'),
+    'creditnote': ('urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2', 'CreditNote'),
+}
+
+
+def build_kind(profile: str, kind: str) -> dict:
+    """Build the doctype + SMP lookup-candidate set for a profile/kind.
+
+    doctype  = the EXACT document type we put in the SBDH + AS4 Action.
+    lookup   = candidate doctype VALUES to try against the receiver's SMP, in order.
+               The testbed registers a broad wildcard (e.g. 'selfbilling-1*'), NOT the
+               exact 'selfbilling-1@ae-1', so the wildcard forms must be candidates.
+    """
+    cust, _ = PROFILES[profile]
+    std, typ = _STD[kind]
+    base = f'{std}::{typ}'
+    stem = cust.split('@', 1)[0]  # e.g. 'selfbilling-1'
+    return {
+        'standard': std,
+        'type': typ,
+        'doctype': f'{base}##urn:peppol:pint:{cust}::2.1',
+        'lookup': [
+            f'{base}##urn:peppol:pint:{stem}*::2.1',   # selfbilling-1*
+            f'{base}##urn:peppol:pint:{cust}::2.1',    # selfbilling-1@ae-1 (exact)
+            f'{base}##urn:peppol:pint:{cust}*::2.1',   # selfbilling-1@ae-1*
+        ],
+    }
 
 
 def _cn(cert):
@@ -95,6 +97,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--invoice', required=True, help='Path to the UBL business document.')
         parser.add_argument('--kind', default='invoice', choices=['invoice', 'creditnote'])
+        parser.add_argument('--profile', default='billing', choices=['billing', 'selfbilling'],
+                            help='PINT-AE profile: billing (default) or selfbilling.')
         parser.add_argument('--sender', default='0235:104132266800003')
         parser.add_argument('--receiver', default='9922:OPTBCNTRLP1004')
         parser.add_argument('--mls-to', default='',
@@ -108,7 +112,9 @@ class Command(BaseCommand):
                                  'ReporterRole=01) to the Tax Authority C5 (AE TDD suite).')
 
     def handle(self, *args, **o):
-        kind = KINDS[o['kind']]
+        kind = build_kind(o['profile'], o['kind'])
+        process_value = PROFILES[o['profile']][1]
+        self.stdout.write(f'Profile: {o["profile"]}  process={process_value}')
         body = open(o['invoice'], 'rb').read()
 
         if o['set_endpoints']:
@@ -167,7 +173,7 @@ class Command(BaseCommand):
         sbd = wrap_in_sbd(
             business_doc=body, sender=o['sender'], receiver=o['receiver'],
             doctype_value=doctype_value, doctype_scheme=DOCTYPE_SCHEME,
-            process_value=PROCESS_VALUE, process_scheme=PROCESS_SCHEME,
+            process_value=process_value, process_scheme=PROCESS_SCHEME,
             standard=kind['standard'], type_name=kind['type'], type_version='2.1',
             country_c1='AE', mls_type='ALWAYS_SEND',
             # Return MLS is addressed to our SPID (scheme 0242). The testbed rejects
@@ -179,7 +185,7 @@ class Command(BaseCommand):
         msg, ct = as4sender.build_message(
             payload_xml=sbd, sender_ap_id=sender_ap_id, recipient_ap_id=recipient_ap_id,
             original_sender=o['sender'], final_recipient=o['receiver'],
-            doc_type=f'{DOCTYPE_SCHEME}::{doctype_value}', process_id=PROCESS_VALUE,
+            doc_type=f'{DOCTYPE_SCHEME}::{doctype_value}', process_id=process_value,
             agreement_ref=AGREEMENT_REF, signing_cert=signer._cert, signing_key=signer._key,
             recipient_cert=recipient_cert,
         )
