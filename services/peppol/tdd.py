@@ -436,7 +436,12 @@ def submit_tdd_for_received(sbd_bytes: bytes, *,
             if _xsd_err:
                 doc_type_code = TDD_TYPE_FAILED
             else:
-                _vd = validate_document(_bd, profile='billing')
+                # Validate with the profile of the received document (a self-billing
+                # invoice MUST be checked against the selfbilling rules, else a valid
+                # doc misfires BV asserts and we wrongly emit F instead of S).
+                _cust = (_inv.findtext(f'{{{NS_CBC}}}CustomizationID') or '').lower()
+                _prof = 'selfbilling' if 'selfbilling' in _cust else 'billing'
+                _vd = validate_document(_bd, profile=_prof)
                 if _vd.ran and not _vd.is_valid:
                     doc_type_code = TDD_TYPE_FAILED
         if doc_type_code == TDD_TYPE_FAILED:
