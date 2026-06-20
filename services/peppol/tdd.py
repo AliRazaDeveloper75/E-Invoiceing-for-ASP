@@ -196,7 +196,16 @@ def build_tdd(sbd_or_invoice: bytes, *,
     _sub(rd, NS_CBC, 'ProfileID', itext('cbc:ProfileID'))              # ibr-tdd-25
     _sub(rd, NS_CBC, 'ID', itext('cbc:ID'))                            # ibr-tdd-26
     _sub(rd, NS_CBC, 'UUID', itext('cbc:UUID'))                        # ibr-tdd-27
-    _sub(rd, NS_CBC, 'IssueDate', itext('cbc:IssueDate'))             # ibr-tdd-28
+    # ibr-tdd-28 requires IssueDate to EXIST, and the TDD XSD requires it to be a
+    # valid xsd:date. A syntax-invalid source invoice can carry an empty/garbage
+    # IssueDate; copying it verbatim makes the TDD itself XSD-invalid. Fall back to
+    # the TDD issue date (today) when the source date is missing or not a real date.
+    _rd_issue = (itext('cbc:IssueDate') or '').strip()
+    try:
+        datetime.strptime(_rd_issue, '%Y-%m-%d')
+    except ValueError:
+        _rd_issue = now.strftime('%Y-%m-%d')
+    _sub(rd, NS_CBC, 'IssueDate', _rd_issue)                          # ibr-tdd-28
     _sub(rd, NS_PXS, 'DocumentTypeCode', itext(f'cbc:{type_code_tag}'))  # ibr-tdd-29
     _sub(rd, NS_CBC, 'DocumentCurrencyCode', dcc)                      # ibr-tdd-30
     if tcc:
