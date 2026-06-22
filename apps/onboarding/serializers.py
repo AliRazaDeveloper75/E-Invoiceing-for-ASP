@@ -77,7 +77,7 @@ class AcceptInvitationSerializer(serializers.Serializer):
     company_name         = serializers.CharField(max_length=255)
     company_legal_name   = serializers.CharField(max_length=255, required=False, allow_blank=True)
     trn                  = serializers.CharField(max_length=15)
-    trade_license_number = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    trade_license_number = serializers.CharField(max_length=30)
     business_type        = serializers.CharField(max_length=20, required=False, allow_blank=True)
     industry_type        = serializers.CharField(max_length=20, required=False, allow_blank=True)
 
@@ -102,6 +102,11 @@ class AcceptInvitationSerializer(serializers.Serializer):
         import re
         if not re.fullmatch(r'\d{15}', attrs['trn']):
             raise serializers.ValidationError({'trn': 'TRN must be exactly 15 numeric digits.'})
+        tl = (attrs.get('trade_license_number') or '').strip()
+        if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9\-/ ]{2,29}', tl):
+            raise serializers.ValidationError({
+                'trade_license_number': 'Use 3–30 letters, numbers, hyphens or slashes only.'
+            })
         return attrs
 
 

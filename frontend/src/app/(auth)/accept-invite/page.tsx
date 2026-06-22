@@ -237,6 +237,11 @@ function AcceptInviteContent() {
 
   // ── Submit ───────────────────────────────────────────────────────────────
   const onSubmit = async (data: Record<string, string>) => {
+    // A profile cannot be created without supporting documents.
+    if (docs.length === 0) {
+      setServerError('Please upload at least one verification document (e.g. Trade License or TRN certificate) to create your profile.');
+      return;
+    }
     setSubmitting(true);
     setServerError('');
     try {
@@ -531,13 +536,14 @@ function AcceptInviteContent() {
                         {...register('trn', { validate: (v) => validateTRN(v, true) })}
                       />
                     </Field>
-                    <Field label="Trade License Number" error={errors.trade_license_number?.message}
+                    <Field label="Trade License Number" error={errors.trade_license_number?.message} required
                       tooltip="Trade license number from the DED or free zone authority. 3–30 characters — letters, numbers, hyphens or slashes only. E.g. DED-2024-12345 or CN-1234567.">
                       <Input placeholder="DED-2024-12345" maxLength={30} error={errors.trade_license_number?.message}
                         {...register('trade_license_number', {
+                          required: 'Trade license number is required',
                           validate: (v) => {
-                            if (!v?.trim()) return true;
-                            const t = v.trim();
+                            const t = (v ?? '').trim();
+                            if (!t) return 'Trade license number is required';
                             if (!/^[A-Za-z0-9][A-Za-z0-9\-/ ]{2,29}$/.test(t))
                               return 'Use 3–30 letters, numbers, hyphens or slashes only';
                             return true;
@@ -721,8 +727,8 @@ function AcceptInviteContent() {
                   )}
 
                   {docs.length === 0 && (
-                    <p className="text-xs text-center text-gray-400">
-                      You can also upload documents later from your dashboard.
+                    <p className="text-xs text-center text-amber-600">
+                      At least one document is required to complete registration.
                     </p>
                   )}
 
@@ -761,7 +767,7 @@ function AcceptInviteContent() {
                   : (
                     <button
                       type="submit"
-                      disabled={submitting}
+                      disabled={submitting || docs.length === 0}
                       className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-brand-600
                         text-white text-sm font-semibold hover:bg-brand-700 transition-colors
                         disabled:opacity-60 disabled:cursor-not-allowed"

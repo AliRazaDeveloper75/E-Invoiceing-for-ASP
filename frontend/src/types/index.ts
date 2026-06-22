@@ -82,9 +82,19 @@ export interface Customer {
   peppol_endpoint: string;
   street_address: string;
   city: string;
+  state_province?: string;
+  postal_code?: string;
   country: string;
   phone: string;
   email: string;
+  trn_issue_date?: string | null;
+  trn_expiry_date?: string | null;
+  trn_document?: string | null;
+  logo?: string | null;
+  formatted_address?: string;
+  notes?: string;
+  is_complete?: boolean;
+  missing_fields?: string[];
   is_active: boolean;
   created_at: string;
 }
@@ -139,6 +149,8 @@ export interface Invoice {
   customer_trn: string;
   customer_trn_issue_date: string | null;
   customer_trn_expiry_date: string | null;
+  customer_logo?: string | null;
+  company_logo?: string | null;
   customer_address?: string;
   customer_city?: string;
   customer_country?: string;

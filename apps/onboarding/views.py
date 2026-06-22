@@ -136,6 +136,15 @@ class AcceptInviteView(APIView):
             })
             i += 1
 
+        # At least one verification document is mandatory — a profile must not be
+        # created without supporting documents (Trade License, TRN certificate, …).
+        if not documents:
+            return error_response(
+                message='Registration failed.',
+                details={'documents': ['At least one verification document is required to create your profile.']},
+                status_code=400,
+            )
+
         try:
             user, company, access, refresh = OnboardingService.accept_invitation(
                 token=str(d['token']),

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
+import { useAutosaveDraft, loadDraft, clearDraft, type DraftEnvelope } from '@/hooks/useAutosaveDraft';
 import useSWR from 'swr';
 import QRCode from 'qrcode';
 import { api } from '@/lib/api';
@@ -1156,6 +1157,75 @@ export default function NewInvoicePage() {
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
 
+  // ── Auto-draft (crash / power-loss proof) ─────────────────────────────────
+  type DraftShape = { form: InvoiceForm; selected: CardType | null };
+  const draftKey = `invoice-draft:new:${activeId ?? 'none'}`;
+  const allValues = watch();
+  const draftIsEmpty = useCallback(
+    (d: DraftShape) =>
+      !d.selected && !d.form?.customer_id && !(d.form?.items ?? []).some((it) => it?.item_name),
+    [],
+  );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const draftSnapshot = useMemo<DraftShape>(() => ({ form: allValues, selected }),
+    [JSON.stringify(allValues), selected]);
+  const [restorable,   setRestorable]   = useState<DraftEnvelope<DraftShape> | null>(null);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+
+  const serverSave = useCallback(async (snap: DraftShape) => {
+    if (!activeId) return;
+    await api.put('/invoices/draft-autosave/', {
+      company_id: activeId, form_type: 'new', payload: snap,
+    }).catch(() => {});
+  }, [activeId]);
+
+  const serverClear = useCallback(() => {
+    if (!activeId) return;
+    api.delete(`/invoices/draft-autosave/?company_id=${activeId}&form_type=new`).catch(() => {});
+  }, [activeId]);
+
+  useAutosaveDraft<DraftShape>({
+    key: draftKey,
+    data: draftSnapshot,
+    enabled: !isSubmitting && !submitted && !!activeId,
+    isEmpty: draftIsEmpty,
+    onSaved: setDraftSavedAt,
+    onServerSave: serverSave,
+  });
+
+  // Resume an unsaved draft — local first (same device), then server (cross-device).
+  const restoreCheckedRef = useRef(false);
+  useEffect(() => {
+    if (restoreCheckedRef.current || !activeId) return;
+    restoreCheckedRef.current = true;
+    const local = loadDraft<DraftShape>(draftKey);
+    if (local && !draftIsEmpty(local.data)) { setRestorable(local); return; }
+    api.get(`/invoices/draft-autosave/?company_id=${activeId}&form_type=new`)
+      .then((res) => {
+        const d = res.data?.data;
+        if (d?.exists && d.payload && !draftIsEmpty(d.payload)) {
+          setRestorable({ data: d.payload, savedAt: Date.parse(d.updated_at) || Date.now() });
+        }
+      })
+      .catch(() => {});
+  }, [activeId, draftKey, draftIsEmpty]);
+
+  const resumeDraft = useCallback(() => {
+    setRestorable((cur) => {
+      if (cur) {
+        if (cur.data.selected) setSelected(cur.data.selected);
+        reset(cur.data.form);
+      }
+      return null;
+    });
+  }, [reset]);
+
+  const discardDraft = useCallback(() => {
+    clearDraft(draftKey);
+    serverClear();
+    setRestorable(null);
+  }, [draftKey, serverClear]);
+
   // Supplier location derived from the active company's profile address.
   const supplierLoc =
     activeCompany?.formatted_address?.trim() ||
@@ -1367,6 +1437,8 @@ export default function NewInvoicePage() {
 
       const res = await api.post('/invoices/', payload);
       setSubmitted(true);
+      clearDraft(draftKey);   // invoice saved — drop the local + server autosave draft
+      serverClear();
       router.push(`/invoices/${res.data.data.id}`);
     } catch (err) {
       const e = err as AxiosError<{ error?: { message?: string; details?: Record<string, string[]> } }>;
@@ -1375,10 +1447,36 @@ export default function NewInvoicePage() {
     }
   };
 
+  const restoreBanner = restorable ? (
+    <div className="mb-5 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+      <p className="text-sm text-amber-800">
+        You have an unsaved invoice from{' '}
+        <span className="font-semibold">{new Date(restorable.savedAt).toLocaleString()}</span>. Resume where you left off?
+      </p>
+      <div className="flex items-center gap-2">
+        <button onClick={resumeDraft}
+          className="px-4 py-1.5 rounded-lg bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 transition-colors">
+          Resume
+        </button>
+        <button onClick={discardDraft}
+          className="px-4 py-1.5 rounded-lg border border-amber-300 text-amber-700 text-sm font-medium hover:bg-amber-100 transition-colors">
+          Discard
+        </button>
+      </div>
+    </div>
+  ) : null;
+
+  const savedIndicator = draftSavedAt && !restorable ? (
+    <div className="fixed bottom-4 right-4 z-40 px-3 py-1.5 rounded-full bg-gray-900/80 text-white text-xs shadow-lg">
+      Draft saved · {new Date(draftSavedAt).toLocaleTimeString()}
+    </div>
+  ) : null;
+
   // ── Step 1: Select type / supply category ──────────────────────────────────
   if (!selected) {
     return (
       <div className="max-w-5xl space-y-10">
+        {restoreBanner}
         <div>
           <h1 className="text-2xl font-bold text-gray-900">New Invoice</h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -1416,6 +1514,8 @@ export default function NewInvoicePage() {
   // ── Step 2: Invoice form + live preview ────────────────────────────────────
   return (
     <div className="pb-12">
+      {restoreBanner}
+      {savedIndicator}
 
       {/* Page header */}
       <div className="mb-5">

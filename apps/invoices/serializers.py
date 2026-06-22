@@ -12,7 +12,19 @@ from apps.common.constants import (
     INVOICE_TYPE_CREDIT_NOTE, INVOICE_TYPE_CONTINUOUS,
     PAYMENT_MEANS_CHOICES,
 )
-from .models import Invoice, InvoiceItem, Product
+from .models import Invoice, InvoiceItem, Product, InvoiceDraft
+
+
+class InvoiceDraftSerializer(serializers.Serializer):
+    """Autosave scratchpad for an in-progress invoice form (partial data OK)."""
+    company_id = serializers.UUIDField()
+    form_type  = serializers.ChoiceField(choices=['pint', 'new'], default='pint')
+    payload    = serializers.JSONField()
+
+    def validate_payload(self, v):
+        if not isinstance(v, (dict, list)):
+            raise serializers.ValidationError('payload must be a JSON object or array.')
+        return v
 
 
 # ─── Product (catalog) ────────────────────────────────────────────────────────
@@ -121,6 +133,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
     customer_email   = serializers.EmailField(source='customer.email',         read_only=True, default='')
     customer_trn_issue_date  = serializers.DateField(source='customer.trn_issue_date',  read_only=True, default=None)
     customer_trn_expiry_date = serializers.DateField(source='customer.trn_expiry_date', read_only=True, default=None)
+    customer_logo    = serializers.ImageField(source='customer.logo',          read_only=True, default=None)
+    company_logo     = serializers.ImageField(source='company.logo',           read_only=True, default=None)
     company_name     = serializers.CharField(source='company.name',            read_only=True)
     company_trn      = serializers.CharField(source='company.trn',             read_only=True)
     company_trn_issue_date  = serializers.DateField(source='company.trn_issue_date',  read_only=True, default=None)
@@ -140,10 +154,11 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'id', 'invoice_number', 'invoice_type', 'type_display',
             'transaction_type', 'status', 'status_display',
             # Parties
-            'company_name', 'company_trn', 'company_trn_issue_date', 'company_trn_expiry_date',
+            'company_name', 'company_trn', 'company_trn_issue_date', 'company_trn_expiry_date', 'company_logo',
             'customer', 'customer_name', 'customer_trn',
             'customer_trn_issue_date', 'customer_trn_expiry_date',
             'customer_address', 'customer_city', 'customer_country', 'customer_phone', 'customer_email',
+            'customer_logo',
             # Dates
             'issue_date', 'due_date', 'supply_date', 'supply_date_end',
             # Continuous supply

@@ -408,9 +408,15 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Buyer</h2>
           <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
-              {(invoice.customer_name || '?').slice(0, 2).toUpperCase()}
-            </div>
+            {invoice.customer_logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={invoice.customer_logo} alt={`${invoice.customer_name} logo`}
+                className="w-12 h-12 rounded-lg object-contain border border-gray-200 bg-white shrink-0" />
+            ) : (
+              <div className="w-12 h-12 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                {(invoice.customer_name || '?').slice(0, 2).toUpperCase()}
+              </div>
+            )}
             <div className="min-w-0 space-y-0.5">
               <p className="font-semibold text-gray-900">{invoice.customer_name}</p>
               {invoice.customer_trn && (

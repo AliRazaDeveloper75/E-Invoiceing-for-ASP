@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import {
@@ -13,6 +13,7 @@ import { PINT_FIELDS } from '@/data/pint-invoice-fields';
 import type { PintField, MandatoryType } from '@/data/pint-invoice-fields';
 import { useCompany } from '@/hooks/useCompany';
 import { api } from '@/lib/api';
+import { useAutosaveDraft, loadDraft, clearDraft, type DraftEnvelope } from '@/hooks/useAutosaveDraft';
 import type { Customer, Company } from '@/types';
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -1053,6 +1054,78 @@ export default function PintCreatePage() {
   const autoFilledRef = useRef(false);
   const topRef        = useRef<HTMLDivElement>(null);
 
+  // ── Auto-draft (crash / power-loss proof) ─────────────────────────────────
+  const draftKey = `invoice-draft:pint:${activeId ?? 'none'}`;
+  const draftSnapshot = useMemo(
+    () => ({ values, lineItems, currentStep, selectedBuyer }),
+    [values, lineItems, currentStep, selectedBuyer],
+  );
+  const draftIsEmpty = useCallback(
+    (d: typeof draftSnapshot) => !d.selectedBuyer && d.lineItems.length === 0,
+    [],
+  );
+  const [restorable,  setRestorable]  = useState<DraftEnvelope<typeof draftSnapshot> | null>(null);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+
+  const serverSave = useCallback(async (snap: typeof draftSnapshot) => {
+    if (!activeId) return;
+    await api.put('/invoices/draft-autosave/', {
+      company_id: activeId, form_type: 'pint', payload: snap,
+    }).catch(() => {});
+  }, [activeId]);
+
+  const serverClear = useCallback(() => {
+    if (!activeId) return;
+    api.delete(`/invoices/draft-autosave/?company_id=${activeId}&form_type=pint`).catch(() => {});
+  }, [activeId]);
+
+  useAutosaveDraft({
+    key: draftKey,
+    data: draftSnapshot,
+    enabled: !isSubmitting && !!activeId,
+    isEmpty: draftIsEmpty,
+    onSaved: setDraftSavedAt,
+    onServerSave: serverSave,
+  });
+
+  // On mount, offer to resume an unsaved draft — local first (same device,
+  // newest), then the server (cross-device).
+  const restoreCheckedRef = useRef(false);
+  useEffect(() => {
+    if (restoreCheckedRef.current || !activeId) return;
+    restoreCheckedRef.current = true;
+    const local = loadDraft<typeof draftSnapshot>(draftKey);
+    if (local && !draftIsEmpty(local.data)) { setRestorable(local); return; }
+    api.get(`/invoices/draft-autosave/?company_id=${activeId}&form_type=pint`)
+      .then((res) => {
+        const d = res.data?.data;
+        if (d?.exists && d.payload && !draftIsEmpty(d.payload)) {
+          setRestorable({ data: d.payload, savedAt: Date.parse(d.updated_at) || Date.now() });
+        }
+      })
+      .catch(() => {});
+  }, [activeId, draftKey, draftIsEmpty]);
+
+  const resumeDraft = useCallback(() => {
+    setRestorable((cur) => {
+      if (cur) {
+        const d = cur.data;
+        setValues(d.values);
+        setLineItems(d.lineItems);
+        setSelectedBuyer(d.selectedBuyer);
+        setCurrentStep(d.currentStep);
+        autoFilledRef.current = true; // keep restored seller fields
+      }
+      return null;
+    });
+  }, []);
+
+  const discardDraft = useCallback(() => {
+    clearDraft(draftKey);
+    serverClear();
+    setRestorable(null);
+  }, [draftKey, serverClear]);
+
   useEffect(() => {
     if (!activeCompany || autoFilledRef.current) return;
     autoFilledRef.current = true;
@@ -1203,6 +1276,8 @@ export default function PintCreatePage() {
       };
 
       await api.post('/invoices/', payload);
+      clearDraft(draftKey);   // invoice saved — drop the local + server autosave draft
+      serverClear();
       router.push('/invoices');
     } catch (err: unknown) {
       // Backend returns { error: { message, details } }. Surface the real reason.
@@ -1235,6 +1310,41 @@ export default function PintCreatePage() {
 
   return (
     <div className="min-h-screen bg-gray-50" ref={topRef}>
+
+      {/* ── Resume unsaved draft banner ──────────────────────────────────── */}
+      {restorable && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-sm text-amber-800">
+              You have an unsaved invoice from{' '}
+              <span className="font-semibold">
+                {new Date(restorable.savedAt).toLocaleString()}
+              </span>. Resume where you left off?
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={resumeDraft}
+                className="px-4 py-1.5 rounded-lg bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 transition-colors"
+              >
+                Resume
+              </button>
+              <button
+                onClick={discardDraft}
+                className="px-4 py-1.5 rounded-lg border border-amber-300 text-amber-700 text-sm font-medium hover:bg-amber-100 transition-colors"
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Autosave indicator ───────────────────────────────────────────── */}
+      {draftSavedAt && !restorable && (
+        <div className="fixed bottom-4 right-4 z-40 px-3 py-1.5 rounded-full bg-gray-900/80 text-white text-xs shadow-lg">
+          Draft saved · {new Date(draftSavedAt).toLocaleTimeString()}
+        </div>
+      )}
 
       {/* ── Top bar ──────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">

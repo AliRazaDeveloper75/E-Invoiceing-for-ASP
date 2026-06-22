@@ -181,6 +181,33 @@ class Customer(BaseModel):
         identifier = self.trn or self.vat_number or 'No Tax ID'
         return f'{self.name} ({identifier})'
 
+    # Fields that must be present before this customer can be put on an invoice.
+    REQUIRED_FOR_INVOICE = [
+        'name', 'trn', 'street_address', 'city', 'country',
+        'email', 'trn_document', 'logo',
+    ]
+    _REQUIRED_LABELS = {
+        'name': 'Name', 'trn': 'TRN', 'street_address': 'Street address',
+        'city': 'City', 'country': 'Country', 'email': 'Email',
+        'trn_document': 'TRN document', 'logo': 'Logo',
+    }
+
+    @property
+    def missing_fields(self):
+        """Human-readable labels of required fields still missing (for invoicing)."""
+        missing = []
+        for f in self.REQUIRED_FOR_INVOICE:
+            val = getattr(self, f, None)
+            # FileField/ImageField evaluate falsy when no file is attached.
+            if not val or (isinstance(val, str) and not val.strip()):
+                missing.append(self._REQUIRED_LABELS.get(f, f))
+        return missing
+
+    @property
+    def is_complete(self):
+        """True when the customer has every field required to issue an invoice."""
+        return not self.missing_fields
+
     def save(self, *args, **kwargs):
         # Auto-derive TIN whenever TRN is set
         self.tin = self.trn[:TIN_LENGTH] if self.trn else ''

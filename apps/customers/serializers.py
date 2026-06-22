@@ -21,6 +21,8 @@ class CustomerSerializer(serializers.ModelSerializer):
         read_only=True
     )
     company_name = serializers.CharField(source='company.name', read_only=True)
+    is_complete    = serializers.BooleanField(read_only=True)
+    missing_fields = serializers.ListField(read_only=True)
 
     class Meta:
         model = Customer
@@ -39,6 +41,8 @@ class CustomerSerializer(serializers.ModelSerializer):
             'formatted_address',
             # Contact
             'email', 'phone',
+            # Completeness (for invoice gating)
+            'is_complete', 'missing_fields',
             # Meta
             'notes', 'is_active', 'created_at', 'updated_at',
         ]

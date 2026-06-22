@@ -678,3 +678,42 @@ class Product(BaseModel):
     def __str__(self):
         scope = 'global' if self.company_id is None else self.company.name
         return f'{self.name} ({scope})'
+
+
+class InvoiceDraft(BaseModel):
+    """Server-side autosave scratchpad for an in-progress invoice form.
+
+    Stores the raw form JSON snapshot (partial data allowed — no customer/items
+    required) so a user can resume an unsaved invoice from any device, not just
+    the browser that has the localStorage copy. One draft per
+    (user, company, form_type); upserted on autosave; deleted once the invoice is
+    actually created. This is NOT a real Invoice — it never enters the PEPPOL
+    pipeline; it only guards against power loss / device switch.
+    """
+    user = models.ForeignKey(
+        'accounts.User', on_delete=models.CASCADE, related_name='invoice_drafts',
+    )
+    company = models.ForeignKey(
+        'companies.Company', on_delete=models.CASCADE, related_name='invoice_drafts',
+    )
+    form_type = models.CharField(
+        max_length=20, default='pint',
+        help_text="Which create form this draft belongs to: 'pint' or 'new'.",
+    )
+    payload = models.JSONField(default=dict, help_text='Raw form snapshot (JSON).')
+
+    class Meta:
+        db_table = 'invoice_drafts'
+        ordering = ['-updated_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'company', 'form_type'],
+                name='uniq_invoice_draft_user_company_form',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['user', 'form_type'], name='idx_invoice_draft_user_form'),
+        ]
+
+    def __str__(self):
+        return f'InvoiceDraft({self.form_type}) — user={self.user_id} company={self.company_id}'

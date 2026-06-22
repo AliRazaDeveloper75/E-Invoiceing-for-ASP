@@ -31,12 +31,13 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
 from apps.common.utils import success_response, error_response, StandardResultsPagination
-from .models import Invoice, InvoiceItem
+from .models import Invoice, InvoiceItem, InvoiceDraft
 from .serializers import (
     InvoiceSerializer, InvoiceListSerializer,
     InvoiceCreateSerializer, InvoiceUpdateSerializer,
     InvoiceFilterSerializer,
     InvoiceItemSerializer, InvoiceItemCreateSerializer, InvoiceItemUpdateSerializer,
+    InvoiceDraftSerializer,
 )
 from .services import InvoiceService, InvoiceItemService, VATCalculationService
 from .permissions import get_company_and_membership
@@ -695,3 +696,62 @@ class InvoiceGapReportView(APIView):
                 else f'{len(gaps)} gap(s) detected in invoice sequence. Investigate immediately.'
             ),
         })
+
+
+class InvoiceDraftAutosaveView(APIView):
+    """
+    Server-side autosave scratchpad for an in-progress invoice form.
+
+    GET    /api/v1/invoices/draft-autosave/?company_id=<uuid>&form_type=pint
+           → { exists, payload, updated_at }  (cross-device resume)
+    PUT    /api/v1/invoices/draft-autosave/   body: { company_id, form_type, payload }
+           → upsert the draft snapshot
+    DELETE /api/v1/invoices/draft-autosave/?company_id=<uuid>&form_type=pint
+           → drop the draft (call after the invoice is created)
+
+    Stores the raw form JSON only — never creates a real Invoice, so partial data
+    (no customer / no items) is fine. Scoped to the authenticated user + company.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        company_id = request.query_params.get('company_id')
+        form_type  = request.query_params.get('form_type', 'pint')
+        company, membership = get_company_and_membership(request.user, company_id)
+        if not company:
+            return error_response('Company not found or access denied.', status_code=403)
+        draft = InvoiceDraft.objects.filter(
+            user=request.user, company=company, form_type=form_type,
+        ).first()
+        if not draft:
+            return success_response(data={'exists': False})
+        return success_response(data={
+            'exists': True,
+            'payload': draft.payload,
+            'updated_at': draft.updated_at,
+        })
+
+    def put(self, request):
+        serializer = InvoiceDraftSerializer(data=request.data)
+        if not serializer.is_valid():
+            return error_response('Invalid draft.', details=serializer.errors, status_code=400)
+        d = serializer.validated_data
+        company, membership = get_company_and_membership(request.user, str(d['company_id']))
+        if not company:
+            return error_response('Company not found or access denied.', status_code=403)
+        InvoiceDraft.objects.update_or_create(
+            user=request.user, company=company, form_type=d['form_type'],
+            defaults={'payload': d['payload']},
+        )
+        return success_response(message='Draft saved.', status_code=200)
+
+    def delete(self, request):
+        company_id = request.query_params.get('company_id')
+        form_type  = request.query_params.get('form_type', 'pint')
+        company, membership = get_company_and_membership(request.user, company_id)
+        if not company:
+            return error_response('Company not found or access denied.', status_code=403)
+        InvoiceDraft.objects.filter(
+            user=request.user, company=company, form_type=form_type,
+        ).delete()
+        return success_response(message='Draft cleared.', status_code=200)

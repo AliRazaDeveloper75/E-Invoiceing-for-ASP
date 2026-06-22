@@ -200,6 +200,10 @@ class OnboardingService:
 
         invite = InvitationService.validate_token(token)
 
+        # A profile must not be created without supporting documents.
+        if not documents:
+            raise ValueError('At least one verification document is required to create your profile.')
+
         email = invite.email
         if User.objects.filter(email=email).exists():
             raise ValueError('An account with this email already exists. Please log in instead.')

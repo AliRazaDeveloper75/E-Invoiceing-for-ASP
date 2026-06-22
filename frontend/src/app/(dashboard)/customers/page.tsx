@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/hooks/useCompany';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Plus, Building2, Mail, X, Loader2, CheckCircle2, Search } from 'lucide-react';
+import { Plus, Building2, Mail, X, Loader2, CheckCircle2, Search, Eye } from 'lucide-react';
 import type { Customer } from '@/types';
 
 async function fetcher(url: string) {
@@ -126,6 +126,78 @@ function InviteBuyerModal({
   );
 }
 
+// ── Customer Detail Modal ──────────────────────────────────────────────────────
+
+function CustomerDetailModal({ customer, onClose }: { customer: Customer; onClose: () => void }) {
+  const Row = ({ label, value }: { label: string; value?: string | null }) => (
+    <div className="flex justify-between gap-4 py-1.5 text-sm">
+      <span className="text-slate-500">{label}</span>
+      <span className="text-slate-800 font-medium text-right break-words">{value || '—'}</span>
+    </div>
+  );
+  const missing = customer.missing_fields ?? [];
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 sticky top-0 bg-white">
+          <div className="flex items-center gap-3">
+            {customer.logo
+              ? <img src={customer.logo} alt={customer.name} className="h-11 w-11 rounded-lg object-cover border border-slate-200" />
+              : <div className="h-11 w-11 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 font-bold">
+                  {customer.name.slice(0, 2).toUpperCase()}
+                </div>}
+            <div>
+              <h2 className="text-lg font-bold text-slate-800">{customer.name}</h2>
+              <p className="text-sm text-slate-500">{TYPE_LABELS[customer.customer_type]}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
+            <X className="w-4 h-4 text-slate-500" />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          {customer.is_complete === false && missing.length > 0 && (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+              <p className="text-sm font-semibold text-amber-800">Incomplete — cannot be invoiced</p>
+              <p className="text-xs text-amber-700 mt-1">Missing: {missing.join(', ')}</p>
+            </div>
+          )}
+          {customer.is_complete && (
+            <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-2.5 flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <p className="text-sm font-medium text-emerald-800">Complete — ready to invoice</p>
+            </div>
+          )}
+
+          <div className="divide-y divide-slate-100">
+            <Row label="Legal name" value={customer.legal_name} />
+            <Row label="TRN" value={customer.trn} />
+            <Row label="TRN issued" value={customer.trn_issue_date} />
+            <Row label="TRN expiry" value={customer.trn_expiry_date} />
+            <Row label="VAT number" value={customer.vat_number} />
+            <Row label="PEPPOL endpoint" value={customer.peppol_endpoint} />
+            <Row label="Address" value={customer.formatted_address || [customer.street_address, customer.city, customer.country].filter(Boolean).join(', ')} />
+            <Row label="Email" value={customer.email} />
+            <Row label="Phone" value={customer.phone} />
+          </div>
+
+          <div className="flex items-center gap-3 pt-1">
+            {customer.trn_document && (
+              <a href={customer.trn_document} target="_blank" rel="noreferrer"
+                className="text-sm font-medium text-blue-600 hover:text-blue-700">View TRN document ↗</a>
+            )}
+            {customer.logo && (
+              <a href={customer.logo} target="_blank" rel="noreferrer"
+                className="text-sm font-medium text-blue-600 hover:text-blue-700">View logo ↗</a>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CustomersPage() {
@@ -136,6 +208,7 @@ export default function CustomersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [inviteTarget, setInviteTarget] = useState<Customer | null>(null);
+  const [viewTarget, setViewTarget]     = useState<Customer | null>(null);
 
   const qp = new URLSearchParams({ page: String(page) });
   if (search.trim()) qp.set('search', search.trim());
@@ -231,14 +304,29 @@ export default function CustomersPage() {
                   <td className="px-5 py-3.5 text-gray-500">{c.email || '—'}</td>
                   {!isAdmin && (
                     <td className="px-5 py-3.5">
-                      <button
-                        onClick={() => setInviteTarget(c)}
-                        className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 px-2.5 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
-                        title="Invite buyer to portal"
-                      >
-                        <Mail className="w-3.5 h-3.5" />
-                        Invite Buyer
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setViewTarget(c)}
+                          className="flex items-center gap-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                          title="View customer details"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          View
+                        </button>
+                        {c.is_complete === false && (
+                          <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                            Incomplete
+                          </span>
+                        )}
+                        <button
+                          onClick={() => setInviteTarget(c)}
+                          className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 px-2.5 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+                          title="Invite buyer to portal"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          Invite Buyer
+                        </button>
+                      </div>
                     </td>
                   )}
                 </tr>
@@ -262,6 +350,13 @@ export default function CustomersPage() {
         <InviteBuyerModal
           customer={inviteTarget}
           onClose={() => setInviteTarget(null)}
+        />
+      )}
+
+      {viewTarget && (
+        <CustomerDetailModal
+          customer={viewTarget}
+          onClose={() => setViewTarget(null)}
         />
       )}
     </div>

@@ -337,6 +337,17 @@ class InvoiceService:
         except Customer.DoesNotExist:
             raise ValidationError({'customer_id': 'Customer not found in this company.'})
 
+        # An invoice must not be issued to a customer with incomplete details.
+        if not customer.is_complete:
+            raise ValidationError({
+                'customer_id': (
+                    f"Customer '{customer.name}' is missing required details: "
+                    f"{', '.join(customer.missing_fields)}. Complete the customer "
+                    f"before creating an invoice."
+                ),
+                'missing_fields': customer.missing_fields,
+            })
+
         # Validate credit note has a reference
         invoice_type = data.get('invoice_type', 'tax_invoice')
         if invoice_type == 'credit_note' and not data.get('reference_number'):

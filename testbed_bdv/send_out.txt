@@ -1,0 +1,243 @@
+D:\Progrmming\E-Invoicing Project\venv\Lib\site-packages\rest_framework\fields.py:1014: UserWarning: min_value should be an integer or Decimal instance.
+  warnings.warn("min_value should be an integer or Decimal instance.")
+prometheus_client not installed — metrics disabled. Add prometheus-client to requirements/production.txt
+[INFO] 2026-06-18 17:10:12,997 signing: AS4 signing credentials loaded from keystore: certs/ap-test.p12.pfx
+[DEBUG] 2026-06-18 17:10:13,004 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:13.000356') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:13.000356'); alias=default
+[DEBUG] 2026-06-18 17:10:13,039 smp_client: BDXL NAPTR lookup: 7muqtxq2s5dxuwmwns3s7u6og2ddxbkgdynu4niylw7wex5seiba.iso6523-actorid-upis.acc.edelivery.tech.ec.europa.eu
+[INFO] 2026-06-18 17:10:15,377 smp_client: SML resolved 9922:OPTBCNTRLP1005 -> https://smp-test.peppol.org
+[DEBUG] 2026-06-18 17:10:15,377 smp_client: SMP HTTP GET: https://smp-test.peppol.org/iso6523-actorid-upis%3A%3A9922%3AOPTBCNTRLP1005/services/peppol-doctype-wildcard%3A%3Aurn%3Aoasis%3Anames%3Aspecification%3Aubl%3Aschema%3Axsd%3AInvoice-2%3A%3AInvoice%23%23urn%3Apeppol%3Apint%3Abilling-1%40ae-1%3A%3A2.1
+[INFO] 2026-06-18 17:10:16,253 smp_client: SMP: participant 9922:OPTBCNTRLP1005 not registered for doc type.
+[DEBUG] 2026-06-18 17:10:16,256 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1*::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:16.255334') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1*::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:16.255334'); alias=default
+[DEBUG] 2026-06-18 17:10:16,256 smp_client: SMP cache hit: 9922:OPTBCNTRLP1005
+[DEBUG] 2026-06-18 17:10:17,953 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:17.952183') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:17.952183'); alias=default
+[DEBUG] 2026-06-18 17:10:17,953 smp_client: BDXL NAPTR lookup: 7muqtxq2s5dxuwmwns3s7u6og2ddxbkgdynu4niylw7wex5seiba.iso6523-actorid-upis.acc.edelivery.tech.ec.europa.eu
+[INFO] 2026-06-18 17:10:22,958 smp_client: SML BDXL lookup failed for 9922:OPTBCNTRLP1005: The resolution lifetime expired after 5.004 seconds: Server Do53:192.168.49.1@53 answered The DNS operation timed out.; Server Do53:192.168.0.1@53 answered The DNS operation timed out.; Server Do53:192.168.1.1@53 answered The DNS operation timed out.
+[INFO] 2026-06-18 17:10:22,958 smp_client: SMP: participant not found in SML: 9922:OPTBCNTRLP1005
+[DEBUG] 2026-06-18 17:10:22,961 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1*::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:22.958791') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1*::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:22.958791'); alias=default
+[DEBUG] 2026-06-18 17:10:22,961 smp_client: SMP cache hit: 9922:OPTBCNTRLP1005
+[DEBUG] 2026-06-18 17:10:22,967 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:22.966911') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:22.966911'); alias=default
+[DEBUG] 2026-06-18 17:10:22,967 smp_client: BDXL NAPTR lookup: 7muqtxq2s5dxuwmwns3s7u6og2ddxbkgdynu4niylw7wex5seiba.iso6523-actorid-upis.acc.edelivery.tech.ec.europa.eu
+[INFO] 2026-06-18 17:10:24,993 smp_client: SML resolved 9922:OPTBCNTRLP1005 -> https://smp-test.peppol.org
+[DEBUG] 2026-06-18 17:10:24,993 smp_client: SMP HTTP GET: https://smp-test.peppol.org/iso6523-actorid-upis%3A%3A9922%3AOPTBCNTRLP1005/services/peppol-doctype-wildcard%3A%3Aurn%3Aoasis%3Anames%3Aspecification%3Aubl%3Aschema%3Axsd%3AInvoice-2%3A%3AInvoice%23%23urn%3Apeppol%3Apint%3Abilling-1%40ae-1%3A%3A2.1
+[INFO] 2026-06-18 17:10:25,761 smp_client: SMP: participant 9922:OPTBCNTRLP1005 not registered for doc type.
+[DEBUG] 2026-06-18 17:10:25,766 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1*::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:25.765500') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1*::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:25.765500'); alias=default
+[DEBUG] 2026-06-18 17:10:25,766 smp_client: SMP cache hit: 9922:OPTBCNTRLP1005
+[DEBUG] 2026-06-18 17:10:25,771 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:25.771128') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:25.771128'); alias=default
+[DEBUG] 2026-06-18 17:10:25,771 smp_client: BDXL NAPTR lookup: 7muqtxq2s5dxuwmwns3s7u6og2ddxbkgdynu4niylw7wex5seiba.iso6523-actorid-upis.acc.edelivery.tech.ec.europa.eu
+[INFO] 2026-06-18 17:10:27,790 smp_client: SML resolved 9922:OPTBCNTRLP1005 -> https://smp-test.peppol.org
+[DEBUG] 2026-06-18 17:10:27,790 smp_client: SMP HTTP GET: https://smp-test.peppol.org/iso6523-actorid-upis%3A%3A9922%3AOPTBCNTRLP1005/services/peppol-doctype-wildcard%3A%3Aurn%3Aoasis%3Anames%3Aspecification%3Aubl%3Aschema%3Axsd%3AInvoice-2%3A%3AInvoice%23%23urn%3Apeppol%3Apint%3Abilling-1%40ae-1%3A%3A2.1
+[INFO] 2026-06-18 17:10:28,538 smp_client: SMP: participant 9922:OPTBCNTRLP1005 not registered for doc type.
+[DEBUG] 2026-06-18 17:10:28,540 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1*::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:28.539534') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1*::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:28.539534'); alias=default
+[DEBUG] 2026-06-18 17:10:28,540 smp_client: SMP cache hit: 9922:OPTBCNTRLP1005
+[DEBUG] 2026-06-18 17:10:28,545 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:28.544522') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:28.544522'); alias=default
+[DEBUG] 2026-06-18 17:10:28,545 smp_client: BDXL NAPTR lookup: 7muqtxq2s5dxuwmwns3s7u6og2ddxbkgdynu4niylw7wex5seiba.iso6523-actorid-upis.acc.edelivery.tech.ec.europa.eu
+[INFO] 2026-06-18 17:10:30,551 smp_client: SML resolved 9922:OPTBCNTRLP1005 -> https://smp-test.peppol.org
+[DEBUG] 2026-06-18 17:10:30,552 smp_client: SMP HTTP GET: https://smp-test.peppol.org/iso6523-actorid-upis%3A%3A9922%3AOPTBCNTRLP1005/services/peppol-doctype-wildcard%3A%3Aurn%3Aoasis%3Anames%3Aspecification%3Aubl%3Aschema%3Axsd%3AInvoice-2%3A%3AInvoice%23%23urn%3Apeppol%3Apint%3Abilling-1%40ae-1%3A%3A2.1
+[INFO] 2026-06-18 17:10:31,269 smp_client: SMP: participant 9922:OPTBCNTRLP1005 not registered for doc type.
+[DEBUG] 2026-06-18 17:10:31,271 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1*::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:31.270526') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:peppol:pint:billing-1@ae-1*::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:31.270526'); alias=default
+[DEBUG] 2026-06-18 17:10:31,271 smp_client: SMP cache hit: 9922:OPTBCNTRLP1005
+[DEBUG] 2026-06-18 17:10:32,689 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:32.688738') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:32.688738'); alias=default
+[DEBUG] 2026-06-18 17:10:32,690 smp_client: BDXL NAPTR lookup: 7muqtxq2s5dxuwmwns3s7u6og2ddxbkgdynu4niylw7wex5seiba.iso6523-actorid-upis.acc.edelivery.tech.ec.europa.eu
+[INFO] 2026-06-18 17:10:34,717 smp_client: SML resolved 9922:OPTBCNTRLP1005 -> https://smp-test.peppol.org
+[DEBUG] 2026-06-18 17:10:34,718 smp_client: SMP HTTP GET: https://smp-test.peppol.org/iso6523-actorid-upis%3A%3A9922%3AOPTBCNTRLP1005/services/peppol-doctype-wildcard%3A%3Aurn%3Aoasis%3Anames%3Aspecification%3Aubl%3Aschema%3Axsd%3ACreditNote-2%3A%3ACreditNote%23%23urn%3Apeppol%3Apint%3Abilling-1%40ae-1%3A%3A2.1
+[INFO] 2026-06-18 17:10:35,466 smp_client: SMP: participant 9922:OPTBCNTRLP1005 not registered for doc type.
+[DEBUG] 2026-06-18 17:10:35,468 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1*::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:35.467517') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1*::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:35.467517'); alias=default
+[DEBUG] 2026-06-18 17:10:35,468 smp_client: SMP cache hit: 9922:OPTBCNTRLP1005
+[DEBUG] 2026-06-18 17:10:36,872 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:36.869897') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:36.869897'); alias=default
+[DEBUG] 2026-06-18 17:10:36,872 smp_client: BDXL NAPTR lookup: 7muqtxq2s5dxuwmwns3s7u6og2ddxbkgdynu4niylw7wex5seiba.iso6523-actorid-upis.acc.edelivery.tech.ec.europa.eu
+[INFO] 2026-06-18 17:10:38,894 smp_client: SML resolved 9922:OPTBCNTRLP1005 -> https://smp-test.peppol.org
+[DEBUG] 2026-06-18 17:10:38,894 smp_client: SMP HTTP GET: https://smp-test.peppol.org/iso6523-actorid-upis%3A%3A9922%3AOPTBCNTRLP1005/services/peppol-doctype-wildcard%3A%3Aurn%3Aoasis%3Anames%3Aspecification%3Aubl%3Aschema%3Axsd%3ACreditNote-2%3A%3ACreditNote%23%23urn%3Apeppol%3Apint%3Abilling-1%40ae-1%3A%3A2.1
+[INFO] 2026-06-18 17:10:39,651 smp_client: SMP: participant 9922:OPTBCNTRLP1005 not registered for doc type.
+[DEBUG] 2026-06-18 17:10:39,653 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1*::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:39.652394') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1*::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:39.652394'); alias=default
+[DEBUG] 2026-06-18 17:10:39,653 smp_client: SMP cache hit: 9922:OPTBCNTRLP1005
+[DEBUG] 2026-06-18 17:10:39,662 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:39.660648') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:39.660648'); alias=default
+[DEBUG] 2026-06-18 17:10:39,662 smp_client: BDXL NAPTR lookup: 7muqtxq2s5dxuwmwns3s7u6og2ddxbkgdynu4niylw7wex5seiba.iso6523-actorid-upis.acc.edelivery.tech.ec.europa.eu
+[INFO] 2026-06-18 17:10:41,679 smp_client: SML resolved 9922:OPTBCNTRLP1005 -> https://smp-test.peppol.org
+[DEBUG] 2026-06-18 17:10:41,679 smp_client: SMP HTTP GET: https://smp-test.peppol.org/iso6523-actorid-upis%3A%3A9922%3AOPTBCNTRLP1005/services/peppol-doctype-wildcard%3A%3Aurn%3Aoasis%3Anames%3Aspecification%3Aubl%3Aschema%3Axsd%3ACreditNote-2%3A%3ACreditNote%23%23urn%3Apeppol%3Apint%3Abilling-1%40ae-1%3A%3A2.1
+[INFO] 2026-06-18 17:10:42,426 smp_client: SMP: participant 9922:OPTBCNTRLP1005 not registered for doc type.
+[DEBUG] 2026-06-18 17:10:42,431 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1*::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:42.429684') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1*::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:42.429684'); alias=default
+[DEBUG] 2026-06-18 17:10:42,431 smp_client: SMP cache hit: 9922:OPTBCNTRLP1005
+[DEBUG] 2026-06-18 17:10:42,439 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:42.438814') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:42.438814'); alias=default
+[DEBUG] 2026-06-18 17:10:42,439 smp_client: BDXL NAPTR lookup: 7muqtxq2s5dxuwmwns3s7u6og2ddxbkgdynu4niylw7wex5seiba.iso6523-actorid-upis.acc.edelivery.tech.ec.europa.eu
+[INFO] 2026-06-18 17:10:44,455 smp_client: SML resolved 9922:OPTBCNTRLP1005 -> https://smp-test.peppol.org
+[DEBUG] 2026-06-18 17:10:44,455 smp_client: SMP HTTP GET: https://smp-test.peppol.org/iso6523-actorid-upis%3A%3A9922%3AOPTBCNTRLP1005/services/peppol-doctype-wildcard%3A%3Aurn%3Aoasis%3Anames%3Aspecification%3Aubl%3Aschema%3Axsd%3ACreditNote-2%3A%3ACreditNote%23%23urn%3Apeppol%3Apint%3Abilling-1%40ae-1%3A%3A2.1
+[INFO] 2026-06-18 17:10:45,193 smp_client: SMP: participant 9922:OPTBCNTRLP1005 not registered for doc type.
+[DEBUG] 2026-06-18 17:10:45,200 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1*::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:45.198023') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1*::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:45.198023'); alias=default
+[DEBUG] 2026-06-18 17:10:45,201 smp_client: SMP cache hit: 9922:OPTBCNTRLP1005
+[DEBUG] 2026-06-18 17:10:45,209 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:45.208595') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:45.208595'); alias=default
+[DEBUG] 2026-06-18 17:10:45,209 smp_client: BDXL NAPTR lookup: 7muqtxq2s5dxuwmwns3s7u6og2ddxbkgdynu4niylw7wex5seiba.iso6523-actorid-upis.acc.edelivery.tech.ec.europa.eu
+[INFO] 2026-06-18 17:10:47,228 smp_client: SML resolved 9922:OPTBCNTRLP1005 -> https://smp-test.peppol.org
+[DEBUG] 2026-06-18 17:10:47,228 smp_client: SMP HTTP GET: https://smp-test.peppol.org/iso6523-actorid-upis%3A%3A9922%3AOPTBCNTRLP1005/services/peppol-doctype-wildcard%3A%3Aurn%3Aoasis%3Anames%3Aspecification%3Aubl%3Aschema%3Axsd%3ACreditNote-2%3A%3ACreditNote%23%23urn%3Apeppol%3Apint%3Abilling-1%40ae-1%3A%3A2.1
+[INFO] 2026-06-18 17:10:47,994 smp_client: SMP: participant 9922:OPTBCNTRLP1005 not registered for doc type.
+[DEBUG] 2026-06-18 17:10:47,998 utils: (0.000) SELECT "smp_endpoint_cache"."created_at", "smp_endpoint_cache"."updated_at", "smp_endpoint_cache"."id", "smp_endpoint_cache"."is_active", "smp_endpoint_cache"."participant_id", "smp_endpoint_cache"."document_type_id", "smp_endpoint_cache"."transport_url", "smp_endpoint_cache"."transport_profile", "smp_endpoint_cache"."certificate_uid" FROM "smp_endpoint_cache" WHERE ("smp_endpoint_cache"."document_type_id" = 'peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1*::2.1' AND "smp_endpoint_cache"."participant_id" = '9922:OPTBCNTRLP1005' AND "smp_endpoint_cache"."updated_at" >= '2026-06-17 12:10:47.997134') ORDER BY "smp_endpoint_cache"."id" ASC LIMIT 1; args=('peppol-doctype-wildcard::urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:peppol:pint:billing-1@ae-1*::2.1', '9922:OPTBCNTRLP1005', '2026-06-17 12:10:47.997134'); alias=default
+[DEBUG] 2026-06-18 17:10:47,998 smp_client: SMP cache hit: 9922:OPTBCNTRLP1005
+
+=== AS4 send to Testbed ===
+Our AP (signer)   : PAE001147
+Batch             : 10 files in naming order
+
+----- [1/10] TestFile_001__PintAeInvoice.xml (10328 bytes) -----
+SBDH route        : 0235:104132266800003 -> 9922:OPTBCNTRLP1005
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1::2.1] ...
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1*::2.1] ...
+SMP endpoint      : https://phase4-controller.testbed.peppol.org/rcv1
+Recipient AP      : POP000005
+Endpoint          : https://phase4-controller.testbed.peppol.org/rcv1
+Doc validation    : valid (PINT-AE Schematron)
+Building encrypted + signed AS4 message...
+MTOM body bytes   : 13576
+Sending...
+HTTP status       : 200
+Response bytes    : 7277
+RESULT: RECEIPT received — testbed accepted the message
+--- response (first 1500 bytes) ---
+<?xml version="1.0" encoding="UTF-8"?><S12:Envelope xmlns:S12="http://www.w3.org/2003/05/soap-envelope"><S12:Header><wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" S12:mustUnderstand="true"><wsse:BinarySecurityToken EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" wsu:Id="X509-e6b9d43b-5b21-4f58-ab36-36508a5ff17b">MIIFsjCCA5qgAwIBAgIUBghvvfb3VrzVkDjwvWCNZbH5F54wDQYJKoZIhvcNAQELBQAwazELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEE9wZW5QRVBQT0wgQUlTQkwxFjAUBgNVBAsTDUZPUiBURVNUIE9OTFkxKTAnBgNVBAMTIFBFUFBPTCBBQ0NFU1MgUE9JTlQgVEVTVCBDQSAtIEczMB4XDTI1MDcxMDAwMDAwMFoXDTI3MDYyOTIzNTk1OVowYDELMAkGA1UEBhMCQkUxJDAiBgNVBAoMG09wZW5QZXBwb2wgT3BlcmF0aW5nIE9mZmljZTEXMBUGA1UECwwOUEVQUE9MIFRFU1QgQVAxEjAQBgNVBAMMCVBPUDAwMDAwNTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMAOw2zx1GxnjIhy+r55+Srj7Nq9IzBDUQLS5ahIjV3TWSSLCJpPwafH9ga3zg3MG7MV2b3Um8/+DYUqgVMb1UfowyqohSkhM2Vg8bQ53e+TLUz2O3ODWHNQlIYR/Q/1z+RuRGHSD1gt50BuzIgj9JnDnjaKkV3kI9QPuVh0nxkwkZNzUh7RkXwK0Jqne59fkW9IdJ2t59NnRuRCD5AKgi0JhD2nlQJMJCDgrsER8LF3ytlJNgxSHPmIj4DvmNwPen8uGPva9/wmpM8CcdCfRKik9l8PkVxZ/p7ROvYjFuYPOgkqMZX02b5RWo5x8zXDthqKFVBd5Wg/QN4R97N8Kf0CAwEAAaOCAVcwggFTMAwGA1UdEwEB/wQCMAAwHQYDVR0OBBYEFDWu0sUj6/tqzswUFymRwZqlUXF5MB8GA1UdIwQYMBaAFLPM
+
+----- [2/10] TestFile_002__PintAeInvoice.xml (10297 bytes) -----
+SBDH route        : 0235:104132266800003 -> 9922:OPTBCNTRLP1005
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1::2.1] ...
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1*::2.1] ...
+SMP endpoint      : https://phase4-controller.testbed.peppol.org/rcv1
+Recipient AP      : POP000005
+Endpoint          : https://phase4-controller.testbed.peppol.org/rcv1
+REJECTED — document failed PINT-AE validation (6 error(s)):
+    ibr-079: [ibr-079]-Document MUST not contain empty elements.
+    ibr-cl-01: [ibr-cl-01]-The document type code  (ibt-003) MUST be coded by the invoice and credit note related code lists of UNTDID 1001.
+    ibr-cl-16: [ibr-cl-16]-Payment means in an invoice (ibt-081) MUST be coded using UNCL4461 code list
+    ibr-055-ae: [ibr-055-ae]-Preceding invoice reference (IBG-03) is must when invoice type code (IBT-003) is 381 (Credit note) or 81 (Credit note related to goods or services) except when the [BTAE-03] Credit note reason code is 'VD'.
+    ibr-124-ae: [ibr-124-ae]-VAT point date [IBT-007] MUST not be there when invoice type code (IBT-003) is 'credit note' or 'Credit note related to goods or services'.
+    ibr-158-ae: [ibr-158-ae]-Where the Invoice type code [IBT-003] is 'Credit note', Credit note reason code [BTAE-03] MUST be there .
+          Message will NOT be sent.
+
+----- [3/10] TestFile_003__PintAeInvoice.xml (10328 bytes) -----
+SBDH route        : 0235:104132266800003 -> 9922:OPTBCNTRLP1005
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1::2.1] ...
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1*::2.1] ...
+SMP endpoint      : https://phase4-controller.testbed.peppol.org/rcv1
+Recipient AP      : POP000005
+Endpoint          : https://phase4-controller.testbed.peppol.org/rcv1
+REJECTED — document failed PINT-AE validation (15 error(s)):
+    ibr-084: [ibr-084]-Invoice total tax amount (ibt-110) and Invoice total tax amount in accounting currency (ibt-111) MUST have the same operational sign.
+    ibr-co-15: [ibr-co-15]-Invoice total amount with Tax (ibt-112) = Invoice total amount without Tax (ibt-109) + Invoice total Tax amount (ibt-110).
+    ibr-126: [ibr-126]- All currencyID attributes must have the same value as the Invoice currency code (ibt-005), except for amounts expected to be in Tax accounting currency (ibt-006).
+    ibr-126: [ibr-126]- All currencyID attributes must have the same value as the Invoice currency code (ibt-005), except for amounts expected to be in Tax accounting currency (ibt-006).
+    ibr-126: [ibr-126]- All currencyID attributes must have the same value as the Invoice currency code (ibt-005), except for amounts expected to be in Tax accounting currency (ibt-006).
+    ibr-126: [ibr-126]- All currencyID attributes must have the same value as the Invoice currency code (ibt-005), except for amounts expected to be in Tax accounting currency (ibt-006).
+          Message will NOT be sent.
+
+----- [4/10] TestFile_004__PintAeInvoice.xml (10277 bytes) -----
+SBDH route        : 0235:104132266800003 -> 9922:OPTBCNTRLP1005
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1::2.1] ...
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1*::2.1] ...
+SMP endpoint      : https://phase4-controller.testbed.peppol.org/rcv1
+Recipient AP      : POP000005
+Endpoint          : https://phase4-controller.testbed.peppol.org/rcv1
+REJECTED — document failed PINT-AE validation (1 error(s)):
+    ibr-101-ae: [ibr-101-ae]-Authority name (BTAE-11) MUST be there when Buyer legal registration identifier type (BTAE-16) is Commercial/Trade license.
+          Message will NOT be sent.
+
+----- [5/10] TestFile_005__PintAeInvoice.xml (10328 bytes) -----
+SBDH route        : 0235:104132266800003 -> 9922:OPTBCNTRLP1005
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1::2.1] ...
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1*::2.1] ...
+SMP endpoint      : https://phase4-controller.testbed.peppol.org/rcv1
+Recipient AP      : POP000005
+Endpoint          : https://phase4-controller.testbed.peppol.org/rcv1
+Doc validation    : valid (PINT-AE Schematron)
+Building encrypted + signed AS4 message...
+MTOM body bytes   : 13575
+Sending...
+HTTP status       : 200
+Response bytes    : 7277
+RESULT: RECEIPT received — testbed accepted the message
+--- response (first 1500 bytes) ---
+<?xml version="1.0" encoding="UTF-8"?><S12:Envelope xmlns:S12="http://www.w3.org/2003/05/soap-envelope"><S12:Header><wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" S12:mustUnderstand="true"><wsse:BinarySecurityToken EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" wsu:Id="X509-5f269f03-ab80-4998-898c-30fcd8eb2282">MIIFsjCCA5qgAwIBAgIUBghvvfb3VrzVkDjwvWCNZbH5F54wDQYJKoZIhvcNAQELBQAwazELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEE9wZW5QRVBQT0wgQUlTQkwxFjAUBgNVBAsTDUZPUiBURVNUIE9OTFkxKTAnBgNVBAMTIFBFUFBPTCBBQ0NFU1MgUE9JTlQgVEVTVCBDQSAtIEczMB4XDTI1MDcxMDAwMDAwMFoXDTI3MDYyOTIzNTk1OVowYDELMAkGA1UEBhMCQkUxJDAiBgNVBAoMG09wZW5QZXBwb2wgT3BlcmF0aW5nIE9mZmljZTEXMBUGA1UECwwOUEVQUE9MIFRFU1QgQVAxEjAQBgNVBAMMCVBPUDAwMDAwNTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMAOw2zx1GxnjIhy+r55+Srj7Nq9IzBDUQLS5ahIjV3TWSSLCJpPwafH9ga3zg3MG7MV2b3Um8/+DYUqgVMb1UfowyqohSkhM2Vg8bQ53e+TLUz2O3ODWHNQlIYR/Q/1z+RuRGHSD1gt50BuzIgj9JnDnjaKkV3kI9QPuVh0nxkwkZNzUh7RkXwK0Jqne59fkW9IdJ2t59NnRuRCD5AKgi0JhD2nlQJMJCDgrsER8LF3ytlJNgxSHPmIj4DvmNwPen8uGPva9/wmpM8CcdCfRKik9l8PkVxZ/p7ROvYjFuYPOgkqMZX02b5RWo5x8zXDthqKFVBd5Wg/QN4R97N8Kf0CAwEAAaOCAVcwggFTMAwGA1UdEwEB/wQCMAAwHQYDVR0OBBYEFDWu0sUj6/tqzswUFymRwZqlUXF5MB8GA1UdIwQYMBaAFLPM
+
+----- [6/10] TestFile_006__PintAeCreditNote.xml (13443 bytes) -----
+SBDH route        : 0235:104132266800003 -> 9922:OPTBCNTRLP1005
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1::2.1] ...
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1*::2.1] ...
+SMP endpoint      : https://phase4-controller.testbed.peppol.org/rcv1
+Recipient AP      : POP000005
+Endpoint          : https://phase4-controller.testbed.peppol.org/rcv1
+Doc validation    : valid (PINT-AE Schematron)
+Building encrypted + signed AS4 message...
+MTOM body bytes   : 13970
+Sending...
+HTTP status       : 200
+Response bytes    : 7277
+RESULT: RECEIPT received — testbed accepted the message
+--- response (first 1500 bytes) ---
+<?xml version="1.0" encoding="UTF-8"?><S12:Envelope xmlns:S12="http://www.w3.org/2003/05/soap-envelope"><S12:Header><wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" S12:mustUnderstand="true"><wsse:BinarySecurityToken EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" wsu:Id="X509-b9101462-da1c-451e-861c-93d3841f6173">MIIFsjCCA5qgAwIBAgIUBghvvfb3VrzVkDjwvWCNZbH5F54wDQYJKoZIhvcNAQELBQAwazELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEE9wZW5QRVBQT0wgQUlTQkwxFjAUBgNVBAsTDUZPUiBURVNUIE9OTFkxKTAnBgNVBAMTIFBFUFBPTCBBQ0NFU1MgUE9JTlQgVEVTVCBDQSAtIEczMB4XDTI1MDcxMDAwMDAwMFoXDTI3MDYyOTIzNTk1OVowYDELMAkGA1UEBhMCQkUxJDAiBgNVBAoMG09wZW5QZXBwb2wgT3BlcmF0aW5nIE9mZmljZTEXMBUGA1UECwwOUEVQUE9MIFRFU1QgQVAxEjAQBgNVBAMMCVBPUDAwMDAwNTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMAOw2zx1GxnjIhy+r55+Srj7Nq9IzBDUQLS5ahIjV3TWSSLCJpPwafH9ga3zg3MG7MV2b3Um8/+DYUqgVMb1UfowyqohSkhM2Vg8bQ53e+TLUz2O3ODWHNQlIYR/Q/1z+RuRGHSD1gt50BuzIgj9JnDnjaKkV3kI9QPuVh0nxkwkZNzUh7RkXwK0Jqne59fkW9IdJ2t59NnRuRCD5AKgi0JhD2nlQJMJCDgrsER8LF3ytlJNgxSHPmIj4DvmNwPen8uGPva9/wmpM8CcdCfRKik9l8PkVxZ/p7ROvYjFuYPOgkqMZX02b5RWo5x8zXDthqKFVBd5Wg/QN4R97N8Kf0CAwEAAaOCAVcwggFTMAwGA1UdEwEB/wQCMAAwHQYDVR0OBBYEFDWu0sUj6/tqzswUFymRwZqlUXF5MB8GA1UdIwQYMBaAFLPM
+
+----- [7/10] TestFile_007__PintAeCreditNote.xml (13443 bytes) -----
+SBDH route        : 0235:104132266800003 -> 9922:OPTBCNTRLP1005
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1::2.1] ...
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1*::2.1] ...
+SMP endpoint      : https://phase4-controller.testbed.peppol.org/rcv1
+Recipient AP      : POP000005
+Endpoint          : https://phase4-controller.testbed.peppol.org/rcv1
+REJECTED — document failed PINT-AE validation (24 error(s)):
+    ibr-co-15: [ibr-co-15]-Invoice total amount with Tax (ibt-112) = Invoice total amount without Tax (ibt-109) + Invoice total Tax amount (ibt-110).
+    ibr-126: [ibr-126]- All currencyID attributes must have the same value as the Invoice currency code (ibt-005), except for amounts expected to be in Tax accounting currency (ibt-006).
+    ibr-126: [ibr-126]- All currencyID attributes must have the same value as the Invoice currency code (ibt-005), except for amounts expected to be in Tax accounting currency (ibt-006).
+    ibr-126: [ibr-126]- All currencyID attributes must have the same value as the Invoice currency code (ibt-005), except for amounts expected to be in Tax accounting currency (ibt-006).
+    ibr-126: [ibr-126]- All currencyID attributes must have the same value as the Invoice currency code (ibt-005), except for amounts expected to be in Tax accounting currency (ibt-006).
+    ibr-126: [ibr-126]- All currencyID attributes must have the same value as the Invoice currency code (ibt-005), except for amounts expected to be in Tax accounting currency (ibt-006).
+          Message will NOT be sent.
+
+----- [8/10] TestFile_008__PintAeCreditNote.xml (13392 bytes) -----
+SBDH route        : 0235:104132266800003 -> 9922:OPTBCNTRLP1005
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1::2.1] ...
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1*::2.1] ...
+SMP endpoint      : https://phase4-controller.testbed.peppol.org/rcv1
+Recipient AP      : POP000005
+Endpoint          : https://phase4-controller.testbed.peppol.org/rcv1
+REJECTED — document failed PINT-AE validation (4 error(s)):
+    ibr-cl-01: [ibr-cl-01]-The document type code  (ibt-003) MUST be coded by the invoice and credit note related code lists of UNTDID 1001.
+    ibr-127-ae: [ibr-127-ae]-Payment due date [IBT-009] MUST be present when the amount due for payment (IBT-115) greater than 0, except when invoice type code (IBT-003) is 'Credit note' or 'Credit note related to goods or services' or Invoice transaction-type code (BTAE-002) is X1XXXXXX (Deemed supply) .
+    ibr-191-ae: [ibr-191-ae]- Payment means type code (ibt-081) must be provided except when the invoice type code (ibt-003) is 'Credit note' or "Credit note related to goods or services", or Invoice transaction-type code (BTAE-002) is X1XXXXXX (Deemed supply).
+    ibr-101-ae: [ibr-101-ae]-Authority name (BTAE-11) MUST be there when Buyer legal registration identifier type (BTAE-16) is Commercial/Trade license.
+          Message will NOT be sent.
+
+----- [9/10] TestFile_009__PintAeCreditNote.xml (13443 bytes) -----
+SBDH route        : 0235:104132266800003 -> 9922:OPTBCNTRLP1005
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1::2.1] ...
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1*::2.1] ...
+SMP endpoint      : https://phase4-controller.testbed.peppol.org/rcv1
+Recipient AP      : POP000005
+Endpoint          : https://phase4-controller.testbed.peppol.org/rcv1
+REJECTED — document failed PINT-AE validation (3 error(s)):
+    aligned-ibrp-047: [aligned-ibrp-047]-Each VAT breakdown (ibg-23) MUST be defined through a VAT category code (ibt-118).
+    aligned-ibrp-048: [aligned-ibrp-048]-Each VAT breakdown (ibg-23) MUST have a VAT category rate (ibt-119), except if the Invoice is not subject to VAT or Exempt from Tax.
+    ibr-133-ae: [ibr-133-ae]-VAT scheme code, if provided in (IBT-095-1) or (IBT-031-1) or (IBT-048-1) or (IBT-063-1) or (IBT-102-1) or (IBT-118-1) shall be 'VAT' except when Seller tax registration identifier (IBT-032) is provided.
+          Message will NOT be sent.
+
+----- [10/10] TestFile_010__PintAeCreditNote.xml (13443 bytes) -----
+SBDH route        : 0235:104132266800003 -> 9922:OPTBCNTRLP1005
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1::2.1] ...
+SMP lookup for 9922:OPTBCNTRLP1005 [urn:peppol:pint:billing-1@ae-1*::2.1] ...
+SMP endpoint      : https://phase4-controller.testbed.peppol.org/rcv1
+Recipient AP      : POP000005
+Endpoint          : https://phase4-controller.testbed.peppol.org/rcv1
+Doc validation    : valid (PINT-AE Schematron)
+Building encrypted + signed AS4 message...
+MTOM body bytes   : 13974
+Sending...
+HTTP status       : 200
+Response bytes    : 7277
+RESULT: RECEIPT received — testbed accepted the message
+--- response (first 1500 bytes) ---
+<?xml version="1.0" encoding="UTF-8"?><S12:Envelope xmlns:S12="http://www.w3.org/2003/05/soap-envelope"><S12:Header><wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" S12:mustUnderstand="true"><wsse:BinarySecurityToken EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" wsu:Id="X509-8086a39b-c566-4a3f-9cd3-91cb9b9d2e37">MIIFsjCCA5qgAwIBAgIUBghvvfb3VrzVkDjwvWCNZbH5F54wDQYJKoZIhvcNAQELBQAwazELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEE9wZW5QRVBQT0wgQUlTQkwxFjAUBgNVBAsTDUZPUiBURVNUIE9OTFkxKTAnBgNVBAMTIFBFUFBPTCBBQ0NFU1MgUE9JTlQgVEVTVCBDQSAtIEczMB4XDTI1MDcxMDAwMDAwMFoXDTI3MDYyOTIzNTk1OVowYDELMAkGA1UEBhMCQkUxJDAiBgNVBAoMG09wZW5QZXBwb2wgT3BlcmF0aW5nIE9mZmljZTEXMBUGA1UECwwOUEVQUE9MIFRFU1QgQVAxEjAQBgNVBAMMCVBPUDAwMDAwNTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMAOw2zx1GxnjIhy+r55+Srj7Nq9IzBDUQLS5ahIjV3TWSSLCJpPwafH9ga3zg3MG7MV2b3Um8/+DYUqgVMb1UfowyqohSkhM2Vg8bQ53e+TLUz2O3ODWHNQlIYR/Q/1z+RuRGHSD1gt50BuzIgj9JnDnjaKkV3kI9QPuVh0nxkwkZNzUh7RkXwK0Jqne59fkW9IdJ2t59NnRuRCD5AKgi0JhD2nlQJMJCDgrsER8LF3ytlJNgxSHPmIj4DvmNwPen8uGPva9/wmpM8CcdCfRKik9l8PkVxZ/p7ROvYjFuYPOgkqMZX02b5RWo5x8zXDthqKFVBd5Wg/QN4R97N8Kf0CAwEAAaOCAVcwggFTMAwGA1UdEwEB/wQCMAAwHQYDVR0OBBYEFDWu0sUj6/tqzswUFymRwZqlUXF5MB8GA1UdIwQYMBaAFLPM
+
+===== Batch summary =====
+  TestFile_001__PintAeInvoice.xml  RECEIPT
+  TestFile_002__PintAeInvoice.xml  REJECTED-INVALID-DOC
+  TestFile_003__PintAeInvoice.xml  REJECTED-INVALID-DOC
+  TestFile_004__PintAeInvoice.xml  REJECTED-INVALID-DOC
+  TestFile_005__PintAeInvoice.xml  RECEIPT
+  TestFile_006__PintAeCreditNote.xml RECEIPT
+  TestFile_007__PintAeCreditNote.xml REJECTED-INVALID-DOC
+  TestFile_008__PintAeCreditNote.xml REJECTED-INVALID-DOC
+  TestFile_009__PintAeCreditNote.xml REJECTED-INVALID-DOC
+  TestFile_010__PintAeCreditNote.xml RECEIPT

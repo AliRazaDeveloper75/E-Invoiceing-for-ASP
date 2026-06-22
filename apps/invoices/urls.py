@@ -20,6 +20,7 @@ from .views import (
     InvoiceFTAReportView,
     InvoiceExportView,
     InvoiceGapReportView,
+    InvoiceDraftAutosaveView,
 )
 from apps.payments.views import SupplierPaymentListView
 from .workflow_views import WorkflowEvaluateView
@@ -42,6 +43,12 @@ urlpatterns = [
     path('dashboard/',
          InvoiceDashboardView.as_view(),
          name='invoice-dashboard'),
+
+    # ── Draft autosave (server-side scratchpad) ───────────────────────────────
+    # Must be declared before <uuid:invoice_id>/ to avoid URL collision
+    path('draft-autosave/',
+         InvoiceDraftAutosaveView.as_view(),
+         name='invoice-draft-autosave'),
 
     # ── Invoice CRUD ──────────────────────────────────────────────────────────
     path('',
