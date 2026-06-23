@@ -208,6 +208,15 @@ class Customer(BaseModel):
         """True when the customer has every field required to issue an invoice."""
         return not self.missing_fields
 
+    @property
+    def completion_percent(self):
+        """Profile completeness 0–100 (share of required invoice fields filled)."""
+        total = len(self.REQUIRED_FOR_INVOICE)
+        if not total:
+            return 100
+        done = total - len(self.missing_fields)
+        return round(done / total * 100)
+
     def save(self, *args, **kwargs):
         # Auto-derive TIN whenever TRN is set
         self.tin = self.trn[:TIN_LENGTH] if self.trn else ''

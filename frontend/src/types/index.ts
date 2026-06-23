@@ -95,6 +95,7 @@ export interface Customer {
   notes?: string;
   is_complete?: boolean;
   missing_fields?: string[];
+  completion_percent?: number;
   is_active: boolean;
   created_at: string;
 }

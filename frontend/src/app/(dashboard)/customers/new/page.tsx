@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { api } from '@/lib/api';
 import { useCompany } from '@/hooks/useCompany';
@@ -46,11 +46,16 @@ export default function NewCustomerPage() {
 
   const countryForm = useCountryForm('AE');
 
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('edit');
+  const isEdit = !!editId;
+
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    reset,
     control,
     formState: { errors, isSubmitting },
   } = useForm<CustomerForm>({
@@ -59,6 +64,22 @@ export default function NewCustomerPage() {
       country: 'AE',
     },
   });
+
+  // Edit mode: load the existing customer and pre-fill the form.
+  useEffect(() => {
+    if (!editId) return;
+    api.get(`/customers/${editId}/`).then((r) => {
+      const c = r.data?.data ?? r.data;
+      reset({
+        name: c.name ?? '', legal_name: c.legal_name ?? '',
+        customer_type: c.customer_type ?? 'b2b',
+        trn: c.trn ?? '', trn_issue_date: c.trn_issue_date ?? '',
+        trn_expiry_date: c.trn_expiry_date ?? '', vat_number: c.vat_number ?? '',
+        street_address: c.street_address ?? '', city: c.city ?? '',
+        country: c.country ?? 'AE', email: c.email ?? '', notes: c.notes ?? '',
+      });
+    }).catch(() => setServerError({ general: 'Failed to load customer.' }));
+  }, [editId, reset]);
 
   const customerType = watch('customer_type');
   const watchedCountry = watch('country');
@@ -102,9 +123,15 @@ export default function NewCustomerPage() {
       if (data.trn_document?.[0]) fd.append('trn_document', data.trn_document[0]);
       if (data.logo?.[0]) fd.append('logo', data.logo[0]);
 
-      await api.post('/customers/', fd, {
-        headers: { 'Content-Type': undefined },   // let the browser set the multipart boundary
-      });
+      if (isEdit) {
+        await api.put(`/customers/${editId}/`, fd, {
+          headers: { 'Content-Type': undefined },
+        });
+      } else {
+        await api.post('/customers/', fd, {
+          headers: { 'Content-Type': undefined },   // let the browser set the multipart boundary
+        });
+      }
       router.push('/customers');
     } catch (err) {
       const e = err as AxiosError<{ error?: { message?: string; details?: Record<string, string[]> } }>;

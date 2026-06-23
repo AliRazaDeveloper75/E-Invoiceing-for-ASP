@@ -157,18 +157,35 @@ function CustomerDetailModal({ customer, onClose }: { customer: Customer; onClos
         </div>
 
         <div className="px-6 py-5 space-y-4">
-          {customer.is_complete === false && missing.length > 0 && (
-            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
-              <p className="text-sm font-semibold text-amber-800">Incomplete — cannot be invoiced</p>
-              <p className="text-xs text-amber-700 mt-1">Missing: {missing.join(', ')}</p>
-            </div>
-          )}
-          {customer.is_complete && (
-            <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-2.5 flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <p className="text-sm font-medium text-emerald-800">Complete — ready to invoice</p>
-            </div>
-          )}
+          {/* Profile completion */}
+          {(() => {
+            const pct = customer.completion_percent ?? (customer.is_complete ? 100 : 0);
+            const done = customer.is_complete;
+            return (
+              <div className={`rounded-xl border px-4 py-3 ${done ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className={`text-sm font-semibold flex items-center gap-1.5 ${done ? 'text-emerald-800' : 'text-amber-800'}`}>
+                    {done
+                      ? <><CheckCircle2 className="h-4 w-4 text-emerald-600" /> Profile complete — ready to invoice</>
+                      : <>Profile not completed</>}
+                  </p>
+                  <span className={`text-sm font-bold ${done ? 'text-emerald-700' : 'text-amber-700'}`}>{pct}%</span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-white/70 overflow-hidden">
+                  <div className={`h-full rounded-full ${done ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${pct}%` }} />
+                </div>
+                {!done && missing.length > 0 && (
+                  <div className="mt-2.5 flex items-center justify-between gap-3 flex-wrap">
+                    <p className="text-xs text-amber-700">Missing: {missing.join(', ')}</p>
+                    <Link href={`/customers/${customer.id}/edit`}
+                      className="text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 px-3 py-1.5 rounded-lg transition-colors">
+                      Edit to complete
+                    </Link>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           <div className="divide-y divide-slate-100">
             <Row label="Legal name" value={customer.legal_name} />
