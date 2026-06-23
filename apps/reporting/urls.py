@@ -15,6 +15,12 @@ from .analytics_views import (
     VATAnalyticsView,
     PaymentAnalyticsView,
 )
+from .ar_views import (
+    ARSummaryView,
+    ARAgingView,
+    ARByCustomerView,
+    ARCustomerStatementView,
+)
 
 app_name = 'reporting'
 
@@ -33,4 +39,11 @@ urlpatterns = [
     path('analytics/revenue/',     RevenueAnalyticsView.as_view(), name='analytics-revenue'),
     path('analytics/vat/',         VATAnalyticsView.as_view(),     name='analytics-vat'),
     path('analytics/payments/',    PaymentAnalyticsView.as_view(), name='analytics-payments'),
+
+    # Accounts Receivable (AR)
+    path('ar/summary/',            ARSummaryView.as_view(),            name='ar-summary'),
+    path('ar/aging/',              ARAgingView.as_view(),              name='ar-aging'),
+    path('ar/by-customer/',        ARByCustomerView.as_view(),         name='ar-by-customer'),
+    path('ar/customer/<uuid:customer_id>/statement/',
+         ARCustomerStatementView.as_view(),                            name='ar-statement'),
 ]

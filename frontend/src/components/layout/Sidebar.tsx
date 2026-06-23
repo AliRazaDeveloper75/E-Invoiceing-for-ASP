@@ -6,7 +6,7 @@ import { clsx } from 'clsx';
 import {
   LayoutDashboard, FileText, Users, Building2, LogOut,
   ChevronDown, Inbox, ShieldCheck, PlusCircle,
-  PanelLeftClose, PanelLeftOpen, ScanLine, ShieldAlert, UserPlus, Package,
+  PanelLeftClose, PanelLeftOpen, ScanLine, ShieldAlert, UserPlus, Package, Wallet,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/hooks/useCompany';
@@ -21,6 +21,7 @@ const NAV: {
   { href: '/dashboard',                label: 'Dashboard',      icon: LayoutDashboard, roles: ['admin', 'supplier', 'accountant', 'viewer'] },
   { href: '/invoices',                  label: 'Invoices',       icon: FileText,        roles: ['admin', 'supplier', 'accountant', 'viewer'] },
   { href: '/customers',                 label: 'Customers',      icon: Users,           roles: ['admin', 'supplier', 'accountant', 'viewer'] },
+  { href: '/receivables',               label: 'Receivables',    icon: Wallet,          roles: ['admin', 'supplier', 'accountant', 'viewer'] },
   { href: '/catalog',                   label: 'Catalog',        icon: Package,         roles: ['admin', 'supplier', 'accountant'] },
   { href: '/companies',                 label: 'Companies',      icon: Building2,       roles: ['admin', 'accountant', 'viewer'] },
   { href: '/inbound',                   label: 'Inbound',        icon: Inbox,           roles: ['admin'] },

@@ -145,6 +145,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
     is_submittable  = serializers.BooleanField(read_only=True)
     is_cancellable  = serializers.BooleanField(read_only=True)
     is_deactivatable = serializers.BooleanField(read_only=True)
+    balance_due     = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
+    is_overdue      = serializers.BooleanField(read_only=True)
+    days_overdue    = serializers.IntegerField(read_only=True)
     items           = serializers.SerializerMethodField()
     item_count      = serializers.SerializerMethodField()
 
@@ -166,8 +169,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
             # Financial
             'currency', 'exchange_rate',
             'subtotal', 'discount_amount', 'taxable_amount', 'total_vat', 'total_amount',
-            # Payment
-            'payment_means_code',
+            # Payment / Accounts Receivable
+            'payment_means_code', 'amount_paid', 'balance_due', 'is_overdue', 'days_overdue',
             # References
             'reference_number', 'purchase_order_number',
             # XML / ASP

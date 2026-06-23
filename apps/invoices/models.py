@@ -284,6 +284,32 @@ class Invoice(BaseModel):
         already cancelled or deactivated."""
         return self.status not in (INVOICE_STATUS_CANCELLED, INVOICE_STATUS_DEACTIVATED)
 
+    # ── Accounts Receivable (AR) ───────────────────────────────────────────────
+    @property
+    def balance_due(self) -> Decimal:
+        """Outstanding amount still owed by the buyer."""
+        return (self.total_amount or Decimal('0.00')) - (self.amount_paid or Decimal('0.00'))
+
+    @property
+    def is_receivable(self) -> bool:
+        """A real, outstanding invoice that belongs in Accounts Receivable."""
+        return (self.balance_due > 0
+                and self.status not in (INVOICE_STATUS_DRAFT, INVOICE_STATUS_CANCELLED,
+                                        INVOICE_STATUS_DEACTIVATED))
+
+    @property
+    def is_overdue(self) -> bool:
+        """Receivable whose due date has passed."""
+        return (self.is_receivable and self.due_date is not None
+                and self.due_date < timezone.now().date())
+
+    @property
+    def days_overdue(self) -> int:
+        """Number of days past the due date (0 if not overdue)."""
+        if not self.is_overdue:
+            return 0
+        return (timezone.now().date() - self.due_date).days
+
 
 # ─── Invoice Item Model ───────────────────────────────────────────────────────
 

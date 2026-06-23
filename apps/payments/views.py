@@ -435,3 +435,56 @@ class SupplierPaymentListView(APIView):
             'amount_due': str(max(invoice.total_amount - total_paid, Decimal('0.00'))),
             'invoice_status': invoice.status,
         })
+
+    def post(self, request, invoice_id):
+        """Supplier records a payment received against one of their invoices."""
+        if request.user.role not in ('admin', 'supplier', 'accountant'):
+            return error_response('Access denied.', status_code=403)
+
+        try:
+            invoice = Invoice.objects.get(id=invoice_id, is_active=True)
+        except Invoice.DoesNotExist:
+            return error_response('Invoice not found.', status_code=404)
+
+        from apps.invoices.permissions import get_company_and_membership
+        company, membership = get_company_and_membership(request.user, str(invoice.company_id))
+        if not company:
+            return error_response('Access denied for this invoice.', status_code=403)
+
+        if invoice.status in ('draft', 'cancelled', 'deactivated', 'paid'):
+            return error_response(
+                f'Cannot record a payment for an invoice in "{invoice.status}" status.',
+                status_code=400,
+            )
+
+        serializer = PaymentCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return error_response('Invalid payment data.', status_code=400,
+                                  details=serializer.errors)
+        d = serializer.validated_data
+
+        already_paid = invoice.payments.filter(is_active=True).aggregate(
+            total=Sum('amount'))['total'] or Decimal('0.00')
+        remaining = invoice.total_amount - already_paid
+        if d['amount'] > remaining:
+            return error_response(
+                f'Payment amount ({d["amount"]}) exceeds remaining balance ({remaining}).',
+                status_code=400,
+            )
+
+        payment = Payment.objects.create(
+            invoice=invoice, amount=d['amount'], method=d['method'],
+            payment_date=d['payment_date'], reference=d.get('reference', ''),
+            notes=d.get('notes', ''), recorded_by=request.user,
+        )
+        invoice.refresh_from_db()  # signal recomputed amount_paid + status
+
+        return success_response(
+            data={
+                'payment': PaymentSerializer(payment).data,
+                'invoice_status': invoice.status,
+                'amount_paid': str(invoice.amount_paid),
+                'balance_due': str(invoice.balance_due),
+            },
+            message='Payment recorded successfully.', status_code=201,
+        )

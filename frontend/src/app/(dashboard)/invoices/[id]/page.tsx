@@ -10,7 +10,7 @@ import { FlowTracker } from '@/components/invoice/FlowTracker';
 import { InvoiceTimeline } from '@/components/invoice/InvoiceTimeline';
 import { PDFDownloadButton } from '@/components/invoice/PDFDownloadButton';
 import { useCompany } from '@/hooks/useCompany';
-import { Download, Send, XCircle, ArrowLeft, RefreshCw, Ban, FileMinus } from 'lucide-react';
+import { Download, Send, XCircle, ArrowLeft, RefreshCw, Ban, FileMinus, Wallet } from 'lucide-react';
 import { AxiosError } from 'axios';
 import type { Invoice, InvoiceTimeline as InvoiceTimelineType } from '@/types';
 
@@ -120,6 +120,27 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
   const [showDeactivate, setShowDeactivate] = useState(false);
   const [deactivateReason, setDeactivateReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [payAmount, setPayAmount] = useState('');
+  const [payMethod, setPayMethod] = useState('bank_transfer');
+  const [payDate, setPayDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [payRef, setPayRef] = useState('');
+
+  async function handleRecordPayment() {
+    if (!payAmount || Number(payAmount) <= 0) { setActionError('Enter a valid payment amount.'); return; }
+    setIsActing(true); setActionError('');
+    try {
+      await api.post(`/invoices/${params.id}/payments/`, {
+        amount: payAmount, method: payMethod, payment_date: payDate, reference: payRef,
+      });
+      setShowPayment(false);
+      setPayAmount(''); setPayRef('');
+      await mutateAll();
+    } catch (e) {
+      const err = e as AxiosError<{ error?: { message?: string } }>;
+      setActionError(err.response?.data?.error?.message ?? 'Failed to record payment.');
+    } finally { setIsActing(false); }
+  }
 
   const {
     data: invoice,
@@ -256,6 +277,17 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
             <span>{invoice.type_display}</span>
             <span>·</span>
             <span>{invoice.transaction_type.toUpperCase()}</span>
+            {Number(invoice.balance_due ?? 0) > 0 && (
+              <>
+                <span>·</span>
+                <span>Balance: <span className="font-semibold text-gray-700">{invoice.currency} {Number(invoice.balance_due).toLocaleString('en-AE', { minimumFractionDigits: 2 })}</span></span>
+              </>
+            )}
+            {invoice.is_overdue && (
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200">
+                OVERDUE {invoice.days_overdue}d
+              </span>
+            )}
             {isPolling && (
               <>
                 <span>·</span>
@@ -285,6 +317,12 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
           {invoice.is_submittable && (
             <Button size="sm" onClick={handleSubmit} loading={isActing}>
               <Send className="h-4 w-4" /> Submit
+            </Button>
+          )}
+          {['submitted', 'validated', 'partially_paid', 'pending'].includes(invoice.status)
+            && Number(invoice.balance_due ?? 0) > 0 && (
+            <Button size="sm" onClick={() => { setActionError(''); setShowPayment(true); }}>
+              <Wallet className="h-4 w-4" /> Record Payment
             </Button>
           )}
           {invoice.invoice_type !== 'credit_note' &&
@@ -363,7 +401,57 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
         </div>
       )}
 
-      {actionError && (
+      {showPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowPayment(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-brand-600" /> Record payment
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Balance due: <span className="font-semibold text-gray-900">{invoice.currency} {Number(invoice.balance_due ?? 0).toLocaleString('en-AE', { minimumFractionDigits: 2 })}</span>
+            </p>
+            <div className="mt-3 space-y-3">
+              <div>
+                <label className="text-xs font-medium text-gray-600">Amount</label>
+                <input type="number" step="0.01" min="0" value={payAmount} autoFocus
+                  onChange={(e) => setPayAmount(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Date</label>
+                  <input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Method</label>
+                  <select value={payMethod} onChange={(e) => setPayMethod(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400">
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="cash">Cash</option>
+                    <option value="card">Card</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600">Reference (optional)</label>
+                <input value={payRef} onChange={(e) => setPayRef(e.target.value)}
+                  placeholder="Txn / cheque no."
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+              </div>
+            </div>
+            {actionError && <p className="mt-2 text-sm text-red-600">{actionError}</p>}
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setShowPayment(false)} disabled={isActing}>Cancel</Button>
+              <Button size="sm" onClick={handleRecordPayment} loading={isActing}>Record Payment</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {actionError && !showPayment && !showDeactivate && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
           {actionError}
         </div>

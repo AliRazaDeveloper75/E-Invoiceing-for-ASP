@@ -177,6 +177,9 @@ export interface Invoice {
   asp_submitted_at: string | null;
   payment_means_code: string;
   amount_paid: string | null;
+  balance_due?: string;
+  is_overdue?: boolean;
+  days_overdue?: number;
   items: InvoiceItem[];
   item_count: number;
   is_editable: boolean;
