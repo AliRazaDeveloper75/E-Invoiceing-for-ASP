@@ -155,8 +155,13 @@ export default function NewCustomerPage() {
         >
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">New Customer</h1>
-        <p className="text-gray-500 text-sm mt-1">Add a customer to issue invoices to</p>
+        <h1 className="text-2xl font-bold text-gray-900">{isEdit ? 'Edit Customer' : 'New Customer'}</h1>
+        <p className="text-gray-500 text-sm mt-1">
+          {isEdit ? 'Update details to complete this customer' : 'Add a customer to issue invoices to'}
+        </p>
+        {isEdit && (
+          <p className="text-xs text-gray-400 mt-1">Leave the logo / TRN document empty to keep the existing files.</p>
+        )}
       </div>
 
       <form
@@ -300,10 +305,10 @@ export default function NewCustomerPage() {
                            file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-medium
                            file:text-brand-700 hover:file:bg-brand-100 cursor-pointer"
                 {...register('trn_document', {
-                  required: 'TRN certificate is required',
+                  required: isEdit ? false : 'TRN certificate is required',
                   validate: (f) => {
                     const file = f?.[0];
-                    if (!file) return 'TRN certificate is required';
+                    if (!file) return isEdit ? true : 'TRN certificate is required';
                     if (!/\.(pdf|jpg|jpeg|png)$/i.test(file.name))
                       return 'Only PDF, JPG or PNG files are allowed';
                     if (file.size > 5 * 1024 * 1024) return 'File must be 5MB or smaller';
@@ -332,10 +337,10 @@ export default function NewCustomerPage() {
                            file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-medium
                            file:text-brand-700 hover:file:bg-brand-100 cursor-pointer"
                 {...register('logo', {
-                  required: 'Customer logo is required',
+                  required: isEdit ? false : 'Customer logo is required',
                   validate: (f) => {
                     const file = f?.[0];
-                    if (!file) return 'Customer logo is required';
+                    if (!file) return isEdit ? true : 'Customer logo is required';
                     if (!/\.(jpg|jpeg|png)$/i.test(file.name))
                       return 'Only JPG or PNG images are allowed';
                     if (file.size > 5 * 1024 * 1024) return 'Image must be 5MB or smaller';
@@ -460,7 +465,7 @@ export default function NewCustomerPage() {
             Cancel
           </Button>
           <Button type="submit" loading={isSubmitting}>
-            Create Customer
+            {isEdit ? 'Save Changes' : 'Create Customer'}
           </Button>
         </div>
       </form>
