@@ -56,6 +56,9 @@ export default function ReceivablesPage() {
 
   const cur = summary?.currency ?? 'AED';
   const bucketKeys = ['current', 'd1_30', 'd31_60', 'd61_90', 'd90_plus'];
+  const BUCKET_LABELS: Record<string, string> = {
+    current: 'Current', d1_30: '1–30', d31_60: '31–60', d61_90: '61–90', d90_plus: '90+',
+  };
   const agingTotal = Number(aging?.total ?? 0);
 
   return (
@@ -91,7 +94,7 @@ export default function ReceivablesPage() {
                   <div className={`w-8 rounded-t ${danger ? 'bg-red-400' : k === 'current' ? 'bg-emerald-400' : 'bg-amber-400'}`}
                     style={{ height: `${Math.max(pct, 2)}%` }} />
                 </div>
-                <p className="text-xs font-medium text-gray-700">{aging?.labels?.[k] ?? k}</p>
+                <p className="text-xs font-medium text-gray-700">{BUCKET_LABELS[k] ?? aging?.labels?.[k] ?? k}</p>
                 <p className="text-xs text-gray-500">{cur} {fmt(val)}</p>
               </div>
             );
