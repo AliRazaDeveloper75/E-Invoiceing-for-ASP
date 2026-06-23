@@ -15,6 +15,11 @@ secrets/
 !services/as4/trust_anchors/
 !services/as4/trust_anchors/*.pem
 
+# ─── Internal docs (company details, ASP registration pack, feature briefs) ───
+# Contain TRN, addresses, architecture & security details — do NOT publish.
+docs/
+*.pdf
+
 # ─── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]

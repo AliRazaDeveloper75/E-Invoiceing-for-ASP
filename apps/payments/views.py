@@ -446,10 +446,12 @@ class SupplierPaymentListView(APIView):
         except Invoice.DoesNotExist:
             return error_response('Invoice not found.', status_code=404)
 
-        from apps.invoices.permissions import get_company_and_membership
-        company, membership = get_company_and_membership(request.user, str(invoice.company_id))
-        if not company:
-            return error_response('Access denied for this invoice.', status_code=403)
+        # Admins may record against any company's invoice; others must be members.
+        if request.user.role != 'admin' and not request.user.is_staff:
+            from apps.invoices.permissions import get_company_and_membership
+            company, membership = get_company_and_membership(request.user, str(invoice.company_id))
+            if not company:
+                return error_response('Access denied for this invoice.', status_code=403)
 
         if invoice.status in ('draft', 'cancelled', 'deactivated', 'paid'):
             return error_response(

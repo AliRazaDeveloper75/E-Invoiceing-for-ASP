@@ -30,7 +30,14 @@ _BALANCE = ExpressionWrapper(
 
 
 def _company(request):
+    """Resolve the requested company. Admins may view any company; everyone
+    else must be an active member of it."""
     company_id = request.query_params.get('company_id')
+    if not company_id:
+        return None
+    if getattr(request.user, 'role', None) == 'admin' or request.user.is_staff:
+        from apps.companies.models import Company
+        return Company.objects.filter(id=company_id, is_active=True).first()
     company, membership = get_company_and_membership(request.user, company_id)
     return company
 
