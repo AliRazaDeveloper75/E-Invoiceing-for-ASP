@@ -55,9 +55,9 @@ export default function ReceivablesPage() {
   const { data: byCust }  = useSWR<{ customers: CustomerRow[] }>(activeId ? `/reports/ar/by-customer/${q}` : null, fetcher);
 
   const cur = summary?.currency ?? 'AED';
-  const bucketKeys = ['current', 'd1_30', 'd31_60', 'd61_90', 'd90_plus'];
+  const bucketKeys = ['current', 'd1_15', 'd16_30', 'd31_45', 'd46_60', 'd60_plus'];
   const BUCKET_LABELS: Record<string, string> = {
-    current: 'Current', d1_30: '1–30', d31_60: '31–60', d61_90: '61–90', d90_plus: '90+',
+    current: 'Current', d1_15: '1–15', d16_30: '16–30', d31_45: '31–45', d46_60: '46–60', d60_plus: '60+',
   };
   const agingTotal = Number(aging?.total ?? 0);
 
@@ -83,11 +83,11 @@ export default function ReceivablesPage() {
       {/* Aging */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
         <h2 className="font-semibold text-gray-800 mb-4">Aging</h2>
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-6 gap-3">
           {bucketKeys.map((k) => {
             const val = Number(aging?.buckets?.[k] ?? 0);
             const pct = agingTotal > 0 ? Math.round((val / agingTotal) * 100) : 0;
-            const danger = k === 'd61_90' || k === 'd90_plus';
+            const danger = k === 'd46_60' || k === 'd60_plus';
             return (
               <div key={k} className="text-center">
                 <div className="h-24 flex items-end justify-center mb-2">

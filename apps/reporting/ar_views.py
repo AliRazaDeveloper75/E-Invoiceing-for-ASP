@@ -47,13 +47,15 @@ def _receivables(company):
 def _bucket(days):
     if days <= 0:
         return 'current'
+    if days <= 15:
+        return 'd1_15'
     if days <= 30:
-        return 'd1_30'
+        return 'd16_30'
+    if days <= 45:
+        return 'd31_45'
     if days <= 60:
-        return 'd31_60'
-    if days <= 90:
-        return 'd61_90'
-    return 'd90_plus'
+        return 'd46_60'
+    return 'd60_plus'
 
 
 class ARSummaryView(APIView):
@@ -109,9 +111,9 @@ class ARAgingView(APIView):
         if customer_id:
             qs = qs.filter(customer_id=customer_id)
 
-        buckets = {'current': Decimal('0.00'), 'd1_30': Decimal('0.00'),
-                   'd31_60': Decimal('0.00'), 'd61_90': Decimal('0.00'),
-                   'd90_plus': Decimal('0.00')}
+        buckets = {'current': Decimal('0.00'), 'd1_15': Decimal('0.00'),
+                   'd16_30': Decimal('0.00'), 'd31_45': Decimal('0.00'),
+                   'd46_60': Decimal('0.00'), 'd60_plus': Decimal('0.00')}
         total = Decimal('0.00')
         for inv in qs:
             days = (today - inv.due_date).days if inv.due_date else 0
@@ -121,8 +123,8 @@ class ARAgingView(APIView):
         return success_response(data={
             'currency': 'AED',
             'buckets': {k: str(v) for k, v in buckets.items()},
-            'labels': {'current': 'Current', 'd1_30': '1–30', 'd31_60': '31–60',
-                       'd61_90': '61–90', 'd90_plus': '90+'},
+            'labels': {'current': 'Current', 'd1_15': '1–15', 'd16_30': '16–30',
+                       'd31_45': '31–45', 'd46_60': '46–60', 'd60_plus': '60+'},
             'total': str(total),
         })
 
