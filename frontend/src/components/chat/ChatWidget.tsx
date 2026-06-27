@@ -502,13 +502,9 @@ interface AgentTabProps {
 }
 
 function AgentTab({ onClose }: AgentTabProps) {
-  const [view, setView] = useState<AuthView>('login');
+  const [view, setView] = useState<AuthView>('register');
   const [userId, setUserId] = useState<number | null>(null);
   const [userName, setUserName] = useState('');
-
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [loginLoading, setLoginLoading] = useState(false);
 
   // Register fields
   const [regName, setRegName] = useState('');
@@ -530,7 +526,6 @@ function AgentTab({ onClose }: AgentTabProps) {
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const loginEmailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -543,24 +538,14 @@ function AgentTab({ onClose }: AgentTabProps) {
     el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
   }, [input]);
 
-  useEffect(() => {
-    if (view === 'login') loginEmailRef.current?.focus();
-  }, [view]);
-
   // Reset touched when switching views
   useEffect(() => {
     setTouched({ name: false, email: false, phone: false });
   }, [view]);
 
-  async function login() {
-    setLoginError(null);
-    const email = loginEmail.trim();
-    if (!email || !email.includes('@')) {
-      setLoginError('Enter a valid email address.');
-      return;
-    }
-
-    setLoginLoading(true);
+  // Logs an existing user in by email. Returns true on success, false otherwise.
+  // Used as a silent fallback during registration when the email already exists.
+  async function loginWithEmail(email: string): Promise<boolean> {
     try {
       const res = await fetch(`${AI_AGENT_BASE}/auth/login`, {
         method: 'POST',
@@ -579,18 +564,12 @@ function AgentTab({ onClose }: AgentTabProps) {
           },
         ]);
         setView('chat');
-      } else if (res.status === 401) {
-        setRegEmail(email);
-        setRegError(null);
-        setView('register');
-      } else {
-        setLoginError(data.detail || 'Something went wrong. Please try again.');
+        return true;
       }
     } catch {
-      setLoginError('Connection failed. Please check your internet.');
-    } finally {
-      setLoginLoading(false);
+      /* fall through to false */
     }
+    return false;
   }
 
   async function register() {
@@ -623,6 +602,10 @@ function AgentTab({ onClose }: AgentTabProps) {
           },
         ]);
         setView('chat');
+      } else if (res.status === 409 || /exist|already|registered/i.test(data.detail || '')) {
+        // User already exists — log them in silently instead of blocking.
+        const ok = await loginWithEmail(regEmail.trim());
+        if (!ok) setRegError('This email is already registered, but sign-in failed. Please try again.');
       } else {
         setRegError(data.detail || 'Registration failed. Please try again.');
       }
@@ -727,94 +710,11 @@ function AgentTab({ onClose }: AgentTabProps) {
 
   const allFieldsValid = nameValidation.valid && emailValidation.valid && phoneValidation.valid;
 
-  // ── Login view ──
-  if (view === 'login') {
-    return (
-      <div
-        className="relative flex h-full flex-col justify-center px-6 py-6"
-        style={{ background: 'linear-gradient(180deg, #FBF7F2 0%, #FFFFFF 60%)' }}
-      >
-        <button
-          onClick={onClose}
-          className="absolute right-3 top-3 rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
-          title="Close"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
-        <div className="mb-6 text-center">
-          <div
-            className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-sm"
-            style={{ background: '#C2410C' }}
-          >
-            <ENumerakLogo className="h-7 w-7" />
-          </div>
-          <h2 className="text-base font-semibold tracking-tight text-stone-900">
-            Sign in to E-Numerak
-          </h2>
-          <p className="mt-1 text-[13px] text-stone-500">
-            Your UAE tax assistant — here to help 24/7
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          <div>
-            <label className="mb-1.5 block" style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#78716c' }}>
-              Email address <span className="text-orange-500">*</span>
-            </label>
-            <div className="relative">
-              <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-              <input
-                ref={loginEmailRef}
-                type="email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && login()}
-                placeholder="you@company.com"
-                className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-stone-800 outline-none transition-all placeholder:text-stone-400 focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
-              />
-            </div>
-          </div>
-
-          {loginError && (
-            <p className="flex items-center gap-1 rounded-lg bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600">
-              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-              {loginError}
-            </p>
-          )}
-
-          <button
-            onClick={login}
-            disabled={loginLoading}
-            className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-            style={{ background: '#1C1917' }}
-          >
-            {loginLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Checking…
-              </>
-            ) : (
-              <>
-                Continue
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
-          </button>
-        </div>
-
-        <p className="mt-5 text-center text-[11px] text-stone-400">
-          New here? Enter your email and we'll get you set up.
-        </p>
-      </div>
-    );
-  }
-
   // ── Register view ──
   if (view === 'register') {
     return (
       <div
-        className="relative flex h-full flex-col justify-center overflow-y-auto px-6 py-5"
+        className="relative flex h-full flex-col justify-center overflow-y-auto px-6 py-6 [justify-content:safe_center]"
         style={{ background: 'linear-gradient(180deg, #FBF7F2 0%, #FFFFFF 60%)' }}
       >
         <button
@@ -928,22 +828,6 @@ function AgentTab({ onClose }: AgentTabProps) {
               {regError}
             </p>
           )}
-
-          {/* Progress indicator: show how many fields are filled */}
-          <div className="flex items-center gap-1.5">
-            {[nameValidation.valid, emailValidation.valid, phoneValidation.valid].map((v, i) => (
-              <div
-                key={i}
-                className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                  v ? 'bg-emerald-400' : 'bg-stone-200'
-                }`}
-              />
-            ))}
-            <span className="ml-1 text-[10px] font-medium text-stone-400 tabular-nums">
-              {[nameValidation.valid, emailValidation.valid, phoneValidation.valid].filter(Boolean).length}/3
-            </span>
-          </div>
-
           <button
             onClick={register}
             disabled={regLoading}
@@ -964,17 +848,6 @@ function AgentTab({ onClose }: AgentTabProps) {
                 <ArrowRight className="h-4 w-4" />
               </>
             )}
-          </button>
-
-          <button
-            onClick={() => {
-              setRegError(null);
-              setView('login');
-            }}
-            className="flex w-full items-center justify-center gap-1.5 py-1 text-xs font-medium text-stone-400 transition-colors hover:text-stone-600"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-            Back to sign in
           </button>
         </div>
       </div>
@@ -1188,7 +1061,7 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
 
       {open && (
         <div
-          className="fixed bottom-24 right-6 z-50 flex h-[560px] max-h-[calc(100dvh-7rem)] w-[380px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl shadow-stone-900/10"
+          className="fixed bottom-24 right-6 z-50 flex h-[min(640px,calc(100dvh_-_7rem))] w-[min(400px,calc(100vw_-_2rem))] flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl shadow-stone-900/10"
           role="dialog"
           aria-label="Chat support"
         >
