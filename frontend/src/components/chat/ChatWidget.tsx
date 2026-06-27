@@ -724,23 +724,6 @@ function AgentTab({ onClose }: AgentTabProps) {
         >
           <X className="h-4 w-4" />
         </button>
-
-        {/* Header */}
-        <div className="mb-5 text-center">
-          <div
-            className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-sm"
-            style={{ background: '#C2410C' }}
-          >
-            <ENumerakLogo className="h-7 w-7" />
-          </div>
-          <h2 className="text-base font-semibold tracking-tight text-stone-900">
-            Create your account
-          </h2>
-          <p className="mt-1 text-[13px] text-stone-500">
-            Let's get you set up — takes just a moment.
-          </p>
-        </div>
-
         <div className="space-y-4">
           {/* Full Name */}
           <Field
@@ -844,7 +827,7 @@ function AgentTab({ onClose }: AgentTabProps) {
               </>
             ) : (
               <>
-                Create account & start chatting
+                start chatting
                 <ArrowRight className="h-4 w-4" />
               </>
             )}
