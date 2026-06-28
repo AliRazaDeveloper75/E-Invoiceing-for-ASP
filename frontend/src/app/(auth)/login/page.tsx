@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/context/I18nContext';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { AxiosError } from 'axios';
@@ -19,31 +21,19 @@ interface LoginForm {
   password: string;
 }
 
-const FEATURES = [
-  {
-    icon: Network,
-    title: '5-Corner',
-    desc: 'End-to-end transmission via accredited ASP through the E-Invoice network.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'ASP Validated',
-    desc: 'Every invoice validated and digitally signed before delivery to the buyer.',
-  },
-  {
-    icon: Landmark,
-    title: 'Automatic FTA Reporting',
-    desc: 'Invoice extracts reported to the Ministry of Finance data platform (Corner 5).',
-  },
-];
+const FEATURE_ICONS = [Network, ShieldCheck, Landmark];
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const mfaExpired = searchParams.get('reason') === 'mfa_expired';
   const [serverError, setServerError] = useState('');
   const [unverified, setUnverified] = useState(false);
+
+  const features = t<{ title: string; desc: string }[]>('login.features');
+  const badges = t<string[]>('login.badges');
 
   const {
     register,
@@ -66,7 +56,7 @@ export default function LoginPage() {
       setServerError(
         e.response?.data?.detail ||
         e.response?.data?.error?.message ||
-        'Invalid credentials. Please try again.'
+        t('login.invalidCreds')
       );
     }
   };
@@ -94,40 +84,38 @@ export default function LoginPage() {
             </div>
             <span className="text-xl font-bold tracking-tight">E-Numerak</span>
           </div>
-          <p className="text-white/50 text-sm ml-12">5-Corner Platform</p>
+          <p className="text-white/50 text-sm ms-12">{t('login.brandSub')}</p>
         </div>
 
         {/* Hero text */}
         <div className="relative z-10 space-y-6">
           <div>
-            <h2 className="text-3xl font-bold leading-tight">
-              The UAE&apos;s compliant<br />e-invoicing platform
-            </h2>
-            <p className="mt-3 text-white/60 text-sm leading-relaxed max-w-sm">
-              Issue, validate, and report tax invoices in full compliance with the UAE
-              FTA mandate — powered by the BIS 3.0 standard.
-            </p>
+            <h2 className="text-3xl font-bold leading-tight">{t('login.heroTitle')}</h2>
+            <p className="mt-3 text-white/60 text-sm leading-relaxed max-w-sm">{t('login.heroBody')}</p>
           </div>
 
           {/* Feature list */}
           <div className="space-y-4">
-            {FEATURES.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="flex items-start gap-3">
-                <div className="shrink-0 h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center mt-0.5">
-                  <Icon className="h-4 w-4 text-white/80" />
+            {features.map((f, i) => {
+              const Icon = FEATURE_ICONS[i];
+              return (
+                <div key={f.title} className="flex items-start gap-3">
+                  <div className="shrink-0 h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center mt-0.5">
+                    <Icon className="h-4 w-4 text-white/80" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{f.title}</p>
+                    <p className="text-xs text-white/50 mt-0.5 leading-relaxed">{f.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">{title}</p>
-                  <p className="text-xs text-white/50 mt-0.5 leading-relaxed">{desc}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
         {/* Footer badges */}
         <div className="relative z-10 flex items-center gap-3 flex-wrap">
-          {['FTA Certified', 'BIS 3.0', 'UBL 2.1', 'VAT Compliant'].map((badge) => (
+          {badges.map((badge) => (
             <span
               key={badge}
               className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-white/10 text-white/70 border border-white/10"
@@ -139,49 +127,53 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right panel — form ──────────────────────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center bg-gray-50 px-6 py-12">
+      <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 px-6 py-12 relative">
+        {/* Language switcher */}
+        <div className="absolute top-4 end-4">
+          <LanguageSwitcher variant="light" />
+        </div>
         <div className="w-full max-w-md">
 
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-2xl font-bold text-brand-900">E-Numerak</h1>
-            <p className="text-gray-500 mt-1 text-sm">5-Corner Platform</p>
+            <p className="text-gray-500 mt-1 text-sm">{t('login.brandSub')}</p>
           </div>
 
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
-            <p className="text-gray-500 mt-1 text-sm">Sign in to your account to continue</p>
+            <h2 className="text-2xl font-bold text-gray-900">{t('login.welcome')}</h2>
+            <p className="text-gray-500 mt-1 text-sm">{t('login.welcomeSub')}</p>
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <Input
-                label="Email address"
+                label={t('login.emailLabel')}
                 type="email"
                 autoComplete="email"
-                placeholder="you@company.ae"
+                placeholder={t('login.emailPh')}
                 error={errors.email?.message}
                 {...register('email', {
-                  required: 'Email is required',
-                  pattern: { value: /\S+@\S+\.\S+/, message: 'Invalid email' },
+                  required: t('login.emailRequired'),
+                  pattern: { value: /\S+@\S+\.\S+/, message: t('login.emailInvalid') },
                 })}
               />
 
               <div>
                 <Input
-                  label="Password"
+                  label={t('login.passwordLabel')}
                   type="password"
                   autoComplete="current-password"
                   placeholder="••••••••"
                   error={errors.password?.message}
-                  {...register('password', { required: 'Password is required' })}
+                  {...register('password', { required: t('login.passwordRequired') })}
                 />
-                <div className="mt-1.5 text-right">
+                <div className="mt-1.5 text-end">
                   <Link
                     href="/forgot-password"
                     className="text-xs text-brand-600 hover:underline font-medium"
                   >
-                    Forgot password?
+                    {t('login.forgot')}
                   </Link>
                 </div>
               </div>
@@ -191,10 +183,8 @@ export default function LoginPage() {
                   <div className="flex items-start gap-2">
                     <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
                     <div>
-                      <p className="font-semibold">MFA session expired</p>
-                      <p className="mt-0.5 text-amber-700">
-                        Your 24-hour authenticator session has expired. Please sign in and verify your code again.
-                      </p>
+                      <p className="font-semibold">{t('login.mfaExpiredTitle')}</p>
+                      <p className="mt-0.5 text-amber-700">{t('login.mfaExpiredBody')}</p>
                     </div>
                   </div>
                 </div>
@@ -205,16 +195,14 @@ export default function LoginPage() {
                   <div className="flex items-start gap-2">
                     <MailWarning className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
                     <div>
-                      <p className="font-semibold">Email not verified</p>
-                      <p className="mt-0.5 text-amber-700">
-                        Your account is not verified. Please verify your email before accessing your account.
-                      </p>
+                      <p className="font-semibold">{t('login.unverifiedTitle')}</p>
+                      <p className="mt-0.5 text-amber-700">{t('login.unverifiedBody')}</p>
                       <button
                         type="button"
                         onClick={() => router.push('/verify-email')}
                         className="mt-2 text-amber-900 font-semibold underline underline-offset-2 hover:text-amber-700"
                       >
-                        Verify email now →
+                        {t('login.verifyNow')}
                       </button>
                     </div>
                   </div>
@@ -228,15 +216,15 @@ export default function LoginPage() {
               )}
 
               <Button type="submit" className="w-full" loading={isSubmitting}>
-                Sign in
-                <ArrowRight className="h-4 w-4 ml-1" />
+                {t('login.signIn')}
+                <ArrowRight className="h-4 w-4 ms-1" />
               </Button>
             </form>
           </div>
 
           <div className="mt-6 flex items-center justify-center gap-2 text-[11px] text-gray-400">
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-            Secure JWT authentication — data encrypted in transit
+            {t('login.secureNote')}
           </div>
         </div>
       </div>

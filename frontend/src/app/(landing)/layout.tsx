@@ -5,17 +5,20 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { FileText, Menu, X, ArrowRight } from 'lucide-react';
 import { ChatWidget } from '@/components/chat/ChatWidget';
+import { useI18n } from '@/context/I18nContext';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 
 const NAV_LINKS = [
-  { label: 'Home',     href: '/' },
-  { label: 'About',    href: '/about' },
-  { label: 'Services', href: '/services' },
-  { label: 'E-Invoice',   href: '/peppol' },
-  { label: 'Contact',  href: '/contact' },
+  { key: 'nav.home',     href: '/' },
+  { key: 'nav.about',    href: '/about' },
+  { key: 'nav.services', href: '/services' },
+  { key: 'nav.peppol',   href: '/peppol' },
+  { key: 'nav.contact',  href: '/contact' },
 ];
 
 function Navbar() {
   const pathname = usePathname();
+  const { t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -50,19 +53,20 @@ function Navbar() {
                     }
                   `}
                 >
-                  {link.label}
+                  {t(link.key)}
                 </Link>
               );
             })}
           </nav>
 
           {/* CTA button */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
+            <LanguageSwitcher variant="dark" />
             <Link
               href="/login"
-              className="text-sm font-medium text-blue-200 hover:text-white transition-colors"
+              className="text-sm font-medium text-blue-200 hover:text-white transition-colors px-2"
             >
-              Sign In
+              {t('nav.signIn')}
             </Link>
             <Link
               href="/dashboard"
@@ -72,7 +76,7 @@ function Navbar() {
                 transition-all duration-150 shadow-md hover:shadow-lg
               "
             >
-              E-Invoice Portal
+              {t('nav.portal')}
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -103,24 +107,25 @@ function Navbar() {
                   ${active ? 'bg-white/15 text-white' : 'text-blue-200 hover:text-white hover:bg-white/10'}
                 `}
               >
-                {link.label}
+                {t(link.key)}
               </Link>
             );
           })}
           <div className="pt-2 border-t border-white/10 flex flex-col gap-2">
+            <div className="px-1"><LanguageSwitcher variant="dark" /></div>
             <Link
               href="/login"
               onClick={() => setMenuOpen(false)}
               className="block px-4 py-2.5 rounded-lg text-sm font-medium text-blue-200 hover:text-white hover:bg-white/10"
             >
-              Sign In
+              {t('nav.signIn')}
             </Link>
             <Link
               href="/dashboard"
               onClick={() => setMenuOpen(false)}
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-blue-500 text-white hover:bg-blue-400"
             >
-              E-Invoice Portal <ArrowRight className="h-3.5 w-3.5" />
+              {t('nav.portal')} <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
         </div>
@@ -130,6 +135,7 @@ function Navbar() {
 }
 
 function Footer() {
+  const { t } = useI18n();
   return (
     <footer className="bg-[#1e3a5f] text-blue-200 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -142,30 +148,29 @@ function Footer() {
               <span className="text-white font-bold text-sm">E-Numerak</span>
             </div>
             <p className="text-xs leading-relaxed text-blue-300 max-w-xs">
-              5-Corner compliant e-invoicing solution for UAE businesses.
-              FTA-certified, VAT-ready, and built for the UAE digital economy.
+              {t('footer.tagline')}
             </p>
           </div>
           <div>
-            <p className="text-white text-xs font-semibold uppercase tracking-wider mb-3">Platform</p>
+            <p className="text-white text-xs font-semibold uppercase tracking-wider mb-3">{t('footer.platform')}</p>
             <ul className="space-y-2 text-xs">
               {NAV_LINKS.map((l) => (
-                <li key={l.href}><Link href={l.href} className="hover:text-white transition-colors">{l.label}</Link></li>
+                <li key={l.href}><Link href={l.href} className="hover:text-white transition-colors">{t(l.key)}</Link></li>
               ))}
             </ul>
           </div>
           <div>
-            <p className="text-white text-xs font-semibold uppercase tracking-wider mb-3">Legal</p>
+            <p className="text-white text-xs font-semibold uppercase tracking-wider mb-3">{t('footer.legal')}</p>
             <ul className="space-y-2 text-xs">
-              <li><Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-              <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
-              <li><Link href="/fta-compliance" className="hover:text-white transition-colors">FTA Compliance</Link></li>
+              <li><Link href="/privacy-policy" className="hover:text-white transition-colors">{t('footer.privacy')}</Link></li>
+              <li><Link href="/terms" className="hover:text-white transition-colors">{t('footer.terms')}</Link></li>
+              <li><Link href="/fta-compliance" className="hover:text-white transition-colors">{t('footer.ftaCompliance')}</Link></li>
             </ul>
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-blue-400">
-          <span>&copy; {new Date().getFullYear()} E-Numerak. All rights reserved.</span>
-          <span>Federal Decree-Law No. 16 of 2024 &bull; BIS 3.0 &bull; UAE FTA Certified</span>
+          <span>&copy; {new Date().getFullYear()} {t('footer.rights')}</span>
+          <span>{t('footer.certified')}</span>
         </div>
       </div>
     </footer>
