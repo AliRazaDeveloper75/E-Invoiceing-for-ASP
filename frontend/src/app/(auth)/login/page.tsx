@@ -127,25 +127,43 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right panel — form ──────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 px-6 py-12 relative">
-        {/* Language switcher */}
-        <div className="absolute top-4 end-4">
-          <LanguageSwitcher variant="light" />
+      <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 via-white to-indigo-50/40 px-6 py-12 relative overflow-hidden">
+        {/* Background decorations */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-indigo-100/40 blur-3xl" />
+          <div className="absolute -bottom-32 -left-20 w-[400px] h-[400px] rounded-full bg-brand-100/30 blur-3xl" />
+          <div className="absolute top-1/2 left-1/3 w-[300px] h-[300px] rounded-full bg-purple-100/20 blur-3xl" />
+          <div
+            className="absolute inset-0 opacity-[0.015]"
+            style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, black 1px, transparent 0)', backgroundSize: '24px 24px' }}
+          />
         </div>
-        <div className="w-full max-w-md">
 
+        {/* Language switcher */}
+        <div className="absolute top-6 end-6 z-10">
+          <div className="bg-white/60 backdrop-blur-sm rounded-lg shadow-sm border border-gray-100/50 p-0.5">
+            <LanguageSwitcher variant="light" />
+          </div>
+        </div>
+
+        <div className="w-full max-w-md relative z-10">
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
-            <h1 className="text-2xl font-bold text-brand-900">E-Numerak</h1>
+            <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-brand-600 to-indigo-600 shadow-lg shadow-brand-500/20 mb-3">
+              <FileText className="h-6 w-6 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">E-Numerak</h1>
             <p className="text-gray-500 mt-1 text-sm">{t('login.brandSub')}</p>
           </div>
 
+          {/* Welcome section */}
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">{t('login.welcome')}</h2>
-            <p className="text-gray-500 mt-1 text-sm">{t('login.welcomeSub')}</p>
+            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{t('login.welcome')}</h2>
+            <p className="text-gray-500 mt-2 text-sm leading-relaxed">{t('login.welcomeSub')}</p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+          {/* Form card */}
+          <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/70 border border-gray-100/80 p-8 relative transition-shadow duration-200">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <Input
                 label={t('login.emailLabel')}
@@ -171,7 +189,7 @@ export default function LoginPage() {
                 <div className="mt-1.5 text-end">
                   <Link
                     href="/forgot-password"
-                    className="text-xs text-brand-600 hover:underline font-medium"
+                    className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors"
                   >
                     {t('login.forgot')}
                   </Link>
@@ -179,28 +197,32 @@ export default function LoginPage() {
               </div>
 
               {mfaExpired && (
-                <div className="rounded-lg bg-amber-50 border border-amber-300 px-4 py-3 text-sm text-amber-800">
-                  <div className="flex items-start gap-2">
-                    <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
-                    <div>
+                <div className="rounded-xl bg-amber-50/80 border border-amber-200/80 px-4 py-3 text-sm text-amber-800">
+                  <div className="flex items-start gap-2.5">
+                    <div className="shrink-0 h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                      <ShieldCheck className="h-4 w-4 text-amber-600" />
+                    </div>
+                    <div className="pt-0.5">
                       <p className="font-semibold">{t('login.mfaExpiredTitle')}</p>
-                      <p className="mt-0.5 text-amber-700">{t('login.mfaExpiredBody')}</p>
+                      <p className="mt-0.5 text-amber-600/90">{t('login.mfaExpiredBody')}</p>
                     </div>
                   </div>
                 </div>
               )}
 
               {unverified && (
-                <div className="rounded-lg bg-amber-50 border border-amber-300 px-4 py-3 text-sm text-amber-800">
-                  <div className="flex items-start gap-2">
-                    <MailWarning className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
-                    <div>
+                <div className="rounded-xl bg-amber-50/80 border border-amber-200/80 px-4 py-3 text-sm text-amber-800">
+                  <div className="flex items-start gap-2.5">
+                    <div className="shrink-0 h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                      <MailWarning className="h-4 w-4 text-amber-600" />
+                    </div>
+                    <div className="pt-0.5">
                       <p className="font-semibold">{t('login.unverifiedTitle')}</p>
-                      <p className="mt-0.5 text-amber-700">{t('login.unverifiedBody')}</p>
+                      <p className="mt-0.5 text-amber-600/90">{t('login.unverifiedBody')}</p>
                       <button
                         type="button"
                         onClick={() => router.push('/verify-email')}
-                        className="mt-2 text-amber-900 font-semibold underline underline-offset-2 hover:text-amber-700"
+                        className="mt-2 text-amber-700 font-semibold underline underline-offset-2 hover:text-amber-600 transition-colors"
                       >
                         {t('login.verifyNow')}
                       </button>
@@ -210,21 +232,29 @@ export default function LoginPage() {
               )}
 
               {serverError && (
-                <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                  {serverError}
+                <div className="rounded-xl bg-red-50/80 border border-red-200/80 px-4 py-3 text-sm text-red-700 flex items-start gap-2.5">
+                  <span className="shrink-0 h-5 w-5 rounded-full bg-red-100 flex items-center justify-center text-xs font-bold text-red-500">!</span>
+                  <span className="pt-0.5">{serverError}</span>
                 </div>
               )}
 
-              <Button type="submit" className="w-full" loading={isSubmitting}>
+              <Button
+                type="submit"
+                className="w-full shadow-md hover:shadow-lg transition-all duration-200"
+                loading={isSubmitting}
+              >
                 {t('login.signIn')}
                 <ArrowRight className="h-4 w-4 ms-1" />
               </Button>
             </form>
           </div>
 
-          <div className="mt-6 flex items-center justify-center gap-2 text-[11px] text-gray-400">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-            {t('login.secureNote')}
+          {/* Secure note */}
+          <div className="mt-8 flex items-center justify-center gap-2.5 text-xs text-gray-400">
+            <div className="h-6 w-6 rounded-full bg-emerald-50 flex items-center justify-center">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+            </div>
+            <span>{t('login.secureNote')}</span>
           </div>
         </div>
       </div>
