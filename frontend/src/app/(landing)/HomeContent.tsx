@@ -141,7 +141,7 @@ function StatCard({ value, label, icon, bg, index }: { value: string; label: str
   return (
     <div
       ref={ref}
-      className={`group relative bg-blue-50 rounded-2xl border border-blue-100/80 p-6 lg:p-8 shadow-sm shadow-blue-100/50 hover:shadow-xl hover:shadow-blue-200/60 transition-all duration-700 ease-out ${
+      className={`group relative bg-blue-50 rounded-2xl border border-blue-100/80 p-6 lg:p-8 shadow-sm shadow-blue-100/50 hover:shadow-xl hover:shadow-blue-200/60 text-center transition-all duration-700 ease-out ${
   inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
 }`}
       style={{ transitionDelay: `${index * 120}ms` }}
@@ -307,7 +307,7 @@ export function HomeContent() {
                         { value: 'AED 14.2K', label: 'VAT', color: 'from-amber-400 to-amber-500' },
                         { value: '98.5%', label: 'Validated', color: 'from-violet-400 to-violet-500' },
                       ].map((stat) => (
-                        <div key={stat.label} className="bg-white/[0.06] rounded-xl p-3 border border-white/[0.06] group-hover:bg-white/[0.08] transition-colors">
+                        <div key={stat.label} className="bg-white/[0.06] rounded-xl p-3 border border-blue-800/30 group-hover:bg-white/[0.08] transition-colors">
                           <div className={`h-1 w-8 rounded-full bg-gradient-to-r ${stat.color} mb-2`} />
                           <div className="text-sm font-bold text-white">{stat.value}</div>
                           <div className="text-[10px] text-blue-200/50 mt-0.5">{stat.label}</div>
@@ -429,21 +429,21 @@ export function HomeContent() {
             {/* ── Left: Story + highlights ──────────────────────────────────── */}
             <AnimatedSection direction="left" delay={0} className="lg:col-span-7">
               <div>
-                <p className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold mb-4">
+                <p className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold mb-3">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                   {t('home.about.tag')}
                 </p>
-                <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6 leading-tight">
+                <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 leading-tight">
                   {t('home.about.title')}
                 </h2>
-                <p className="text-gray-600 leading-relaxed text-[15px] mb-8 max-w-xl">
+                <p className="text-gray-600 leading-relaxed text-[15px] mb-6 max-w-xl">
                   {t('home.about.p1')}
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {aboutList.map((item, i) => (
                     <div
                       key={item}
-                      className="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50/80 border border-gray-100 transition-all duration-200 hover:bg-blue-50/80 hover:border-blue-100 hover:-translate-y-0.5"
+                      className="flex items-start gap-3 p-3.5 rounded-xl bg-blue-50/80 border border-blue-100 transition-all duration-200 hover:bg-blue-100/80 hover:border-blue-300 hover:-translate-y-0.5"
                     >
                       <div className={`shrink-0 flex items-center justify-center w-8 h-8 rounded-lg ${ABOUT_ICON_BG[i]}`}>
                         {ABOUT_ICONS[i]}
@@ -581,15 +581,15 @@ export function HomeContent() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {services.map((f, i) => (
-              <AnimatedSection key={f.title} delay={i * 100} direction="up">
-                <div className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl overflow-hidden">
+              <AnimatedSection key={f.title} delay={i * 100} direction="up" className="flex">
+                <div className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl overflow-hidden w-full flex flex-col">
                   <div className={`h-1.5 w-full bg-gradient-to-r ${SERVICE_GRADIENTS[i]}`} />
-                  <div className="p-8">
+                  <div className="p-8 flex flex-col grow">
                     <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5 transition-all duration-300 group-hover:scale-110 group-hover:shadow-md ${FEATURE_COLORS[i]}`}>
                       {FEATURE_ICONS[i]}
                     </div>
                     <h3 className="text-lg font-bold text-gray-900 mb-3">{f.title}</h3>
-                    <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
+                    <p className="text-sm text-gray-500 leading-relaxed grow">{f.desc}</p>
                   </div>
                 </div>
               </AnimatedSection>
@@ -606,7 +606,7 @@ export function HomeContent() {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
             <AnimatedSection direction="left" delay={0}>
               <div>
                 <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100/80 text-blue-700 text-[11px] font-semibold uppercase tracking-[0.12em] mb-4">
@@ -759,15 +759,15 @@ export function HomeContent() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {valueCards.map((card, i) => (
-              <AnimatedSection key={card.title} delay={i * 100} direction="up">
-                <div className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
+              <AnimatedSection key={card.title} delay={i * 100} direction="up" className="flex">
+                <div className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-xl w-full flex flex-col">
                   <div className={`h-1.5 w-full bg-gradient-to-r ${VALUE_GRADIENTS[i]}`} />
-                  <div className="p-7">
+                  <div className="p-7 flex flex-col grow">
                     <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5 transition-all duration-300 group-hover:scale-110 group-hover:shadow-md ${VALUE_COLORS[i].color}`}>
                       {VALUE_ICONS[i]}
                     </div>
                     <h3 className={`font-bold text-lg mb-3 ${VALUE_COLORS[i].heading}`}>{card.title}</h3>
-                    <p className="text-sm text-gray-500 leading-relaxed">{card.body}</p>
+                    <p className="text-sm text-gray-500 leading-relaxed grow">{card.body}</p>
                   </div>
                 </div>
               </AnimatedSection>

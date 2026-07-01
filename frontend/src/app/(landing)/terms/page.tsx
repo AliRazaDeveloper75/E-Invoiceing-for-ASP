@@ -117,8 +117,8 @@ export default function TermsPage() {
             }}
           />
         </div>
-        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 lg:py-36">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 lg:py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
 
             <div className="max-w-xl">
               <AnimatedSection delay={0} direction="up">
@@ -138,10 +138,16 @@ export default function TermsPage() {
                 </p>
               </AnimatedSection>
               <AnimatedSection delay={450} direction="up">
-                <p className="text-xs text-blue-300/60 mt-6 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  Last updated: {new Date().getFullYear()}
-                </p>
+                <div className="flex flex-wrap gap-3 mt-8">
+                  {['User Agreement', 'Service Terms', 'Acceptable Use', 'Legal'].map((badge) => (
+                    <span
+                      key={badge}
+                      className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-blue-200 text-xs font-medium"
+                    >
+                      {badge}
+                    </span>
+                  ))}
+                </div>
               </AnimatedSection>
             </div>
 

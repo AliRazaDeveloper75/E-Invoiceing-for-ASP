@@ -57,17 +57,17 @@ interface AdminInvoice {
 // ─── Status badge ──────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
-  draft:     { label: 'Draft',     color: 'text-gray-600',    bg: 'bg-gray-100',    icon: FileText },
-  pending:   { label: 'Pending',   color: 'text-blue-600',    bg: 'bg-blue-100',    icon: Clock },
-  submitted: { label: 'Submitted', color: 'text-indigo-600',  bg: 'bg-indigo-100',  icon: Send },
-  validated: { label: 'Validated', color: 'text-emerald-600', bg: 'bg-emerald-100', icon: CheckCircle2 },
-  rejected:  { label: 'Rejected',  color: 'text-red-600',     bg: 'bg-red-100',     icon: XCircle },
-  cancelled: { label: 'Cancelled', color: 'text-slate-500',   bg: 'bg-slate-100',   icon: XCircle },
-  deactivated: { label: 'Deactivated', color: 'text-amber-700', bg: 'bg-amber-100', icon: Ban },
+  draft:       { label: 'Draft',       color: 'text-gray-600',    bg: 'bg-gradient-to-r from-gray-100 to-gray-50',      icon: FileText },
+  pending:     { label: 'Pending',     color: 'text-blue-600',    bg: 'bg-gradient-to-r from-blue-100 to-blue-50',      icon: Clock },
+  submitted:   { label: 'Submitted',   color: 'text-indigo-600',  bg: 'bg-gradient-to-r from-indigo-100 to-indigo-50',    icon: Send },
+  validated:   { label: 'Validated',   color: 'text-emerald-600', bg: 'bg-gradient-to-r from-emerald-100 to-emerald-50',   icon: CheckCircle2 },
+  rejected:    { label: 'Rejected',    color: 'text-red-600',     bg: 'bg-gradient-to-r from-red-100 to-red-50',       icon: XCircle },
+  cancelled:   { label: 'Cancelled',   color: 'text-slate-500',   bg: 'bg-gradient-to-r from-slate-100 to-slate-50',     icon: XCircle },
+  deactivated: { label: 'Deactivated', color: 'text-amber-700',   bg: 'bg-gradient-to-r from-amber-100 to-amber-50',     icon: Ban },
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, color: 'text-gray-600', bg: 'bg-gray-100', icon: FileText };
+  const cfg = STATUS_CONFIG[status] ?? { label: status, color: 'text-gray-600', bg: 'bg-gradient-to-r from-gray-100 to-gray-50', icon: FileText };
   const Icon = cfg.icon;
   return (
     <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold ${cfg.bg} ${cfg.color}`}>
@@ -99,7 +99,7 @@ function getActions(invoice: AdminInvoice): ActionDef[] {
       key: 'submit',
       label: 'Submit to ASP',
       icon: Send,
-      color: 'bg-orange-500 hover:bg-orange-600 text-white',
+      color: 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white shadow-sm',
       endpoint: `/admin/invoices/${invoice.id}/submit/`,
       confirm: `Submit invoice ${num} to ASP for validation?`,
     });
@@ -110,7 +110,7 @@ function getActions(invoice: AdminInvoice): ActionDef[] {
       key: 'approve',
       label: 'Approve — ASP Validated',
       icon: ShieldCheck,
-      color: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+      color: 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-sm',
       endpoint: `/admin/invoices/${invoice.id}/approve-asp/`,
       confirm: `Mark invoice ${num} as validated by ASP?\n\nThis advances the E-Invoice flow through Corners 2, 3 and 4.`,
     });
@@ -118,7 +118,7 @@ function getActions(invoice: AdminInvoice): ActionDef[] {
       key: 'reject',
       label: 'Reject — ASP Rejected',
       icon: ShieldX,
-      color: 'bg-red-500 hover:bg-red-600 text-white',
+      color: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white shadow-sm',
       endpoint: `/admin/invoices/${invoice.id}/reject-asp/`,
       confirm: `Reject invoice ${num}? This marks it as rejected by ASP.`,
     });
@@ -129,7 +129,7 @@ function getActions(invoice: AdminInvoice): ActionDef[] {
       key: 'fta',
       label: 'Report to FTA',
       icon: Landmark,
-      color: 'bg-teal-600 hover:bg-teal-700 text-white',
+      color: 'bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white shadow-sm',
       endpoint: `/admin/invoices/${invoice.id}/report-fta/`,
       confirm: `Report invoice ${num} to the UAE FTA data platform?`,
     });
@@ -191,56 +191,64 @@ export default function AdminInvoiceDetailPage() {
   return (
     <div className="space-y-6">
 
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => router.back()}
-          className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <div className="flex-1 flex items-center gap-3 flex-wrap">
-          <h1 className="text-2xl font-bold text-gray-900">
-            {invoice?.invoice_number ?? '…'}
-          </h1>
-          {invoice && <StatusBadge status={invoice.status} />}
-          {invoice?.fta_status === 'reported' && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-700">
-              <CheckCircle2 className="h-3 w-3" /> FTA Reported
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {invoice && (
-            <button
-              onClick={() => downloadFile(
-                `/invoices/${invoice.id}/download-pdf/`,
-                `${invoice.invoice_number}.pdf`,
-                'application/pdf',
-              )}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
-            >
-              <FileText className="h-3.5 w-3.5" /> PDF
-            </button>
-          )}
-          {invoice && (
-            <button
-              onClick={() => downloadFile(
-                `/invoices/${invoice.id}/download-xml/`,
-                `${invoice.invoice_number}.xml`,
-                'application/xml',
-              )}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
-            >
-              <Download className="h-3.5 w-3.5" /> XML
-            </button>
-          )}
+      {/* ── Gradient Card Header ──────────────────────────────────────────── */}
+      <div className="bg-gradient-to-br from-white via-blue-50/30 to-white rounded-2xl p-6 shadow-[0_8px_30px_-8px_rgba(59,130,246,0.15)] border border-blue-100/70 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+        <div className="flex items-center gap-4">
           <button
-            onClick={() => { mutateInv(); mutateTl(); }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+            onClick={() => router.back()}
+            className="p-2 rounded-xl border border-gray-200/80 text-gray-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200/60 transition-all shadow-sm"
           >
-            <RefreshCw className="h-3.5 w-3.5" /> Refresh
+            <ArrowLeft className="h-4 w-4" />
           </button>
+          <div className="flex-1">
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="h-2 w-2 rounded-full bg-gradient-to-r from-blue-400 to-blue-600" />
+              <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-[0.12em]">Invoice Detail</span>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+                {invoice?.invoice_number ?? '…'}
+              </h1>
+              {invoice && <StatusBadge status={invoice.status} />}
+              {invoice?.fta_status === 'reported' && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-teal-100 to-teal-50 text-teal-700">
+                  <CheckCircle2 className="h-3 w-3" /> FTA Reported
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {invoice && (
+              <button
+                onClick={() => downloadFile(
+                  `/invoices/${invoice.id}/download-pdf/`,
+                  `${invoice.invoice_number}.pdf`,
+                  'application/pdf',
+                )}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-500/25 transition-all duration-200"
+              >
+                <FileText className="h-3.5 w-3.5" /> PDF
+              </button>
+            )}
+            {invoice && (
+              <button
+                onClick={() => downloadFile(
+                  `/invoices/${invoice.id}/download-xml/`,
+                  `${invoice.invoice_number}.xml`,
+                  'application/xml',
+                )}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-500/25 transition-all duration-200"
+              >
+                <Download className="h-3.5 w-3.5" /> XML
+              </button>
+            )}
+            <button
+              onClick={() => { mutateInv(); mutateTl(); }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200/80 bg-white text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200/60 transition-all shadow-sm"
+            >
+              <RefreshCw className="h-3.5 w-3.5" /> Refresh
+            </button>
+          </div>
         </div>
       </div>
 
@@ -252,17 +260,17 @@ export default function AdminInvoiceDetailPage() {
         <>
           {/* ── Feedback banners ───────────────────────────────────────────── */}
           {lastMessage && (
-            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
+            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-50 to-emerald-50/80 border border-emerald-200 text-emerald-700 text-sm font-medium shadow-sm">
               <CheckCircle2 className="h-4 w-4 shrink-0" /> {lastMessage}
             </div>
           )}
           {lastError && (
-            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
+            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-red-50 to-red-50/80 border border-red-200 text-red-700 text-sm font-medium shadow-sm">
               <AlertTriangle className="h-4 w-4 shrink-0" /> {lastError}
             </div>
           )}
           {invoice?.status === 'deactivated' && (
-            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+            <div className="rounded-xl bg-gradient-to-r from-amber-50 to-amber-50/80 border border-amber-200 px-4 py-3 text-sm text-amber-800 shadow-sm">
               <p className="font-semibold flex items-center gap-1.5"><Ban className="h-4 w-4" /> This invoice has been deactivated.</p>
               {invoice.deactivation_reason && (
                 <p className="mt-1"><span className="font-medium">Reason:</span> {invoice.deactivation_reason}</p>
@@ -270,9 +278,9 @@ export default function AdminInvoiceDetailPage() {
             </div>
           )}
 
-          {/* ── Admin Action Panel ─────────────────────────────────────────── */}
+          {/* ── Admin Action Panel — 3D card ───────────────────────────────── */}
           {actions.length > 0 && (
-            <div className="bg-white rounded-xl border-2 border-blue-100 p-5 space-y-4">
+            <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-4 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 Admin Actions — Advance E-Invoice Flow
               </p>
@@ -287,8 +295,8 @@ export default function AdminInvoiceDetailPage() {
                     <div key={step} className="flex items-center">
                       <div className="flex flex-col items-center gap-1">
                         <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all
-                          ${isDone    ? 'bg-emerald-500 border-emerald-500 text-white' :
-                            isCurrent ? 'bg-blue-500 border-blue-500 text-white' :
+                          ${isDone    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 border-emerald-500 text-white shadow-sm' :
+                            isCurrent ? 'bg-gradient-to-r from-blue-500 to-blue-600 border-blue-500 text-white shadow-sm' :
                                         'bg-white border-gray-200 text-gray-400'}`}>
                           {isDone ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
                         </div>
@@ -315,7 +323,7 @@ export default function AdminInvoiceDetailPage() {
                       onClick={() => handleAction(action)}
                       disabled={actionLoading !== null}
                       className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
-                                  transition-colors disabled:opacity-50 ${action.color}`}
+                                  transition-all duration-200 disabled:opacity-50 ${action.color}`}
                     >
                       {actionLoading === action.key
                         ? <RefreshCw className="h-4 w-4 animate-spin" />
@@ -331,7 +339,7 @@ export default function AdminInvoiceDetailPage() {
 
           {/* Completed banner */}
           {invoice?.status === 'validated' && invoice.fta_status === 'reported' && (
-            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 text-sm font-medium">
+            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-teal-50 to-teal-50/80 border border-teal-200 text-teal-700 text-sm font-medium shadow-sm">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               Full 5-corner E-Invoice flow complete — invoice reported to FTA.
             </div>
@@ -340,11 +348,11 @@ export default function AdminInvoiceDetailPage() {
           {/* ── 5-Corner Flow Tracker ───────────────────────────────── */}
           {timeline?.flow && <FlowTracker flow={timeline.flow} />}
 
-          {/* ── Invoice Metadata ───────────────────────────────────────────── */}
+          {/* ── Invoice Metadata — 3D cards ────────────────────────────────── */}
           {invoice && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Supplier */}
-              <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+              <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-3 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Supplier</p>
                 <div className="flex items-start gap-3">
                   <Building2 className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
@@ -362,7 +370,7 @@ export default function AdminInvoiceDetailPage() {
               </div>
 
               {/* Buyer */}
-              <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+              <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-3 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Buyer</p>
                 <div className="flex items-start gap-3">
                   <User className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
@@ -371,7 +379,7 @@ export default function AdminInvoiceDetailPage() {
               </div>
 
               {/* Invoice details */}
-              <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+              <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-3 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Invoice Details</p>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
@@ -398,7 +406,7 @@ export default function AdminInvoiceDetailPage() {
               </div>
 
               {/* Financials */}
-              <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+              <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-3 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Financials</p>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
@@ -413,7 +421,7 @@ export default function AdminInvoiceDetailPage() {
                       {invoice.currency} {parseFloat(invoice.total_vat).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </span>
                   </div>
-                  <div className="flex justify-between border-t border-gray-100 pt-2">
+                  <div className="flex justify-between border-t border-blue-100/40 pt-2">
                     <span className="font-semibold text-gray-700">Total</span>
                     <span className="font-bold text-gray-900">
                       {invoice.currency} {parseFloat(invoice.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -424,10 +432,10 @@ export default function AdminInvoiceDetailPage() {
             </div>
           )}
 
-          {/* ── Event Log ──────────────────────────────────────────────────── */}
+          {/* ── Event Log — 3D card ────────────────────────────────────────── */}
           {timeline?.events && timeline.events.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Event Log</p>
+            <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-4 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Event Log</p>
               <div className="space-y-3">
                 {[...timeline.events].reverse().map((event, i) => (
                   <div key={i} className="flex items-start gap-3">

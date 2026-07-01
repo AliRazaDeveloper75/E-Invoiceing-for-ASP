@@ -105,7 +105,7 @@ function StatusChip({ status }: { status: CornerFlowStatus }) {
     );
   if (status === 'processing')
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-brand-700 bg-brand-50 border border-brand-200 px-1.5 py-0.5 rounded-full">
+      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-full">
         <Loader2 className="h-2.5 w-2.5 animate-spin" /> In Progress
       </span>
     );

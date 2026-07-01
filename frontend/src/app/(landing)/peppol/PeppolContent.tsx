@@ -33,11 +33,11 @@ const CORNER_ICONS = [
 ];
 
 const CORNER_BG = [
-  'bg-blue-50 border-blue-100',
-  'bg-indigo-50 border-indigo-100',
-  'bg-purple-50 border-purple-100',
-  'bg-emerald-50 border-emerald-100',
-  'bg-teal-50 border-teal-100',
+  'bg-blue-50 border-blue-200',
+  'bg-indigo-50 border-indigo-200',
+  'bg-purple-50 border-purple-200',
+  'bg-emerald-50 border-emerald-200',
+  'bg-teal-50 border-teal-200',
 ];
 
 const CORNER_TAG = [
@@ -78,8 +78,8 @@ export function PeppolContent() {
             }}
           />
         </div>
-        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 lg:py-36">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 lg:py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
 
             {/* Left: Text content */}
             <div className="max-w-xl">
@@ -257,8 +257,8 @@ export function PeppolContent() {
             <div className="relative grid grid-cols-5 gap-6">
               {corners.map((corner, i) => (
                 <AnimatedSection key={corner.label} delay={i * 100} direction="up">
-                  <div className="group relative bg-white rounded-2xl border border-gray-200 p-6 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-gray-200/80 hover:border-transparent h-full">
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gray-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                  <div className="group relative bg-blue-50/60 rounded-2xl border border-blue-200 p-7 lg:p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-200/60 hover:border-blue-300 h-full">
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-50/80 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                     <div className="relative text-center">
                       <div
                         className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${CORNER_GRADIENTS[i]} text-white shadow-lg transition-all duration-500 group-hover:scale-110 group-hover:shadow-xl mb-4 mx-auto`}
@@ -288,7 +288,7 @@ export function PeppolContent() {
           <div className="lg:hidden mb-12 space-y-6">
             {corners.map((corner, i) => (
               <AnimatedSection key={corner.label} delay={i * 100} direction="up">
-                <div className={`flex gap-4 p-5 rounded-2xl border ${CORNER_BG[i]}`}>
+                <div className={`flex gap-4 p-6 rounded-2xl border ${CORNER_BG[i]}`}>
                   <div
                     className={`flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${CORNER_GRADIENTS[i]} text-white shadow-md shrink-0 mt-0.5`}
                   >

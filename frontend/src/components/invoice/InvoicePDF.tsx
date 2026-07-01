@@ -1,5 +1,5 @@
 /**
- * InvoicePDF v4 — Premium UAE Tax Invoice with logos
+ * InvoicePDF v5 — Premium UAE Tax Invoice
  *
  * react-pdf constraints:
  *  • NO gap / rowGap / columnGap  — use marginRight on siblings
@@ -10,43 +10,44 @@
  */
 
 import React from 'react'
-import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Image, Svg, Path, Rect, Circle, Line } from '@react-pdf/renderer'
 import type { Company, Invoice } from '@/types'
 
-// ─── Palette ──────────────────────────────────────────────────────────────────
 const C = {
-  brand:    '#1a3050',
-  brandDk:  '#0f1e33',
-  brandLt:  '#243d63',
-  brandBd:  '#2a4878',
-  brandTint:'#eef2f8',
+  navy:     '#0f2557',
+  navyDk:   '#091840',
+  navyLt:   '#1a3a7a',
+  navyBd:   '#1e3e7e',
+  navyTint: '#f0f4ff',
 
   teal:     '#0d9488',
+  tealLt:   '#14b8a6',
   tealTint: '#f0fdfa',
 
-  ink:   '#111827',
-  n800:  '#1f2937',
-  n700:  '#374151',
-  n600:  '#4b5563',
-  n500:  '#6b7280',
-  n400:  '#9ca3af',
-  n300:  '#d1d5db',
-  n200:  '#e5e7eb',
-  n100:  '#f3f4f6',
-  n50:   '#f9fafb',
+  gold:     '#d97706',
+  goldTint: '#fffbeb',
+
+  ink:   '#0f172a',
+  n800:  '#1e293b',
+  n700:  '#334155',
+  n600:  '#475569',
+  n500:  '#64748b',
+  n400:  '#94a3b8',
+  n300:  '#cbd5e1',
+  n200:  '#e2e8f0',
+  n100:  '#f1f5f9',
+  n50:   '#f8fafc',
   white: '#ffffff',
 
-  okBg: '#ecfdf5', okFg: '#065f46',
+  okBg: '#f0fdf4', okFg: '#166534',
   erBg: '#fef2f2', erFg: '#991b1b',
   waBg: '#fffbeb', waFg: '#92400e',
   blBg: '#eff6ff', blFg: '#1d4ed8',
-  muBg: '#f3f4f6', muFg: '#4b5563',
-
+  muBg: '#f1f5f9', muFg: '#475569',
   red:  '#dc2626',
-  blue: '#1d4ed8',
+  blue: '#2563eb',
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
 
   page: {
@@ -54,37 +55,36 @@ const S = StyleSheet.create({
     fontSize: 8,
     color: C.ink,
     backgroundColor: C.white,
+    position: 'relative',
+    paddingBottom: 60,
   },
 
-  topBar: { height: 4, backgroundColor: C.brand },
+  topBar: { height: 5, backgroundColor: C.navy },
 
   // ── Header ────────────────────────────────────────────────────────────────
   header: {
     flexDirection: 'row',
     paddingHorizontal: 30,
-    paddingTop: 20,
-    paddingBottom: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: C.n200,
-    backgroundColor: C.white,
+    paddingTop: 22,
+    paddingBottom: 20,
+    backgroundColor: C.navy,
   },
   hdrLeft:  { flex: 1, paddingRight: 20 },
-  hdrRight: { width: 185, alignItems: 'flex-end' },
+  hdrRight: { width: 200, alignItems: 'flex-end' },
 
-  // Supplier logo / mark
-  coLogoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  coLogoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   coLogoImg: {
-    width: 48, height: 48,
+    width: 46, height: 46,
     borderRadius: 6,
     objectFit: 'contain',
     marginRight: 12,
-    backgroundColor: C.n50,
+    backgroundColor: C.white,
     borderWidth: 1,
-    borderColor: C.n200,
+    borderColor: C.navyBd,
   },
   coMark: {
-    width: 48, height: 48,
-    backgroundColor: C.brand,
+    width: 46, height: 46,
+    backgroundColor: C.teal,
     borderRadius: 6,
     alignItems: 'center', justifyContent: 'center',
     marginRight: 12,
@@ -92,82 +92,94 @@ const S = StyleSheet.create({
   coMarkLetter: { fontSize: 20, fontFamily: 'Helvetica-Bold', color: C.white },
 
   coNameBlock: { flex: 1, justifyContent: 'center' },
-  coName:      { fontSize: 13, fontFamily: 'Helvetica-Bold', color: C.ink, marginBottom: 2 },
-  coLegal:     { fontSize: 7, color: C.n500 },
+  coName:      { fontSize: 14, fontFamily: 'Helvetica-Bold', color: C.white, marginBottom: 1 },
+  coLegal:     { fontSize: 7, color: C.n300 },
 
-  coInfoRow:    { flexDirection: 'row', marginTop: 3 },
-  coInfoKey:    { width: 38, fontSize: 6, fontFamily: 'Helvetica-Bold', color: C.n400, letterSpacing: 0.4 },
-  coInfoVal:    { flex: 1, fontSize: 7, color: C.n600 },
+  coInfoRow:    { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  coInfoKey:    { width: 36, fontSize: 6, fontFamily: 'Helvetica-Bold', color: C.n400, letterSpacing: 0.6 },
+  coInfoVal:    { flex: 1, fontSize: 7, color: C.white, marginLeft: 2 },
 
-  // Right column: invoice identity
-  invTypeLabel: { fontSize: 7, fontFamily: 'Helvetica-Bold', color: C.n400, letterSpacing: 1.5, marginBottom: 4 },
-  invTitle:     { fontSize: 28, fontFamily: 'Helvetica-Bold', color: C.brand, letterSpacing: 1.5, marginBottom: 2 },
-  invNum:       { fontSize: 9, fontFamily: 'Helvetica-Bold', color: C.ink, marginBottom: 10 },
+  invTypeLabel: { fontSize: 7, fontFamily: 'Helvetica-Bold', color: C.tealLt, letterSpacing: 1.5, marginBottom: 3 },
+  invTitle:     { fontSize: 30, fontFamily: 'Helvetica-Bold', color: C.white, letterSpacing: 2, marginBottom: 2 },
+  invNum:       { fontSize: 9, fontFamily: 'Helvetica-Bold', color: C.n300, marginBottom: 10 },
 
   badge:    { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 3, marginBottom: 10 },
   badgeTxt: { fontSize: 6.5, fontFamily: 'Helvetica-Bold', letterSpacing: 0.5 },
 
-  amtLbl: { fontSize: 6, color: C.n400, marginBottom: 2, letterSpacing: 0.3 },
-  amtVal: { fontSize: 18, fontFamily: 'Helvetica-Bold', color: C.brand },
-  amtCur: { fontSize: 9, color: C.n500, marginTop: 1 },
+  amtLbl: { fontSize: 6, color: C.n400, marginBottom: 2, letterSpacing: 0.5 },
+  amtVal: { fontSize: 18, fontFamily: 'Helvetica-Bold', color: C.white },
+  amtCur: { fontSize: 8, color: C.tealLt, marginTop: 1 },
 
   // ── Date strip ────────────────────────────────────────────────────────────
   strip: {
     flexDirection: 'row',
     marginHorizontal: 30,
-    marginTop: 14,
-    marginBottom: 14,
+    marginTop: 16,
+    marginBottom: 16,
+    borderRadius: 6,
+    overflow: 'hidden',
+    backgroundColor: C.white,
     borderWidth: 1,
     borderColor: C.n200,
-    borderRadius: 5,
-    overflow: 'hidden',
-    backgroundColor: C.n50,
   },
   stripCell: {
     flex: 1,
-    paddingHorizontal: 10,
-    paddingTop: 7,
-    paddingBottom: 7,
+    flexDirection: 'row',
+    paddingHorizontal: 6,
+    paddingTop: 0,
+    paddingBottom: 0,
     borderRightWidth: 1,
     borderRightColor: C.n200,
   },
   stripCellLast: { borderRightWidth: 0 },
-  stripKey: { fontSize: 5.5, fontFamily: 'Helvetica-Bold', color: C.n400, letterSpacing: 0.7, marginBottom: 3 },
-  stripVal: { fontSize: 8.5, fontFamily: 'Helvetica-Bold', color: C.ink },
+  stripAccent: { height: 3, backgroundColor: C.navy, marginBottom: 0 },
+  stripCellBody: { flexDirection: 'row', flex: 1, paddingTop: 10, paddingBottom: 10 },
+  stripIconCol: {
+    width: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: C.navyTint,
+    borderRadius: 4,
+    marginRight: 8,
+    height: 24,
+  },
+  stripContentCol: { flex: 1, justifyContent: 'center' },
+  stripKey: { fontSize: 5.5, fontFamily: 'Helvetica-Bold', color: C.n400, letterSpacing: 0.8, marginBottom: 2 },
+  stripVal: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: C.navy },
 
   // ── Credit note banner ────────────────────────────────────────────────────
   crBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 30,
-    marginBottom: 12,
+    marginBottom: 14,
     paddingHorizontal: 12,
     paddingTop: 7,
     paddingBottom: 7,
-    backgroundColor: '#fff7ed',
+    backgroundColor: C.goldTint,
     borderWidth: 1,
     borderColor: '#fed7aa',
     borderLeftWidth: 3,
-    borderLeftColor: '#f97316',
+    borderLeftColor: C.gold,
     borderRadius: 4,
   },
-  crLbl: { fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: '#c2410c', marginRight: 5 },
-  crVal: { fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#9a3412' },
+  crLbl: { fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: C.gold },
+  crVal: { fontSize: 7, color: '#9a3412' },
 
   // ── Party cards ───────────────────────────────────────────────────────────
   partiesRow: {
     flexDirection: 'row',
     marginHorizontal: 30,
-    marginBottom: 14,
+    marginBottom: 16,
   },
   partyCard: {
     flex: 1,
     borderWidth: 1,
     borderColor: C.n200,
-    borderRadius: 5,
+    borderRadius: 6,
     overflow: 'hidden',
   },
-  partyCardLeft: { marginRight: 10 },
+  partyCardLeft: { marginRight: 12 },
 
   partyHdr: {
     flexDirection: 'row',
@@ -177,43 +189,42 @@ const S = StyleSheet.create({
     paddingBottom: 7,
     borderBottomWidth: 1,
     borderBottomColor: C.n200,
-    borderLeftWidth: 3,
   },
   partyMark: {
     width: 22, height: 22,
-    borderRadius: 3,
+    borderRadius: 11,
     alignItems: 'center', justifyContent: 'center',
     marginRight: 7,
   },
-  partyMarkTxt: { fontSize: 10, fontFamily: 'Helvetica-Bold', color: C.white },
   partyMarkImg: {
     width: 22, height: 22,
-    borderRadius: 3,
+    borderRadius: 11,
     objectFit: 'contain',
     marginRight: 7,
     backgroundColor: C.white,
   },
-  partyHdrLabel: { fontSize: 6.5, fontFamily: 'Helvetica-Bold', letterSpacing: 0.7 },
+  partyHdrLabel: { fontSize: 6.5, fontFamily: 'Helvetica-Bold', letterSpacing: 0.8 },
 
-  partyBody:    { paddingHorizontal: 10, paddingTop: 9, paddingBottom: 9 },
-  partyName:    { fontSize: 10, fontFamily: 'Helvetica-Bold', color: C.ink, marginBottom: 1 },
-  partyLegal:   { fontSize: 7, color: C.n500, marginBottom: 5 },
-  partyAddr:    { fontSize: 7, color: C.n700, lineHeight: 1.5, marginBottom: 6 },
-  partyTrnRow:  { flexDirection: 'row', alignItems: 'center', marginBottom: 3 },
-  partyTrnKey:  { width: 30, fontSize: 5.5, fontFamily: 'Helvetica-Bold', color: C.n400, letterSpacing: 0.3 },
-  partyTrnVal:  { fontSize: 7.5, fontFamily: 'Courier', color: C.brand },
-  partyContact: { fontSize: 6.5, color: C.n500, marginTop: 2 },
+  partyBody:    { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 10 },
+  partyField:   { minHeight: 14 },
+  partyName:    { fontSize: 10, fontFamily: 'Helvetica-Bold', color: C.navy, marginBottom: 1 },
+  partyLegal:   { fontSize: 7, color: C.n500, marginBottom: 4 },
+  partyAddr:    { fontSize: 7, color: C.n700, lineHeight: 1.6 },
+  partyTrnRow:  { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
+  partyTrnKey:  { fontSize: 5.5, fontFamily: 'Helvetica-Bold', color: C.tealLt, letterSpacing: 0.3, width: 28 },
+  partyTrnVal:  { fontSize: 7.5, fontFamily: 'Courier', color: C.navy },
+  partyContact: { fontSize: 6.5, color: C.n500 },
 
   // ── Table ─────────────────────────────────────────────────────────────────
   tableWrap: {
     marginHorizontal: 30,
-    marginBottom: 14,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: C.n200,
-    borderRadius: 5,
+    borderRadius: 6,
     overflow: 'hidden',
   },
-  thead: { flexDirection: 'row', backgroundColor: C.brand },
+  thead: { flexDirection: 'row', backgroundColor: C.navy },
   th: {
     paddingHorizontal: 8,
     paddingTop: 8,
@@ -221,9 +232,9 @@ const S = StyleSheet.create({
     fontSize: 6,
     fontFamily: 'Helvetica-Bold',
     color: C.white,
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
     borderRightWidth: 1,
-    borderRightColor: C.brandBd,
+    borderRightColor: C.navyBd,
   },
   thLast: { borderRightWidth: 0 },
   thR: { textAlign: 'right' },
@@ -247,70 +258,95 @@ const S = StyleSheet.create({
   tdR:    { alignItems: 'flex-end' },
   tdC:    { alignItems: 'center' },
 
-  tdBold:  { fontSize: 8, fontFamily: 'Helvetica-Bold', color: C.ink, marginBottom: 1.5 },
-  tdSub:   { fontSize: 7, color: C.n500 },
+  tdBold:  { fontSize: 8.5, fontFamily: 'Helvetica-Bold', color: C.navy, marginBottom: 2 },
+  tdSub:   { fontSize: 7, color: C.n500, lineHeight: 1.5 },
   tdNum:   { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: C.n800 },
-  tdMuted: { fontSize: 7.5, color: C.n600 },
-  tdTotal: { fontSize: 8, fontFamily: 'Helvetica-Bold', color: C.brand },
+  tdMuted: { fontSize: 7, color: C.n500 },
+  tdTotal: { fontSize: 8, fontFamily: 'Helvetica-Bold', color: C.navy },
   tdIdx:   { fontSize: 7, fontFamily: 'Helvetica-Bold', color: C.n400 },
 
   vatPill: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 2 },
   vatTxt:  { fontSize: 6, fontFamily: 'Helvetica-Bold' },
 
   // ── Totals ────────────────────────────────────────────────────────────────
-  totOuter: { flexDirection: 'row', marginHorizontal: 30, marginBottom: 14 },
-  totLeft:  { flex: 1, paddingRight: 12 },
+  totOuter: { flexDirection: 'row', marginHorizontal: 30, marginBottom: 16 },
+  totLeft:  { flex: 1, paddingRight: 14 },
 
   notesBox: {
     borderWidth: 1,
     borderColor: C.n200,
     borderLeftWidth: 3,
-    borderLeftColor: C.n300,
+    borderLeftColor: C.gold,
     borderRadius: 4,
     paddingHorizontal: 10,
     paddingTop: 9,
     paddingBottom: 9,
-    backgroundColor: C.n50,
+    backgroundColor: C.goldTint,
   },
-  notesLbl: { fontSize: 6, fontFamily: 'Helvetica-Bold', color: C.n400, letterSpacing: 0.7, marginBottom: 4 },
+  notesLbl: { fontSize: 6, fontFamily: 'Helvetica-Bold', color: C.gold, letterSpacing: 0.7, marginBottom: 4 },
   notesTxt: { fontSize: 7, color: C.n700, lineHeight: 1.6 },
 
   totRight: {
     width: '50%',
     borderWidth: 1,
     borderColor: C.n200,
-    borderRadius: 5,
+    borderRadius: 6,
     overflow: 'hidden',
   },
   totRow:    { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: C.n100 },
   totKey:    { flex: 1, paddingHorizontal: 12, paddingTop: 7, paddingBottom: 7, fontSize: 7.5, color: C.n500 },
-  totVal:    { paddingHorizontal: 12, paddingTop: 7, paddingBottom: 7, fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: C.ink, textAlign: 'right', minWidth: 95 },
+  totVal:    { paddingHorizontal: 12, paddingTop: 7, paddingBottom: 7, fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: C.ink, textAlign: 'right', minWidth: 100 },
   totRedKey: { color: C.red },
   totRedVal: { color: C.red },
   totBluKey: { color: C.blue },
   totBluVal: { color: C.blue },
 
-  totGrand:    { flexDirection: 'row', backgroundColor: C.brand },
-  totGrandKey: { flex: 1, paddingHorizontal: 12, paddingTop: 11, paddingBottom: 11, fontSize: 10, fontFamily: 'Helvetica-Bold', color: C.white },
-  totGrandVal: { paddingHorizontal: 12, paddingTop: 11, paddingBottom: 11, fontSize: 12, fontFamily: 'Helvetica-Bold', color: C.white, textAlign: 'right', minWidth: 95 },
+  totGrand:    { flexDirection: 'row', backgroundColor: C.navy },
+  totGrandKey: { flex: 1, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 12, fontSize: 10, fontFamily: 'Helvetica-Bold', color: C.tealLt },
+  totGrandVal: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 12, fontSize: 12, fontFamily: 'Helvetica-Bold', color: C.white, textAlign: 'right', minWidth: 100 },
 
   totPaidRow: { flexDirection: 'row', backgroundColor: C.okBg },
   totPaidKey: { flex: 1, paddingHorizontal: 12, paddingTop: 6, paddingBottom: 6, fontSize: 7.5, color: C.okFg },
-  totPaidVal: { paddingHorizontal: 12, paddingTop: 6, paddingBottom: 6, fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: C.okFg, textAlign: 'right', minWidth: 95 },
+  totPaidVal: { paddingHorizontal: 12, paddingTop: 6, paddingBottom: 6, fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: C.okFg, textAlign: 'right', minWidth: 100 },
 
   totBalRow: { flexDirection: 'row', backgroundColor: C.erBg },
   totBalKey: { flex: 1, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8, fontSize: 8.5, fontFamily: 'Helvetica-Bold', color: C.erFg },
-  totBalVal: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8, fontSize: 8.5, fontFamily: 'Helvetica-Bold', color: C.erFg, textAlign: 'right', minWidth: 95 },
+  totBalVal: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8, fontSize: 8.5, fontFamily: 'Helvetica-Bold', color: C.erFg, textAlign: 'right', minWidth: 100 },
 
-  // ── QR + payment info bar ─────────────────────────────────────────────────
-  infoBar: {
+  // ── Bottom info bar (due date / type / issuer trn) ────────────────────────
+  botInfoBar: {
     flexDirection: 'row',
     marginHorizontal: 30,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: C.n200,
-    borderRadius: 5,
+    borderRadius: 6,
     overflow: 'hidden',
+    backgroundColor: C.navyTint,
+  },
+  botInfoCell: {
+    flex: 1,
+    paddingHorizontal: 10,
+    paddingTop: 7,
+    paddingBottom: 7,
+    borderRightWidth: 1,
+    borderRightColor: C.n200,
+  },
+  botInfoCellLast: { borderRightWidth: 0 },
+  botInfoKey:  { fontSize: 5.5, fontFamily: 'Helvetica-Bold', color: C.n400, letterSpacing: 0.6, marginBottom: 2 },
+  botInfoVal:  { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: C.n800 },
+  botInfoMono: { fontSize: 7, fontFamily: 'Courier', color: C.n800 },
+
+  // ── QR + payment info bar ─────────────────────────────────────────────────
+  infoBar: {
+    flexDirection: 'row',
+    marginHorizontal: 30,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: C.n200,
+    borderRadius: 6,
+    overflow: 'hidden',
+    backgroundColor: C.white,
   },
   qrCell: {
     width: 62,
@@ -318,12 +354,12 @@ const S = StyleSheet.create({
     justifyContent: 'center',
     paddingTop: 10,
     paddingBottom: 10,
-    backgroundColor: C.brandTint,
+    backgroundColor: C.navyTint,
     borderRightWidth: 1,
     borderRightColor: C.n200,
   },
   qrBox: {
-    width: 38, height: 38,
+    width: 36, height: 36,
     borderWidth: 1.5,
     borderColor: C.n300,
     borderRadius: 3,
@@ -333,22 +369,22 @@ const S = StyleSheet.create({
     marginBottom: 4,
   },
   qrGrid: { flexDirection: 'row', flexWrap: 'wrap', width: 18, height: 18 },
-  qrDot:  { width: 5, height: 5, backgroundColor: C.brand, margin: 1, borderRadius: 1 },
+  qrDot:  { width: 5, height: 5, backgroundColor: C.navy, margin: 1, borderRadius: 1 },
   qrCap:  { fontSize: 5.5, color: C.n500, textAlign: 'center' },
 
   payCell:     { flex: 1, paddingHorizontal: 10, paddingTop: 8, paddingBottom: 8, borderRightWidth: 1, borderRightColor: C.n200 },
   payCellLast: { borderRightWidth: 0 },
-  payKey:  { fontSize: 5.5, fontFamily: 'Helvetica-Bold', color: C.n400, letterSpacing: 0.5, marginBottom: 3 },
-  payVal:  { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: C.n700 },
-  payMono: { fontSize: 7, fontFamily: 'Courier', color: C.n700 },
+  payKey:  { fontSize: 5.5, fontFamily: 'Helvetica-Bold', color: C.n400, letterSpacing: 0.6, marginBottom: 2 },
+  payVal:  { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: C.n800 },
+  payMono: { fontSize: 7, fontFamily: 'Courier', color: C.n800 },
 
   // ── ASP refs ──────────────────────────────────────────────────────────────
   refBox: {
     marginHorizontal: 30,
-    marginBottom: 10,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: C.n200,
-    borderRadius: 5,
+    borderRadius: 6,
     overflow: 'hidden',
   },
   refHdr:    { backgroundColor: C.n50, borderBottomWidth: 1, borderBottomColor: C.n200, paddingHorizontal: 10, paddingTop: 5, paddingBottom: 5 },
@@ -359,35 +395,38 @@ const S = StyleSheet.create({
   refVal:    { flex: 1, fontSize: 7, fontFamily: 'Courier', color: C.n700 },
 
   // ── Footer ────────────────────────────────────────────────────────────────
-  footerRule: { height: 1, backgroundColor: C.n200, marginHorizontal: 30, marginTop: 2 },
   footer: {
+    position: 'absolute',
+    bottom: 5,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 30,
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingTop: 10,
+    paddingBottom: 10,
+    backgroundColor: C.navy,
   },
   footerLeft: { flex: 1, paddingRight: 10 },
   footerTxt:  { fontSize: 6, color: C.n400, lineHeight: 1.7 },
-  footerBold: { fontFamily: 'Helvetica-Bold', color: C.n500 },
+  footerBold: { fontFamily: 'Helvetica-Bold', color: C.n300 },
 
   footerPills: { flexDirection: 'row', alignItems: 'center' },
   pill: {
     borderWidth: 1,
-    borderColor: C.n200,
+    borderColor: C.navyBd,
     borderRadius: 3,
     paddingHorizontal: 5,
     paddingTop: 2,
     paddingBottom: 2,
-    backgroundColor: C.n50,
-    marginLeft: 3,
+    backgroundColor: C.navyLt,
+    marginLeft: 4,
   },
-  pillTxt: { fontSize: 5.5, fontFamily: 'Helvetica-Bold', color: C.n500 },
+  pillTxt: { fontSize: 5.5, fontFamily: 'Helvetica-Bold', color: C.tealLt },
 
-  bottomBar: { height: 4, backgroundColor: C.brand },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 5, backgroundColor: C.teal },
 })
 
-// ─── Badge map ────────────────────────────────────────────────────────────────
 const BADGE: Record<string, { bg: string; fg: string; label: string }> = {
   draft:          { bg: C.muBg, fg: C.muFg, label: 'DRAFT' },
   pending:        { bg: C.waBg, fg: C.waFg, label: 'PENDING' },
@@ -399,16 +438,15 @@ const BADGE: Record<string, { bg: string; fg: string; label: string }> = {
   partially_paid: { bg: C.blBg, fg: C.blFg, label: 'PARTIAL' },
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmt(v: string | number | null | undefined, dec = 2): string {
-  if (v == null || v === '') return '—'
+  if (v == null || v === '') return '\u2014'
   const n = Number(v)
   if (isNaN(n)) return String(v)
   return n.toLocaleString('en-AE', { minimumFractionDigits: dec, maximumFractionDigits: dec })
 }
 
 function fmtDate(d: string | null | undefined): string {
-  if (!d) return '—'
+  if (!d) return '\u2014'
   try { return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) }
   catch { return String(d) }
 }
@@ -416,25 +454,148 @@ function fmtDate(d: string | null | undefined): string {
 const nonZero = (v: string | number | null | undefined) =>
   v != null && v !== '' && Number(v) !== 0
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function CoInfoRow({ k, v }: { k: string; v?: string | null }) {
+function CoInfoRow({ icon, v }: { icon: string; v?: string | null }) {
   if (!v) return null
   return (
     <View style={S.coInfoRow}>
-      <Text style={S.coInfoKey}>{k}</Text>
+      <View style={{ width: 16, alignItems: 'center', marginRight: 4 }}>
+        <CoInfoIcon type={icon} />
+      </View>
       <Text style={S.coInfoVal}>{v}</Text>
     </View>
   )
 }
 
-function SCell({ label, value, last }: { label: string; value: string; last?: boolean }) {
+function CoInfoIcon({ type }: { type: string }) {
+  const p = { width: 10, height: 10, viewBox: '0 0 24 24' } as const
+  const s = C.white
+  if (type === 'phone') {
+    return (
+      <Svg {...p}>
+        <Path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" fill="none" stroke={s} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </Svg>
+    )
+  }
+  if (type === 'email') {
+    return (
+      <Svg {...p}>
+        <Rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke={s} strokeWidth="1.5" />
+        <Path d="M22 7l-10 7L2 7" fill="none" stroke={s} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </Svg>
+    )
+  }
+  if (type === 'address') {
+    return (
+      <Svg {...p}>
+        <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" fill="none" stroke={s} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <Circle cx="12" cy="10" r="3" fill="none" stroke={s} strokeWidth="1.5" />
+      </Svg>
+    )
+  }
+  if (type === 'trn') {
+    return (
+      <Svg {...p}>
+        <Rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke={s} strokeWidth="1.5" />
+        <Path d="M9 8h6" fill="none" stroke={s} strokeWidth="1.5" strokeLinecap="round" />
+        <Path d="M9 12h6" fill="none" stroke={s} strokeWidth="1.5" strokeLinecap="round" />
+        <Path d="M9 16h4" fill="none" stroke={s} strokeWidth="1.5" strokeLinecap="round" />
+      </Svg>
+    )
+  }
+  if (type === 'web') {
+    return (
+      <Svg {...p}>
+        <Circle cx="12" cy="12" r="10" fill="none" stroke={s} strokeWidth="1.5" />
+        <Path d="M2 12h20" fill="none" stroke={s} strokeWidth="1.5" />
+        <Path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" fill="none" stroke={s} strokeWidth="1.5" />
+      </Svg>
+    )
+  }
+  return null
+}
+
+function StripIcon({ type }: { type: string }) {
+  const props = { width: 13, height: 13, viewBox: '0 0 24 24' } as const
+  const fill = C.navy
+  if (type === 'calendar') {
+    return (
+      <Svg {...props}>
+        <Rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke={fill} strokeWidth="1.5" />
+        <Line x1="8" y1="2" x2="8" y2="6" stroke={fill} strokeWidth="1.5" strokeLinecap="round" />
+        <Line x1="16" y1="2" x2="16" y2="6" stroke={fill} strokeWidth="1.5" strokeLinecap="round" />
+        <Line x1="3" y1="10" x2="21" y2="10" stroke={fill} strokeWidth="1.5" />
+      </Svg>
+    )
+  }
+  if (type === 'dollar') {
+    return (
+      <Svg {...props}>
+        <Path d="M12 2v20" fill="none" stroke={fill} strokeWidth="1.5" strokeLinecap="round" />
+        <Path d="M17 6H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H7" fill="none" stroke={fill} strokeWidth="1.5" strokeLinecap="round" />
+      </Svg>
+    )
+  }
+  if (type === 'tag') {
+    return (
+      <Svg {...props}>
+        <Path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" fill="none" stroke={fill} strokeWidth="1.5" />
+        <Circle cx="7" cy="7" r="1.5" fill={fill} />
+      </Svg>
+    )
+  }
+  if (type === 'document') {
+    return (
+      <Svg {...props}>
+        <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="none" stroke={fill} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <Path d="M14 2v6h6" fill="none" stroke={fill} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <Line x1="9" y1="13" x2="15" y2="13" stroke={fill} strokeWidth="1.5" strokeLinecap="round" />
+        <Line x1="9" y1="17" x2="13" y2="17" stroke={fill} strokeWidth="1.5" strokeLinecap="round" />
+      </Svg>
+    )
+  }
+  return null
+}
+
+function SCell({ label, value, last, icon }: { label: string; value: string; last?: boolean; icon?: string }) {
   return (
     <View style={[S.stripCell, ...(last ? [S.stripCellLast] : [])]}>
-      <Text style={S.stripKey}>{label.toUpperCase()}</Text>
-      <Text style={S.stripVal}>{value}</Text>
+      <View style={S.stripAccent} />
+      <View style={S.stripCellBody}>
+        {icon && (
+          <View style={S.stripIconCol}>
+            <StripIcon type={icon} />
+          </View>
+        )}
+        <View style={S.stripContentCol}>
+          <Text style={S.stripKey}>{label.toUpperCase()}</Text>
+          <Text style={S.stripVal}>{value}</Text>
+        </View>
+      </View>
     </View>
   )
+}
+
+function PartyIcon({ type }: { type: string }) {
+  const p = { width: 13, height: 13, viewBox: '0 0 24 24' } as const
+  const fill = C.white
+  if (type === 'building') {
+    return (
+      <Svg {...p}>
+        <Rect x="3" y="7" width="18" height="14" rx="2" fill="none" stroke={fill} strokeWidth="1.5" />
+        <Path d="M7 21V5l5-3 5 3v16" fill="none" stroke={fill} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <Path d="M10 12v4h4v-4" fill="none" stroke={fill} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </Svg>
+    )
+  }
+  if (type === 'user') {
+    return (
+      <Svg {...p}>
+        <Circle cx="12" cy="8" r="5" fill="none" stroke={fill} strokeWidth="1.5" />
+        <Path d="M3 21c0-5 4-9 9-9s9 4 9 9" fill="none" stroke={fill} strokeWidth="1.5" strokeLinecap="round" />
+      </Svg>
+    )
+  }
+  return null
 }
 
 function PartyCard({
@@ -444,37 +605,45 @@ function PartyCard({
   trn?: string; phone?: string; email?: string; isLeft?: boolean
   accentColor?: string; logoUrl?: string | null
 }) {
-  const accent  = accentColor ?? C.brand
-  const initial = (name || '?').charAt(0).toUpperCase()
+  const accent  = accentColor ?? C.navy
+  const iconType = title === 'Supplier' ? 'building' : 'user'
 
   return (
     <View style={[S.partyCard, ...(isLeft ? [S.partyCardLeft] : [])]}>
-
-      {/* Card header with icon + label */}
-      <View style={[S.partyHdr, { backgroundColor: C.n50, borderLeftColor: accent }]}>
+      <View style={[S.partyHdr, { backgroundColor: C.navy, borderBottomColor: C.navyBd }]}>
         {logoUrl ? (
           <Image src={logoUrl} style={S.partyMarkImg} />
         ) : (
           <View style={[S.partyMark, { backgroundColor: accent }]}>
-            <Text style={S.partyMarkTxt}>{initial}</Text>
+            <PartyIcon type={iconType} />
           </View>
         )}
-        <Text style={[S.partyHdrLabel, { color: accent }]}>{title.toUpperCase()}</Text>
+        <Text style={[S.partyHdrLabel, { color: C.white }]}>{title.toUpperCase()}</Text>
       </View>
-
-      {/* Card body */}
       <View style={S.partyBody}>
-        <Text style={S.partyName}>{name}</Text>
-        {!!legal && <Text style={S.partyLegal}>{legal}</Text>}
-        {!!address && <Text style={S.partyAddr}>{address}</Text>}
-        {!!trn && (
-          <View style={S.partyTrnRow}>
-            <Text style={S.partyTrnKey}>TRN</Text>
-            <Text style={S.partyTrnVal}>{trn}</Text>
-          </View>
-        )}
-        {!!phone && <Text style={S.partyContact}>{phone}</Text>}
-        {!!email && <Text style={S.partyContact}>{email}</Text>}
+        <View style={S.partyField}>
+          {name ? <Text style={S.partyName}>{name}</Text> : null}
+        </View>
+        <View style={S.partyField}>
+          {!!legal ? <Text style={S.partyLegal}>{legal}</Text> : null}
+        </View>
+        <View style={S.partyField}>
+          {!!address ? <Text style={S.partyAddr}>{address}</Text> : null}
+        </View>
+        <View style={S.partyField}>
+          {!!trn ? (
+            <View style={S.partyTrnRow}>
+              <Text style={S.partyTrnKey}>TRN</Text>
+              <Text style={S.partyTrnVal}>{trn}</Text>
+            </View>
+          ) : null}
+        </View>
+        <View style={S.partyField}>
+          {!!phone ? <Text style={S.partyContact}>{phone}</Text> : null}
+        </View>
+        <View style={S.partyField}>
+          {!!email ? <Text style={S.partyContact}>{email}</Text> : null}
+        </View>
       </View>
     </View>
   )
@@ -486,20 +655,18 @@ function VatPill({ type }: { type: string }) {
   return (
     <View style={[S.vatPill, { backgroundColor: isStd ? C.blBg : isZero ? C.okBg : C.muBg }]}>
       <Text style={[S.vatTxt, { color: isStd ? C.blFg : isZero ? C.okFg : C.muFg }]}>
-        {isStd ? 'VAT 5%' : isZero ? '0%' : 'Exempt'}
+        {isStd ? '5%' : isZero ? '0%' : 'Exempt'}
       </Text>
     </View>
   )
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
 export interface InvoicePDFProps { invoice: Invoice; company: Company | null }
 
 export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
   const bc     = BADGE[invoice.status] ?? BADGE.draft
   const isCN   = invoice.invoice_type === 'credit_note'
   const isCS   = invoice.invoice_type === 'continuous_supply'
-  const hasDsc = nonZero(invoice.discount_amount)
   const hasPaid = nonZero(invoice.amount_paid)
   const hasAsp = !!invoice.asp_submission_id
 
@@ -545,8 +712,6 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
 
         {/* 2 ── Header */}
         <View style={S.header}>
-
-          {/* Left: supplier identity with logo */}
           <View style={S.hdrLeft}>
             <View style={S.coLogoRow}>
               {company?.logo_url ? (
@@ -563,54 +728,53 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
                 )}
               </View>
             </View>
-            <CoInfoRow k="TEL"   v={company?.phone} />
-            <CoInfoRow k="EMAIL" v={company?.email} />
+            <CoInfoRow icon="phone"   v={company?.phone} />
+            <CoInfoRow icon="email" v={company?.email} />
             {!!company?.street_address && (
-              <CoInfoRow k="ADDR" v={[company.street_address, company.city, company.country || 'UAE'].filter(Boolean).join(', ')} />
+              <CoInfoRow icon="address" v={[company.street_address, company.city, company.country || 'UAE'].filter(Boolean).join(', ')} />
             )}
-            <CoInfoRow k="TRN" v={company?.trn || invoice.company_trn} />
-            {!!company?.website && <CoInfoRow k="WEB" v={company.website} />}
+            <CoInfoRow icon="trn" v={company?.trn || invoice.company_trn} />
+            {!!company?.website && <CoInfoRow icon="web" v={company.website} />}
           </View>
-
-          {/* Right: invoice identity */}
           <View style={S.hdrRight}>
             <Text style={S.invTypeLabel}>{invTypeLabel}</Text>
             <Text style={S.invTitle}>INVOICE</Text>
             <Text style={S.invNum}>{invoice.invoice_number}</Text>
-
             <View style={[S.badge, { backgroundColor: bc.bg }]}>
               <Text style={[S.badgeTxt, { color: bc.fg }]}>{bc.label}</Text>
             </View>
-
-            <Text style={S.amtLbl}>TOTAL AMOUNT DUE</Text>
+            <Text style={S.amtLbl}>TOTAL DUE</Text>
             <Text style={S.amtVal}>{fmt(invoice.total_amount)}</Text>
             <Text style={S.amtCur}>{invoice.currency}</Text>
           </View>
         </View>
 
+        {/* 3─9 ── Main content wrapper */}
+        <View style={{ flex: 1, flexDirection: 'column' }}>
+
         {/* 3 ── Date / reference strip */}
         <View style={S.strip}>
-          <SCell label="Issue Date"  value={fmtDate(invoice.issue_date)} />
-          <SCell label="Due Date"    value={fmtDate(invoice.due_date)} />
+          <SCell icon="calendar" label="Issue Date"  value={fmtDate(invoice.issue_date)} />
+          <SCell icon="calendar" label="Due Date"    value={fmtDate(invoice.due_date)} />
           {isCS ? (
             <>
-              <SCell label="Period Start" value={fmtDate(invoice.supply_date)} />
-              <SCell label="Period End"   value={fmtDate(invoice.supply_date_end)} />
+              <SCell icon="calendar" label="Period Start" value={fmtDate(invoice.supply_date)} />
+              <SCell icon="calendar" label="Period End"   value={fmtDate(invoice.supply_date_end)} />
             </>
           ) : (
-            <SCell label="Supply Date" value={fmtDate(invoice.supply_date)} />
+            <SCell icon="calendar" label="Supply Date" value={fmtDate(invoice.supply_date)} />
           )}
-          <SCell label="Currency" value={invoice.currency} last={!invoice.purchase_order_number} />
+          <SCell icon="dollar" label="Currency" value={invoice.currency} last={!invoice.purchase_order_number} />
           {!!invoice.purchase_order_number && (
-            <SCell label="PO Number" value={invoice.purchase_order_number} last />
+            <SCell icon="tag" label="PO Number" value={invoice.purchase_order_number} last />
           )}
         </View>
 
         {/* Credit note banner */}
         {isCN && !!invoice.reference_number && (
           <View style={S.crBanner}>
-            <Text style={S.crLbl}>CREDIT NOTE —</Text>
-            <Text style={S.crVal}>References original invoice: {invoice.reference_number}</Text>
+            <Text style={S.crLbl}>CREDIT NOTE</Text>
+            <Text style={S.crVal}>  References original invoice: {invoice.reference_number}</Text>
           </View>
         )}
 
@@ -619,7 +783,7 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
           <PartyCard
             isLeft
             title="Supplier"
-            accentColor={C.brand}
+            accentColor={C.teal}
             logoUrl={company?.logo_url}
             name={company?.name || invoice.company_name}
             legal={company?.legal_name !== company?.name ? company?.legal_name : undefined}
@@ -647,7 +811,7 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
             <View style={[S.th, S.thR, { width: '7%' }]}><Text>QTY</Text></View>
             <View style={[S.th, S.thC, { width: '6%' }]}><Text>UNIT</Text></View>
             <View style={[S.th, S.thR, { width: '12%' }]}><Text>UNIT PRICE</Text></View>
-            <View style={[S.th, S.thC, { width: '9%' }]}><Text>VAT</Text></View>
+            <View style={[S.th, S.thC, { width: '8%' }]}><Text>VAT</Text></View>
             <View style={[S.th, S.thR, { width: '10%' }]}><Text>VAT AMT</Text></View>
             <View style={[S.th, S.thLast, S.thR, { width: '13%' }]}><Text>TOTAL</Text></View>
           </View>
@@ -665,7 +829,7 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
                 <View style={[S.td, S.tdC, { width: '4%' }]}>
                   <Text style={S.tdIdx}>{i + 1}</Text>
                 </View>
-                <View style={[S.td, { flex: 1 }]}>
+                <View style={[S.td, { flex: 1, paddingLeft: 14 }]}>
                   {!!(item as any).item_name && (
                     <Text style={S.tdBold}>{(item as any).item_name}</Text>
                   )}
@@ -677,12 +841,12 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
                   <Text style={S.tdMuted}>{item.quantity}</Text>
                 </View>
                 <View style={[S.td, S.tdC, { width: '6%' }]}>
-                  <Text style={{ fontSize: 7, color: C.n400 }}>{item.unit || '—'}</Text>
+                  <Text style={{ fontSize: 7, color: C.n400 }}>{item.unit || '\u2014'}</Text>
                 </View>
                 <View style={[S.td, S.tdR, { width: '12%' }]}>
                   <Text style={S.tdNum}>{fmt(item.unit_price)}</Text>
                 </View>
-                <View style={[S.td, S.tdC, { width: '9%' }]}>
+                <View style={[S.td, S.tdC, { width: '8%' }]}>
                   <VatPill type={item.vat_rate_type} />
                 </View>
                 <View style={[S.td, S.tdR, { width: '10%' }]}>
@@ -701,7 +865,7 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
           <View style={S.totLeft}>
             {!!invoice.notes && (
               <View style={S.notesBox}>
-                <Text style={S.notesLbl}>NOTES & TERMS</Text>
+                <Text style={S.notesLbl}>NOTES</Text>
                 <Text style={S.notesTxt}>{invoice.notes}</Text>
               </View>
             )}
@@ -713,18 +877,14 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
               <Text style={S.totVal}>{invoice.currency} {fmt(invoice.subtotal)}</Text>
             </View>
 
-            {hasDsc && (
-              <>
-                <View style={S.totRow}>
-                  <Text style={[S.totKey, S.totRedKey]}>Discount</Text>
-                  <Text style={[S.totVal, S.totRedVal]}>− {invoice.currency} {fmt(invoice.discount_amount)}</Text>
-                </View>
-                <View style={S.totRow}>
-                  <Text style={S.totKey}>Taxable Amount</Text>
-                  <Text style={S.totVal}>{invoice.currency} {fmt(invoice.taxable_amount)}</Text>
-                </View>
-              </>
-            )}
+            <View style={S.totRow}>
+              <Text style={[S.totKey, S.totRedKey]}>Discount</Text>
+              <Text style={[S.totVal, S.totRedVal]}>- {invoice.currency} {fmt(invoice.discount_amount ?? 0)}</Text>
+            </View>
+            <View style={S.totRow}>
+              <Text style={S.totKey}>Taxable Amount</Text>
+              <Text style={S.totVal}>{invoice.currency} {fmt(invoice.taxable_amount)}</Text>
+            </View>
 
             <View style={S.totRow}>
               <Text style={[S.totKey, S.totBluKey]}>VAT (5%)</Text>
@@ -739,7 +899,7 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
             {hasPaid && (
               <View style={S.totPaidRow}>
                 <Text style={S.totPaidKey}>Amount Paid</Text>
-                <Text style={S.totPaidVal}>− {invoice.currency} {fmt(invoice.amount_paid)}</Text>
+                <Text style={S.totPaidVal}>\u2212 {invoice.currency} {fmt(invoice.amount_paid)}</Text>
               </View>
             )}
 
@@ -752,52 +912,11 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
           </View>
         </View>
 
-        {/* 7 ── QR + payment info bar */}
-        <View style={S.infoBar}>
-          <View style={S.qrCell}>
-            <View style={S.qrBox}>
-              {/* Stylised QR grid placeholder */}
-              <View style={S.qrGrid}>
-                {[1,1,0,1,1,0,1,0,0,1].map((on, i) => (
-                  <View key={i} style={[S.qrDot, { opacity: on ? 1 : 0 }]} />
-                ))}
-              </View>
-            </View>
-            <Text style={S.qrCap}>{'Scan to\nverify'}</Text>
-          </View>
-
-          <View style={S.payCell}>
-            <Text style={S.payKey}>PAYMENT METHOD</Text>
-            <Text style={S.payVal}>{pmLabel}</Text>
-          </View>
-          <View style={S.payCell}>
-            <Text style={S.payKey}>DUE DATE</Text>
-            <Text style={[S.payVal, { color: invoice.due_date ? C.erFg : C.n700 }]}>
-              {fmtDate(invoice.due_date)}
-            </Text>
-          </View>
-          {company?.iban ? (
-            <View style={S.payCell}>
-              <Text style={S.payKey}>IBAN</Text>
-              <Text style={S.payMono}>{company.iban}</Text>
-            </View>
-          ) : (
-            <View style={S.payCell}>
-              <Text style={S.payKey}>INVOICE TYPE</Text>
-              <Text style={S.payVal}>{invTypeLabel}</Text>
-            </View>
-          )}
-          <View style={[S.payCell, S.payCellLast]}>
-            <Text style={S.payKey}>ISSUER TRN</Text>
-            <Text style={S.payMono}>{company?.trn || invoice.company_trn || '—'}</Text>
-          </View>
-        </View>
-
         {/* 8 ── ASP submission refs */}
         {hasAsp && (
           <View style={S.refBox}>
             <View style={S.refHdr}>
-              <Text style={S.refHdrTxt}>ELECTRONIC SUBMISSION REFERENCES  ·  E-Invoice 5-CORNER MODEL</Text>
+              <Text style={S.refHdrTxt}>ELECTRONIC SUBMISSION REFERENCES  \u00B7  5-CORNER MODEL</Text>
             </View>
             <View style={S.refRow}>
               <Text style={S.refKey}>ASP Submission ID</Text>
@@ -812,16 +931,37 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
           </View>
         )}
 
-        {/* 9 ── Footer */}
-        <View style={S.footerRule} />
+        <View style={{ flex: 1 }} />
+
+        {/* 9 ── Bottom info bar */}
+        <View style={S.botInfoBar}>
+          <View style={S.botInfoCell}>
+            <Text style={S.botInfoKey}>DUE DATE</Text>
+            <Text style={[S.botInfoVal, { color: invoice.due_date ? C.erFg : C.n700 }]}>
+              {fmtDate(invoice.due_date)}
+            </Text>
+          </View>
+          <View style={S.botInfoCell}>
+            <Text style={S.botInfoKey}>TYPE</Text>
+            <Text style={S.botInfoVal}>{invTypeLabel}</Text>
+          </View>
+          <View style={[S.botInfoCell, S.botInfoCellLast]}>
+            <Text style={S.botInfoKey}>ISSUER TRN</Text>
+            <Text style={S.botInfoMono}>{company?.trn || invoice.company_trn || '\u2014'}</Text>
+          </View>
+        </View>
+
+        {/* 10 ── Footer */}
+        </View>
+
         <View style={S.footer}>
           <View style={S.footerLeft}>
             <Text style={S.footerTxt}>
-              {'Computer-generated tax invoice  ·  UAE Federal Decree-Law No. 8 of 2017 on Value Added Tax\n'}
-              <Text style={S.footerBold}>Issuer TRN: {company?.trn || invoice.company_trn || '—'}</Text>
-              {'  ·  Taxable Amount: '}
+              {'Computer-generated tax invoice  \u00B7  UAE Federal Decree-Law No. 8 of 2017\n'}
+              <Text style={S.footerBold}>Issuer TRN: {company?.trn || invoice.company_trn || '\u2014'}</Text>
+              {'  \u00B7  Taxable Amount: '}
               <Text style={S.footerBold}>{invoice.currency} {fmt(invoice.taxable_amount)}</Text>
-              {'  ·  Generated: '}{fmtDate(invoice.created_at)}
+              {'  \u00B7  Generated: '}{fmtDate(invoice.created_at)}
             </Text>
           </View>
           <View style={S.footerPills}>
@@ -833,7 +973,7 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
           </View>
         </View>
 
-        {/* 10 ── Bottom accent bar */}
+        {/* 11 ── Bottom teal accent bar */}
         <View style={S.bottomBar} />
 
       </Page>

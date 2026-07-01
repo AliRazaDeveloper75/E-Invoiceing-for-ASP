@@ -53,7 +53,6 @@ export default function SubmitInvoicePage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState<{ id: string; number: string } | null>(null);
 
-  // ── Derived totals ───────────────────────────────────────────────────────────
   const totals = items.reduce(
     (acc, item) => {
       const { subtotal, vatAmt, total } = calcItem(item);
@@ -66,7 +65,6 @@ export default function SubmitInvoicePage() {
     { subtotal: 0, vat: 0, total: 0 }
   );
 
-  // ── Items helpers ────────────────────────────────────────────────────────────
   const addItem = () =>
     setItems((prev) => [...prev, { ...DEFAULT_ITEM(), line_number: prev.length + 1 }]);
 
@@ -76,7 +74,6 @@ export default function SubmitInvoicePage() {
   const updateItem = (i: number, field: keyof LineItem, value: string) =>
     setItems((prev) => prev.map((it, idx) => (idx === i ? { ...it, [field]: value } : it)));
 
-  // ── Submit ───────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -122,12 +119,11 @@ export default function SubmitInvoicePage() {
     }
   };
 
-  // ── Success screen ───────────────────────────────────────────────────────────
   if (success) {
     return (
-      <div className="max-w-lg mx-auto mt-20 text-center space-y-5">
+      <div className="mt-20 text-center space-y-5">
         <div className="flex justify-center">
-          <div className="h-16 w-16 rounded-full bg-emerald-50 flex items-center justify-center">
+          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center">
             <CheckCircle2 className="h-8 w-8 text-emerald-500" />
           </div>
         </div>
@@ -139,13 +135,13 @@ export default function SubmitInvoicePage() {
         <div className="flex gap-3 justify-center">
           <button
             onClick={() => router.push('/supplier-portal/invoices')}
-            className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
           >
             View My Invoices
           </button>
           <button
             onClick={() => { setSuccess(null); setItems([DEFAULT_ITEM()]); setForm(f => ({ ...f, supplier_invoice_number: '' })); }}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50"
+            className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50"
           >
             Submit Another
           </button>
@@ -154,25 +150,30 @@ export default function SubmitInvoicePage() {
     );
   }
 
-  // ── Form ─────────────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="space-y-6">
 
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Submit Invoice</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Fill in the invoice details and add line items</p>
+      {/* ── Header ── */}
+      <div className="bg-gradient-to-br from-white via-blue-50/30 to-white rounded-2xl p-6 shadow-[0_8px_30px_-8px_rgba(59,130,246,0.15)] border border-blue-100/70 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-blue-50 transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div>
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="h-2 w-2 rounded-full bg-gradient-to-r from-blue-400 to-blue-600" />
+              <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-[0.12em]">Submit Invoice</span>
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight">Submit Invoice</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Fill in the invoice details and add line items</p>
+          </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
 
-        {/* ── Invoice Header ─────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+        {/* ── Invoice Details ── */}
+        <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-6 space-y-4 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
           <h2 className="font-semibold text-gray-800">Invoice Details</h2>
 
           <div className="grid grid-cols-2 gap-4">
@@ -185,7 +186,7 @@ export default function SubmitInvoicePage() {
                 value={form.supplier_invoice_number}
                 onChange={(e) => setForm((f) => ({ ...f, supplier_invoice_number: e.target.value }))}
                 placeholder="e.g. INV-2026-001"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 text-sm border border-gray-200/80 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm"
               />
             </div>
 
@@ -194,7 +195,7 @@ export default function SubmitInvoicePage() {
               <select
                 value={form.currency}
                 onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 text-sm border border-gray-200/80 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm"
               >
                 <option>AED</option><option>USD</option><option>EUR</option>
               </select>
@@ -205,7 +206,7 @@ export default function SubmitInvoicePage() {
               <select
                 value={form.invoice_type}
                 onChange={(e) => setForm((f) => ({ ...f, invoice_type: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 text-sm border border-gray-200/80 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm"
               >
                 <option value="tax_invoice">Tax Invoice</option>
                 <option value="simplified">Simplified Invoice</option>
@@ -219,7 +220,7 @@ export default function SubmitInvoicePage() {
               <select
                 value={form.transaction_type}
                 onChange={(e) => setForm((f) => ({ ...f, transaction_type: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 text-sm border border-gray-200/80 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm"
               >
                 <option value="b2b">B2B</option>
                 <option value="b2g">B2G</option>
@@ -236,7 +237,7 @@ export default function SubmitInvoicePage() {
                 required
                 value={form.issue_date}
                 onChange={(e) => setForm((f) => ({ ...f, issue_date: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 text-sm border border-gray-200/80 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm"
               />
             </div>
 
@@ -246,7 +247,7 @@ export default function SubmitInvoicePage() {
                 type="date"
                 value={form.due_date}
                 onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 text-sm border border-gray-200/80 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm"
               />
             </div>
 
@@ -256,7 +257,7 @@ export default function SubmitInvoicePage() {
                 value={form.purchase_order_ref}
                 onChange={(e) => setForm((f) => ({ ...f, purchase_order_ref: e.target.value }))}
                 placeholder="Optional"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 text-sm border border-gray-200/80 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm"
               />
             </div>
 
@@ -266,7 +267,7 @@ export default function SubmitInvoicePage() {
                 value={form.contract_ref}
                 onChange={(e) => setForm((f) => ({ ...f, contract_ref: e.target.value }))}
                 placeholder="Optional"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 text-sm border border-gray-200/80 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm"
               />
             </div>
           </div>
@@ -278,25 +279,24 @@ export default function SubmitInvoicePage() {
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               placeholder="Optional notes..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              className="w-full px-3 py-2 text-sm border border-gray-200/80 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm resize-none"
             />
           </div>
         </div>
 
-        {/* ── Line Items ──────────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+        {/* ── Line Items ── */}
+        <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-6 space-y-4 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-gray-800">Line Items</h2>
             <button
               type="button"
               onClick={addItem}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-brand-600 border border-brand-300 rounded-lg hover:bg-brand-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
             >
               <Plus className="h-4 w-4" /> Add Item
             </button>
           </div>
 
-          {/* Table header */}
           <div className="grid grid-cols-[2fr_80px_60px_120px_80px_36px] gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide px-1">
             <span>Description</span>
             <span>Qty</span>
@@ -317,7 +317,7 @@ export default function SubmitInvoicePage() {
                       value={item.description}
                       onChange={(e) => updateItem(i, 'description', e.target.value)}
                       placeholder="Item description"
-                      className="w-full px-2.5 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full px-2.5 py-2 text-sm border border-gray-200/80 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm"
                     />
                     <input
                       type="number"
@@ -326,13 +326,13 @@ export default function SubmitInvoicePage() {
                       required
                       value={item.quantity}
                       onChange={(e) => updateItem(i, 'quantity', e.target.value)}
-                      className="w-full px-2 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full px-2 py-2 text-sm border border-gray-200/80 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm"
                     />
                     <input
                       value={item.unit}
                       onChange={(e) => updateItem(i, 'unit', e.target.value)}
                       placeholder="EA"
-                      className="w-full px-2 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full px-2 py-2 text-sm border border-gray-200/80 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm"
                     />
                     <input
                       type="number"
@@ -342,7 +342,7 @@ export default function SubmitInvoicePage() {
                       value={item.unit_price}
                       onChange={(e) => updateItem(i, 'unit_price', e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-2 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full px-2 py-2 text-sm border border-gray-200/80 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm"
                     />
                     <input
                       type="number"
@@ -351,7 +351,7 @@ export default function SubmitInvoicePage() {
                       step="any"
                       value={item.vat_rate}
                       onChange={(e) => updateItem(i, 'vat_rate', e.target.value)}
-                      className="w-full px-2 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full px-2 py-2 text-sm border border-gray-200/80 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm"
                     />
                     <button
                       type="button"
@@ -362,7 +362,6 @@ export default function SubmitInvoicePage() {
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
-                  {/* Row totals */}
                   {item.unit_price && (
                     <div className="text-xs text-gray-400 pl-1">
                       Subtotal: {subtotal.toFixed(2)} | VAT: {vatAmt.toFixed(2)} | Total: <span className="font-semibold text-gray-600">{total.toFixed(2)} {form.currency}</span>
@@ -373,8 +372,7 @@ export default function SubmitInvoicePage() {
             })}
           </div>
 
-          {/* Grand totals */}
-          <div className="border-t border-gray-100 pt-4 flex justify-end">
+          <div className="border-t border-blue-100/60 pt-4 flex justify-end">
             <div className="space-y-1 text-sm min-w-[220px]">
               <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
@@ -384,7 +382,7 @@ export default function SubmitInvoicePage() {
                 <span>VAT</span>
                 <span>{totals.vat.toFixed(2)} {form.currency}</span>
               </div>
-              <div className="flex justify-between font-bold text-gray-900 text-base border-t border-gray-200 pt-1">
+              <div className="flex justify-between font-bold text-gray-900 text-base border-t border-blue-100/60 pt-1">
                 <span>Total</span>
                 <span>{totals.total.toFixed(2)} {form.currency}</span>
               </div>
@@ -392,9 +390,8 @@ export default function SubmitInvoicePage() {
           </div>
         </div>
 
-        {/* ── Error & Submit ───────────────────────────────────────────────────── */}
         {error && (
-          <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
@@ -403,14 +400,14 @@ export default function SubmitInvoicePage() {
           <button
             type="button"
             onClick={() => router.back()}
-            className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50"
+            className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="h-4 w-4" />
             {submitting ? 'Submitting…' : 'Submit Invoice'}

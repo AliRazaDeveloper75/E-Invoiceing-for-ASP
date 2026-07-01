@@ -73,13 +73,6 @@ const HIGHLIGHTS = [
   },
 ];
 
-const STATS = [
-  { value: '5+', label: 'Years of Expertise' },
-  { value: '5%', label: 'UAE VAT Rate' },
-  { value: '32', label: 'FAF Data Elements' },
-  { value: '100%', label: 'FTA Compliant' },
-];
-
 export function AboutContent() {
   const { t } = useI18n();
 
@@ -103,8 +96,8 @@ export function AboutContent() {
             }}
           />
         </div>
-        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 lg:py-36">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 lg:py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
 
             {/* Left: Text content */}
             <div className="max-w-xl">
@@ -264,23 +257,7 @@ export function AboutContent() {
         </svg>
       </section>
 
-      {/* Stats Strip */}
-      <section className="relative -mt-12 z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 grid grid-cols-2 sm:grid-cols-4">
-            {STATS.map((stat, i) => (
-              <AnimatedSection key={stat.label} delay={i * 100} direction="up">
-                <div className="p-6 lg:p-8 text-center">
-                  <div className="text-3xl lg:text-4xl font-bold bg-gradient-to-br from-brand-900 to-brand-600 bg-clip-text text-transparent">
-                    {stat.value}
-                  </div>
-                  <div className="text-sm text-gray-500 mt-1.5 font-medium">{stat.label}</div>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* Values */}
       <section className="py-20 lg:py-28 bg-white">
@@ -338,7 +315,7 @@ export function AboutContent() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {HIGHLIGHTS.map((item, i) => (
               <AnimatedSection key={item.title} delay={i * 100} direction="up">
-                <div className="group bg-white rounded-xl border border-gray-200 p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-brand-500/30">
+                <div className="group bg-blue-50/60 rounded-xl border border-gray-200 p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-brand-500/30">
                   <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-brand-50 to-blue-50 text-brand-600 mb-4 transition-all duration-300 group-hover:scale-110 group-hover:from-brand-500 group-hover:to-brand-600 group-hover:text-white">
                     {item.icon}
                   </div>

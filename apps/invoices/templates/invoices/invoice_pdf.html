@@ -8,98 +8,118 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; color: #1e293b; background: #fff; }
 
-  /* ── status pills (inline-block works in xhtml2pdf) ── */
+  /* ── status pills ── */
   .pill {
     display: inline-block; font-size: 6.5pt; font-weight: bold;
-    letter-spacing: 0.4px; padding: 2px 9px; border-radius: 3px; text-transform: uppercase;
+    letter-spacing: 0.4px; padding: 3px 10px; border-radius: 3px; text-transform: uppercase;
   }
-  .s-draft     { background-color: #e2e8f0; color: #475569; }
-  .s-pending   { background-color: #fef3c7; color: #92400e; }
-  .s-submitted { background-color: #dbeafe; color: #1e40af; }
-  .s-validated { background-color: #d1fae5; color: #065f46; }
-  .s-rejected  { background-color: #fee2e2; color: #991b1b; }
-  .s-cancelled { background-color: #f1f5f9; color: #64748b; }
+  .s-draft     { background-color: #f1f5f9; color: #475569; }
+  .s-pending   { background-color: #fffbeb; color: #92400e; }
+  .s-submitted { background-color: #eff6ff; color: #1d4ed8; }
+  .s-validated { background-color: #f0fdf4; color: #166534; }
+  .s-rejected  { background-color: #fef2f2; color: #991b1b; }
+  .s-cancelled { background-color: #f1f5f9; color: #475569; }
 
   /* ── vat pills ── */
-  .vp { display: inline-block; font-size: 6.5pt; font-weight: bold; padding: 2px 8px; border-radius: 3px; }
+  .vp { display: inline-block; font-size: 6pt; font-weight: bold; padding: 2px 6px; border-radius: 2px; }
   .vp-s { background-color: #eff6ff; color: #1d4ed8; }
   .vp-z { background-color: #f0fdf4; color: #15803d; }
-  .vp-e { background-color: #f8fafc; color: #64748b; }
+  .vp-e { background-color: #f1f5f9; color: #64748b; }
+
+  /* ── utility ── */
+  .rnd { border-radius: 6px; overflow: hidden; }
+  .mt8  { margin-top: 8px; }
+  .mt10 { margin-top: 10px; }
+  .mt12 { margin-top: 12px; }
+  .mt14 { margin-top: 14px; }
+  .mt16 { margin-top: 16px; }
+  .mt18 { margin-top: 18px; }
+
+  .mono { font-family: Courier, monospace; }
 </style>
 </head>
 <body>
 
-<!-- ══════════ TOP LABEL BAR ══════════ -->
+<!-- ══════════ 1. TOP ACCENT BAR ══════════ -->
 <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
-  <tr>
-    <td style="background-color:#0f2557; padding:5px 28px; font-size:6.5pt; font-weight:bold; color:#94a3b8; letter-spacing:1.8px; text-transform:uppercase;">
-      TAX INVOICE &nbsp;&bull;&nbsp; UAE FTA COMPLIANT &nbsp;&bull;&nbsp; PEPPOL BIS 3.0
-    </td>
-  </tr>
+  <tr><td style="height:5px; background-color:#0f2557; font-size:1px; line-height:1px;">&nbsp;</td></tr>
 </table>
 
-<!-- ══════════ HEADER ══════════ -->
+<!-- ══════════ 2. HEADER ══════════ -->
 <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
   <tr>
-    <!-- Left: company info -->
-    <td width="54%" style="background-color:#0f2557; padding:20px 18px 20px 28px; vertical-align:top;">
-
-      <!-- Logo box + name -->
+    <td width="56%" style="background-color:#0f2557; padding:22px 18px 22px 30px; vertical-align:top;">
+      <!-- Logo + name -->
       <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
         <tr>
-          <td width="46" style="width:46px; height:46px; background-color:#1d4ed8; vertical-align:middle; text-align:center; font-size:17pt; font-weight:bold; color:#ffffff;">
+          <td width="46" style="width:46px; height:46px; background-color:#0d9488; border-radius:6px; vertical-align:middle; text-align:center; font-size:20pt; font-weight:bold; color:#ffffff;">
             {{ invoice.company.name|slice:":1"|upper }}
           </td>
-          <td style="padding-left:10px; vertical-align:middle;">
+          <td style="padding-left:12px; vertical-align:middle;">
             <div style="font-size:14pt; font-weight:bold; color:#ffffff; line-height:1.2;">{{ invoice.company.name }}</div>
             {% if invoice.company.legal_name and invoice.company.legal_name != invoice.company.name %}
-            <div style="font-size:7pt; color:#93c5fd; margin-top:2px;">{{ invoice.company.legal_name }}</div>
+            <div style="font-size:7pt; color:#cbd5e1; margin-top:1px;">{{ invoice.company.legal_name }}</div>
             {% endif %}
           </td>
         </tr>
       </table>
 
       <!-- Contact rows -->
-      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse; margin-top:13px;">
+      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse; margin-top:10px;">
         {% if invoice.company.phone %}
         <tr>
-          <td width="36" style="font-size:6pt; font-weight:bold; color:#60a5fa; padding:2px 0; text-transform:uppercase; letter-spacing:0.5px;">TEL</td>
-          <td style="font-size:7.5pt; color:#cbd5e1; padding:2px 0;">{{ invoice.company.phone }}</td>
+          <td width="36" style="font-size:6pt; font-weight:bold; color:#94a3b8; padding:2px 0; text-transform:uppercase; letter-spacing:0.5px;">TEL</td>
+          <td style="font-size:7pt; color:#cbd5e1; padding:2px 0;">{{ invoice.company.phone }}</td>
         </tr>
         {% endif %}
         {% if invoice.company.email %}
         <tr>
-          <td style="font-size:6pt; font-weight:bold; color:#60a5fa; padding:2px 0; text-transform:uppercase;">EMAIL</td>
-          <td style="font-size:7.5pt; color:#cbd5e1; padding:2px 0;">{{ invoice.company.email }}</td>
+          <td style="font-size:6pt; font-weight:bold; color:#94a3b8; padding:2px 0; text-transform:uppercase;">EMAIL</td>
+          <td style="font-size:7pt; color:#cbd5e1; padding:2px 0;">{{ invoice.company.email }}</td>
         </tr>
         {% endif %}
         {% if invoice.company.street_address %}
         <tr>
-          <td style="font-size:6pt; font-weight:bold; color:#60a5fa; padding:2px 0; text-transform:uppercase; vertical-align:top;">ADDR</td>
-          <td style="font-size:7.5pt; color:#cbd5e1; padding:2px 0;">
+          <td style="font-size:6pt; font-weight:bold; color:#94a3b8; padding:2px 0; text-transform:uppercase; vertical-align:top;">ADDR</td>
+          <td style="font-size:7pt; color:#cbd5e1; padding:2px 0;">
             {{ invoice.company.street_address }}{% if invoice.company.city %}, {{ invoice.company.city }}{% endif %}{% if invoice.company.emirate %}, {{ invoice.company.get_emirate_display }}{% endif %}, {{ invoice.company.country }}
           </td>
         </tr>
         {% endif %}
         <tr>
-          <td style="font-size:6pt; font-weight:bold; color:#60a5fa; padding:3px 0; text-transform:uppercase;">TRN</td>
+          <td style="font-size:6pt; font-weight:bold; color:#94a3b8; padding:3px 0; text-transform:uppercase;">TRN</td>
           <td style="font-size:7.5pt; color:#93c5fd; font-family:Courier,monospace; font-weight:bold; padding:3px 0;">{{ invoice.company.trn }}</td>
         </tr>
+        {% if invoice.company.website %}
+        <tr>
+          <td style="font-size:6pt; font-weight:bold; color:#94a3b8; padding:2px 0; text-transform:uppercase;">WEB</td>
+          <td style="font-size:7pt; color:#cbd5e1; padding:2px 0;">{{ invoice.company.website }}</td>
+        </tr>
+        {% endif %}
       </table>
     </td>
 
-    <!-- Thin divider -->
+    <!-- Divider -->
     <td width="1" style="background-color:#1a3a6e; padding:0; font-size:1px;">&nbsp;</td>
 
-    <!-- Right: invoice identity -->
-    <td width="45%" style="background-color:#0f2557; padding:20px 28px 20px 18px; vertical-align:top; text-align:right;">
-      <div style="font-size:26pt; font-weight:bold; color:#ffffff; letter-spacing:2px; line-height:1;">INVOICE</div>
-      <div style="font-size:8.5pt; color:#93c5fd; margin-top:6px;">
-        No.&nbsp;<span style="color:#ffffff; font-family:Courier,monospace; font-size:9pt; font-weight:bold;">{{ invoice.invoice_number }}</span>
+    <!-- Right: invoice identity + total due -->
+    <td width="43%" style="background-color:#0f2557; padding:22px 30px 22px 18px; vertical-align:top; text-align:right;">
+      {% with s=invoice.status %}
+      {% if s == 'credit_note' %}
+      <div style="font-size:7pt; font-weight:bold; color:#14b8a6; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:3px;">CREDIT NOTE</div>
+      {% elif s == 'continuous_supply' %}
+      <div style="font-size:7pt; font-weight:bold; color:#14b8a6; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:3px;">SUPPLY INVOICE</div>
+      {% else %}
+      <div style="font-size:7pt; font-weight:bold; color:#14b8a6; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:3px;">TAX INVOICE</div>
+      {% endif %}
+      {% endwith %}
+      <div style="font-size:30pt; font-weight:bold; color:#ffffff; letter-spacing:2px; line-height:1;">INVOICE</div>
+      <div style="font-size:9pt; color:#cbd5e1; margin-top:6px;">
+        <span class="mono" style="font-weight:bold; color:#ffffff;">{{ invoice.invoice_number }}</span>
       </div>
 
       <!-- Status badge -->
-      <div style="margin-top:8px; margin-bottom:6px;">
+      <div style="margin-top:10px; margin-bottom:6px;">
         {% with s=invoice.status %}
         <span class="pill
           {% if s == 'draft' %}s-draft
@@ -114,288 +134,333 @@
         {% endwith %}
       </div>
 
-      <div style="font-size:7pt; color:#7ea8e0;">
+      <!-- Total Due amount (matching frontend v5) -->
+      <div style="font-size:6pt; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-top:4px;">Total Due</div>
+      <div style="font-size:18pt; font-weight:bold; color:#ffffff; margin-top:1px;">{{ invoice.total_amount|floatformat:2 }}</div>
+      <div style="font-size:8pt; color:#14b8a6; margin-top:1px;">{{ invoice.currency }}</div>
+
+      <div style="font-size:7pt; color:#7ea8e0; margin-top:8px;">
         {{ invoice.get_invoice_type_display|upper }} &nbsp;&bull;&nbsp; {{ invoice.transaction_type|upper }} &nbsp;&bull;&nbsp; {{ invoice.currency }}
       </div>
     </td>
   </tr>
 </table>
 
-<!-- Gold accent line -->
-<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
-  <tr><td style="height:4px; background-color:#d97706; font-size:1px; line-height:1px;">&nbsp;</td></tr>
-</table>
-
-<!-- ══════════ BODY ══════════ -->
-<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
-  <tr>
-    <td style="padding:20px 28px 0 28px;">
-
-      <!-- ── Invoice detail strip ── -->
-      <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; border:1px solid #e2e8f0;">
-        <tr>
-          <td style="background-color:#f8fafc; border-right:1px solid #e2e8f0; padding:9px 14px; vertical-align:top;">
-            <div style="font-size:6pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px;">Issue Date</div>
-            <div style="font-size:8.5pt; font-weight:bold; color:#0f172a;">{{ invoice.issue_date|date:"d M Y" }}</div>
-          </td>
-          <td style="background-color:#f8fafc; border-right:1px solid #e2e8f0; padding:9px 14px; vertical-align:top;">
-            <div style="font-size:6pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px;">Due Date</div>
-            <div style="font-size:8.5pt; font-weight:bold; color:#0f172a;">{% if invoice.due_date %}{{ invoice.due_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</div>
-          </td>
-          {% if invoice.invoice_type == 'continuous_supply' %}
-          <td style="background-color:#f8fafc; border-right:1px solid #e2e8f0; padding:9px 14px; vertical-align:top;">
-            <div style="font-size:6pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px;">Period Start</div>
-            <div style="font-size:8.5pt; font-weight:bold; color:#0f172a;">{% if invoice.supply_date %}{{ invoice.supply_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</div>
-          </td>
-          <td style="background-color:#f8fafc; border-right:1px solid #e2e8f0; padding:9px 14px; vertical-align:top;">
-            <div style="font-size:6pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px;">Period End</div>
-            <div style="font-size:8.5pt; font-weight:bold; color:#0f172a;">{% if invoice.supply_date_end %}{{ invoice.supply_date_end|date:"d M Y" }}{% else %}&mdash;{% endif %}</div>
-          </td>
-          {% else %}
-          <td style="background-color:#f8fafc; border-right:1px solid #e2e8f0; padding:9px 14px; vertical-align:top;">
-            <div style="font-size:6pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px;">Supply Date</div>
-            <div style="font-size:8.5pt; font-weight:bold; color:#0f172a;">{% if invoice.supply_date %}{{ invoice.supply_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</div>
-          </td>
-          {% endif %}
-          <td style="background-color:#f8fafc; border-right:1px solid #e2e8f0; padding:9px 14px; vertical-align:top;">
-            <div style="font-size:6pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px;">Currency</div>
-            <div style="font-size:8.5pt; font-weight:bold; color:#0f172a;">{{ invoice.currency }}</div>
-          </td>
-          {% if invoice.purchase_order_number %}
-          <td style="background-color:#f8fafc; border-right:1px solid #e2e8f0; padding:9px 14px; vertical-align:top;">
-            <div style="font-size:6pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px;">PO Number</div>
-            <div style="font-size:8.5pt; font-weight:bold; color:#0f172a;">{{ invoice.purchase_order_number }}</div>
-          </td>
-          {% endif %}
-          {% if invoice.payment_means_code %}
-          <td style="background-color:#f8fafc; padding:9px 14px; vertical-align:top;">
-            <div style="font-size:6pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px;">Payment Code</div>
-            <div style="font-size:8.5pt; font-weight:bold; color:#0f172a;">{{ invoice.payment_means_code }}</div>
-          </td>
-          {% endif %}
-        </tr>
-      </table>
-
-      {% if invoice.invoice_type == "credit_note" and invoice.reference_number %}
-      <div style="height:12px; font-size:1px;">&nbsp;</div>
-      <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
-        <tr>
-          <td style="background-color:#fff7ed; border-top:1px solid #fed7aa; border-right:1px solid #fed7aa; border-bottom:1px solid #fed7aa; border-left:3px solid #f97316; padding:8px 14px; font-size:8pt; color:#9a3412;">
-            <strong>Credit Note</strong> &mdash; References original invoice <strong>{{ invoice.reference_number }}</strong>
-          </td>
-        </tr>
-      </table>
+<!-- ══════════ 3. DATE STRIP ══════════ -->
+<div style="padding:0 30px;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; border:1px solid #e2e8f0; border-radius:6px; margin-top:16px;">
+    <tr>
+      <td style="border-right:1px solid #e2e8f0; padding:9px 12px; vertical-align:top;">
+        <div style="font-size:5.5pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px;">Issue Date</div>
+        <div style="font-size:8.5pt; font-weight:bold; color:#0f2557;">{{ invoice.issue_date|date:"d M Y" }}</div>
+      </td>
+      <td style="border-right:1px solid #e2e8f0; padding:9px 12px; vertical-align:top;">
+        <div style="font-size:5.5pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px;">Due Date</div>
+        <div style="font-size:8.5pt; font-weight:bold; color:#0f2557;">{% if invoice.due_date %}{{ invoice.due_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</div>
+      </td>
+      {% if invoice.invoice_type == 'continuous_supply' %}
+      <td style="border-right:1px solid #e2e8f0; padding:9px 12px; vertical-align:top;">
+        <div style="font-size:5.5pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px;">Period Start</div>
+        <div style="font-size:8.5pt; font-weight:bold; color:#0f2557;">{% if invoice.supply_date %}{{ invoice.supply_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</div>
+      </td>
+      <td style="border-right:1px solid #e2e8f0; padding:9px 12px; vertical-align:top;">
+        <div style="font-size:5.5pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px;">Period End</div>
+        <div style="font-size:8.5pt; font-weight:bold; color:#0f2557;">{% if invoice.supply_date_end %}{{ invoice.supply_date_end|date:"d M Y" }}{% else %}&mdash;{% endif %}</div>
+      </td>
+      {% else %}
+      <td style="border-right:1px solid #e2e8f0; padding:9px 12px; vertical-align:top;">
+        <div style="font-size:5.5pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px;">Supply Date</div>
+        <div style="font-size:8.5pt; font-weight:bold; color:#0f2557;">{% if invoice.supply_date %}{{ invoice.supply_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</div>
+      </td>
       {% endif %}
+      <td style="border-right:1px solid #e2e8f0; padding:9px 12px; vertical-align:top;">
+        <div style="font-size:5.5pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px;">Currency</div>
+        <div style="font-size:8.5pt; font-weight:bold; color:#0f2557;">{{ invoice.currency }}</div>
+      </td>
+      <td style="padding:9px 12px; vertical-align:top;">
+        <div style="font-size:5.5pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px;">PO Number</div>
+        <div style="font-size:8.5pt; font-weight:bold; color:#0f2557;">{% if invoice.purchase_order_number %}{{ invoice.purchase_order_number }}{% else %}&mdash;{% endif %}</div>
+      </td>
+    </tr>
+  </table>
+</div>
 
-      <div style="height:18px; font-size:1px;">&nbsp;</div>
+<!-- Credit note banner -->
+{% if invoice.invoice_type == "credit_note" and invoice.reference_number %}
+<div style="padding:0 30px;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; margin-top:14px;">
+    <tr>
+      <td style="background-color:#fffbeb; border:1px solid #fed7aa; border-left:3px solid #d97706; border-radius:4px; padding:8px 12px;">
+        <span style="font-size:6.5pt; font-weight:bold; color:#d97706;">CREDIT NOTE</span>
+        <span style="font-size:7pt; color:#9a3412;">&nbsp;&nbsp;References original invoice: <strong>{{ invoice.reference_number }}</strong></span>
+      </td>
+    </tr>
+  </table>
+</div>
+{% endif %}
 
-      <!-- ── From / Bill To ── -->
-      <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
-        <tr>
-
-          <!-- Supplier card -->
-          <td width="48%" style="vertical-align:top;">
-            <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
-              <tr>
-                <td style="background-color:#0f2557; padding:7px 13px;">
-                  <span style="font-size:7pt; font-weight:bold; color:#ffffff; text-transform:uppercase; letter-spacing:1px;">From Supplier</span>
-                </td>
-              </tr>
-              <tr>
-                <td style="background-color:#f8fafc; border-left:1px solid #dde5f0; border-right:1px solid #dde5f0; border-bottom:1px solid #dde5f0; padding:13px 13px; vertical-align:top;">
-                  <div style="font-size:10.5pt; font-weight:bold; color:#0f172a; line-height:1.3;">{{ invoice.company.name }}</div>
-                  {% if invoice.company.legal_name and invoice.company.legal_name != invoice.company.name %}
-                  <div style="font-size:7.5pt; color:#64748b; font-style:italic; margin-top:2px;">{{ invoice.company.legal_name }}</div>
-                  {% endif %}
-                  <div style="font-size:7.5pt; color:#64748b; margin-top:6px; line-height:1.8;">
-                    {% if invoice.company.street_address %}{{ invoice.company.street_address }}<br/>{% endif %}
-                    {% if invoice.company.city %}{{ invoice.company.city }}{% if invoice.company.emirate %}, {{ invoice.company.get_emirate_display }}{% endif %}<br/>{% endif %}
-                    {% if invoice.company.po_box %}P.O. Box {{ invoice.company.po_box }}<br/>{% endif %}
-                    {{ invoice.company.country }}
-                  </div>
-                  <div style="font-size:6pt; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-top:7px;">Tax Registration Number</div>
-                  <div style="font-size:8pt; font-weight:bold; color:#0f2557; font-family:Courier,monospace; margin-top:1px;">{{ invoice.company.trn }}</div>
-                  {% if invoice.company.phone %}<div style="font-size:7pt; color:#94a3b8; margin-top:3px;">{{ invoice.company.phone }}</div>{% endif %}
-                  {% if invoice.company.email %}<div style="font-size:7pt; color:#94a3b8; margin-top:1px;">{{ invoice.company.email }}</div>{% endif %}
-                </td>
-              </tr>
-            </table>
-          </td>
-
-          <td width="4%">&nbsp;</td>
-
-          <!-- Buyer card -->
-          <td width="48%" style="vertical-align:top;">
-            <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
-              <tr>
-                <td style="background-color:#0f2557; padding:7px 13px;">
-                  <span style="font-size:7pt; font-weight:bold; color:#ffffff; text-transform:uppercase; letter-spacing:1px;">Bill To (Buyer)</span>
-                </td>
-              </tr>
-              <tr>
-                <td style="background-color:#f8fafc; border-left:1px solid #dde5f0; border-right:1px solid #dde5f0; border-bottom:1px solid #dde5f0; padding:13px 13px; vertical-align:top;">
-                  <div style="font-size:10.5pt; font-weight:bold; color:#0f172a; line-height:1.3;">{{ invoice.customer.name }}</div>
-                  {% if invoice.customer.legal_name and invoice.customer.legal_name != invoice.customer.name %}
-                  <div style="font-size:7.5pt; color:#64748b; font-style:italic; margin-top:2px;">{{ invoice.customer.legal_name }}</div>
-                  {% endif %}
-                  <div style="font-size:7.5pt; color:#64748b; margin-top:6px; line-height:1.8;">
-                    {% if invoice.customer.street_address %}{{ invoice.customer.street_address }}<br/>{% endif %}
-                    {% if invoice.customer.city %}{{ invoice.customer.city }}{% if invoice.customer.state_province %}, {{ invoice.customer.state_province }}{% endif %}<br/>{% endif %}
-                    {{ invoice.customer.country }}
-                  </div>
-                  {% if invoice.customer.trn %}
-                  <div style="font-size:6pt; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-top:7px;">Tax Registration Number</div>
-                  <div style="font-size:8pt; font-weight:bold; color:#0f2557; font-family:Courier,monospace; margin-top:1px;">{{ invoice.customer.trn }}</div>
-                  {% elif invoice.customer.vat_number %}
-                  <div style="font-size:6pt; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-top:7px;">VAT Number</div>
-                  <div style="font-size:8pt; font-weight:bold; color:#0f2557; font-family:Courier,monospace; margin-top:1px;">{{ invoice.customer.vat_number }}</div>
-                  {% endif %}
-                  {% if invoice.customer.phone %}<div style="font-size:7pt; color:#94a3b8; margin-top:3px;">{{ invoice.customer.phone }}</div>{% endif %}
-                  {% if invoice.customer.email %}<div style="font-size:7pt; color:#94a3b8; margin-top:1px;">{{ invoice.customer.email }}</div>{% endif %}
-                </td>
-              </tr>
-            </table>
-          </td>
-
-        </tr>
-      </table>
-
-      <div style="height:20px; font-size:1px;">&nbsp;</div>
-
-      <!-- ── Line items ── -->
-      <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; border:1px solid #e2e8f0;">
-        <thead>
+<!-- ══════════ 4. PARTY CARDS ══════════ -->
+<div style="padding:0 30px;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; margin-top:16px;">
+    <tr>
+      <!-- Supplier card -->
+      <td width="48%" style="vertical-align:top;">
+        <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; border:1px solid #e2e8f0; border-radius:6px;">
           <tr>
-            <th width="4%"  style="background-color:#0f2557; padding:9px 7px; font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.7px; color:#ffffff; text-align:center; border-right:1px solid #1e3a7a;">#</th>
-            <th width="35%" style="background-color:#0f2557; padding:9px 8px; font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.7px; color:#ffffff; text-align:left;   border-right:1px solid #1e3a7a;">Description</th>
-            <th width="8%"  style="background-color:#0f2557; padding:9px 7px; font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.7px; color:#ffffff; text-align:right;  border-right:1px solid #1e3a7a;">Qty</th>
-            <th width="7%"  style="background-color:#0f2557; padding:9px 7px; font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.7px; color:#ffffff; text-align:center; border-right:1px solid #1e3a7a;">Unit</th>
-            <th width="12%" style="background-color:#0f2557; padding:9px 7px; font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.7px; color:#ffffff; text-align:right;  border-right:1px solid #1e3a7a;">Unit Price</th>
-            <th width="10%" style="background-color:#0f2557; padding:9px 7px; font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.7px; color:#ffffff; text-align:center; border-right:1px solid #1e3a7a;">VAT</th>
-            <th width="9%"  style="background-color:#0f2557; padding:9px 7px; font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.7px; color:#ffffff; text-align:right;  border-right:1px solid #1e3a7a;">VAT Amt</th>
-            <th width="15%" style="background-color:#0f2557; padding:9px 7px; font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.7px; color:#ffffff; text-align:right;">Total</th>
+            <td style="background-color:#0f2557; padding:7px 10px; border-bottom:1px solid #1e3e7e;">
+              <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+                <tr>
+                  <td width="22" style="width:22px; height:22px; background-color:#0d9488; border-radius:4px; vertical-align:middle; text-align:center; font-size:10pt; font-weight:bold; color:#ffffff;">{{ invoice.company.name|slice:":1"|upper }}</td>
+                  <td style="padding-left:7px; vertical-align:middle;">
+                    <span style="font-size:6.5pt; font-weight:bold; color:#ffffff; letter-spacing:0.8px; text-transform:uppercase;">Supplier</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {% for item in items %}
           <tr>
-            <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:10px 7px; text-align:center; border-bottom:1px solid #f1f5f9; border-right:1px solid #f1f5f9; color:#cbd5e1; font-weight:bold; font-size:8pt; vertical-align:middle;">{{ forloop.counter }}</td>
-            <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:10px 8px; border-bottom:1px solid #f1f5f9; border-right:1px solid #f1f5f9; vertical-align:middle;">
-              {% if item.item_name %}<div style="font-weight:bold; color:#0f172a; font-size:8.5pt;">{{ item.item_name }}</div>{% endif %}
-              <div style="font-size:{% if not item.item_name %}8.5pt; font-weight:bold; color:#0f172a;{% else %}7pt; color:#94a3b8;{% endif %} margin-top:2px;">{{ item.description }}</div>
-              {% if item.item_code %}<div style="font-size:6.5pt; color:#cbd5e1; margin-top:1px;">SKU: {{ item.item_code }}</div>{% endif %}
-            </td>
-            <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:10px 7px; text-align:right; border-bottom:1px solid #f1f5f9; border-right:1px solid #f1f5f9; color:#475569; vertical-align:middle;">{{ item.quantity }}</td>
-            <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:10px 7px; text-align:center; border-bottom:1px solid #f1f5f9; border-right:1px solid #f1f5f9; color:#94a3b8; vertical-align:middle;">{{ item.unit|default:"&mdash;" }}</td>
-            <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:10px 7px; text-align:right; border-bottom:1px solid #f1f5f9; border-right:1px solid #f1f5f9; font-weight:bold; color:#0f172a; vertical-align:middle;">{{ item.unit_price|floatformat:2 }}</td>
-            <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:10px 7px; text-align:center; border-bottom:1px solid #f1f5f9; border-right:1px solid #f1f5f9; vertical-align:middle;">
-              {% with v=item.vat_rate_type %}
-              <span class="vp {% if v == 'standard' %}vp-s{% elif v == 'zero' %}vp-z{% else %}vp-e{% endif %}">
-                {% if v == 'standard' %}5%{% elif v == 'zero' %}0%{% else %}Exempt{% endif %}
-              </span>
-              {% endwith %}
-            </td>
-            <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:10px 7px; text-align:right; border-bottom:1px solid #f1f5f9; border-right:1px solid #f1f5f9; color:#64748b; vertical-align:middle;">{{ item.vat_amount|floatformat:2 }}</td>
-            <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:10px 7px; text-align:right; border-bottom:1px solid #f1f5f9; font-weight:bold; color:#0f2557; vertical-align:middle;">{{ item.total_amount|floatformat:2 }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <div style="height:20px; font-size:1px;">&nbsp;</div>
-
-      <!-- ── Totals ── -->
-      <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
-        <tr>
-          <td width="46%">&nbsp;</td>
-          <td width="54%" style="vertical-align:top;">
-            <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; border:1px solid #e2e8f0;">
-              <tr>
-                <td style="background-color:#f8fafc; padding:9px 14px; font-size:8.5pt; color:#64748b; border-bottom:1px solid #eef2f8;">Subtotal</td>
-                <td style="background-color:#f8fafc; padding:9px 14px; font-size:8.5pt; font-weight:bold; color:#0f172a; text-align:right; border-bottom:1px solid #eef2f8;">{{ invoice.currency }}&nbsp;{{ invoice.subtotal|floatformat:2 }}</td>
-              </tr>
-              {% if invoice.discount_amount and invoice.discount_amount != "0.00" %}
-              <tr>
-                <td style="background-color:#f8fafc; padding:9px 14px; font-size:8.5pt; color:#dc2626; border-bottom:1px solid #eef2f8;">Discount</td>
-                <td style="background-color:#f8fafc; padding:9px 14px; font-size:8.5pt; font-weight:bold; color:#dc2626; text-align:right; border-bottom:1px solid #eef2f8;">&minus;&nbsp;{{ invoice.currency }}&nbsp;{{ invoice.discount_amount|floatformat:2 }}</td>
-              </tr>
-              <tr>
-                <td style="background-color:#f8fafc; padding:9px 14px; font-size:8.5pt; color:#64748b; border-bottom:1px solid #eef2f8;">Taxable Amount</td>
-                <td style="background-color:#f8fafc; padding:9px 14px; font-size:8.5pt; font-weight:bold; color:#0f172a; text-align:right; border-bottom:1px solid #eef2f8;">{{ invoice.currency }}&nbsp;{{ invoice.taxable_amount|floatformat:2 }}</td>
-              </tr>
+            <td style="padding:10px 12px; vertical-align:top;">
+              <div style="font-size:10pt; font-weight:bold; color:#0f172a; line-height:1.3;">{{ invoice.company.name }}</div>
+              {% if invoice.company.legal_name and invoice.company.legal_name != invoice.company.name %}
+              <div style="font-size:7pt; color:#64748b; font-style:italic; margin-top:1px;">{{ invoice.company.legal_name }}</div>
               {% endif %}
-              <tr>
-                <td style="background-color:#f8fafc; padding:9px 14px; font-size:8.5pt; color:#1d4ed8; border-bottom:1px solid #eef2f8;">VAT (5%)</td>
-                <td style="background-color:#f8fafc; padding:9px 14px; font-size:8.5pt; font-weight:bold; color:#1d4ed8; text-align:right; border-bottom:1px solid #eef2f8;">{{ invoice.currency }}&nbsp;{{ invoice.total_vat|floatformat:2 }}</td>
-              </tr>
-              <!-- Grand total row — navy bg, white text -->
-              <tr>
-                <td style="background-color:#0f2557; padding:13px 14px; font-size:11pt; font-weight:bold; color:#93c5fd;">Total Due</td>
-                <td style="background-color:#0f2557; padding:13px 14px; font-size:11pt; font-weight:bold; color:#ffffff; text-align:right;">{{ invoice.currency }}&nbsp;{{ invoice.total_amount|floatformat:2 }}</td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
+              <div style="font-size:7pt; color:#334155; margin-top:6px; line-height:1.8;">
+                {% if invoice.company.street_address %}{{ invoice.company.street_address }}<br/>{% endif %}
+                {% if invoice.company.city %}{{ invoice.company.city }}{% if invoice.company.emirate %}, {{ invoice.company.get_emirate_display }}{% endif %}<br/>{% endif %}
+                {% if invoice.company.po_box %}P.O. Box {{ invoice.company.po_box }}<br/>{% endif %}
+                {{ invoice.company.country }}
+              </div>
+              <table cellspacing="0" cellpadding="0" style="border-collapse:collapse; margin-top:6px;">
+                <tr>
+                  <td width="28" style="font-size:5.5pt; font-weight:bold; color:#94a3b8; letter-spacing:0.3px;">TRN</td>
+                  <td style="font-size:7.5pt; font-weight:bold; color:#0f2557; font-family:Courier,monospace;">{{ invoice.company.trn }}</td>
+                </tr>
+              </table>
+              {% if invoice.company.phone %}<div style="font-size:6.5pt; color:#64748b; margin-top:2px;">{{ invoice.company.phone }}</div>{% endif %}
+              {% if invoice.company.email %}<div style="font-size:6.5pt; color:#64748b; margin-top:1px;">{{ invoice.company.email }}</div>{% endif %}
+            </td>
+          </tr>
+        </table>
+      </td>
 
-      <!-- ── ASP References ── -->
-      {% if invoice.asp_submission_id %}
-      <div style="height:18px; font-size:1px;">&nbsp;</div>
-      <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; background-color:#f8fafc; border:1px solid #e2e8f0;">
-        <tr>
-          <td colspan="2" style="background-color:#f1f5f9; padding:5px 14px; border-bottom:1px solid #e2e8f0;">
-            <span style="font-size:7pt; font-weight:bold; color:#0f2557; text-transform:uppercase; letter-spacing:1px;">Electronic Submission References</span>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:6px 14px; width:38%; font-size:7pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; border-bottom:1px solid #f1f5f9;">ASP Submission ID</td>
-          <td style="padding:6px 14px; font-family:Courier,monospace; font-size:7.5pt; color:#334155; border-bottom:1px solid #f1f5f9;">{{ invoice.asp_submission_id }}</td>
-        </tr>
-        {% if invoice.asp_submitted_at %}
-        <tr>
-          <td style="padding:6px 14px; font-size:7pt; font-weight:bold; color:#94a3b8; text-transform:uppercase;">Submitted At</td>
-          <td style="padding:6px 14px; font-family:Courier,monospace; font-size:7.5pt; color:#334155;">{{ invoice.asp_submitted_at|date:"d M Y, H:i" }} UTC</td>
-        </tr>
+      <td width="4%">&nbsp;</td>
+
+      <!-- Buyer card -->
+      <td width="48%" style="vertical-align:top;">
+        <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; border:1px solid #e2e8f0; border-radius:6px;">
+          <tr>
+            <td style="background-color:#0f2557; padding:7px 10px; border-bottom:1px solid #1e3e7e;">
+              <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+                <tr>
+                  <td width="22" style="width:22px; height:22px; background-color:#0d9488; border-radius:4px; vertical-align:middle; text-align:center; font-size:10pt; font-weight:bold; color:#ffffff;">{{ invoice.customer.name|slice:":1"|upper }}</td>
+                  <td style="padding-left:7px; vertical-align:middle;">
+                    <span style="font-size:6.5pt; font-weight:bold; color:#ffffff; letter-spacing:0.8px; text-transform:uppercase;">Bill To (Buyer)</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 12px; vertical-align:top;">
+              <div style="font-size:10pt; font-weight:bold; color:#0f172a; line-height:1.3;">{{ invoice.customer.name }}</div>
+              {% if invoice.customer.legal_name and invoice.customer.legal_name != invoice.customer.name %}
+              <div style="font-size:7pt; color:#64748b; font-style:italic; margin-top:1px;">{{ invoice.customer.legal_name }}</div>
+              {% endif %}
+              <div style="font-size:7pt; color:#334155; margin-top:6px; line-height:1.8;">
+                {% if invoice.customer.street_address %}{{ invoice.customer.street_address }}<br/>{% endif %}
+                {% if invoice.customer.city %}{{ invoice.customer.city }}{% if invoice.customer.state_province %}, {{ invoice.customer.state_province }}{% endif %}<br/>{% endif %}
+                {{ invoice.customer.country }}
+              </div>
+              {% if invoice.customer.trn %}
+              <table cellspacing="0" cellpadding="0" style="border-collapse:collapse; margin-top:6px;">
+                <tr>
+                  <td width="28" style="font-size:5.5pt; font-weight:bold; color:#94a3b8; letter-spacing:0.3px;">TRN</td>
+                  <td style="font-size:7.5pt; font-weight:bold; color:#0f2557; font-family:Courier,monospace;">{{ invoice.customer.trn }}</td>
+                </tr>
+              </table>
+              {% elif invoice.customer.vat_number %}
+              <table cellspacing="0" cellpadding="0" style="border-collapse:collapse; margin-top:6px;">
+                <tr>
+                  <td width="28" style="font-size:5.5pt; font-weight:bold; color:#94a3b8; letter-spacing:0.3px;">VAT</td>
+                  <td style="font-size:7.5pt; font-weight:bold; color:#0f2557; font-family:Courier,monospace;">{{ invoice.customer.vat_number }}</td>
+                </tr>
+              </table>
+              {% endif %}
+              {% if invoice.customer.phone %}<div style="font-size:6.5pt; color:#64748b; margin-top:2px;">{{ invoice.customer.phone }}</div>{% endif %}
+              {% if invoice.customer.email %}<div style="font-size:6.5pt; color:#64748b; margin-top:1px;">{{ invoice.customer.email }}</div>{% endif %}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div style="height:18px; font-size:1px;">&nbsp;</div>
+
+<!-- ══════════ 5. LINE ITEMS TABLE ══════════ -->
+<div style="padding:0 30px;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; border:1px solid #e2e8f0; border-radius:6px;">
+    <thead>
+      <tr>
+        <th width="4%"  style="background-color:#0f2557; padding:8px 7px; font-size:6pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.6px; color:#ffffff; text-align:center; border-right:1px solid #1e3e7e;">#</th>
+        <th width="34%" style="background-color:#0f2557; padding:8px 8px; font-size:6pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.6px; color:#ffffff; text-align:left;   border-right:1px solid #1e3e7e;">Description</th>
+        <th width="7%"  style="background-color:#0f2557; padding:8px 7px; font-size:6pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.6px; color:#ffffff; text-align:right;  border-right:1px solid #1e3e7e;">Qty</th>
+        <th width="6%"  style="background-color:#0f2557; padding:8px 7px; font-size:6pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.6px; color:#ffffff; text-align:center; border-right:1px solid #1e3e7e;">Unit</th>
+        <th width="12%" style="background-color:#0f2557; padding:8px 7px; font-size:6pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.6px; color:#ffffff; text-align:right;  border-right:1px solid #1e3e7e;">Unit Price</th>
+        <th width="8%"  style="background-color:#0f2557; padding:8px 7px; font-size:6pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.6px; color:#ffffff; text-align:center; border-right:1px solid #1e3e7e;">VAT</th>
+        <th width="10%" style="background-color:#0f2557; padding:8px 7px; font-size:6pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.6px; color:#ffffff; text-align:right;  border-right:1px solid #1e3e7e;">VAT Amt</th>
+        <th width="13%" style="background-color:#0f2557; padding:8px 7px; font-size:6pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.6px; color:#ffffff; text-align:right;">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:7px 7px; text-align:center; border-bottom:1px solid #f1f5f9; border-right:1px solid #f1f5f9; color:#cbd5e1; font-weight:bold; font-size:7pt; vertical-align:middle;">{{ forloop.counter }}</td>
+        <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:7px 8px; border-bottom:1px solid #f1f5f9; border-right:1px solid #f1f5f9; vertical-align:middle;">
+          {% if item.item_name %}<div style="font-weight:bold; color:#0f172a; font-size:8pt;">{{ item.item_name }}</div>{% endif %}
+          <div style="font-size:{% if not item.item_name %}8pt; font-weight:bold; color:#0f172a;{% else %}6.5pt; color:#64748b;{% endif %} margin-top:1px;">{{ item.description }}</div>
+          {% if item.item_code %}<div style="font-size:6pt; color:#cbd5e1; margin-top:1px;">SKU: {{ item.item_code }}</div>{% endif %}
+        </td>
+        <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:7px 7px; text-align:right; border-bottom:1px solid #f1f5f9; border-right:1px solid #f1f5f9; color:#475569; vertical-align:middle;">{{ item.quantity }}</td>
+        <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:7px 7px; text-align:center; border-bottom:1px solid #f1f5f9; border-right:1px solid #f1f5f9; color:#94a3b8; font-size:7pt; vertical-align:middle;">{{ item.unit|default:"&mdash;" }}</td>
+        <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:7px 7px; text-align:right; border-bottom:1px solid #f1f5f9; border-right:1px solid #f1f5f9; font-weight:bold; color:#0f172a; font-size:7.5pt; vertical-align:middle;">{{ item.unit_price|floatformat:2 }}</td>
+        <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:7px 7px; text-align:center; border-bottom:1px solid #f1f5f9; border-right:1px solid #f1f5f9; vertical-align:middle;">
+          {% with v=item.vat_rate_type %}
+          <span class="vp {% if v == 'standard' %}vp-s{% elif v == 'zero' %}vp-z{% else %}vp-e{% endif %}">
+            {% if v == 'standard' %}5%{% elif v == 'zero' %}0%{% else %}Exempt{% endif %}
+          </span>
+          {% endwith %}
+        </td>
+        <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:7px 7px; text-align:right; border-bottom:1px solid #f1f5f9; border-right:1px solid #f1f5f9; color:#64748b; font-size:7.5pt; vertical-align:middle;">{{ item.vat_amount|floatformat:2 }}</td>
+        <td style="{% if forloop.counter|divisibleby:2 %}background-color:#f8fafc;{% endif %} padding:7px 7px; text-align:right; border-bottom:1px solid #f1f5f9; font-weight:bold; color:#0f2557; font-size:8pt; vertical-align:middle;">{{ item.total_amount|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div style="height:18px; font-size:1px;">&nbsp;</div>
+
+<!-- ══════════ 6. TOTALS + NOTES ══════════ -->
+<div style="padding:0 30px;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+    <tr>
+      <td width="46%" style="vertical-align:top; padding-right:14px;">
+        {% if invoice.notes %}
+        <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; border:1px solid #e2e8f0; border-left:3px solid #d97706; border-radius:4px;">
+          <tr>
+            <td style="background-color:#fffbeb; padding:9px 10px;">
+              <div style="font-size:6pt; font-weight:bold; color:#d97706; text-transform:uppercase; letter-spacing:0.7px; margin-bottom:4px;">Notes</div>
+              <div style="font-size:7pt; color:#334155; line-height:1.6;">{{ invoice.notes }}</div>
+            </td>
+          </tr>
+        </table>
         {% endif %}
-      </table>
-      {% endif %}
+      </td>
+      <td width="54%" style="vertical-align:top;">
+        <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; border:1px solid #e2e8f0; border-radius:6px;">
+          <tr>
+            <td style="background-color:#f8fafc; padding:7px 12px; font-size:7.5pt; color:#64748b; border-bottom:1px solid #f1f5f9;">Subtotal</td>
+            <td style="background-color:#f8fafc; padding:7px 12px; font-size:7.5pt; font-weight:bold; color:#0f172a; text-align:right; border-bottom:1px solid #f1f5f9;">{{ invoice.currency }}&nbsp;{{ invoice.subtotal|floatformat:2 }}</td>
+          </tr>
+          <tr>
+            <td style="background-color:#f8fafc; padding:7px 12px; font-size:7.5pt; color:#dc2626; border-bottom:1px solid #f1f5f9;">Discount</td>
+            <td style="background-color:#f8fafc; padding:7px 12px; font-size:7.5pt; font-weight:bold; color:#dc2626; text-align:right; border-bottom:1px solid #f1f5f9;">- {{ invoice.currency }}&nbsp;{{ invoice.discount_amount|floatformat:2 }}</td>
+          </tr>
+          <tr>
+            <td style="background-color:#f8fafc; padding:7px 12px; font-size:7.5pt; color:#64748b; border-bottom:1px solid #f1f5f9;">Taxable Amount</td>
+            <td style="background-color:#f8fafc; padding:7px 12px; font-size:7.5pt; font-weight:bold; color:#0f172a; text-align:right; border-bottom:1px solid #f1f5f9;">{{ invoice.currency }}&nbsp;{{ invoice.taxable_amount|floatformat:2 }}</td>
+          </tr>
+          <tr>
+            <td style="background-color:#f8fafc; padding:7px 12px; font-size:7.5pt; color:#2563eb; border-bottom:1px solid #f1f5f9;">VAT (5%)</td>
+            <td style="background-color:#f8fafc; padding:7px 12px; font-size:7.5pt; font-weight:bold; color:#2563eb; text-align:right; border-bottom:1px solid #f1f5f9;">{{ invoice.currency }}&nbsp;{{ invoice.total_vat|floatformat:2 }}</td>
+          </tr>
+          <!-- Grand total row — navy bg, teal text for key, white for value -->
+          <tr>
+            <td style="background-color:#0f2557; padding:12px 14px; font-size:10pt; font-weight:bold; color:#14b8a6;">Total Due</td>
+            <td style="background-color:#0f2557; padding:12px 14px; font-size:12pt; font-weight:bold; color:#ffffff; text-align:right;">{{ invoice.currency }}&nbsp;{{ invoice.total_amount|floatformat:2 }}</td>
+          </tr>
+          {% if invoice.amount_paid and invoice.amount_paid != "0.00" %}
+          <tr>
+            <td style="background-color:#f0fdf4; padding:6px 12px; font-size:7.5pt; color:#166534;">Amount Paid</td>
+            <td style="background-color:#f0fdf4; padding:6px 12px; font-size:7.5pt; font-weight:bold; color:#166534; text-align:right;">&minus;&nbsp;{{ invoice.currency }}&nbsp;{{ invoice.amount_paid|floatformat:2 }}</td>
+          </tr>
+          {% endif %}
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
 
-      <!-- ── Notes ── -->
-      {% if invoice.notes %}
-      <div style="height:14px; font-size:1px;">&nbsp;</div>
-      <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
-        <tr>
-          <td style="background-color:#fffbeb; border-top:1px solid #fde68a; border-right:1px solid #fde68a; border-bottom:1px solid #fde68a; border-left:4px solid #d97706; padding:11px 14px;">
-            <div style="font-size:6.5pt; font-weight:bold; color:#92400e; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Notes</div>
-            <div style="font-size:8pt; color:#44403c; line-height:1.7;">{{ invoice.notes }}</div>
-          </td>
-        </tr>
-      </table>
-      {% endif %}
+<!-- ══════════ 8. ASP REFERENCES ══════════ -->
+{% if invoice.asp_submission_id %}
+<div style="padding:0 30px;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; border:1px solid #e2e8f0; border-radius:6px; margin-top:12px;">
+    <tr>
+      <td colspan="2" style="background-color:#f8fafc; padding:5px 10px; border-bottom:1px solid #e2e8f0;">
+        <span style="font-size:6pt; font-weight:bold; color:#64748b; letter-spacing:0.6px; text-transform:uppercase;">Electronic Submission References &bull; 5-Corner Model</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:5px 10px; width:34%; font-size:7pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; border-bottom:1px solid #f1f5f9;">ASP Submission ID</td>
+      <td style="padding:5px 10px; font-family:Courier,monospace; font-size:7pt; color:#334155; border-bottom:1px solid #f1f5f9;">{{ invoice.asp_submission_id }}</td>
+    </tr>
+    {% if invoice.asp_submitted_at %}
+    <tr>
+      <td style="padding:5px 10px; font-size:7pt; font-weight:bold; color:#94a3b8; text-transform:uppercase;">Submitted At</td>
+      <td style="padding:5px 10px; font-family:Courier,monospace; font-size:7pt; color:#334155;">{{ invoice.asp_submitted_at|date:"d M Y, H:i" }} UTC</td>
+    </tr>
+    {% endif %}
+  </table>
+</div>
+{% endif %}
 
-      <div style="height:22px; font-size:1px;">&nbsp;</div>
+<!-- ══════════ 9. BOTTOM INFO BAR (DUE DATE / TYPE / ISSUER TRN) ══════════ -->
+<div style="padding:0 30px;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; border:1px solid #e2e8f0; border-radius:6px; background-color:#f0f4ff;">
+    <tr>
+      <td style="border-right:1px solid #e2e8f0; padding:7px 10px; vertical-align:middle;">
+        <div style="font-size:5.5pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:2px;">Due Date</div>
+        <div style="font-size:7.5pt; font-weight:bold; color:#991b1b;">{% if invoice.due_date %}{{ invoice.due_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</div>
+      </td>
+      <td style="border-right:1px solid #e2e8f0; padding:7px 10px; vertical-align:middle;">
+        <div style="font-size:5.5pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:2px;">Type</div>
+        <div style="font-size:7.5pt; font-weight:bold; color:#1e293b;">{{ invoice.get_invoice_type_display|upper }}</div>
+      </td>
+      <td style="padding:7px 10px; vertical-align:middle;">
+        <div style="font-size:5.5pt; font-weight:bold; color:#94a3b8; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:2px;">Issuer TRN</div>
+        <div style="font-size:7pt; font-family:Courier,monospace; color:#1e293b;">{{ invoice.company.trn }}</div>
+      </td>
+    </tr>
+  </table>
+</div>
 
-    </td>
-  </tr>
-</table>
+<div style="height:12px; font-size:1px;">&nbsp;</div>
 
-<!-- ══════════ FOOTER ══════════ -->
+<!-- ══════════ 10. FOOTER ══════════ -->
 <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
   <tr>
-    <td style="background-color:#0f2557; padding:12px 28px; vertical-align:middle;">
-      <span style="font-size:6.5pt; color:#475569; line-height:1.9;">
+    <td width="62%" style="background-color:#0f2557; padding:10px 30px; vertical-align:middle;">
+      <span style="font-size:6pt; color:#94a3b8; line-height:1.8;">
         Computer-generated tax invoice &bull; UAE Federal Decree-Law No. 8 of 2017 on Value Added Tax<br/>
-        Issuer TRN: <strong style="color:#94a3b8;">{{ invoice.company.trn }}</strong>
-        &nbsp;&bull;&nbsp; Taxable Amount: {{ invoice.currency }} {{ invoice.taxable_amount|floatformat:2 }}
+        Issuer TRN: <strong style="color:#cbd5e1;">{{ invoice.company.trn }}</strong>
+        &nbsp;&bull;&nbsp; Taxable Amount: <strong style="color:#cbd5e1;">{{ invoice.currency }} {{ invoice.taxable_amount|floatformat:2 }}</strong>
         &nbsp;&bull;&nbsp; Generated: {{ invoice.created_at|date:"d M Y" }}
       </span>
     </td>
-    <td style="background-color:#0f2557; padding:12px 28px 12px 0; text-align:right; vertical-align:middle; white-space:nowrap;">
-      <span style="display:inline-block; font-size:6pt; font-weight:bold; color:#0f2557; background-color:#d97706; padding:3px 8px; border-radius:3px; margin-left:3px;">PEPPOL BIS 3.0</span>
-      <span style="display:inline-block; font-size:6pt; font-weight:bold; color:#0f2557; background-color:#d97706; padding:3px 8px; border-radius:3px; margin-left:3px;">UBL 2.1</span>
-      <span style="display:inline-block; font-size:6pt; font-weight:bold; color:#0f2557; background-color:#d97706; padding:3px 8px; border-radius:3px; margin-left:3px;">FTA</span>
+    <td width="38%" style="background-color:#0f2557; padding:10px 30px 10px 0; text-align:right; vertical-align:middle; white-space:nowrap;">
+      <span style="display:inline-block; font-size:5.5pt; font-weight:bold; color:#14b8a6; background-color:#1a3a7a; border:1px solid #1e3e7e; padding:2px 5px; border-radius:3px; margin-left:4px;">BIS 3.0</span>
+      <span style="display:inline-block; font-size:5.5pt; font-weight:bold; color:#14b8a6; background-color:#1a3a7a; border:1px solid #1e3e7e; padding:2px 5px; border-radius:3px; margin-left:4px;">UAE PINT</span>
+      <span style="display:inline-block; font-size:5.5pt; font-weight:bold; color:#14b8a6; background-color:#1a3a7a; border:1px solid #1e3e7e; padding:2px 5px; border-radius:3px; margin-left:4px;">UBL 2.1</span>
+      <span style="display:inline-block; font-size:5.5pt; font-weight:bold; color:#14b8a6; background-color:#1a3a7a; border:1px solid #1e3e7e; padding:2px 5px; border-radius:3px; margin-left:4px;">FTA</span>
     </td>
   </tr>
+</table>
+
+<!-- ══════════ 10. BOTTOM TEAL ACCENT BAR ══════════ -->
+<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+  <tr><td style="height:5px; background-color:#0d9488; font-size:1px; line-height:1px;">&nbsp;</td></tr>
 </table>
 
 </body>

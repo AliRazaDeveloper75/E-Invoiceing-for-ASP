@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
@@ -65,6 +66,12 @@ export function Sidebar() {
   const { collapsed, toggle } = useSidebar();
   const router = useRouter();
 
+  const [open, setOpen] = useState(false);
+
+  const closeOnMobile = () => {
+    if (window.innerWidth < 640) toggle();
+  };
+
   const visibleNav = NAV.filter(
     ({ roles }) => roles === null || (user?.role && roles.includes(user.role))
   );
@@ -75,10 +82,10 @@ export function Sidebar() {
   return (
     <aside
       className={clsx(
-        'group/sidebar flex flex-col h-screen bg-gradient-to-b from-[#0f1b35] to-[#162040]',
+        'group/sidebar flex flex-col h-screen bg-gradient-to-b from-blue-950 to-indigo-950',
         'text-white fixed left-0 top-0 z-50 transition-all duration-300 ease-in-out',
         'border-r border-white/[0.06] shadow-2xl',
-        collapsed ? 'w-[68px]' : 'w-64',
+        collapsed ? 'w-0 sm:w-[68px] opacity-0 sm:opacity-100 pointer-events-none sm:pointer-events-auto' : 'w-full sm:w-64',
       )}
     >
       {/* ── Logo + toggle ─────────────────────────────────────── */}
@@ -89,7 +96,7 @@ export function Sidebar() {
         {!collapsed && (
           <div>
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-brand-500 flex items-center justify-center shrink-0">
+              <div className="h-7 w-7 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
                 <span className="text-white text-xs font-black">E</span>
               </div>
               <h1 className="text-[15px] font-bold tracking-tight text-white">E-Numerak</h1>
@@ -98,7 +105,7 @@ export function Sidebar() {
           </div>
         )}
         {collapsed && (
-          <div className="h-8 w-8 rounded-lg bg-brand-500 flex items-center justify-center">
+          <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center">
             <span className="text-white text-sm font-black">E</span>
           </div>
         )}
@@ -116,34 +123,96 @@ export function Sidebar() {
       {/* ── Company selector ──────────────────────────────────── */}
       {companies.length > 0 && !collapsed && (
         <div className="px-4 py-3 border-b border-white/[0.08] shrink-0">
-          <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1.5 font-semibold">
+          <p className="text-[10px] text-white/30 uppercase tracking-widest mb-2 font-semibold">
             Active Company
           </p>
+          {/* Current company card + dropdown trigger */}
           <div className="relative">
-            <select
-              value={activeCompany?.id ?? ''}
-              onChange={(e) => {
-                if (e.target.value === '__add_new__') {
-                  router.push('/companies?new=1');
-                } else {
-                  setActiveId(e.target.value);
-                }
-              }}
-              className="w-full bg-white/[0.07] text-white text-sm rounded-xl px-3 py-2 pr-8
-                         border border-white/[0.12] appearance-none cursor-pointer
-                         focus:outline-none focus:ring-2 focus:ring-brand-400/40
-                         hover:bg-white/[0.10] transition-colors"
+            <button
+              onClick={() => setOpen(!open)}
+              className={clsx(
+                'flex items-center gap-3 w-full rounded-xl px-3 py-2.5 border text-left transition-all',
+                open
+                  ? 'bg-white/[0.10] border-blue-400/40 shadow-sm shadow-blue-500/10'
+                  : 'bg-white/[0.06] border-white/[0.08] hover:bg-white/[0.10] hover:border-white/[0.12]',
+              )}
             >
-              {companies.map((c) => (
-                <option key={c.id} value={c.id} className="text-gray-900 bg-white">
-                  {c.name}
-                </option>
-              ))}
-              <option value="__add_new__" className="text-brand-600 bg-white font-semibold">
-                + Add new company
-              </option>
-            </select>
-            <ChevronDown className="absolute right-2.5 top-2.5 h-4 w-4 pointer-events-none text-white/40" />
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-sm shadow-blue-500/30">
+                <Building2 className="h-4 w-4 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-white truncate leading-tight">
+                  {activeCompany?.name ?? 'Select a company'}
+                </p>
+                {activeCompany?.trn && (
+                  <p className="text-[11px] text-white/40 truncate mt-0.5">TRN: {activeCompany.trn}</p>
+                )}
+              </div>
+              <ChevronDown className={clsx(
+                'h-4 w-4 text-white/40 shrink-0 transition-transform duration-200',
+                open && 'rotate-180',
+              )} />
+            </button>
+
+            {/* Dropdown menu */}
+            {open && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+                <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-xl border border-white/[0.12] bg-gradient-to-b from-slate-800 to-slate-900 shadow-2xl shadow-black/50 overflow-hidden">
+                  {companies.map((c) => {
+                    const isActive = c.id === activeCompany?.id;
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => { setActiveId(c.id); setOpen(false); }}
+                        className={clsx(
+                          'flex items-center gap-3 w-full px-3.5 py-2.5 text-left transition-all',
+                          isActive
+                            ? 'bg-blue-500/15 text-white'
+                            : 'text-white/70 hover:bg-white/[0.06] hover:text-white',
+                        )}
+                      >
+                        <div className={clsx(
+                          'h-7 w-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold transition-colors',
+                          isActive
+                            ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm shadow-blue-500/20'
+                            : 'bg-white/[0.06] text-white/40',
+                        )}>
+                          {c.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className={clsx(
+                              'text-sm truncate leading-tight',
+                              isActive ? 'font-semibold' : 'font-medium',
+                            )}>
+                              {c.name}
+                            </p>
+                            {isActive && (
+                              <span className="h-1.5 w-1.5 rounded-full bg-blue-400 shrink-0" />
+                            )}
+                          </div>
+                          {c.trn && (
+                            <p className="text-[11px] text-white/40 truncate mt-0.5">TRN: {c.trn}</p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                  {/* Divider */}
+                  <div className="h-px bg-white/[0.06] mx-3" />
+                  <button
+                    onClick={() => { router.push('/companies?new=1'); setOpen(false); }}
+                    className="flex items-center gap-3 w-full px-3.5 py-2.5 text-left text-blue-300 hover:bg-white/[0.06] hover:text-blue-200 transition-all font-medium text-sm"
+                  >
+                    <div className="h-7 w-7 rounded-lg border border-dashed border-blue-400/40 flex items-center justify-center shrink-0">
+                      <PlusCircle className="h-3.5 w-3.5" />
+                    </div>
+                    Add new company
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -176,10 +245,11 @@ export function Sidebar() {
             <NavTooltip key={href} label={label}>
               <Link
                 href={href}
+                onClick={closeOnMobile}
                 className={clsx(
                   'flex items-center justify-center w-full h-10 rounded-xl transition-all duration-150',
                   active
-                    ? 'bg-brand-500/20 text-brand-300 ring-1 ring-brand-500/30'
+                    ? 'bg-blue-500/20 text-blue-300 ring-1 ring-blue-500/30'
                     : 'text-white/50 hover:bg-white/10 hover:text-white',
                 )}
               >
@@ -190,6 +260,7 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
+              onClick={closeOnMobile}
               className={clsx(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group',
                 active
@@ -199,11 +270,11 @@ export function Sidebar() {
             >
               <Icon className={clsx(
                 'h-4 w-4 shrink-0 transition-colors',
-                active ? 'text-brand-400' : 'text-white/40 group-hover:text-white/70',
+                active ? 'text-blue-400' : 'text-white/40 group-hover:text-white/70',
               )} />
               <span>{label}</span>
               {active && (
-                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-brand-400 shrink-0" />
+                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-400 shrink-0" />
               )}
             </Link>
           );
@@ -229,7 +300,7 @@ export function Sidebar() {
       {!collapsed ? (
         <div className="px-4 py-4 border-t border-white/[0.08] shrink-0">
           <div className="flex items-center gap-3 mb-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600
                             flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-lg">
               {initials}
             </div>
@@ -260,7 +331,7 @@ export function Sidebar() {
       ) : (
         <div className="flex flex-col items-center gap-2 py-3 px-2 border-t border-white/[0.08] shrink-0">
           <NavTooltip label={user?.full_name ?? 'User'}>
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600
                             flex items-center justify-center text-sm font-bold text-white shadow-lg cursor-default">
               {initials}
             </div>

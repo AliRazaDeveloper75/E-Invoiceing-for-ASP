@@ -77,8 +77,8 @@ export default function ContactPage() {
             }}
           />
         </div>
-        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 lg:py-36">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 lg:py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
 
             {/* Left: Text content */}
             <div className="max-w-xl">
@@ -100,6 +100,18 @@ export default function ContactPage() {
                 <p className="text-lg sm:text-xl text-blue-100/90 leading-relaxed max-w-2xl">
                   {t('contact.hero.body')}
                 </p>
+              </AnimatedSection>
+              <AnimatedSection delay={450} direction="up">
+                <div className="flex flex-wrap gap-3 mt-8">
+                  {['Email Support', 'Phone Support', 'Live Chat', '24/7 Help'].map((badge) => (
+                    <span
+                      key={badge}
+                      className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-blue-200 text-xs font-medium"
+                    >
+                      {badge}
+                    </span>
+                  ))}
+                </div>
               </AnimatedSection>
             </div>
 
@@ -331,14 +343,10 @@ export default function ContactPage() {
                           </div>
                         )}
 
-                        <div className="flex items-center justify-between pt-2">
-                          <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <Clock className="h-3.5 w-3.5" />
-                            Average response: &lt; 24 hours
-                          </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-0 pt-2">
                           <button
                             type="submit" disabled={submitting}
-                            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-brand-900 to-brand-700 hover:from-brand-700 hover:to-brand-600 text-white font-semibold text-sm shadow-lg shadow-brand-900/25 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-brand-900 to-brand-700 hover:from-brand-700 hover:to-brand-600 text-white font-semibold text-sm shadow-lg shadow-brand-900/25 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                           >
                             {submitting ? (
                               <span className="flex items-center gap-2">
@@ -346,12 +354,16 @@ export default function ContactPage() {
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                 </svg>
-                                {t('contact.sending')}
+                                Sending...
                               </span>
                             ) : (
                               <>{t('contact.send')} <Send className="h-4 w-4" /></>
                             )}
                           </button>
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <Clock className="h-3.5 w-3.5 shrink-0" />
+                            Average response: &lt; 24 hours
+                          </div>
                         </div>
                       </form>
                     )}

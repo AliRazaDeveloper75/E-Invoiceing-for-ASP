@@ -9,6 +9,7 @@ import QRCode from 'qrcode';
 import { api } from '@/lib/api';
 import { useCompany } from '@/hooks/useCompany';
 import { Button } from '@/components/ui/Button';
+import { AnimatedSection } from '@/app/(landing)/AnimatedSection';
 import {
   Trash2, Plus, FileText, RotateCcw, RefreshCw,
   CheckCircle2, ArrowLeft, AlertTriangle,
@@ -318,7 +319,7 @@ function TypeCard({ card, selected, onSelect }: { card: CardType; selected: bool
 function GroupHeading({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle: string }) {
   return (
     <div className="flex items-center gap-3 mb-4">
-      <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gray-100 text-gray-600 shrink-0">
+      <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/20 shrink-0">
         {icon}
       </div>
       <div>
@@ -357,25 +358,27 @@ function Section({ title, subtitle, icon, children }: {
   title: string; subtitle?: string; icon?: React.ReactNode; children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-      <div className="px-5 py-3.5 border-b border-gray-100 bg-gradient-to-r from-blue-50 via-indigo-50/40 to-white flex items-start gap-3">
+    <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-200 overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-gray-100 bg-gradient-to-r from-blue-950 to-indigo-950 flex items-start gap-3 relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid opacity-[0.04] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
         {icon && (
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm shadow-blue-200 shrink-0">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/30 shrink-0 relative z-10">
             {icon}
           </div>
         )}
-        <div className="min-w-0">
-          <p className="font-bold text-gray-900 text-sm tracking-tight">{title}</p>
-          {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+        <div className="min-w-0 relative z-10">
+          <p className="font-bold text-white text-sm tracking-tight">{title}</p>
+          {subtitle && <p className="text-xs text-blue-200/60 mt-0.5">{subtitle}</p>}
         </div>
       </div>
-      <div className="p-5 space-y-4">{children}</div>
+      <div className="p-5 sm:p-6 space-y-4">{children}</div>
     </div>
   );
 }
 
 const inputCls = (err?: string) =>
-  `w-full text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${err ? 'border-red-400' : 'border-gray-300'}`;
+  `w-full text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 ${err ? 'border-red-400' : 'border-gray-300'}`;
 
 // Reusable text rule: at most 20 words, and each word at most 15 characters.
 // Blocks long gibberish strings while allowing normal multi-word text.
@@ -415,7 +418,7 @@ function flattenServerErrors(details: unknown, prefix = ''): string[] {
   return out;
 }
 
-const selectCls = 'w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500';
+const selectCls = 'w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400';
 
 // ─── Excel columns (order matters — matches sample template) ──────────────────
 
@@ -577,7 +580,7 @@ function ExcelUploadButton({
       <button
         type="button"
         onClick={downloadSampleExcel}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
       >
         <Download className="h-3.5 w-3.5" />
         Download Template
@@ -588,12 +591,12 @@ function ExcelUploadButton({
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={status === 'parsing'}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-300 bg-blue-50 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-xs font-semibold text-white shadow-sm hover:shadow transition-all duration-200 disabled:opacity-50"
       >
         {status === 'parsing'
           ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
           : <Upload className="h-3.5 w-3.5" />}
-        {status === 'parsing' ? 'Reading…' : 'Upload Excel / CSV'}
+        {status === 'parsing' ? 'Reading\u2026' : 'Upload Excel / CSV'}
       </button>
 
       <input
@@ -642,7 +645,7 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, produc
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-gray-50/40 p-4 space-y-3">
+    <div className="rounded-xl border-2 border-gray-200 bg-white p-4 space-y-3 shadow-sm hover:shadow-md transition-shadow duration-200">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Item #{idx + 1}</span>
         {canRemove && (
@@ -659,7 +662,7 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, produc
           <select
             defaultValue=""
             onChange={(e) => { applyProduct(e.target.value); e.target.value = ''; }}
-            className={selectCls + ' mt-1'}
+            className={selectCls + ' mt-1 border-gray-200'}
           >
             <option value="">— Select a saved product to auto-fill —</option>
             {products.map((p) => (
@@ -781,14 +784,14 @@ function FormStepper({ steps, current }: { steps: StepDef[]; current?: number })
   const allDone   = activeIdx === -1;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 mb-5">
+    <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg shadow-gray-200/50 px-5 py-4 mb-5">
       {/* Progress bar track */}
       <div className="relative mb-4">
         {/* Background track */}
         <div className="absolute top-[18px] left-0 right-0 h-0.5 bg-gray-100 mx-6" />
         {/* Filled track */}
         <div
-          className="absolute top-[18px] left-0 h-0.5 bg-gradient-to-r from-blue-500 to-emerald-500 mx-6 transition-all duration-500"
+          className="absolute top-[18px] left-0 h-0.5 bg-gradient-to-r from-blue-500 to-indigo-600 mx-6 transition-all duration-500"
           style={{
             width: allDone
               ? 'calc(100% - 3rem)'
@@ -809,7 +812,7 @@ function FormStepper({ steps, current }: { steps: StepDef[]; current?: number })
                 <div className={`
                   w-9 h-9 rounded-full flex items-center justify-center z-10 transition-all duration-300 shrink-0
                   ${isDone    ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-md shadow-emerald-200' : ''}
-                  ${isActive  ? 'bg-gradient-to-br from-blue-500 to-blue-700 shadow-md shadow-blue-200 ring-4 ring-blue-100' : ''}
+                  ${isActive  ? 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md shadow-indigo-200 ring-4 ring-indigo-100' : ''}
                   ${isUpcoming? 'bg-gray-100 border-2 border-gray-200' : ''}
                 `}>
                   {isDone ? (
@@ -825,7 +828,7 @@ function FormStepper({ steps, current }: { steps: StepDef[]; current?: number })
                 {/* Label */}
                 <div className="text-center max-w-[72px]">
                   <p className={`text-[10px] font-bold leading-tight truncate
-                    ${isDone ? 'text-emerald-600' : isActive ? 'text-blue-600' : 'text-gray-400'}`}>
+                    ${isDone ? 'text-emerald-600' : isActive ? 'text-indigo-600' : 'text-gray-400'}`}>
                     {step.label}
                   </p>
                   <p className="text-[9px] text-gray-400 leading-tight mt-0.5 truncate hidden sm:block">
@@ -842,7 +845,7 @@ function FormStepper({ steps, current }: { steps: StepDef[]; current?: number })
       <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs
         ${allDone
           ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-          : 'bg-blue-50 border border-blue-100 text-blue-700'}`}>
+          : 'bg-indigo-50 border border-indigo-100 text-indigo-700'}`}>
         {allDone ? (
           <>
             <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -852,7 +855,7 @@ function FormStepper({ steps, current }: { steps: StepDef[]; current?: number })
           </>
         ) : (
           <>
-            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse shrink-0" />
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shrink-0" />
             <span>
               <span className="font-semibold">Step {activeIdx + 1}:</span>{' '}
               {steps[activeIdx]?.label} — {steps[activeIdx]?.sub}
@@ -1155,7 +1158,7 @@ export default function NewInvoicePage() {
     },
   });
 
-  const { fields, append, remove } = useFieldArray({ control, name: 'items' });
+  const { fields, append, remove, replace } = useFieldArray({ control, name: 'items' });
 
   // ── Auto-draft (crash / power-loss proof) ─────────────────────────────────
   type DraftShape = { form: InvoiceForm; selected: CardType | null };
@@ -1210,15 +1213,30 @@ export default function NewInvoicePage() {
       .catch(() => {});
   }, [activeId, draftKey, draftIsEmpty]);
 
+  const [restoreForm, setRestoreForm] = useState<InvoiceForm | null>(null);
+
   const resumeDraft = useCallback(() => {
+    let data: DraftShape | null = null;
     setRestorable((cur) => {
-      if (cur) {
-        if (cur.data.selected) setSelected(cur.data.selected);
-        reset(cur.data.form);
-      }
+      data = cur?.data ?? null;
       return null;
     });
-  }, [reset]);
+    if (data) {
+      if (data.selected) {
+        const allCards = [...DOCUMENT_TYPES, ...SALES_TYPES, ...PURCHASE_TYPES];
+        const match = allCards.find(c => c.value === data.selected!.value);
+        setSelected(match ?? data.selected);
+      }
+      setRestoreForm(data.form);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (restoreForm && selected) {
+      reset(restoreForm);
+      setRestoreForm(null);
+    }
+  }, [restoreForm, selected, reset]);
 
   const discardDraft = useCallback(() => {
     clearDraft(draftKey);
@@ -1309,7 +1327,7 @@ export default function NewInvoicePage() {
       case 1: return ['customer_id', 'customer_location'];     // Buyer
       case 2: return ['items'];                                 // Product Catalog — validate all line-item fields
       case 3: return [                                          // Payment & Sign
-        'issue_date', 'due_date', 'exchange_rate', 'discount_amount',
+        'issue_date', 'due_date', 'exchange_rate', 'discount_amount', 'currency',
         'gl_account_id', 'permit_number', 'transaction_id', 'purchase_order_number',
         ...(needRef ? ['reference_number' as keyof InvoiceForm] : []),
       ];
@@ -1455,7 +1473,7 @@ export default function NewInvoicePage() {
       </p>
       <div className="flex items-center gap-2">
         <button onClick={resumeDraft}
-          className="px-4 py-1.5 rounded-lg bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 transition-colors">
+          className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white text-sm font-semibold hover:from-amber-400 hover:to-amber-500 shadow-sm hover:shadow transition-all duration-200">
           Resume
         </button>
         <button onClick={discardDraft}
@@ -1475,38 +1493,50 @@ export default function NewInvoicePage() {
   // ── Step 1: Select type / supply category ──────────────────────────────────
   if (!selected) {
     return (
-      <div className="max-w-5xl space-y-10">
+      <div className="space-y-10">
         {restoreBanner}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">New Invoice</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Select the invoice type — the form will show only the relevant UAE FTA fields.
-          </p>
-        </div>
 
-        <div>
+        {/* Header card */}
+        <AnimatedSection>
+          <div className="bg-gradient-to-br from-blue-950 to-indigo-950 rounded-2xl border border-white/10 shadow-2xl shadow-blue-950/30 p-5 sm:p-7 relative overflow-hidden">
+            <div className="absolute inset-0 bg-grid opacity-[0.04] pointer-events-none" />
+            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative">
+              <div className="flex items-center gap-2.5 mb-1">
+                <div className="h-2 w-2 rounded-full bg-blue-400" />
+                <span className="text-[11px] font-semibold text-blue-200/70 uppercase tracking-[0.12em]">Invoicing</span>
+              </div>
+              <h1 className="text-xl font-bold text-white tracking-tight">New Invoice</h1>
+              <p className="text-sm text-blue-200/60 mt-0.5">
+                Select the invoice type — the form will show only the relevant UAE FTA fields.
+              </p>
+            </div>
+          </div>
+        </AnimatedSection>
+
+        <AnimatedSection delay={100}>
           <GroupHeading icon={<FileText className="h-4 w-4" />} title="Document Types"
             subtitle="UAE FTA Req 12 & 13 — Tax invoices, credit notes and debit notes" />
           <div className="grid grid-cols-3 gap-4">
             {DOCUMENT_TYPES.map((t) => <TypeCard key={t.value} card={t} selected={false} onSelect={() => pickCard(t)} />)}
           </div>
-        </div>
+        </AnimatedSection>
 
-        <div>
+        <AnimatedSection delay={200}>
           <GroupHeading icon={<TrendingUp className="h-4 w-4" />} title="Sales / Output Supplies"
             subtitle="UAE FTA Req 1.1–1.9 — Supply categories for VAT return output tax (Boxes 1–6)" />
           <div className="grid grid-cols-3 gap-4">
             {SALES_TYPES.map((t) => <TypeCard key={t.value} card={t} selected={false} onSelect={() => pickCard(t)} />)}
           </div>
-        </div>
+        </AnimatedSection>
 
-        <div>
+        <AnimatedSection delay={300}>
           <GroupHeading icon={<TrendingDown className="h-4 w-4" />} title="Purchases / Input Tax"
             subtitle="UAE FTA Req 1.10–1.14 — Purchase categories for VAT return input tax recovery (Boxes 10–14)" />
           <div className="grid grid-cols-3 gap-4">
             {PURCHASE_TYPES.map((t) => <TypeCard key={t.value} card={t} selected={false} onSelect={() => pickCard(t)} />)}
           </div>
-        </div>
+        </AnimatedSection>
       </div>
     );
   }
@@ -1518,41 +1548,48 @@ export default function NewInvoicePage() {
       {savedIndicator}
 
       {/* Page header */}
-      <div className="mb-5">
-        <button type="button" onClick={() => setSelected(null)}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-3">
-          <ArrowLeft className="h-4 w-4" /> Back to invoice types
-        </button>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${accent.bg}`}>
-            <span className={accent.icon}>{selected.icon}</span>
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold text-gray-900">{selected.title}</h1>
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${accent.badge}`}>{selected.boxRef}</span>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 border border-indigo-200">{selected.reqRef}</span>
+      <AnimatedSection>
+        <div className="bg-gradient-to-br from-blue-950 to-indigo-950 rounded-2xl border border-white/10 shadow-2xl shadow-blue-950/30 p-5 sm:p-6 relative overflow-hidden mb-5">
+          <div className="absolute inset-0 bg-grid opacity-[0.04] pointer-events-none" />
+          <div className="absolute top-0 right-0 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10">
+            <button type="button" onClick={() => setSelected(null)}
+              className="flex items-center gap-1.5 text-sm text-blue-200/70 hover:text-white mb-3 transition-colors">
+              <ArrowLeft className="h-4 w-4" /> Back to invoice types
+            </button>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 shrink-0">
+                {selected.icon}
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl font-bold text-white tracking-tight">{selected.title}</h1>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${accent.badge}`}>{selected.boxRef}</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-200 border border-indigo-500/30">{selected.reqRef}</span>
+                </div>
+                <p className="text-sm text-blue-200/60 mt-0.5">{selected.subtitle}</p>
+              </div>
             </div>
-            <p className="text-sm text-gray-500 mt-0.5">{selected.subtitle}</p>
           </div>
         </div>
-      </div>
+      </AnimatedSection>
 
       {/* Progress stepper */}
       <FormStepper steps={STEPS} current={step} />
 
       {/* Two-column layout: form + preview. On the Review step we go full-width
           and show the invoice as one professional document instead. */}
-      <div className={step === 5 ? '' : 'grid grid-cols-[1fr_360px] gap-6 items-start'}>
+      <div className={step === 5 ? '' : 'grid grid-cols-[1fr_420px] gap-6 items-start'}>
 
         {/* ── LEFT: Form ── */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 min-w-0" noValidate>
 
           {/* STEP 0 — Your Info (seller) */}
           {step === 0 && (
+            <AnimatedSection>
             <Section title="Your Info" icon={<Building2 className="h-4 w-4" />} subtitle="Your company (seller) details">
-              <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shrink-0">
+              <div className="flex items-center gap-3 rounded-xl border-2 border-gray-200 bg-white p-3 shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-blue-500/20 shrink-0">
                   {(activeCompany?.name ?? 'CO').slice(0, 2).toUpperCase()}
                 </div>
                 <div className="min-w-0">
@@ -1585,8 +1622,9 @@ export default function NewInvoicePage() {
                     <option value="b2g">B2G — Business to Government</option>
                   </select>
                 </Field>
-                <Field label="Payment Method" hint="UN/ECE UNCL 4461 — mandatory for UBL PaymentMeans element">
-                  <select className={selectCls} {...register('payment_means_code')}>
+                <Field label="Payment Method" hint="UN/ECE UNCL 4461 — mandatory for UBL PaymentMeans element"
+                  error={errors.payment_means_code?.message}>
+                  <select className={selectCls} {...register('payment_means_code', { required: 'Payment method is required' })}>
                     <option value="30">30 — Credit Transfer</option>
                     <option value="10">10 — Cash</option>
                     <option value="20">20 — Cheque</option>
@@ -1598,10 +1636,12 @@ export default function NewInvoicePage() {
                 </Field>
               </div>
             </Section>
+            </AnimatedSection>
           )}
 
           {/* STEP 1 — Buyer */}
           {step === 1 && (
+            <AnimatedSection delay={100}>
             <Section title="Buyer" icon={<Building2 className="h-4 w-4" />} subtitle="Select the customer being invoiced">
               <Field label="Customer (Buyer)" required
                 tooltip="The business or person being invoiced. For B2B/B2G the customer must have a valid 15-digit TRN. Pick '+ Add new customer' to create one."
@@ -1637,13 +1677,15 @@ export default function NewInvoicePage() {
                   })} />
               </Field>
             </Section>
+            </AnimatedSection>
           )}
 
           {/* STEP 2 — Product Catalog (supply classification + line items) */}
-          {step === 2 && (<>
+          {step === 2 && (
+          <AnimatedSection delay={200}>
           {/* Supply Classification */}
           <Section title="Supply Classification" icon={<ShieldCheck className="h-4 w-4" />} subtitle={`UAE VAT Return ${selected.boxRef} — ${selected.reqRef}`}>
-            <div className={`flex items-center gap-3 rounded-lg border p-3 ${accent.border} ${accent.bg}`}>
+            <div className={`flex items-center gap-3 rounded-xl border-2 p-3 ${accent.border} ${accent.bg}`}>
               <span className={accent.icon}>{selected.icon}</span>
               <div className="flex-1">
                 <p className={`text-sm font-semibold ${accent.icon}`}>{selected.title}</p>
@@ -1658,8 +1700,8 @@ export default function NewInvoicePage() {
                 </select>
               </Field>
             )}
-            <label className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 cursor-pointer">
-              <input type="checkbox" className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" {...register('is_reverse_charge')} />
+            <label className="flex items-start gap-3 rounded-xl border-2 border-gray-200 bg-white p-3 cursor-pointer hover:border-gray-300 transition-colors">
+              <input type="checkbox" className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500/30" {...register('is_reverse_charge')} />
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-900">Reverse Charge Mechanism applies</p>
                 <p className="text-xs text-gray-500 mt-0.5">VAT liability transfers to the buyer — required for imports subject to reverse charge (Box 1c).</p>
@@ -1667,10 +1709,12 @@ export default function NewInvoicePage() {
               {isReverse && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 shrink-0">RC Active</span>}
             </label>
           </Section>
-          </>)}
+          </AnimatedSection>
+          )}
 
           {/* STEP 3 — Payment & Sign (dates, references, currency) */}
-          {step === 3 && (<>
+          {step === 3 && (
+          <AnimatedSection delay={300}>
           {/* Invoice Dates */}
           <Section title="Invoice Dates" icon={<FileText className="h-4 w-4" />} subtitle="Invoice dates, transaction dates, tax payment dates">
             <div className="grid grid-cols-2 gap-4">
@@ -1759,8 +1803,9 @@ export default function NewInvoicePage() {
           <Section title="Currency & Financials" icon={<CreditCard className="h-4 w-4" />} subtitle="VAT amounts in actual currency and AED">
             <div className="grid grid-cols-3 gap-4">
               <Field label="Currency" required
-                tooltip="The currency this invoice is issued in. Non-AED invoices require an exchange rate to AED for FTA reporting.">
-                <select className={selectCls} {...register('currency')}>
+                tooltip="The currency this invoice is issued in. Non-AED invoices require an exchange rate to AED for FTA reporting."
+                error={errors.currency?.message}>
+                <select className={selectCls} {...register('currency', { required: 'Currency is required' })}>
                   <option value="AED">AED — UAE Dirham</option>
                   <option value="USD">USD — US Dollar</option>
                   <option value="EUR">EUR — Euro</option>
@@ -1773,7 +1818,7 @@ export default function NewInvoicePage() {
                 tooltip={isAED ? 'Always 1.0 for AED invoices.' : 'Rate used to convert all VAT amounts to AED for FTA reporting. Must be greater than 0.'}
                 error={errors.exchange_rate?.message}>
                 <input type="number" step="0.000001" min="0.000001" disabled={isAED}
-                  className={`w-full text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isAED ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed' : errors.exchange_rate ? 'border-red-400' : 'border-gray-300'}`}
+                  className={`w-full text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 ${isAED ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed' : errors.exchange_rate ? 'border-red-400' : 'border-gray-300'}`}
                   {...register('exchange_rate', {
                     validate: (v) => {
                       if (isAED) return true;
@@ -1804,10 +1849,12 @@ export default function NewInvoicePage() {
               </div>
             )}
           </Section>
-          </>)}
+          </AnimatedSection>
+          )}
 
           {/* STEP 2 (cont.) — Line Items */}
           {step === 2 && (
+          <AnimatedSection delay={200}>
           <Section title="Line Items" icon={<Package className="h-4 w-4" />} subtitle="Description, product/service references, tax codes, debit/credit amounts, VAT amounts">
 
             {/* Excel toolbar */}
@@ -1842,19 +1889,21 @@ export default function NewInvoicePage() {
               onClick={() => append({ item_name: '', description: '', product_reference: '', quantity: '1', unit: '',
                 unit_price: '', vat_rate_type: vatLocked ? 'out_of_scope' : (selected.vatRate ?? 'standard'),
                 tax_code: '', debit_amount: '', credit_amount: '' })}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-gray-300
-                         text-sm font-medium text-gray-600 hover:border-gray-400 hover:text-gray-700 w-full justify-center">
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-gray-300
+                         text-sm font-medium text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50/50 w-full justify-center transition-all duration-200">
               <Plus className="h-4 w-4" /> Add Line Item
             </button>
           </Section>
+          </AnimatedSection>
           )}
 
           {/* STEP 5 — Review */}
-          {step === 5 && (<>
+          {step === 5 && (
+          <AnimatedSection delay={400}>
           {/* Optional notes — compact, above the document */}
           <Section title="Notes" icon={<FileText className="h-4 w-4" />} subtitle="Optional — appended to the invoice">
             <textarea rows={2} placeholder="Optional notes…"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 resize-none"
               {...register('notes')} />
           </Section>
 
@@ -1867,8 +1916,8 @@ export default function NewInvoicePage() {
               <h2 className="text-sm font-bold text-gray-900 tracking-tight">Review your invoice</h2>
               <span className="text-xs text-gray-400">— confirm everything is correct, then submit</span>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-100 via-slate-50 to-white p-5 sm:p-10 flex justify-center">
-              <div className="w-full max-w-md">
+            <div className="rounded-2xl border-2 border-gray-200 bg-gradient-to-b from-gray-50 via-white to-white p-5 sm:p-8 lg:p-12 flex justify-center shadow-lg shadow-gray-200/50">
+              <div className="w-full max-w-lg">
                 <InvoicePreview
                   card={selected}
                   companyName={activeCompany?.name ?? ''}
@@ -1886,13 +1935,15 @@ export default function NewInvoicePage() {
               Audit metadata (GL/ID, permit, transaction ID, supply category) is automatically appended on save.
             </p>
           </div>
-          </>)}
+          </AnimatedSection>
+          )}
 
           {/* STEP 4 — Print Code */}
           {step === 4 && (
+          <AnimatedSection delay={500}>
           <Section title="Print Code" icon={<QrCode className="h-4 w-4" />} subtitle="Scan-to-verify QR code — printed on the final invoice">
             <div className="flex flex-col sm:flex-row items-center gap-5">
-              <div className="shrink-0 rounded-xl border-2 border-gray-100 bg-white p-3 shadow-sm">
+              <div className="shrink-0 rounded-xl border-2 border-gray-200 bg-white p-3 shadow-lg shadow-gray-200/50">
                 {qrUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={qrUrl} alt="Invoice verification QR code" className="w-36 h-36" />
@@ -1918,10 +1969,12 @@ export default function NewInvoicePage() {
               </div>
             </div>
           </Section>
+          </AnimatedSection>
           )}
 
           {/* STEP 6 — Submit */}
           {step === 6 && (
+            <AnimatedSection delay={600}>
             <Section title="Submit" icon={<CheckCircle2 className="h-4 w-4" />} subtitle="Confirm and create the invoice">
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 flex items-start gap-2">
                 <ShieldCheck className="h-5 w-5 shrink-0" />
@@ -1931,6 +1984,7 @@ export default function NewInvoicePage() {
                 </div>
               </div>
             </Section>
+            </AnimatedSection>
           )}
 
           {/* Error */}
@@ -1949,16 +2003,17 @@ export default function NewInvoicePage() {
           {/* Wizard navigation */}
           <div className="flex items-center justify-between pt-2">
             <button type="button" onClick={step === 0 ? () => router.back() : goBack}
-              className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">
+              className="px-4 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200">
               {step === 0 ? 'Cancel' : step === 5 ? '← Edit' : '← Back'}
             </button>
             {step < 5 ? (
               <button type="button" onClick={goNext}
-                className="px-8 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors">
+                className="inline-flex items-center gap-2 px-8 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-200">
                 Next →
               </button>
             ) : (
-              <Button type="submit" disabled={isSubmitting || submitted} className="px-8">
+              <Button type="submit" disabled={isSubmitting || submitted}
+                className="inline-flex items-center gap-2 px-8 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50">
                 {isSubmitting || submitted
                   ? <span className="flex items-center gap-2"><RefreshCw className="h-4 w-4 animate-spin" /> Creating…</span>
                   : <span className="flex items-center gap-2"><FileText className="h-4 w-4" /> Submit &amp; Create Invoice</span>
@@ -1970,28 +2025,31 @@ export default function NewInvoicePage() {
 
         {/* ── RIGHT: Live preview — hidden on the Review step (shown full-width there). ── */}
         {step !== 5 && (
-        <div className="sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50 via-indigo-50/40 to-white p-4 shadow-sm [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Invoice Preview</p>
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
+        <div className="sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto rounded-2xl border border-white/10 bg-gradient-to-br from-blue-950 to-indigo-950 p-4 shadow-xl shadow-blue-950/30 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="absolute inset-0 bg-grid opacity-[0.03] pointer-events-none rounded-2xl" />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <p className="text-[11px] font-bold text-blue-200/70 uppercase tracking-widest">Invoice Preview</p>
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+              </div>
+              <span className="text-[10px] text-blue-200/40 bg-white/10 border border-white/10 px-2 py-0.5 rounded-full">Updates live</span>
             </div>
-            <span className="text-[10px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-full shadow-sm">Updates live</span>
+            <InvoicePreview
+              card={selected}
+              companyName={activeCompany?.name ?? ''}
+              customerName={selectedCustomer?.name ?? ''}
+              issueDate={issueDate}
+              dueDate={dueDate}
+              currency={currency}
+              discount={discount}
+              items={watchedItems}
+              invoiceNo={invoiceNo}
+            />
           </div>
-          <InvoicePreview
-            card={selected}
-            companyName={activeCompany?.name ?? ''}
-            customerName={selectedCustomer?.name ?? ''}
-            issueDate={issueDate}
-            dueDate={dueDate}
-            currency={currency}
-            discount={discount}
-            items={watchedItems}
-            invoiceNo={invoiceNo}
-          />
         </div>
         )}
 

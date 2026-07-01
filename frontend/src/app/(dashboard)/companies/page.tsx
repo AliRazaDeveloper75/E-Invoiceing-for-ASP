@@ -7,7 +7,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { useForm, Controller } from 'react-hook-form';
-import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { CountrySelect } from '@/components/ui/CountrySelect';
 import { CitySelect } from '@/components/ui/CitySelect';
@@ -17,9 +16,10 @@ import { useAuth } from '@/context/AuthContext';
 import {
   Building2, Plus, X, Eye, Pencil, Trash2,
   Phone, Mail, MapPin, Users, Hash, Globe, AlertTriangle,
-  CheckSquare, Square, Layers,
+  CheckSquare, Square, Layers, Loader2, ArrowUpRight,
 } from 'lucide-react';
 import { AxiosError } from 'axios';
+import { clsx } from 'clsx';
 import type { Company } from '@/types';
 import {
   emailValidators, validateTRN, validateWebsite,
@@ -45,8 +45,6 @@ interface CompanyForm {
   website?: string;
 }
 
-// ─── View Modal ───────────────────────────────────────────────────────────────
-
 function ViewModal({ company, onClose }: { company: Company; onClose: () => void }) {
   const rows: { icon: React.ElementType; label: string; value: string | number | null | undefined }[] = [
     { icon: Hash,    label: 'TRN',             value: company.trn },
@@ -55,17 +53,16 @@ function ViewModal({ company, onClose }: { company: Company; onClose: () => void
     { icon: Mail,    label: 'Email',            value: company.email },
     { icon: Globe,   label: 'Website',          value: company.website },
     { icon: Users,   label: 'Members',          value: company.member_count },
-    { icon: Hash,    label: 'E-Invoice Endpoint',  value: company.peppol_endpoint },
+    { icon: Hash,    label: 'E-Invoice Endpoint', value: company.peppol_endpoint },
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-blue-100/60">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-brand-500/10 flex items-center justify-center">
-              <Building2 className="h-5 w-5 text-brand-600" />
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+              <Building2 className="h-5 w-5 text-white" />
             </div>
             <div>
               <h2 className="font-bold text-gray-900">{company.name}</h2>
@@ -74,20 +71,21 @@ function ViewModal({ company, onClose }: { company: Company; onClose: () => void
               )}
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <X className="h-5 w-5" />
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-blue-50 transition-colors">
+            <X className="h-4 w-4 text-gray-400" />
           </button>
         </div>
 
-        {/* Details */}
-        <div className="px-6 py-4 space-y-3">
+        <div className="px-6 py-4 space-y-4">
           {rows.map(({ icon: Icon, label, value }) =>
             value ? (
               <div key={label} className="flex items-start gap-3">
-                <Icon className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+                <div className="h-7 w-7 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                  <Icon className="h-3.5 w-3.5 text-blue-500" />
+                </div>
                 <div>
-                  <p className="text-xs text-gray-400 font-medium">{label}</p>
-                  <p className="text-sm text-gray-800 font-mono">{String(value)}</p>
+                  <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">{label}</p>
+                  <p className="text-sm text-gray-800 font-medium">{String(value)}</p>
                 </div>
               </div>
             ) : null
@@ -97,7 +95,7 @@ function ViewModal({ company, onClose }: { company: Company; onClose: () => void
         <div className="px-6 pb-5 flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium rounded-lg hover:bg-gray-100 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 rounded-xl hover:bg-gray-50 transition-colors"
           >
             Close
           </button>
@@ -106,8 +104,6 @@ function ViewModal({ company, onClose }: { company: Company; onClose: () => void
     </div>
   );
 }
-
-// ─── Delete Modal (single or bulk) ───────────────────────────────────────────
 
 function DeleteModal({
   targets,
@@ -149,8 +145,8 @@ function DeleteModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent">
         <div className="px-6 py-5 flex items-start gap-4">
           <div className="h-10 w-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
             <AlertTriangle className="h-5 w-5 text-red-600" />
@@ -175,7 +171,6 @@ function DeleteModal({
           </div>
         </div>
 
-        {/* Progress bar during bulk delete */}
         {loading && isBulk && (
           <div className="mx-6 mb-4">
             <div className="flex justify-between text-xs text-gray-500 mb-1">
@@ -192,7 +187,7 @@ function DeleteModal({
         )}
 
         {errors.length > 0 && (
-          <div className="mx-6 mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 space-y-1">
+          <div className="mx-6 mb-4 rounded-xl bg-red-50/80 border border-red-200/60 px-4 py-3 space-y-1">
             {errors.map((e, i) => (
               <p key={i} className="text-sm text-red-700">{e}</p>
             ))}
@@ -203,7 +198,7 @@ function DeleteModal({
           <button
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             {errors.length > 0 ? 'Close' : 'Cancel'}
           </button>
@@ -211,7 +206,7 @@ function DeleteModal({
             <button
               onClick={handleDelete}
               disabled={loading}
-              className="px-5 py-2 text-sm bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 font-medium"
+              className="px-5 py-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-sm font-semibold text-white shadow-lg shadow-red-500/25 transition-all disabled:opacity-50"
             >
               {loading ? 'Deleting…' : isBulk ? `Delete All (${targets.length})` : 'Delete Company'}
             </button>
@@ -221,8 +216,6 @@ function DeleteModal({
     </div>
   );
 }
-
-// ─── Company Form (create + edit) ────────────────────────────────────────────
 
 function CompanyFormPanel({
   mode,
@@ -277,7 +270,6 @@ function CompanyFormPanel({
       const method = mode === 'create' ? 'post' : 'put';
 
       if (logoFile) {
-        // Multipart so the company logo file is uploaded alongside the fields.
         const fd = new FormData();
         Object.entries(payload).forEach(([k, v]) => {
           if (v !== undefined && v !== null && v !== '') fd.append(k, String(v));
@@ -297,31 +289,35 @@ function CompanyFormPanel({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+    <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-6 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="font-semibold text-gray-800">
-          {mode === 'create' ? 'New Company' : `Edit — ${initial?.name}`}
-        </h2>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-          <X className="h-5 w-5" />
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+            <Building2 className="h-4 w-4 text-white" />
+          </div>
+          <h2 className="text-sm font-semibold text-gray-900">
+            {mode === 'create' ? 'New Company' : `Edit — ${initial?.name}`}
+          </h2>
+        </div>
+        <button onClick={onClose} className="p-2 rounded-lg hover:bg-blue-50 transition-colors">
+          <X className="h-4 w-4 text-gray-400" />
         </button>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Company logo */}
         <div className="flex items-center gap-4">
           {logoPreview ? (
             <img src={logoPreview} alt="Company logo"
                  className="h-16 w-16 rounded-xl object-cover border border-gray-200" />
           ) : (
-            <div className="h-16 w-16 rounded-xl bg-gray-100 border border-gray-200
-                            flex items-center justify-center text-[10px] text-gray-400 text-center">
+            <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200/60
+                            flex items-center justify-center text-[10px] text-blue-400 text-center font-medium">
               No logo
             </div>
           )}
           <div>
             <label className="inline-block cursor-pointer">
-              <span className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+              <span className="px-3 py-1.5 rounded-xl border border-gray-200/80 bg-white text-sm font-medium text-gray-600 hover:text-blue-600 hover:border-blue-200/60 hover:bg-blue-50/40 shadow-sm transition-all">
                 {logoPreview ? 'Change logo' : 'Upload logo'}
               </span>
               <input
@@ -338,7 +334,7 @@ function CompanyFormPanel({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Trading Name"
             required
@@ -376,7 +372,7 @@ function CompanyFormPanel({
           })}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="TRN Issue Date"
             type="date"
@@ -405,7 +401,7 @@ function CompanyFormPanel({
           })}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <CountrySelect
             label="Country"
             required
@@ -428,7 +424,7 @@ function CompanyFormPanel({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Controller
             name="phone"
             control={control}
@@ -481,29 +477,38 @@ function CompanyFormPanel({
         />
 
         {serverError && (
-          <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-xl bg-red-50/80 border border-red-200/60 px-4 py-3 text-sm text-red-700">
             {serverError}
           </div>
         )}
 
         <div className="flex gap-3 justify-end pt-2">
-          <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
-          <Button type="submit" loading={isSubmitting}>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-200 disabled:opacity-50"
+          >
+            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {mode === 'create' ? 'Create Company' : 'Save Changes'}
-          </Button>
+          </button>
         </div>
       </form>
     </div>
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default function CompaniesPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const { data: companies = [], mutate } = useSWR<Company[]>('/companies/', fetcher);
+  const { data: companies = [], mutate, isLoading } = useSWR<Company[]>('/companies/', fetcher);
 
   type PanelMode = null | 'create' | 'edit';
   const [panelMode,  setPanelMode]  = useState<PanelMode>(null);
@@ -511,21 +516,19 @@ export default function CompaniesPage() {
   const [editTarget, setEditTarget] = useState<Company | null>(null);
   const [delTargets, setDelTargets] = useState<Company[]>([]);
 
-  // Multi-select state
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   function openCreate() { setEditTarget(null); setPanelMode('create'); }
   function openEdit(c: Company) { setEditTarget(c); setPanelMode('edit'); }
   function closePanel() { setPanelMode(null); setEditTarget(null); }
 
-  // Open the create panel automatically when arriving via "+ Add new company" (?new=1)
   const searchParams = useSearchParams();
   const router = useRouter();
   useEffect(() => {
     if (searchParams.get('new') === '1') {
       setPanelMode('create');
       setEditTarget(null);
-      router.replace('/companies'); // clear the query param
+      router.replace('/companies');
     }
   }, [searchParams, router]);
 
@@ -560,16 +563,33 @@ export default function CompaniesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Companies</h1>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4" /> Add Company
-        </Button>
+    <div className="space-y-6 animate-fade-in">
+
+      {/* ── Header ───────────────────────────────────────────── */}
+      <div className="bg-gradient-to-br from-white via-blue-50/30 to-white rounded-2xl p-6 shadow-[0_8px_30px_-8px_rgba(59,130,246,0.15)] border border-blue-100/70 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="h-2 w-2 rounded-full bg-gradient-to-r from-blue-400 to-blue-600" />
+              <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-[0.12em]">Companies</span>
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight">Companies</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {companies.length > 0 ? `${companies.length} total` : 'Manage your companies'}
+            </p>
+          </div>
+          {!panelMode && (
+            <button
+              onClick={openCreate}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shrink-0"
+            >
+              <Plus className="h-4 w-4" /> Add Company
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Create / Edit form panel */}
+      {/* Create / Edit form */}
       {panelMode && (
         <CompanyFormPanel
           mode={panelMode}
@@ -579,78 +599,95 @@ export default function CompaniesPage() {
         />
       )}
 
-      {/* Bulk action bar — admin only, appears when items selected */}
-      {isAdmin && companies.length > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-white rounded-xl border border-gray-200 shadow-sm">
-          {/* Select all toggle */}
-          <button
-            onClick={toggleAll}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            {allSelected ? (
-              <CheckSquare className="h-4 w-4 text-brand-600" />
-            ) : someSelected ? (
-              <Layers className="h-4 w-4 text-brand-400" />
-            ) : (
-              <Square className="h-4 w-4 text-gray-400" />
-            )}
-            <span className="font-medium">
-              {allSelected ? 'Deselect All' : 'Select All'}
-            </span>
-          </button>
-
-          {selectedCount > 0 && (
-            <>
-              <span className="text-gray-300">|</span>
-              <span className="text-sm text-gray-500">
-                <span className="font-semibold text-gray-700">{selectedCount}</span> selected
+      {/* Bulk action bar */}
+      {isAdmin && companies.length > 0 && !panelMode && (
+        <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 px-4 py-3 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleAll}
+              className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              {allSelected ? (
+                <CheckSquare className="h-4 w-4 text-blue-600" />
+              ) : someSelected ? (
+                <Layers className="h-4 w-4 text-blue-400" />
+              ) : (
+                <Square className="h-4 w-4 text-gray-400" />
+              )}
+              <span className="font-medium">
+                {allSelected ? 'Deselect All' : 'Select All'}
               </span>
-              <button
-                onClick={openBulkDelete}
-                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete Selected ({selectedCount})
-              </button>
-            </>
-          )}
+            </button>
+
+            {selectedCount > 0 && (
+              <>
+                <span className="text-gray-200">|</span>
+                <span className="text-sm text-gray-500">
+                  <span className="font-semibold text-gray-700">{selectedCount}</span> selected
+                </span>
+                <button
+                  onClick={openBulkDelete}
+                  className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-400 hover:to-red-500 shadow-md shadow-red-500/20 transition-all font-medium"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete ({selectedCount})
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
 
       {/* Company list */}
-      {companies.length === 0 && !panelMode ? (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm py-16 text-center text-gray-400">
-          <Building2 className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-          <p className="font-medium">No companies yet</p>
-          <p className="text-sm mt-1">Create your first company to start issuing invoices.</p>
+      {isLoading ? (
+        <div className="py-20 text-center">
+          <Loader2 className="h-6 w-6 animate-spin mx-auto text-blue-500" />
+        </div>
+      ) : companies.length === 0 && !panelMode ? (
+        <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent py-16 text-center">
+          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center mx-auto mb-4">
+            <Building2 className="h-7 w-7 text-blue-400" />
+          </div>
+          <p className="text-base font-semibold text-gray-900">No companies yet</p>
+          <p className="text-sm text-gray-500 mt-1">Create your first company to start issuing invoices.</p>
+          <button
+            onClick={openCreate}
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+          >
+            <Plus className="h-4 w-4" /> Add Company
+          </button>
         </div>
       ) : (
         <div className="grid gap-4">
-          {companies.map((company) => {
+          {companies.filter(c => !panelMode || (panelMode === 'edit' && editTarget?.id !== c.id)).map((company) => {
             const isChecked = selected.has(company.id);
             return (
               <div
                 key={company.id}
-                className={`bg-white rounded-xl border shadow-sm p-5 hover:border-gray-300 transition-colors ${
-                  isChecked ? 'border-brand-400 ring-1 ring-brand-200' : 'border-gray-200'
-                }`}
+                className={clsx(
+                  'group relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border p-5',
+                  'shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.2)] hover:-translate-y-[1px] transition-all duration-300',
+                  'before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent',
+                  isChecked
+                    ? 'border-blue-300/80 ring-1 ring-blue-200/60'
+                    : 'border-blue-100/70',
+                )}
               >
                 <div className="flex items-start justify-between gap-4">
-                  {/* Checkbox + Identity */}
                   <div className="flex items-center gap-3 min-w-0">
                     {isAdmin && (
                       <button
                         onClick={() => toggleSelect(company.id)}
-                        className="shrink-0 text-gray-300 hover:text-brand-500 transition-colors"
+                        className="shrink-0 text-gray-300 hover:text-blue-500 transition-colors"
                       >
                         {isChecked
-                          ? <CheckSquare className="h-5 w-5 text-brand-500" />
+                          ? <CheckSquare className="h-5 w-5 text-blue-500" />
                           : <Square className="h-5 w-5" />
                         }
                       </button>
                     )}
-                    <div className="h-10 w-10 rounded-xl bg-brand-500/10 flex items-center justify-center shrink-0">
-                      <span className="text-brand-600 font-bold text-sm">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+                      <span className="text-white font-bold text-sm">
                         {company.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
@@ -659,10 +696,13 @@ export default function CompaniesPage() {
                       {company.legal_name && company.legal_name !== company.name && (
                         <p className="text-sm text-gray-500 truncate">{company.legal_name}</p>
                       )}
+                      <div className="flex items-center gap-3 mt-1 sm:hidden">
+                        <span className="text-xs font-mono text-gray-400">TRN: {company.trn}</span>
+                        <span className="text-xs text-gray-400">{company.member_count} member{company.member_count !== 1 ? 's' : ''}</span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Meta + actions */}
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right hidden sm:block">
                       <p className="text-xs font-mono text-gray-500">TRN: {company.trn}</p>
@@ -676,21 +716,21 @@ export default function CompaniesPage() {
                         <button
                           onClick={() => setViewTarget(company)}
                           title="View details"
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => openEdit(company)}
                           title="Edit company"
-                          className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                          className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => setDelTargets([company])}
                           title="Delete company"
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50/60 transition-all"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -700,7 +740,10 @@ export default function CompaniesPage() {
                 </div>
 
                 {company.formatted_address && (
-                  <p className="text-sm text-gray-400 mt-3 pl-[52px]">{company.formatted_address}</p>
+                  <p className="text-sm text-gray-400 mt-3 flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-gray-300 shrink-0" />
+                    {company.formatted_address}
+                  </p>
                 )}
               </div>
             );

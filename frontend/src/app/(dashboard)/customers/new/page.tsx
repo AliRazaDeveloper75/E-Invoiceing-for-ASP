@@ -277,7 +277,7 @@ export default function NewCustomerPage() {
               type="checkbox"
               checked={vatSameAsTrn}
               onChange={(e) => setVatSameAsTrn(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             VAT Number same as TRN
           </label>
@@ -302,8 +302,8 @@ export default function NewCustomerPage() {
                 type="file"
                 accept=".pdf,.jpg,.jpeg,.png"
                 className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0
-                           file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-medium
-                           file:text-brand-700 hover:file:bg-brand-100 cursor-pointer"
+                           file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-medium
+                           file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
                 {...register('trn_document', {
                   required: isEdit ? false : 'TRN certificate is required',
                   validate: (f) => {
@@ -334,8 +334,8 @@ export default function NewCustomerPage() {
                 type="file"
                 accept=".jpg,.jpeg,.png"
                 className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0
-                           file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-medium
-                           file:text-brand-700 hover:file:bg-brand-100 cursor-pointer"
+                           file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-medium
+                           file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
                 {...register('logo', {
                   required: isEdit ? false : 'Customer logo is required',
                   validate: (f) => {
@@ -443,7 +443,7 @@ export default function NewCustomerPage() {
               rows={2}
               placeholder="Optional notes about this customer (payment terms, special requirements, etc.)"
               className="mt-0.5 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                         focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-gray-400"
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400"
               {...register('notes', {
                 maxLength: { value: 500, message: 'Notes must be 500 characters or fewer' },
               })}

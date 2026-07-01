@@ -10,7 +10,7 @@ import {
   XCircle, Clock, RefreshCw,
   Send, Landmark, ShieldCheck, ArrowRight, CreditCard, Eye,
   Truck, UserCheck, MessageSquare, UserPlus, X, Loader2, Mail,
-  ClipboardList,
+  ClipboardList, TrendingUp,
 } from 'lucide-react';
 
 async function fetcher(url: string) {
@@ -45,62 +45,79 @@ interface Invitation {
   status: string;
 }
 
-// ─── Stat card ────────────────────────────────────────────────────────────────
+const iconColors: Record<string, string> = {
+  blue: 'from-blue-500 to-blue-600',
+  indigo: 'from-indigo-500 to-indigo-600',
+  emerald: 'from-emerald-500 to-emerald-600',
+  amber: 'from-amber-500 to-amber-600',
+  violet: 'from-violet-500 to-violet-600',
+  cyan: 'from-cyan-500 to-cyan-600',
+  teal: 'from-teal-500 to-teal-600',
+  red: 'from-red-500 to-red-600',
+  orange: 'from-orange-500 to-orange-600',
+  purple: 'from-purple-500 to-purple-600',
+  gray: 'from-gray-500 to-gray-600',
+};
+
+function SectionHeading({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      <div className="h-4 w-0.5 rounded-full bg-gradient-to-b from-blue-500 to-blue-600" />
+      <h2 className="text-sm font-bold text-gray-800">{label}</h2>
+    </div>
+  );
+}
 
 function StatCard({
-  label, value, sub, icon: Icon, color, href,
+  label, value, sub, icon: Icon, color = 'blue', href,
 }: {
   label: string; value: number | string; sub?: string;
-  icon: React.ElementType; color: string; href?: string;
+  icon: React.ElementType; color?: string; href?: string;
 }) {
   const inner = (
-    <div className={`bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3 ${href ? 'hover:shadow-md transition-shadow cursor-pointer' : ''}`}>
-      <div className={`p-2.5 rounded-xl ${color}`}>
-        <Icon className="h-5 w-5" />
+    <div className={`group bg-white rounded-xl shadow-sm border border-gray-100/80 p-4 flex items-center gap-3 transition-all duration-200 ${href ? 'hover:shadow-md hover:border-gray-200/80 cursor-pointer' : ''}`}>
+      <div className={`p-2.5 rounded-xl bg-gradient-to-br ${iconColors[color] ?? iconColors.blue} shadow-sm`}>
+        <Icon className="h-5 w-5 text-white" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-2xl font-bold text-gray-900">{value ?? 0}</p>
         <p className="text-xs text-gray-500">{label}</p>
         {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
       </div>
-      {href && <ArrowRight className="h-4 w-4 text-gray-300 shrink-0" />}
+      {href && <ArrowRight className="h-4 w-4 text-gray-300 group-hover:text-blue-500 transition-colors shrink-0" />}
     </div>
   );
   return href ? <Link href={href}>{inner}</Link> : inner;
 }
 
-// ─── Queue card ───────────────────────────────────────────────────────────────
-
 function QueueCard({
-  title, subtitle, count, urgent, href, icon: Icon, color,
+  title, subtitle, count, urgent, href, icon: Icon,
 }: {
   title: string; subtitle: string; count: number; urgent?: boolean;
-  href: string; icon: React.ElementType; color: string;
+  href: string; icon: React.ElementType;
 }) {
   return (
     <Link href={href}>
-      <div className={`bg-white rounded-xl border-2 p-5 hover:shadow-md transition-all ${urgent && count > 0 ? 'border-red-300' : 'border-gray-200'}`}>
+      <div className={`group bg-white rounded-xl shadow-sm border border-gray-100/80 p-5 transition-all duration-200 hover:shadow-md hover:border-gray-200/80 hover:-translate-y-0.5 ${urgent && count > 0 ? 'border-l-2 border-l-red-400' : ''}`}>
         <div className="flex items-start justify-between mb-4">
-          <div className={`p-2.5 rounded-xl ${color}`}>
-            <Icon className="h-5 w-5" />
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm">
+            <Icon className="h-5 w-5 text-white" />
           </div>
           {count > 0 && (
-            <span className={`text-sm font-bold px-2.5 py-1 rounded-full ${urgent ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+            <span className={`text-sm font-bold px-2.5 py-1 rounded-full ${urgent ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
               {count}
             </span>
           )}
         </div>
         <p className="font-semibold text-gray-900">{title}</p>
-        <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
-        <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-blue-600">
+        <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{subtitle}</p>
+        <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:gap-1.5 transition-all">
           Manage <ArrowRight className="h-3.5 w-3.5" />
         </div>
       </div>
     </Link>
   );
 }
-
-// ─── Send Invitation Modal ─────────────────────────────────────────────────────
 
 interface InviteForm {
   email: string;
@@ -171,13 +188,12 @@ function SendInviteModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
 
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-blue-100 text-blue-600">
-              <Mail className="h-5 w-5" />
+            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm">
+              <Mail className="h-5 w-5 text-white" />
             </div>
             <div>
               <h2 className="text-base font-semibold text-gray-900">Send Invitation</h2>
@@ -194,8 +210,8 @@ function SendInviteModal({
 
         {success ? (
           <div className="px-6 py-12 flex flex-col items-center gap-3">
-            <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
-              <CheckCircle2 className="h-7 w-7 text-emerald-600" />
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-sm">
+              <CheckCircle2 className="h-7 w-7 text-white" />
             </div>
             <p className="text-base font-semibold text-gray-900">Invitation sent!</p>
             <p className="text-sm text-gray-500 text-center">
@@ -204,7 +220,6 @@ function SendInviteModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-            {/* Email */}
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">
                 Email Address <span className="text-red-500">*</span>
@@ -218,7 +233,6 @@ function SendInviteModal({
               />
             </div>
 
-            {/* Name row */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">First Name</label>
@@ -242,7 +256,6 @@ function SendInviteModal({
               </div>
             </div>
 
-            {/* Company hint + Role row */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Company Name Hint</label>
@@ -269,7 +282,6 @@ function SendInviteModal({
               </div>
             </div>
 
-            {/* Message */}
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Personal Message <span className="text-gray-400 font-normal">(optional)</span></label>
               <textarea
@@ -298,10 +310,10 @@ function SendInviteModal({
               <button
                 type="submit"
                 disabled={loading}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 disabled:opacity-60 transition-all duration-200 shadow-sm"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                {loading ? 'Sending…' : 'Send Invitation'}
+                {loading ? 'Sending\u2026' : 'Send Invitation'}
               </button>
             </div>
           </form>
@@ -310,8 +322,6 @@ function SendInviteModal({
     </div>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ManagementPage() {
   const { data: stats, isLoading, mutate } = useSWR<AdminStats>(
@@ -350,55 +360,64 @@ export default function ManagementPage() {
 
       <div className="space-y-8">
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Platform management — users, invoices, ASP verification and FTA reporting
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
-            >
-              <UserPlus className="h-4 w-4" />
-              Send Invitation
-            </button>
-            <button
-              onClick={() => mutate()}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
-            >
-              <RefreshCw className="h-3.5 w-3.5" /> Refresh
-            </button>
+        {/* ── Header ─────────────────────────────────────────────────── */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-blue-950 to-indigo-950 rounded-2xl shadow-md p-6 sm:p-8">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyek0zNiAxNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-300" />
+              <span className="text-[11px] font-semibold text-blue-200 uppercase tracking-widest">Management</span>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Admin Dashboard</h1>
+                <p className="text-sm text-blue-200/80 mt-1">
+                  Platform management &mdash; users, invoices, ASP verification and FTA reporting
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setModalOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-white text-blue-700 hover:bg-blue-50 transition-all duration-200 shadow-sm"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Send Invitation
+                </button>
+                <button
+                  onClick={() => mutate()}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-white/15 text-white hover:bg-white/25 backdrop-blur-sm transition-all duration-200"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" /> Refresh
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-20 text-gray-400">
-            <RefreshCw className="h-5 w-5 animate-spin mr-2" /> Loading stats…
+            <RefreshCw className="h-5 w-5 animate-spin mr-2" /> Loading stats&hellip;
           </div>
         ) : (
           <>
-            {/* ── Platform stats ──────────────────────────────────────────── */}
-            <div>
-              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Platform Overview</h2>
+            {/* ── Platform Overview ───────────────────────────────────── */}
+            <section>
+              <SectionHeading label="Platform Overview" />
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <StatCard label="Total Users"      value={usr?.total ?? 0}                          sub={`${usr?.active ?? 0} active`} icon={Users}        color="bg-blue-100 text-blue-600"     href="/management/users" />
-                <StatCard label="Suppliers"        value={usr?.by_role?.['supplier'] ?? 0}           sub="registered suppliers"         icon={UserCheck}    color="bg-indigo-100 text-indigo-600" href="/management/users?role=supplier" />
-                <StatCard label="Buyers"           value={usr?.by_role?.['inbound_supplier'] ?? 0}   sub="inbound suppliers"            icon={Truck}        color="bg-amber-100 text-amber-600"   href="/management/users?role=inbound_supplier" />
-                <StatCard label="Companies"        value={stats?.companies.total ?? 0}               sub="registered"                   icon={Building2}    color="bg-violet-100 text-violet-600" />
-                <StatCard label="Total Invoices"   value={inv?.total ?? 0}                           sub="across all companies"         icon={FileText}     color="bg-indigo-100 text-indigo-600" href="/management/invoices" />
-                <StatCard label="Validated"        value={inv?.by_status?.validated ?? 0}            sub="accepted by ASP"              icon={CheckCircle2} color="bg-emerald-100 text-emerald-600" />
+                <StatCard label="Total Users"      value={usr?.total ?? 0}                        sub={`${usr?.active ?? 0} active`} icon={Users}        color="blue"    href="/management/users" />
+                <StatCard label="Suppliers"        value={usr?.by_role?.['supplier'] ?? 0}         sub="registered suppliers"         icon={UserCheck}  color="indigo"  href="/management/users?role=supplier" />
+                <StatCard label="Buyers"           value={usr?.by_role?.['inbound_supplier'] ?? 0} sub="inbound suppliers"            icon={Truck}      color="violet"  href="/management/users?role=inbound_supplier" />
+                <StatCard label="Companies"        value={stats?.companies.total ?? 0}             sub="registered"                   icon={Building2}  color="blue" />
+                <StatCard label="Total Invoices"   value={inv?.total ?? 0}                         sub="across all companies"         icon={FileText}   color="indigo"  href="/management/invoices" />
+                <StatCard label="Validated"        value={inv?.by_status?.validated ?? 0}          sub="accepted by ASP"              icon={CheckCircle2} color="emerald" />
               </div>
-            </div>
+            </section>
 
-            {/* ── Invitations & Onboarding ─────────────────────────────────── */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Invitations & Onboarding</h2>
-                <Link href="/management/invitations" className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1">
+            {/* ── Invitations & Onboarding ─────────────────────────────── */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <SectionHeading label="Invitations &amp; Onboarding" />
+                <Link href="/management/invitations" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
                   View all <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
@@ -408,7 +427,7 @@ export default function ManagementPage() {
                   value={pendingInvites}
                   sub="awaiting registration"
                   icon={Mail}
-                  color="bg-blue-100 text-blue-600"
+                  color="blue"
                   href="/management/invitations"
                 />
                 <StatCard
@@ -416,35 +435,35 @@ export default function ManagementPage() {
                   value={reviewCount}
                   sub="submitted or under review"
                   icon={ClipboardList}
-                  color="bg-orange-100 text-orange-600"
+                  color="amber"
                   href="/management/invitations"
                 />
                 <div
                   onClick={() => setModalOpen(true)}
-                  className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm"
+                  className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md"
                 >
                   <div className="p-2.5 rounded-xl bg-white/20">
                     <UserPlus className="h-5 w-5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-base font-bold text-white">Send Invitation</p>
-                    <p className="text-xs text-blue-100">Invite a company by email</p>
+                    <p className="text-xs text-blue-200">Invite a company by email</p>
                   </div>
-                  <ArrowRight className="h-4 w-4 text-white/60 shrink-0" />
+                  <ArrowRight className="h-4 w-4 text-white/50 shrink-0" />
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* ── Payment & engagement stats ───────────────────────────────── */}
-            <div>
-              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Payments & Buyer Engagement</h2>
+            {/* ── Payments & Buyer Engagement ──────────────────────────── */}
+            <section>
+              <SectionHeading label="Payments &amp; Buyer Engagement" />
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <StatCard
                   label="Total Payments"
                   value={stats?.payments.total_count ?? 0}
                   sub="all methods"
                   icon={CreditCard}
-                  color="bg-teal-100 text-teal-600"
+                  color="blue"
                   href="/management/payments"
                 />
                 <StatCard
@@ -452,39 +471,39 @@ export default function ManagementPage() {
                   value={`AED ${parseFloat(stats?.payments.total_amount ?? '0').toLocaleString('en-AE', { minimumFractionDigits: 2 })}`}
                   sub="sum of all payments"
                   icon={CheckCircle2}
-                  color="bg-emerald-100 text-emerald-600"
+                  color="emerald"
                 />
                 <StatCard
                   label="Buyer Viewed"
                   value={inv?.buyer_viewed ?? 0}
                   sub="invoices opened by buyer"
                   icon={Eye}
-                  color="bg-cyan-100 text-cyan-600"
+                  color="cyan"
                 />
                 <StatCard
                   label="Paid Invoices"
                   value={(inv?.by_status?.paid ?? 0) + (inv?.by_status?.partially_paid ?? 0)}
                   sub="paid or partially paid"
                   icon={CheckCircle2}
-                  color="bg-green-100 text-green-600"
+                  color="teal"
                 />
               </div>
-            </div>
+            </section>
 
-            {/* ── Invoice status breakdown ─────────────────────────────────── */}
-            <div>
-              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Invoice Status Breakdown</h2>
+            {/* ── Invoice Status Breakdown ──────────────────────────────── */}
+            <section>
+              <SectionHeading label="Invoice Status Breakdown" />
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                 {[
-                  { key: 'draft',     label: 'Draft',       color: 'text-gray-600',   bg: 'bg-gray-100',    icon: FileText },
-                  { key: 'pending',   label: 'Pending',     color: 'text-blue-600',   bg: 'bg-blue-100',    icon: Clock },
-                  { key: 'submitted', label: 'Submitted',   color: 'text-indigo-600', bg: 'bg-indigo-100',  icon: Send },
-                  { key: 'validated', label: 'Validated',   color: 'text-emerald-600',bg: 'bg-emerald-100', icon: CheckCircle2 },
-                  { key: 'rejected',  label: 'Rejected',    color: 'text-red-600',    bg: 'bg-red-100',     icon: XCircle },
-                  { key: 'cancelled', label: 'Cancelled',   color: 'text-slate-500',  bg: 'bg-slate-100',   icon: XCircle },
-                ].map(({ key, label, color, bg, icon: Icon }) => (
-                  <div key={key} className="bg-white rounded-xl border border-gray-200 p-3 text-center">
-                    <div className={`inline-flex items-center justify-center w-8 h-8 rounded-lg ${bg} ${color} mb-2`}>
+                  { key: 'draft',     label: 'Draft',       color: 'gray',      icon: FileText },
+                  { key: 'pending',   label: 'Pending',     color: 'blue',      icon: Clock },
+                  { key: 'submitted', label: 'Submitted',   color: 'indigo',    icon: Send },
+                  { key: 'validated', label: 'Validated',   color: 'emerald',   icon: CheckCircle2 },
+                  { key: 'rejected',  label: 'Rejected',    color: 'red',       icon: XCircle },
+                  { key: 'cancelled', label: 'Cancelled',   color: 'gray',      icon: XCircle },
+                ].map(({ key, label, color, icon: Icon }) => (
+                  <div key={key} className="bg-white rounded-xl shadow-sm border border-gray-100/80 p-4 text-center">
+                    <div className={`inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br ${iconColors[color]} shadow-sm text-white mb-2`}>
                       <Icon className="h-4 w-4" />
                     </div>
                     <p className="text-lg font-bold text-gray-900">{inv?.by_status?.[key] ?? 0}</p>
@@ -492,11 +511,11 @@ export default function ManagementPage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
 
-            {/* ── Action queues ────────────────────────────────────────────── */}
-            <div>
-              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Action Queues</h2>
+            {/* ── Action Queues ──────────────────────────────────────────── */}
+            <section>
+              <SectionHeading label="Action Queues" />
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <QueueCard
                   title="User Management"
@@ -504,7 +523,6 @@ export default function ManagementPage() {
                   count={usr?.inactive ?? 0}
                   href="/management/users"
                   icon={Users}
-                  color="bg-blue-100 text-blue-600"
                 />
                 <QueueCard
                   title="All Invoices"
@@ -512,25 +530,22 @@ export default function ManagementPage() {
                   count={inv?.total ?? 0}
                   href="/management/invoices"
                   icon={FileText}
-                  color="bg-indigo-100 text-indigo-600"
                 />
                 <QueueCard
-                  title="ASP Verification Queue"
+                  title="ASP Verification"
                   subtitle="Review draft invoices and submit to E-Invoice / ASP"
                   count={inv?.asp_pending ?? 0}
                   urgent
                   href="/management/asp"
                   icon={ShieldCheck}
-                  color="bg-orange-100 text-orange-600"
                 />
                 <QueueCard
-                  title="FTA Reporting Queue"
+                  title="FTA Reporting"
                   subtitle="Report validated invoices to the FTA data platform"
                   count={inv?.fta_pending ?? 0}
                   urgent
                   href="/management/asp?tab=fta"
                   icon={Landmark}
-                  color="bg-teal-100 text-teal-600"
                 />
                 <QueueCard
                   title="Invitations"
@@ -538,7 +553,6 @@ export default function ManagementPage() {
                   count={pendingInvites}
                   href="/management/invitations"
                   icon={Mail}
-                  color="bg-blue-100 text-blue-600"
                 />
                 <QueueCard
                   title="Onboarding Review"
@@ -547,7 +561,6 @@ export default function ManagementPage() {
                   urgent={reviewCount > 0}
                   href="/management/invitations"
                   icon={ClipboardList}
-                  color="bg-violet-100 text-violet-600"
                 />
                 <QueueCard
                   title="Payment Management"
@@ -555,7 +568,6 @@ export default function ManagementPage() {
                   count={stats?.payments.total_count ?? 0}
                   href="/management/payments"
                   icon={CreditCard}
-                  color="bg-green-100 text-green-600"
                 />
                 <QueueCard
                   title="Contact Messages"
@@ -564,37 +576,36 @@ export default function ManagementPage() {
                   urgent
                   href="/management/contact-messages"
                   icon={MessageSquare}
-                  color="bg-purple-100 text-purple-600"
                 />
               </div>
-            </div>
+            </section>
 
-            {/* ── User role breakdown ──────────────────────────────────────── */}
-            <div>
-              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">User Roles</h2>
+            {/* ── User Roles ────────────────────────────────────────────── */}
+            <section>
+              <SectionHeading label="User Roles" />
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 {[
-                  { role: 'admin',            label: 'Admins',            color: 'bg-red-100 text-red-600' },
-                  { role: 'supplier',         label: 'Suppliers',         color: 'bg-blue-100 text-blue-600' },
-                  { role: 'accountant',       label: 'Accountants',       color: 'bg-indigo-100 text-indigo-600' },
-                  { role: 'inbound_supplier', label: 'Buyers',            color: 'bg-amber-100 text-amber-600' },
-                  { role: 'viewer',           label: 'Viewers',           color: 'bg-gray-100 text-gray-600' },
+                  { role: 'admin',            label: 'Admins',      color: 'red' },
+                  { role: 'supplier',         label: 'Suppliers',   color: 'blue' },
+                  { role: 'accountant',       label: 'Accountants', color: 'indigo' },
+                  { role: 'inbound_supplier', label: 'Buyers',      color: 'amber' },
+                  { role: 'viewer',           label: 'Viewers',     color: 'gray' },
                 ].map(({ role, label, color }) => (
                   <Link key={role} href={`/management/users?role=${role}`}>
-                    <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3 hover:shadow-md transition-shadow cursor-pointer">
-                      <div className={`p-2 rounded-lg ${color}`}>
-                        <Users className="h-4 w-4" />
+                    <div className="group bg-white rounded-xl shadow-sm border border-gray-100/80 p-4 flex items-center gap-3 transition-all duration-200 hover:shadow-md hover:border-gray-200/80 hover:-translate-y-0.5 cursor-pointer">
+                      <div className={`p-2 rounded-lg bg-gradient-to-br ${iconColors[color]} shadow-sm`}>
+                        <Users className="h-4 w-4 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xl font-bold text-gray-900">{usr?.by_role?.[role] ?? 0}</p>
                         <p className="text-xs text-gray-500">{label}</p>
                       </div>
-                      <ArrowRight className="h-4 w-4 text-gray-300 shrink-0" />
+                      <ArrowRight className="h-4 w-4 text-gray-300 group-hover:text-blue-500 transition-colors shrink-0" />
                     </div>
                   </Link>
                 ))}
               </div>
-            </div>
+            </section>
           </>
         )}
       </div>

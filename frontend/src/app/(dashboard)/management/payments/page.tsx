@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import {
   CreditCard, Search, RefreshCw, Trash2, FileText,
   CheckCircle2, AlertTriangle, ArrowLeft, DollarSign,
-  Receipt, X, AlertCircle,
+  Receipt, X, AlertCircle, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -62,6 +62,20 @@ const INV_STATUS_COLORS: Record<string, string> = {
   draft:          'bg-slate-100 text-slate-600',
 };
 
+// ─── Pagination helper ─────────────────────────────────────────────────────────
+
+function getPageNumbers(current: number, total: number): (number | 'ellipsis')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | 'ellipsis')[] = [1];
+  if (current > 3) pages.push('ellipsis');
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (current < total - 2) pages.push('ellipsis');
+  pages.push(total);
+  return pages;
+}
+
 // ─── Void confirmation dialog ─────────────────────────────────────────────────
 
 function VoidDialog({
@@ -77,57 +91,57 @@ function VoidDialog({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+      <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent w-full max-w-sm p-6 space-y-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shrink-0 shadow-lg shadow-red-500/20">
+            <AlertTriangle className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-800">Void Payment</h2>
-            <p className="text-xs text-slate-500 mt-0.5">This cannot be undone</p>
+            <h2 className="text-base font-bold text-gray-800">Void Payment</h2>
+            <p className="text-xs text-gray-500 mt-0.5">This cannot be undone</p>
           </div>
-          <button onClick={onCancel} className="ml-auto p-1.5 rounded-lg hover:bg-slate-100">
-            <X className="w-4 h-4 text-slate-400" />
+          <button onClick={onCancel} className="ml-auto p-1.5 rounded-lg hover:bg-gray-100">
+            <X className="w-4 h-4 text-gray-400" />
           </button>
         </div>
 
-        <div className="bg-slate-50 rounded-xl p-4 space-y-1.5 text-sm">
+        <div className="bg-gradient-to-br from-gray-50 to-blue-50/20 rounded-xl p-4 space-y-1.5 text-sm">
           <div className="flex justify-between">
-            <span className="text-slate-500">Invoice</span>
-            <span className="font-semibold text-slate-800">{payment.invoice_number}</span>
+            <span className="text-gray-500">Invoice</span>
+            <span className="font-semibold text-gray-800">{payment.invoice_number}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-500">Amount</span>
+            <span className="text-gray-500">Amount</span>
             <span className="font-bold text-red-600">AED {parseFloat(payment.amount).toFixed(2)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-500">Method</span>
-            <span className="text-slate-700">{payment.method_display}</span>
+            <span className="text-gray-500">Method</span>
+            <span className="text-gray-700">{payment.method_display}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-500">Date</span>
-            <span className="text-slate-700">{payment.payment_date}</span>
+            <span className="text-gray-500">Date</span>
+            <span className="text-gray-700">{payment.payment_date}</span>
           </div>
         </div>
 
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-gray-600">
           Voiding this payment will recalculate the invoice status. If no other payments remain, the invoice will revert to <strong>Validated</strong>.
         </p>
 
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
-            className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 transition-all"
           >
             {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-            {loading ? 'Voiding…' : 'Void Payment'}
+            {loading ? 'Voiding\u2026' : 'Void Payment'}
           </button>
         </div>
       </div>
@@ -138,14 +152,14 @@ function VoidDialog({
 // ─── Summary card ─────────────────────────────────────────────────────────────
 
 function SummaryCard({
-  icon: Icon, label, value, color,
+  icon: Icon, label, value, gradient,
 }: {
-  icon: React.ElementType; label: string; value: string | number; color: string;
+  icon: React.ElementType; label: string; value: string | number; gradient: string;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
-      <div className={`p-2.5 rounded-xl ${color}`}>
-        <Icon className="h-5 w-5" />
+    <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.18),0_2px_6px_-2px_rgba(0,0,0,0.06)] transition-all duration-300 p-4 flex items-center gap-3">
+      <div className={`p-2.5 rounded-xl ${gradient}`}>
+        <Icon className="h-5 w-5 text-white" />
       </div>
       <div>
         <p className="text-xl font-bold text-gray-900">{value}</p>
@@ -210,7 +224,9 @@ export default function AdminPaymentsPage() {
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg text-sm font-medium
-          ${toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
+          ${toast.type === 'success'
+            ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-emerald-500/10'
+            : 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-red-500/10'}`}>
           {toast.type === 'success'
             ? <CheckCircle2 className="w-4 h-4 shrink-0" />
             : <AlertCircle className="w-4 h-4 shrink-0" />}
@@ -222,22 +238,26 @@ export default function AdminPaymentsPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/management" className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-            <ArrowLeft className="h-4 w-4 text-gray-500" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Payment Management</h1>
-            <p className="text-sm text-gray-500 mt-0.5">View and manage all buyer payments across the platform</p>
+      <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.18),0_2px_6px_-2px_rgba(0,0,0,0.06)] transition-all duration-300">
+        <div className="px-6 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/management" className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+              <ArrowLeft className="h-4 w-4 text-gray-500" />
+            </Link>
+            <div className="w-1 h-10 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full" />
+            <div className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-blue-100" />
+            <div>
+              <h1 className="text-lg font-bold text-gray-900 uppercase tracking-wider">Payment Management</h1>
+              <p className="text-sm text-gray-500 mt-0.5">View and manage all buyer payments across the platform</p>
+            </div>
           </div>
+          <button
+            onClick={() => mutate()}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Refresh
+          </button>
         </div>
-        <button
-          onClick={() => mutate()}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
-        >
-          <RefreshCw className="h-3.5 w-3.5" /> Refresh
-        </button>
       </div>
 
       {/* Summary Cards */}
@@ -246,83 +266,87 @@ export default function AdminPaymentsPage() {
           icon={Receipt}
           label="Total Payments"
           value={summary?.total_count ?? 0}
-          color="bg-blue-100 text-blue-600"
+          gradient="bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/20"
         />
         <SummaryCard
           icon={DollarSign}
           label="Total Collected"
           value={`AED ${parseFloat(summary?.total_amount ?? '0').toLocaleString('en-AE', { minimumFractionDigits: 2 })}`}
-          color="bg-emerald-100 text-emerald-600"
+          gradient="bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/20"
         />
         <SummaryCard
           icon={CheckCircle2}
           label="Showing on Page"
           value={payments.length}
-          color="bg-indigo-100 text-indigo-600"
+          gradient="bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-500/20"
         />
         <SummaryCard
           icon={CreditCard}
           label="Filtered Results"
           value={pagination?.count ?? 0}
-          color="bg-violet-100 text-violet-600"
+          gradient="bg-gradient-to-br from-violet-500 to-violet-600 shadow-lg shadow-violet-500/20"
         />
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <div className="relative sm:col-span-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search invoice, company, customer, reference…"
-              value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1); }}
-              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <select
-            value={method}
-            onChange={e => { setMethod(e.target.value); setPage(1); }}
-            className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {METHOD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-          <div className="flex gap-2">
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={e => { setDateFrom(e.target.value); setPage(1); }}
-              className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-              title="From date"
-            />
-            <input
-              type="date"
-              value={dateTo}
-              onChange={e => { setDateTo(e.target.value); setPage(1); }}
-              className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-              title="To date"
-            />
+      <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.18),0_2px_6px_-2px_rgba(0,0,0,0.06)] transition-all duration-300">
+        <div className="p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div className="relative sm:col-span-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search invoice, company, customer, reference\u2026"
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              />
+            </div>
+            <select
+              value={method}
+              onChange={e => { setMethod(e.target.value); setPage(1); }}
+              className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            >
+              {METHOD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={e => { setDateFrom(e.target.value); setPage(1); }}
+                className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                title="From date"
+              />
+              <input
+                type="date"
+                value={dateTo}
+                onChange={e => { setDateTo(e.target.value); setPage(1); }}
+                className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                title="To date"
+              />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.18),0_2px_6px_-2px_rgba(0,0,0,0.06)] transition-all duration-300">
         {isLoading ? (
           <div className="py-20 flex items-center justify-center text-gray-400">
-            <RefreshCw className="h-5 w-5 animate-spin mr-2" /> Loading payments…
+            <RefreshCw className="h-5 w-5 animate-spin mr-2" /> Loading payments\u2026
           </div>
         ) : payments.length === 0 ? (
           <div className="py-20 text-center text-gray-400">
-            <Receipt className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <div className="p-4 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 inline-flex mb-3">
+              <Receipt className="h-10 w-10 text-blue-300" />
+            </div>
             <p className="font-medium">No payments found</p>
             <p className="text-sm mt-1">Try adjusting your filters</p>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50/50">
+              <tr className="bg-gradient-to-r from-gray-50/80 to-blue-50/40 border-b border-gray-200">
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Invoice</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Company / Customer</th>
                 <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
@@ -334,8 +358,8 @@ export default function AdminPaymentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {payments.map(p => (
-                <tr key={p.id} className="hover:bg-gray-50/60 transition-colors">
+              {payments.map((p, idx) => (
+                <tr key={p.id} className={`${idx % 2 === 0 ? 'bg-blue-50/10' : ''} hover:bg-blue-50/30 transition-colors`}>
                   <td className="px-5 py-3.5">
                     <Link
                       href={`/management/invoices/${p.invoice_id}`}
@@ -360,14 +384,14 @@ export default function AdminPaymentsPage() {
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${METHOD_COLORS[p.method] ?? 'bg-gray-100 text-gray-700'}`}>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-xl ${METHOD_COLORS[p.method] ?? 'bg-gray-100 text-gray-700'}`}>
                       {p.method_display}
                     </span>
                   </td>
                   <td className="px-5 py-3.5 text-gray-600 text-sm whitespace-nowrap">{p.payment_date}</td>
                   <td className="px-5 py-3.5 text-gray-500 text-sm">{p.recorded_by}</td>
                   <td className="px-5 py-3.5">
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full capitalize ${INV_STATUS_COLORS[p.invoice_status] ?? 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-xl capitalize ${INV_STATUS_COLORS[p.invoice_status] ?? 'bg-gray-100 text-gray-600'}`}>
                       {p.invoice_status.replace('_', ' ')}
                     </span>
                   </td>
@@ -375,7 +399,7 @@ export default function AdminPaymentsPage() {
                     <button
                       onClick={() => setVoidTarget(p)}
                       title="Void payment"
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-gradient-to-br hover:from-red-50 hover:to-red-100 transition-all"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -390,20 +414,34 @@ export default function AdminPaymentsPage() {
         {totalPages > 1 && (
           <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between text-sm">
             <span className="text-gray-500">Page {page} of {totalPages} ({pagination?.count} total)</span>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-1.5">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage(p => p - 1)}
-                className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors"
+                className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
               >
-                Previous
+                <ChevronLeft className="h-4 w-4" />
               </button>
+              {getPageNumbers(page, totalPages).map((p, i) =>
+                p === 'ellipsis' ? (
+                  <span key={`e-${i}`} className="px-2 text-gray-400">\u2026</span>
+                ) : (
+                  <button key={p} onClick={() => setPage(p)}
+                    className={`min-w-[32px] h-8 rounded-lg text-sm font-medium transition-all ${
+                      p === page
+                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/20'
+                        : 'text-gray-600 hover:bg-gray-100 border border-gray-200'
+                    }`}>
+                    {p}
+                  </button>
+                )
+              )}
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => p + 1)}
-                className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors"
+                className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
               >
-                Next
+                <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           </div>

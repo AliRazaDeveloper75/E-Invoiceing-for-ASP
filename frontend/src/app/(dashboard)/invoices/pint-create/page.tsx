@@ -178,14 +178,14 @@ function FieldRenderer({ field, value, onChange, error, isActive, onFocus, onBlu
 }) {
   const inputCls = [
     'w-full rounded-xl border-2 px-3.5 py-2.5 text-sm transition-all outline-none',
-    isActive ? 'border-brand-500 ring-2 ring-brand-100 bg-white'
+    isActive ? 'border-blue-500 ring-2 ring-blue-100 bg-white'
       : error ? 'border-red-300 bg-red-50'
-      : 'border-gray-200 bg-white hover:border-gray-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100',
+      : 'border-gray-200 bg-white hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100',
   ].join(' ');
 
   const wrapCls = [
     'rounded-xl border p-4 transition-all duration-200',
-    isActive ? 'border-brand-100 bg-brand-50/50 shadow-sm' : 'border-transparent',
+    isActive ? 'border-blue-100 bg-blue-50/50 shadow-sm' : 'border-transparent',
   ].join(' ');
 
   // VAT identifiers (seller IBT-031, buyer IBT-048) — exactly 15 digits, digits only.
@@ -270,22 +270,22 @@ function FieldRenderer({ field, value, onChange, error, isActive, onFocus, onBlu
 // ─────────────────────────────────────────────────────────────────────────
 function SellerCard({ company, onRefill }: { company: Company; onRefill: () => void }) {
   return (
-    <div className="bg-brand-50 border border-brand-200 rounded-2xl px-4 py-3 mb-1">
+    <div className="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 mb-1">
       <div className="flex items-start gap-3">
-        <div className="h-9 w-9 rounded-xl bg-brand-600 flex items-center justify-center shrink-0">
+        <div className="h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center shrink-0">
           <Building2 className="h-4 w-4 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-brand-800 uppercase tracking-wider mb-0.5">Pre-filled from active company</p>
-          <p className="text-sm font-semibold text-brand-900 truncate">{company.legal_name || company.name}</p>
+          <p className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-0.5">Pre-filled from active company</p>
+          <p className="text-sm font-semibold text-blue-900 truncate">{company.legal_name || company.name}</p>
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-            {company.trn && <span className="text-xs text-brand-600">TRN: {company.trn}</span>}
-            {company.email && <span className="text-xs text-brand-600 truncate">{company.email}</span>}
-            {company.city && <span className="text-xs text-brand-500">{company.city}, {company.country || 'AE'}</span>}
+            {company.trn && <span className="text-xs text-blue-600">TRN: {company.trn}</span>}
+            {company.email && <span className="text-xs text-blue-600 truncate">{company.email}</span>}
+            {company.city && <span className="text-xs text-blue-500">{company.city}, {company.country || 'AE'}</span>}
           </div>
         </div>
         <button onClick={onRefill} title="Re-fill from company"
-          className="p-1.5 rounded-lg text-brand-500 hover:bg-brand-100 transition-colors shrink-0">
+          className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-100 transition-colors shrink-0">
           <RotateCcw className="h-4 w-4" />
         </button>
       </div>
@@ -350,7 +350,7 @@ function BuyerPicker({ activeId, selectedCustomer, onSelect, onClear }: {
           onFocus={() => setOpen(true)}
           placeholder="Search by name, TRN, or email…"
           className="w-full rounded-xl border-2 border-gray-200 px-3.5 py-2.5 text-sm
-                     focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 pr-10" />
+                     focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 pr-10" />
         <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
         {open && (
           <>
@@ -364,7 +364,7 @@ function BuyerPicker({ activeId, selectedCustomer, onSelect, onClear }: {
               ) : filtered.map((c) => (
                 <button key={c.id}
                   onClick={() => { onSelect(c); setOpen(false); setQuery(''); }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-brand-50 transition-colors border-b border-gray-50 last:border-0">
+                  className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0">
                   <p className="text-sm font-semibold text-gray-900">{c.legal_name || c.name}</p>
                   <div className="flex gap-3 mt-0.5">
                     {c.trn && <span className="text-xs text-gray-500">TRN: {c.trn}</span>}
@@ -445,7 +445,7 @@ function LineItemsEditor({ items, currency, onChange }: {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <span className="h-6 w-6 rounded-lg bg-brand-600 text-white text-xs font-bold flex items-center justify-center">
+                <span className="h-6 w-6 rounded-lg bg-blue-600 text-white text-xs font-bold flex items-center justify-center">
                   {idx + 1}
                 </span>
                 <span className="text-sm font-semibold text-gray-700 truncate max-w-[200px]">
@@ -480,7 +480,7 @@ function LineItemsEditor({ items, currency, onChange }: {
                     onChange={(e) => updateItem(item.id, 'name', e.target.value)}
                     placeholder="e.g. Consulting Services"
                     className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm
-                               focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100" />
+                               focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Description</label>
@@ -488,7 +488,7 @@ function LineItemsEditor({ items, currency, onChange }: {
                     onChange={(e) => updateItem(item.id, 'description', e.target.value)}
                     placeholder="Optional details"
                     className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm
-                               focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100" />
+                               focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
                 </div>
               </div>
 
@@ -501,13 +501,13 @@ function LineItemsEditor({ items, currency, onChange }: {
                   <input type="number" value={item.quantity} min="0" step="any"
                     onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
                     className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm
-                               focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100" />
+                               focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Unit</label>
                   <select value={item.unit} onChange={(e) => updateItem(item.id, 'unit', e.target.value)}
                     className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm
-                               focus:outline-none focus:border-brand-500 cursor-pointer">
+                               focus:outline-none focus:border-blue-500 cursor-pointer">
                     {UNIT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.value}</option>)}
                   </select>
                 </div>
@@ -519,7 +519,7 @@ function LineItemsEditor({ items, currency, onChange }: {
                     onChange={(e) => updateItem(item.id, 'unitPrice', e.target.value)}
                     placeholder="0.00"
                     className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm
-                               focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100" />
+                               focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Discount</label>
@@ -527,7 +527,7 @@ function LineItemsEditor({ items, currency, onChange }: {
                     onChange={(e) => updateItem(item.id, 'discount', e.target.value)}
                     placeholder="0.00"
                     className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm
-                               focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100" />
+                               focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
                 </div>
               </div>
 
@@ -539,7 +539,7 @@ function LineItemsEditor({ items, currency, onChange }: {
                   </label>
                   <select value={item.vatCategory} onChange={(e) => updateItem(item.id, 'vatCategory', e.target.value)}
                     className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm
-                               focus:outline-none focus:border-brand-500 cursor-pointer">
+                               focus:outline-none focus:border-blue-500 cursor-pointer">
                     {VAT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
@@ -548,7 +548,7 @@ function LineItemsEditor({ items, currency, onChange }: {
                   <input type="number" value={item.vatRate} min="0" max="100" step="0.01"
                     onChange={(e) => updateItem(item.id, 'vatRate', e.target.value)}
                     className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm
-                               focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100" />
+                               focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
                 </div>
               </div>
 
@@ -557,7 +557,7 @@ function LineItemsEditor({ items, currency, onChange }: {
                 <div className="flex items-center justify-end gap-5 pt-2 border-t border-gray-100 text-xs text-gray-500">
                   <span>Net: <span className="font-bold text-gray-900">{currency} {net.toFixed(2)}</span></span>
                   <span>VAT: <span className="font-bold text-blue-600">+{vatAmt.toFixed(2)}</span></span>
-                  <span>Total: <span className="font-bold text-brand-700">{(net + vatAmt).toFixed(2)}</span></span>
+                  <span>Total: <span className="font-bold text-blue-700">{(net + vatAmt).toFixed(2)}</span></span>
                 </div>
               )}
             </div>
@@ -568,8 +568,8 @@ function LineItemsEditor({ items, currency, onChange }: {
       {/* Add item */}
       <button onClick={addItem}
         className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl
-                   border-2 border-dashed border-brand-200 text-brand-600 font-semibold text-sm
-                   hover:border-brand-400 hover:bg-brand-50 transition-all">
+                   border-2 border-dashed border-blue-200 text-blue-600 font-semibold text-sm
+                   hover:border-blue-400 hover:bg-blue-50 transition-all">
         <Plus className="h-4 w-4" /> Add Line Item
       </button>
 
@@ -589,7 +589,7 @@ function LineItemsEditor({ items, currency, onChange }: {
               <span>Total VAT</span>
               <span className="font-mono">+{totalVat.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-base font-black text-brand-700 pt-2 border-t-2 border-gray-200">
+            <div className="flex justify-between text-base font-black text-blue-700 pt-2 border-t-2 border-gray-200">
               <span>Amount Due</span>
               <span className="font-mono">{currency} {grandTotal.toFixed(2)}</span>
             </div>
@@ -706,7 +706,7 @@ function ReviewStep({ values, lineItems, hasBuyer, onSubmit, isSubmitting, submi
             <div className="flex justify-between text-sm text-blue-600">
               <span>Total VAT</span><span className="font-mono">+{totalVat.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-base font-black text-brand-700">
+            <div className="flex justify-between text-base font-black text-blue-700">
               <span>Amount Due</span>
               <span className="font-mono">{currency} {grandTotal.toFixed(2)}</span>
             </div>
@@ -806,7 +806,7 @@ function InvoicePreview({ values, lineItems, activeFieldId }: {
     <div className="sticky top-[156px]">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-brand-500" /> Live Preview
+          <Sparkles className="h-3.5 w-3.5 text-blue-500" /> Live Preview
         </h3>
         <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Auto-updates</span>
       </div>
@@ -968,7 +968,7 @@ function InvoicePreview({ values, lineItems, activeFieldId }: {
           </div>
           <div className="border-t-2 border-gray-300 pt-2 flex justify-between items-center">
             <span className="text-xs font-black uppercase tracking-wider text-gray-700">Amount Due</span>
-            <span className="text-base font-black font-mono text-brand-700">
+            <span className="text-base font-black font-mono text-blue-700">
               {v('IBT-005') || 'AED'} {grandTotal > 0 ? grandTotal.toFixed(2) : '0.00'}
             </span>
           </div>
@@ -995,7 +995,7 @@ function InvoicePreview({ values, lineItems, activeFieldId }: {
           </div>
           <div className="flex gap-1">
             {['UBL 2.1', 'FTA', 'VAT'].map((b) => (
-              <span key={b} className="text-[8px] px-1.5 py-0.5 rounded-full bg-brand-50 text-brand-600 font-black border border-brand-100">
+              <span key={b} className="text-[8px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 font-black border border-blue-100">
                 {b}
               </span>
             ))}
@@ -1011,10 +1011,10 @@ function InvoicePreview({ values, lineItems, activeFieldId }: {
       )}
 
       {activeFieldId && (
-        <div className="mt-3 rounded-xl bg-brand-50 border border-brand-100 px-3.5 py-3">
-          <p className="text-[10px] font-bold text-brand-700 uppercase tracking-wider mb-1">Editing field</p>
-          <p className="text-xs font-mono text-brand-600 font-semibold">{activeFieldId}</p>
-          <p className="text-[11px] text-brand-500 mt-0.5 leading-snug">
+        <div className="mt-3 rounded-xl bg-blue-50 border border-blue-100 px-3.5 py-3">
+          <p className="text-[10px] font-bold text-blue-700 uppercase tracking-wider mb-1">Editing field</p>
+          <p className="text-xs font-mono text-blue-600 font-semibold">{activeFieldId}</p>
+          <p className="text-[11px] text-blue-500 mt-0.5 leading-snug">
             {PINT_FIELDS.find((f) => f.id === activeFieldId)?.businessTerm}
           </p>
         </div>
@@ -1107,17 +1107,18 @@ export default function PintCreatePage() {
   }, [activeId, draftKey, draftIsEmpty]);
 
   const resumeDraft = useCallback(() => {
+    let data: typeof draftSnapshot | null = null;
     setRestorable((cur) => {
-      if (cur) {
-        const d = cur.data;
-        setValues(d.values);
-        setLineItems(d.lineItems);
-        setSelectedBuyer(d.selectedBuyer);
-        setCurrentStep(d.currentStep);
-        autoFilledRef.current = true; // keep restored seller fields
-      }
+      data = cur?.data ?? null;
       return null;
     });
+    if (data) {
+      setValues(data.values);
+      setLineItems(data.lineItems);
+      setSelectedBuyer(data.selectedBuyer);
+      setCurrentStep(data.currentStep);
+      autoFilledRef.current = true;
+    }
   }, []);
 
   const discardDraft = useCallback(() => {
@@ -1368,7 +1369,7 @@ export default function PintCreatePage() {
                 className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900
                            px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
                 {showOptional
-                  ? <Eye className="h-3.5 w-3.5 text-brand-500" />
+                  ? <Eye className="h-3.5 w-3.5 text-blue-500" />
                   : <EyeOff className="h-3.5 w-3.5 text-gray-400" />}
                 {showOptional ? 'All fields' : 'Required only'}
               </button>
@@ -1377,7 +1378,7 @@ export default function PintCreatePage() {
 
           {/* Progress bar */}
           <div className="w-full bg-gray-100 rounded-full h-1.5 mb-3">
-            <div className="bg-brand-600 h-1.5 rounded-full transition-all duration-500"
+            <div className="bg-blue-600 h-1.5 rounded-full transition-all duration-500"
               style={{ width: `${totalPct}%` }} />
           </div>
 
@@ -1393,13 +1394,13 @@ export default function PintCreatePage() {
                   disabled={idx > currentStep}
                   className={[
                     'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all',
-                    current  ? 'bg-brand-50 text-brand-700 border border-brand-100 shadow-sm' : '',
+                    current  ? 'bg-blue-50 text-blue-700 border border-blue-100 shadow-sm' : '',
                     done     ? 'text-emerald-700 hover:bg-emerald-50 cursor-pointer' : '',
                     !current && !done ? 'text-gray-400 cursor-not-allowed' : '',
                   ].join(' ')}>
                   {done
                     ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                    : <Icon className={`h-3.5 w-3.5 ${current ? 'text-brand-500' : 'text-gray-300'}`} />}
+                    : <Icon className={`h-3.5 w-3.5 ${current ? 'text-blue-500' : 'text-gray-300'}`} />}
                   {s.label}
                 </button>
               );
@@ -1442,8 +1443,8 @@ export default function PintCreatePage() {
             <div className="bg-white rounded-2xl border border-gray-200 px-6 py-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center shrink-0">
-                    {(() => { const Icon = step.icon; return <Icon className="h-5 w-5 text-brand-600" />; })()}
+                  <div className="h-10 w-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                    {(() => { const Icon = step.icon; return <Icon className="h-5 w-5 text-blue-600" />; })()}
                   </div>
                   <div>
                     <h2 className="text-base font-bold text-gray-900">
@@ -1456,7 +1457,7 @@ export default function PintCreatePage() {
                   <div className="text-right shrink-0">
                     <p className="text-xs text-gray-500">{filledMandatory} / {mandatoryFields.length} required</p>
                     <div className="w-28 bg-gray-100 rounded-full h-1.5 mt-1.5">
-                      <div className={`h-1.5 rounded-full transition-all ${stepPct === 100 ? 'bg-emerald-500' : 'bg-brand-500'}`}
+                      <div className={`h-1.5 rounded-full transition-all ${stepPct === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`}
                         style={{ width: `${stepPct}%` }} />
                     </div>
                   </div>
@@ -1496,7 +1497,7 @@ export default function PintCreatePage() {
                     <CheckCircle2 className="h-12 w-12 mx-auto mb-3 text-emerald-300" />
                     <p className="text-sm font-medium text-gray-500">No required fields in this step.</p>
                     <button onClick={() => setShowOptional(true)}
-                      className="mt-2 text-xs text-brand-600 hover:underline font-medium">
+                      className="mt-2 text-xs text-blue-600 hover:underline font-medium">
                       Show all optional fields →
                     </button>
                   </div>
@@ -1543,7 +1544,7 @@ export default function PintCreatePage() {
                 </button>
                 <div className="text-xs text-gray-400">Step {currentStep + 1} of {STEPS.length}</div>
                 <button onClick={handleNext}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700
                              text-white text-sm font-semibold transition-colors shadow-sm">
                   {currentStep === STEPS.length - 2 ? 'Review & Submit' : 'Next'}
                   <ChevronRight className="h-4 w-4" />

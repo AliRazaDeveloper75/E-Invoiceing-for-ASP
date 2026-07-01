@@ -88,7 +88,7 @@ export function PhoneInput({
       <div
         className={clsx(
           'flex items-stretch rounded-lg border shadow-sm overflow-hidden',
-          'focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-brand-500',
+          'focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500',
           error ? 'border-red-400' : 'border-gray-300',
           disabled && 'bg-gray-50'
         )}

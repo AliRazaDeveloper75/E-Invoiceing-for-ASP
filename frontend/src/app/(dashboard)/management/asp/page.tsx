@@ -48,8 +48,8 @@ const TABS = [
     id: 'asp',
     label: 'ASP Verification Queue',
     icon: ShieldCheck,
-    color: 'text-orange-600',
-    activeBg: 'bg-orange-50 border-orange-500',
+    color: 'text-blue-600',
+    activeBg: 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-500 shadow-sm',
     description: 'Draft invoices ready to be submitted to the E-Invoice / ASP network',
     emptyText: 'No draft invoices in the ASP queue',
   },
@@ -57,8 +57,8 @@ const TABS = [
     id: 'fta',
     label: 'FTA Reporting Queue',
     icon: Landmark,
-    color: 'text-teal-600',
-    activeBg: 'bg-teal-50 border-teal-500',
+    color: 'text-blue-600',
+    activeBg: 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-500 shadow-sm',
     description: 'Validated invoices pending FTA reporting',
     emptyText: 'No invoices pending FTA reporting',
   },
@@ -70,10 +70,12 @@ function InvoiceRow({
   invoice,
   tab,
   onRefresh,
+  idx = 0,
 }: {
   invoice: AdminInvoice;
   tab: string;
   onRefresh: () => void;
+  idx?: number;
 }) {
   const [loading, setLoading] = useState(false);
   const [done, setDone]       = useState(false);
@@ -97,7 +99,7 @@ function InvoiceRow({
   };
 
   return (
-    <tr className={`hover:bg-gray-50 transition-colors ${done ? 'opacity-40' : ''}`}>
+    <tr className={`transition-all duration-150 ${idx % 2 === 0 ? 'bg-white' : 'bg-blue-50/10'} hover:bg-blue-50/40 hover:shadow-[inset_0_1px_0_rgba(59,130,246,0.06)] ${done ? 'opacity-40' : ''}`}>
       <td className="px-4 py-3">
         <p className="font-semibold text-gray-900">{invoice.invoice_number}</p>
         <p className="text-xs text-gray-400">{invoice.type_display}</p>
@@ -121,17 +123,17 @@ function InvoiceRow({
       <td className="px-4 py-3 text-xs text-gray-500">{invoice.created_by_name || '—'}</td>
       <td className="px-4 py-3">
         {done ? (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-100 text-emerald-700">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border border-emerald-200">
             <CheckCircle2 className="h-3 w-3" /> Done
           </span>
         ) : (
           <button
             onClick={handleAction}
             disabled={loading}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 disabled:opacity-50 shadow-sm
               ${tab === 'asp'
-                ? 'bg-orange-500 text-white hover:bg-orange-600'
-                : 'bg-teal-600 text-white hover:bg-teal-700'
+                ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white'
+                : 'bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white'
               }`}
           >
             {loading
@@ -193,22 +195,22 @@ function QueueTable({ tab }: { tab: string }) {
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Search invoices…"
-              className="pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-52"
+              className="pl-8 pr-3 py-2.5 text-sm border border-gray-200/80 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm w-52"
             />
           </div>
           <button
             onClick={() => mutate()}
-            className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
+            className="p-2 rounded-xl border border-gray-200/80 text-gray-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200/60 transition-all shadow-sm"
           >
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
 
-      {/* Alert banner for non-empty queues */}
+      {/* Alert banner with gradient left border */}
       {!isLoading && count > 0 && (
-        <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium
-          ${tab === 'asp' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'bg-teal-50 text-teal-700 border border-teal-200'}`}>
+        <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-sm border-l-4
+          ${tab === 'asp' ? 'bg-orange-50 text-orange-700 border-l-orange-400 border border-orange-200' : 'bg-teal-50 text-teal-700 border-l-teal-400 border border-teal-200'}`}>
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {tab === 'asp'
             ? `${count} draft invoice${count !== 1 ? 's' : ''} awaiting ASP submission`
@@ -217,65 +219,69 @@ function QueueTable({ tab }: { tab: string }) {
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      {/* Table — 3D card */}
+      <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] overflow-hidden relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 text-gray-400">
+          <div className="flex items-center justify-center py-20 text-gray-400">
             <RefreshCw className="h-5 w-5 animate-spin mr-2" /> Loading…
           </div>
         ) : invoices.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-            <CheckCircle2 className="h-10 w-10 mb-3 opacity-20" />
-            <p className="text-sm font-medium">{tabInfo.emptyText}</p>
-            <p className="text-xs mt-1">Queue is clear</p>
+            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center mb-4">
+              <CheckCircle2 className="h-7 w-7 text-blue-400" />
+            </div>
+            <p className="font-medium text-gray-500">{tabInfo.emptyText}</p>
+            <p className="text-xs mt-1 text-gray-400">Queue is clear</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Invoice</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Company</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Created by</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {invoices.map((inv) => (
-                  <InvoiceRow key={inv.id} invoice={inv} tab={tab} onRefresh={() => mutate()} />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gradient-to-r from-gray-50/80 to-blue-50/40 border-b border-blue-100/60">
+                    <th className="text-left px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Invoice</th>
+                    <th className="text-left px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Company</th>
+                    <th className="text-left px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
+                    <th className="text-right px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th className="text-left px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="text-left px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Created by</th>
+                    <th className="text-left px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-blue-100/40">
+                  {invoices.map((inv, idx) => (
+                    <InvoiceRow key={inv.id} invoice={inv} tab={tab} onRefresh={() => mutate()} idx={idx} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="px-4 py-3.5 border-t border-blue-100/40 bg-gradient-to-r from-gray-50/50 to-blue-50/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
+                <span className="text-gray-500 text-xs">{count} invoices</span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 text-gray-600 hover:text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200/60 disabled:text-gray-300 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" /> Prev
+                  </button>
+                  <span className="text-xs text-gray-500 px-2">Page {page} of {totalPages}</span>
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 text-gray-600 hover:text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200/60 disabled:text-gray-300 disabled:cursor-not-allowed"
+                  >
+                    Next <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <p>{count} invoices</p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <span>Page {page} of {totalPages}</span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -293,15 +299,21 @@ function AspPageInner() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">ASP & FTA Queues</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Submit invoices to E-Invoice / ASP and report validated invoices to the FTA
-        </p>
+      {/* Gradient card header */}
+      <div className="bg-gradient-to-br from-white via-blue-50/30 to-white rounded-2xl p-6 shadow-[0_8px_30px_-8px_rgba(59,130,246,0.15)] border border-blue-100/70 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+        <div>
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="h-2 w-2 rounded-full bg-gradient-to-r from-blue-400 to-blue-600" />
+            <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-[0.12em]">ASP &amp; FTA Queues</span>
+          </div>
+          <h1 className="text-xl font-bold text-gray-900 tracking-tight">ASP &amp; FTA Queues</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Submit invoices to E-Invoice / ASP and report validated invoices to the FTA
+          </p>
+        </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs — blue theme */}
       <div className="flex gap-2">
         {TABS.map((tab) => {
           const active = activeTab === tab.id;
@@ -310,10 +322,10 @@ function AspPageInner() {
             <button
               key={tab.id}
               onClick={() => setTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all duration-200
                 ${active
-                  ? tab.activeBg + ' ' + tab.color
-                  : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  ? tab.activeBg
+                  : 'border-gray-200 bg-white text-gray-500 hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50 shadow-sm'
                 }`}
             >
               <Icon className="h-4 w-4" />

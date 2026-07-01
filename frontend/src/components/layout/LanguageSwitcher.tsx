@@ -62,7 +62,7 @@ export function LanguageSwitcher({ variant = 'dark', className }: Props) {
                 }}
                 className={clsx(
                   'flex items-center justify-between w-full px-3 py-2 text-sm transition-colors',
-                  active ? 'text-brand-700 font-semibold bg-brand-50' : 'text-gray-700 hover:bg-gray-50',
+                  active ? 'text-blue-700 font-semibold bg-blue-50' : 'text-gray-700 hover:bg-gray-50',
                 )}
               >
                 <span>{l.native}</span>

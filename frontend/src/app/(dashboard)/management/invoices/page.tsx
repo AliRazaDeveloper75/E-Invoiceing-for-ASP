@@ -47,16 +47,16 @@ interface PaginatedResponse {
 // ─── Status config ─────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
-  draft:     { label: 'Draft',     color: 'text-gray-600',    bg: 'bg-gray-100',    icon: FileText },
-  pending:   { label: 'Pending',   color: 'text-blue-600',    bg: 'bg-blue-100',    icon: Clock },
-  submitted: { label: 'Submitted', color: 'text-indigo-600',  bg: 'bg-indigo-100',  icon: Send },
-  validated: { label: 'Validated', color: 'text-emerald-600', bg: 'bg-emerald-100', icon: CheckCircle2 },
-  rejected:  { label: 'Rejected',  color: 'text-red-600',     bg: 'bg-red-100',     icon: XCircle },
-  cancelled: { label: 'Cancelled', color: 'text-slate-500',   bg: 'bg-slate-100',   icon: XCircle },
+  draft:     { label: 'Draft',     color: 'text-gray-600',    bg: 'bg-gradient-to-r from-gray-100 to-gray-50',    icon: FileText },
+  pending:   { label: 'Pending',   color: 'text-blue-600',    bg: 'bg-gradient-to-r from-blue-100 to-blue-50',    icon: Clock },
+  submitted: { label: 'Submitted', color: 'text-indigo-600',  bg: 'bg-gradient-to-r from-indigo-100 to-indigo-50',  icon: Send },
+  validated: { label: 'Validated', color: 'text-emerald-600', bg: 'bg-gradient-to-r from-emerald-100 to-emerald-50', icon: CheckCircle2 },
+  rejected:  { label: 'Rejected',  color: 'text-red-600',     bg: 'bg-gradient-to-r from-red-100 to-red-50',     icon: XCircle },
+  cancelled: { label: 'Cancelled', color: 'text-slate-500',   bg: 'bg-gradient-to-r from-slate-100 to-slate-50',   icon: XCircle },
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, color: 'text-gray-600', bg: 'bg-gray-100', icon: FileText };
+  const cfg = STATUS_CONFIG[status] ?? { label: status, color: 'text-gray-600', bg: 'bg-gradient-to-r from-gray-100 to-gray-50', icon: FileText };
   const Icon = cfg.icon;
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.bg} ${cfg.color}`}>
@@ -104,7 +104,7 @@ function ActionCell({ invoice, onRefresh }: { invoice: AdminInvoice; onRefresh: 
           onClick={handleSubmit}
           disabled={loading !== null}
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium
-                     bg-orange-100 text-orange-700 hover:bg-orange-200 disabled:opacity-50 transition-colors"
+                     bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white shadow-sm disabled:opacity-50 transition-all duration-200"
         >
           {loading === 'submit' ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
           Submit ASP
@@ -115,14 +115,14 @@ function ActionCell({ invoice, onRefresh }: { invoice: AdminInvoice; onRefresh: 
           onClick={handleFta}
           disabled={loading !== null}
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium
-                     bg-teal-100 text-teal-700 hover:bg-teal-200 disabled:opacity-50 transition-colors"
+                     bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white shadow-sm disabled:opacity-50 transition-all duration-200"
         >
           {loading === 'fta' ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Landmark className="h-3 w-3" />}
           Report FTA
         </button>
       )}
       {invoice.fta_status === 'reported' && (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-teal-50 text-teal-600">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-gradient-to-r from-teal-50 to-teal-50/80 text-teal-600 border border-teal-200">
           <CheckCircle2 className="h-3 w-3" /> FTA Reported
         </span>
       )}
@@ -160,24 +160,30 @@ export default function AdminInvoicesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">All Invoices</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            View and manage invoices across all companies
-          </p>
+      {/* Gradient card header */}
+      <div className="bg-gradient-to-br from-white via-blue-50/30 to-white rounded-2xl p-6 shadow-[0_8px_30px_-8px_rgba(59,130,246,0.15)] border border-blue-100/70 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="h-2 w-2 rounded-full bg-gradient-to-r from-blue-400 to-blue-600" />
+              <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-[0.12em]">All Invoices</span>
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight">All Invoices</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              View and manage invoices across all companies
+            </p>
+          </div>
+          <button
+            onClick={() => mutate()}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-gray-200/80 bg-white text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200/60 transition-all shadow-sm"
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Refresh
+          </button>
         </div>
-        <button
-          onClick={() => mutate()}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
-        >
-          <RefreshCw className="h-3.5 w-3.5" /> Refresh
-        </button>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      {/* Filters — 3D card */}
+      <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-4 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
         <form onSubmit={handleSearch} className="flex items-center gap-3 flex-wrap">
           <div className="relative flex-1 min-w-[220px]">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
@@ -185,7 +191,7 @@ export default function AdminInvoicesPage() {
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Invoice #, customer, company…"
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm bg-white"
             />
           </div>
 
@@ -194,7 +200,7 @@ export default function AdminInvoicesPage() {
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="text-sm border border-gray-200/80 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm"
             >
               <option value="">All Statuses</option>
               {Object.entries(STATUS_CONFIG).map(([val, { label }]) => (
@@ -205,120 +211,124 @@ export default function AdminInvoicesPage() {
 
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
           >
-            Search
+            <Search className="h-3.5 w-3.5" /> Search
           </button>
         </form>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      {/* Table — 3D card */}
+      <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] overflow-hidden relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 text-gray-400">
+          <div className="flex items-center justify-center py-20 text-gray-400">
             <RefreshCw className="h-5 w-5 animate-spin mr-2" /> Loading invoices…
           </div>
         ) : invoices.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-            <FileText className="h-10 w-10 mb-3 opacity-30" />
-            <p className="text-sm">No invoices found</p>
+          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center mb-4">
+              <FileText className="h-7 w-7 text-blue-400" />
+            </div>
+            <p className="font-medium text-gray-500">No invoices found</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Invoice</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Company</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {invoices.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{inv.invoice_number}</p>
-                      <p className="text-xs text-gray-400">{inv.type_display}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <Building2 className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                        <div>
-                          <p className="text-gray-700">{inv.company_name}</p>
-                          {inv.company_trn && <p className="text-xs text-gray-400">TRN: {inv.company_trn}</p>}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <User className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                        <span className="text-gray-700">{inv.customer_name || '—'}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={inv.status} />
-                      {inv.fta_status === 'reported' && (
-                        <span className="block mt-1 text-[10px] text-teal-600 font-medium">FTA ✓</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <p className="font-semibold text-gray-900">
-                        {inv.currency} {parseFloat(inv.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        VAT: {parseFloat(inv.total_vat).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">
-                      {inv.issue_date ? new Date(inv.issue_date).toLocaleDateString('en-AE') : '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/management/invoices/${inv.id}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium
-                                     bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-                        >
-                          <Eye className="h-3 w-3" /> View
-                        </Link>
-                        <ActionCell invoice={inv} onRefresh={() => mutate()} />
-                      </div>
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gradient-to-r from-gray-50/80 to-blue-50/40 border-b border-blue-100/60">
+                    <th className="text-left px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Invoice</th>
+                    <th className="text-left px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Company</th>
+                    <th className="text-left px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
+                    <th className="text-left px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="text-right px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th className="text-left px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="text-left px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-blue-100/40">
+                  {invoices.map((inv, idx) => (
+                    <tr key={inv.id} className={`transition-all duration-150 ${idx % 2 === 0 ? 'bg-white' : 'bg-blue-50/10'} hover:bg-blue-50/40 hover:shadow-[inset_0_1px_0_rgba(59,130,246,0.06)]`}>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-900">{inv.invoice_number}</p>
+                        <p className="text-xs text-gray-400">{inv.type_display}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <Building2 className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                          <div>
+                            <p className="text-gray-700">{inv.company_name}</p>
+                            {inv.company_trn && <p className="text-xs text-gray-400">TRN: {inv.company_trn}</p>}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <User className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                          <span className="text-gray-700">{inv.customer_name || '—'}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={inv.status} />
+                        {inv.fta_status === 'reported' && (
+                          <span className="block mt-1 text-[10px] text-teal-600 font-medium">FTA ✓</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <p className="font-semibold text-gray-900">
+                          {inv.currency} {parseFloat(inv.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          VAT: {parseFloat(inv.total_vat).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">
+                        {inv.issue_date ? new Date(inv.issue_date).toLocaleDateString('en-AE') : '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/management/invoices/${inv.id}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium
+                                       bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-400 hover:to-gray-500 text-white shadow-sm transition-all duration-200"
+                          >
+                            <Eye className="h-3 w-3" /> View
+                          </Link>
+                          <ActionCell invoice={inv} onRefresh={() => mutate()} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="px-4 py-3.5 border-t border-blue-100/40 bg-gradient-to-r from-gray-50/50 to-blue-50/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
+                <span className="text-gray-500 text-xs">{count} invoices total</span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 text-gray-600 hover:text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200/60 disabled:text-gray-300 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" /> Prev
+                  </button>
+                  <span className="text-xs text-gray-500 px-2">Page {page} of {totalPages}</span>
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 text-gray-600 hover:text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200/60 disabled:text-gray-300 disabled:cursor-not-allowed"
+                  >
+                    Next <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <p>{count} invoices total</p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <span>Page {page} of {totalPages}</span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

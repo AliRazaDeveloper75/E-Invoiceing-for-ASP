@@ -71,8 +71,8 @@ export function ServicesContent() {
             }}
           />
         </div>
-        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 lg:py-36">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 lg:py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
 
             {/* Left: Text content */}
             <div className="max-w-xl">
@@ -248,7 +248,7 @@ export function ServicesContent() {
               const color = COLORS[i];
               return (
                 <AnimatedSection key={s.title} delay={i * 100} direction="up">
-                  <div className="group relative bg-white rounded-2xl border border-gray-200 p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-gray-200/80 hover:border-transparent h-full flex flex-col">
+                  <div className="group relative bg-blue-50/60 rounded-2xl border border-gray-200 p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-gray-200/80 hover:border-transparent h-full flex flex-col">
                     <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gray-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                     <div className="relative flex-1 flex flex-col">
                       <div
@@ -318,15 +318,15 @@ export function ServicesContent() {
                 color: 'from-purple-600 to-purple-400',
               },
             ].map((step, i) => (
-              <AnimatedSection key={step.step} delay={i * 150} direction="up">
-                <div className="text-center">
+              <AnimatedSection key={step.step} delay={i * 150} direction="up" className="flex">
+                <div className="text-center bg-blue-50/60 border border-blue-200 rounded-2xl p-8 w-full flex flex-col items-center">
                   <div
-                    className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} text-white text-xl font-bold shadow-lg mb-6 mx-auto`}
+                    className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} text-white text-xl font-bold shadow-lg mb-6`}
                   >
                     {step.step}
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
-                  <p className="text-[15px] text-gray-500 leading-relaxed max-w-xs mx-auto">
+                  <p className="text-[15px] text-gray-500 leading-relaxed max-w-xs grow">
                     {step.desc}
                   </p>
                 </div>

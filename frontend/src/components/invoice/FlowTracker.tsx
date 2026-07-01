@@ -38,14 +38,14 @@ const STEP_LABELS: Record<number, string> = {
 
 const STATUS_ICON_COLOR: Record<CornerFlowStatus, string> = {
   idle:       'text-gray-300',
-  processing: 'text-brand-500',
+  processing: 'text-blue-500',
   complete:   'text-emerald-500',
   error:      'text-red-500',
 };
 
 const STATUS_BADGE: Record<CornerFlowStatus, { label: string; className: string }> = {
   idle:       { label: 'Waiting',    className: 'bg-gray-100 text-gray-400' },
-  processing: { label: 'In Progress',className: 'bg-brand-100 text-brand-600' },
+  processing: { label: 'In Progress',className: 'bg-blue-100 text-blue-600' },
   complete:   { label: 'Complete',   className: 'bg-emerald-100 text-emerald-700' },
   error:      { label: 'Failed',     className: 'bg-red-100 text-red-700' },
 };
@@ -100,7 +100,7 @@ function CornerCard({ corner, isLast }: { corner: CornerFlowState; isLast: boole
           className={clsx(
             'relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300',
             status === 'complete'   && 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-200',
-            status === 'processing' && 'bg-white text-brand-600 border-2 border-brand-500 ring-4 ring-brand-100',
+            status === 'processing' && 'bg-white text-blue-600 border-2 border-blue-500 ring-4 ring-blue-100',
             status === 'error'      && 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-md shadow-red-200',
             status === 'idle'       && 'bg-gray-100 text-gray-400 border border-gray-200',
           )}
@@ -114,8 +114,8 @@ function CornerCard({ corner, isLast }: { corner: CornerFlowState; isLast: boole
           {/* Live pulse on the current step */}
           {status === 'processing' && (
             <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-brand-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500" />
             </span>
           )}
         </div>
@@ -131,7 +131,7 @@ function CornerCard({ corner, isLast }: { corner: CornerFlowState; isLast: boole
           <p className={clsx(
             'text-[10px] font-medium mt-0.5',
             status === 'complete'   ? 'text-emerald-600' :
-            status === 'processing' ? 'text-brand-600' :
+            status === 'processing' ? 'text-blue-600' :
             status === 'error'      ? 'text-red-600' : 'text-gray-400',
           )}>
             {badge.label}
@@ -214,7 +214,7 @@ export function FlowTracker({ flow, compact = false }: FlowTrackerProps) {
               : activeCorner.status === 'complete'
               ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
               : activeCorner.status === 'processing'
-              ? 'bg-brand-50 border-brand-100 text-brand-700'
+              ? 'bg-blue-50 border-blue-100 text-blue-700'
               : 'bg-gray-50 border-gray-100 text-gray-500',
           )}
         >

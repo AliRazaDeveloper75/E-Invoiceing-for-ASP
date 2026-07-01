@@ -151,6 +151,7 @@ class ARByCustomerView(APIView):
             r = rows.setdefault(cid, {
                 'customer_id': cid,
                 'customer_name': inv.customer.name if inv.customer else '—',
+                'logo': inv.customer.logo.url if inv.customer and inv.customer.logo else None,
                 'outstanding': Decimal('0.00'),
                 'overdue': Decimal('0.00'),
                 'invoice_count': 0,

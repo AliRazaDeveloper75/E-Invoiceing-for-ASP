@@ -151,7 +151,7 @@ export function LocationPhoneFields({
                 <select
                   {...field}
                   value={field.value ?? countryForm.languages[0] ?? ''}
-                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   {countryForm.languages.map((lang) => (
                     <option key={lang} value={lang}>

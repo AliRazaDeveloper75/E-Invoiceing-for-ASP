@@ -14,15 +14,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const { collapsed } = useSidebar();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50/80">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 to-blue-50/40">
       <Sidebar />
       <div
-        className="flex flex-col flex-1 min-h-screen overflow-hidden transition-all duration-300 ease-in-out"
-        style={{ marginLeft: collapsed ? 68 : 256 }}
+        className={`flex flex-col flex-1 min-h-screen overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? 'sm:ml-[68px]' : 'sm:ml-64'}`}
       >
         <Header />
-        <main className="flex-1 overflow-y-auto pt-14">
-          <div className="max-w-7xl mx-auto px-6 py-8">
+        <main className="flex-1 overflow-y-auto pt-4">
+          <div className="max-w-7xl mx-auto px-6 py-5">
             {children}
           </div>
         </main>
@@ -53,7 +52,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin h-8 w-8 rounded-full border-4 border-brand-600 border-t-transparent" />
+        <div className="animate-spin h-8 w-8 rounded-full border-4 border-blue-500 border-t-transparent" />
       </div>
     );
   }

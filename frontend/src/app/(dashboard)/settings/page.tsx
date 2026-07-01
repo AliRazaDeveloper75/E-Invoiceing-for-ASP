@@ -3,14 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
-import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { AxiosError } from 'axios';
 import type { APISuccess } from '@/types';
+import { AnimatedSection } from '@/app/(landing)/AnimatedSection';
 import {
   Bell, Shield, Globe, ShieldCheck, ShieldOff,
   QrCode, CheckCircle2, AlertCircle, Copy, Check,
 } from 'lucide-react';
+import { clsx } from 'clsx';
 
 // ── MFA Section ───────────────────────────────────────────────────────────────
 
@@ -112,11 +113,20 @@ function MFASection() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const Spinner = () => (
+    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+  );
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+    <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg shadow-gray-200/50 p-5 sm:p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-gray-500" />
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+            <ShieldCheck className="h-4 w-4 text-white" />
+          </div>
           <h2 className="font-semibold text-gray-900">Two-Factor Authentication</h2>
         </div>
         <span
@@ -135,13 +145,13 @@ function MFASection() {
 
       {/* Success / Error banners */}
       {success && (
-        <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700">
+        <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 shadow-sm">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           {success}
         </div>
       )}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 shadow-sm">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -149,29 +159,32 @@ function MFASection() {
 
       {/* ── Idle state ── */}
       {step === 'idle' && !mfaEnabled && (
-        <Button variant="secondary" onClick={startSetup} loading={loading} className="w-full sm:w-auto">
-          <ShieldCheck className="h-4 w-4 mr-1.5" />
-          Enable Two-Factor Authentication
-        </Button>
+        <button
+          onClick={startSetup}
+          disabled={loading}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 w-full sm:w-auto"
+        >
+          {loading ? <Spinner /> : <ShieldCheck className="h-4 w-4" />}
+          {loading ? 'Loading\u2026' : 'Enable Two-Factor Authentication'}
+        </button>
       )}
 
       {step === 'idle' && mfaEnabled && (
-        <Button
-          variant="danger"
+        <button
           onClick={() => { setStep('disabling'); setError(''); setSuccess(''); }}
-          className="w-full sm:w-auto"
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 px-5 py-2.5 text-sm font-semibold text-red-700 hover:text-red-800 shadow-sm hover:shadow-md transition-all duration-200 w-full sm:w-auto"
         >
-          <ShieldOff className="h-4 w-4 mr-1.5" />
+          <ShieldOff className="h-4 w-4" />
           Disable Two-Factor Authentication
-        </Button>
+        </button>
       )}
 
       {/* ── Setup: QR code + confirm code ── */}
       {step === 'setup' && setupData && (
         <div className="space-y-5 pt-2">
-          <div className="rounded-lg bg-blue-50 border border-blue-100 p-4 text-sm text-blue-700 space-y-1">
+          <div className="rounded-xl bg-indigo-50 border border-indigo-200/70 px-4 py-3.5 text-sm text-indigo-700 space-y-1">
             <p className="font-semibold">Scan this QR code with your authenticator app</p>
-            <p className="text-blue-600">
+            <p className="text-indigo-600">
               Open <strong>Google Authenticator</strong>, tap <strong>+</strong>, then
               select <strong>Scan a QR code</strong>.
             </p>
@@ -217,7 +230,7 @@ function MFASection() {
           </div>
 
           {/* Confirm code */}
-          <form onSubmit={handleEnable} className="space-y-3 border-t border-gray-100 pt-4">
+          <form onSubmit={handleEnable} className="space-y-3 border-t border-gray-200 pt-4">
             <p className="text-sm font-medium text-gray-700">
               Enter the 6-digit code from your app to confirm setup:
             </p>
@@ -232,12 +245,22 @@ function MFASection() {
               autoComplete="one-time-code"
             />
             <div className="flex gap-3">
-              <Button type="submit" loading={loading} disabled={code.length !== 6}>
-                Confirm &amp; Enable
-              </Button>
-              <Button type="button" variant="secondary" onClick={cancel} disabled={loading}>
+              <button
+                type="submit"
+                disabled={loading || code.length !== 6}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50"
+              >
+                {loading ? <Spinner /> : null}
+                {loading ? 'Confirming\u2026' : 'Confirm & Enable'}
+              </button>
+              <button
+                type="button"
+                onClick={cancel}
+                disabled={loading}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 px-5 py-2.5 text-sm font-semibold text-gray-600 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50"
+              >
                 Cancel
-              </Button>
+              </button>
             </div>
           </form>
         </div>
@@ -246,7 +269,7 @@ function MFASection() {
       {/* ── Disable: confirm with current code ── */}
       {step === 'disabling' && (
         <form onSubmit={handleDisable} className="space-y-3 pt-2">
-          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+          <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
             Enter your current authenticator code to confirm disabling 2FA.
           </div>
           <Input
@@ -260,17 +283,22 @@ function MFASection() {
             autoComplete="one-time-code"
           />
           <div className="flex gap-3">
-            <Button
+            <button
               type="submit"
-              loading={loading}
-              disabled={code.length !== 6}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={loading || code.length !== 6}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-500/25 hover:shadow-lg hover:shadow-red-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50"
             >
-              Disable 2FA
-            </Button>
-            <Button type="button" variant="secondary" onClick={cancel} disabled={loading}>
+              {loading ? <Spinner /> : null}
+              {loading ? 'Disabling\u2026' : 'Disable 2FA'}
+            </button>
+            <button
+              type="button"
+              onClick={cancel}
+              disabled={loading}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 px-5 py-2.5 text-sm font-semibold text-gray-600 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50"
+            >
               Cancel
-            </Button>
+            </button>
           </div>
         </form>
       )}
@@ -284,59 +312,88 @@ export default function SettingsPage() {
   const { user } = useAuth();
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 p-6">
-      <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+    <div className="space-y-6">
+
+      {/* ── Header card ── */}
+      <AnimatedSection>
+        <div className="bg-gradient-to-br from-blue-950 to-indigo-950 rounded-2xl border border-white/10 shadow-2xl shadow-blue-950/30 p-5 sm:p-7 relative overflow-hidden">
+          <div className="absolute inset-0 bg-grid opacity-[0.04] pointer-events-none" />
+          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative">
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="h-2 w-2 rounded-full bg-blue-400" />
+              <span className="text-[11px] font-semibold text-blue-200/70 uppercase tracking-[0.12em]">Settings</span>
+            </div>
+            <h1 className="text-xl font-bold text-white tracking-tight">Settings</h1>
+            <p className="text-sm text-blue-200/60 mt-0.5">Manage your account settings and preferences.</p>
+          </div>
+        </div>
+      </AnimatedSection>
 
       {/* Account info */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <div className="flex items-center gap-2">
-          <Shield className="h-4 w-4 text-gray-500" />
-          <h2 className="font-semibold text-gray-900">Account</h2>
+      <AnimatedSection delay={80}>
+        <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg shadow-gray-200/50 p-5 sm:p-6 space-y-5">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+              <Shield className="h-4 w-4 text-white" />
+            </div>
+            <h2 className="font-semibold text-gray-900">Account</h2>
+          </div>
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between py-2 border-b border-gray-200">
+              <span className="text-gray-500">Email</span>
+              <span className="text-gray-900 font-medium">{user?.email}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b border-gray-200">
+              <span className="text-gray-500">Role</span>
+              <span className="text-gray-900 font-medium capitalize">{user?.role?.replace(/_/g, ' ')}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b border-gray-200">
+              <span className="text-gray-500">Email verified</span>
+              <span className={user?.email_verified ? 'text-green-600 font-medium' : 'text-amber-600 font-medium'}>
+                {user?.email_verified ? 'Verified' : 'Not verified'}
+              </span>
+            </div>
+            <div className="flex justify-between py-2">
+              <span className="text-gray-500">Member since</span>
+              <span className="text-gray-900 font-medium">
+                {user?.date_joined ? new Date(user.date_joined).toLocaleDateString() : '\u2014'}
+              </span>
+            </div>
+          </div>
         </div>
-        <div className="space-y-3 text-sm">
-          <div className="flex justify-between py-2 border-b border-gray-100">
-            <span className="text-gray-500">Email</span>
-            <span className="text-gray-900 font-medium">{user?.email}</span>
-          </div>
-          <div className="flex justify-between py-2 border-b border-gray-100">
-            <span className="text-gray-500">Role</span>
-            <span className="text-gray-900 font-medium capitalize">{user?.role?.replace(/_/g, ' ')}</span>
-          </div>
-          <div className="flex justify-between py-2 border-b border-gray-100">
-            <span className="text-gray-500">Email verified</span>
-            <span className={user?.email_verified ? 'text-green-600 font-medium' : 'text-amber-600 font-medium'}>
-              {user?.email_verified ? 'Verified' : 'Not verified'}
-            </span>
-          </div>
-          <div className="flex justify-between py-2">
-            <span className="text-gray-500">Member since</span>
-            <span className="text-gray-900 font-medium">
-              {user?.date_joined ? new Date(user.date_joined).toLocaleDateString() : '—'}
-            </span>
-          </div>
-        </div>
-      </div>
+      </AnimatedSection>
 
       {/* Two-Factor Authentication */}
-      <MFASection />
+      <AnimatedSection delay={160}>
+        <MFASection />
+      </AnimatedSection>
 
       {/* Notifications placeholder */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <div className="flex items-center gap-2">
-          <Bell className="h-4 w-4 text-gray-500" />
-          <h2 className="font-semibold text-gray-900">Notifications</h2>
+      <AnimatedSection delay={240}>
+        <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg shadow-gray-200/50 p-5 sm:p-6 space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+              <Bell className="h-4 w-4 text-white" />
+            </div>
+            <h2 className="font-semibold text-gray-900">Notifications</h2>
+          </div>
+          <p className="text-sm text-gray-400">Notification preferences coming soon.</p>
         </div>
-        <p className="text-sm text-gray-400">Notification preferences coming soon.</p>
-      </div>
+      </AnimatedSection>
 
       {/* Region placeholder */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <div className="flex items-center gap-2">
-          <Globe className="h-4 w-4 text-gray-500" />
-          <h2 className="font-semibold text-gray-900">Region &amp; Language</h2>
+      <AnimatedSection delay={320}>
+        <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg shadow-gray-200/50 p-5 sm:p-6 space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+              <Globe className="h-4 w-4 text-white" />
+            </div>
+            <h2 className="font-semibold text-gray-900">Region &amp; Language</h2>
+          </div>
+          <p className="text-sm text-gray-400">UAE / English (default)</p>
         </div>
-        <p className="text-sm text-gray-400">UAE / English (default)</p>
-      </div>
+      </AnimatedSection>
     </div>
   );
 }
