@@ -382,12 +382,12 @@ const inputCls = (err?: string) =>
 
 // Reusable text rule: at most 20 words, and each word at most 15 characters.
 // Blocks long gibberish strings while allowing normal multi-word text.
-const wordLimit = (label: string) => ({
+const wordLimit = (label: string, maxWords = 20) => ({
   validate: (v?: string) => {
     const val = (v ?? '').trim();
     if (!val) return true;
     const words = val.split(/\s+/);
-    if (words.length > 20) return `${label}: maximum 20 words allowed.`;
+    if (words.length > maxWords) return `${label}: maximum ${maxWords} words allowed.`;
     const tooLong = words.find((w) => w.length > 15);
     if (tooLong) return `${label}: each word must be 15 characters or fewer.`;
     return true;
@@ -675,21 +675,26 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, produc
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Item / Service Name" faf error={errors.items?.[idx]?.item_name?.message}
-          tooltip="Short name for this product or service. Max 120 characters.">
+        <Field label="Item / Service Name" faf required
+          error={errors.items?.[idx]?.item_name?.message}
+          tooltip="Short name for this product or service. Max 5 words, 120 characters.">
           <input placeholder="e.g. IT Consulting, Office Chair…" maxLength={120}
             className={inputCls(errors.items?.[idx]?.item_name?.message)}
             {...register(`items.${idx}.item_name`, {
+              required: 'Required',
               maxLength: { value: 120, message: 'Max 120 characters' },
-              ...wordLimit('Item name'),
+              ...wordLimit('Item name', 5),
             })} />
         </Field>
-        <Field label="Product / Service Reference" faf
+        <Field label="Product / Service Reference" faf required
           error={errors.items?.[idx]?.product_reference?.message}
-          tooltip="Your internal product code or SKU for this line — e.g. SKU-001 or SVC-REF.">
+          tooltip="Your internal product code or SKU for this line — e.g. SKU-001 or SVC-REF. Max 5 words.">
           <input placeholder="e.g. SKU-001 or SVC-REF" maxLength={50}
             className={inputCls(errors.items?.[idx]?.product_reference?.message)}
-            {...register(`items.${idx}.product_reference`, { ...wordLimit('Reference') })} />
+            {...register(`items.${idx}.product_reference`, {
+              required: 'Required',
+              ...wordLimit('Reference', 5),
+            })} />
         </Field>
       </div>
 
@@ -702,7 +707,7 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, produc
           {...register(`items.${idx}.description`, {
             required: 'Description is required',
             maxLength: { value: 300, message: 'Description must be 300 characters or fewer' },
-            ...wordLimit('Description'),
+            ...wordLimit('Description', 50),
           })}
         />
       </Field>
@@ -717,11 +722,28 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, produc
               validate: (v) => (parseFloat(v) > 0) || 'Must be greater than 0',
             })} />
         </Field>
-        <Field label="Unit" tooltip="Unit of measure — e.g. pcs, hr, kg, yr.">
-          <input placeholder="pcs / hr / kg" maxLength={12} className={inputCls()}
-            {...register(`items.${idx}.unit`, {
-              pattern: { value: /^[A-Za-z0-9 ]*$/, message: 'Letters/numbers only' },
-            })} />
+        <Field label="Unit" required tooltip="Unit of measure.">
+          <select className={selectCls} {...register(`items.${idx}.unit`, { required: 'Required' })}>
+            <option value="">— Select —</option>
+            <option value="pcs">pcs</option>
+            <option value="hr">hr</option>
+            <option value="kg">kg</option>
+            <option value="g">g</option>
+            <option value="m">m</option>
+            <option value="m²">m²</option>
+            <option value="m³">m³</option>
+            <option value="L">L</option>
+            <option value="ml">ml</option>
+            <option value="box">box</option>
+            <option value="set">set</option>
+            <option value="pair">pair</option>
+            <option value="doz">doz</option>
+            <option value="day">day</option>
+            <option value="month">month</option>
+            <option value="year">year</option>
+            <option value="service">service</option>
+            <option value="unit">unit</option>
+          </select>
         </Field>
         <Field label="Unit Price (excl. VAT)" required
           tooltip="Price per unit excluding VAT. Cannot be negative."
@@ -734,7 +756,13 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, produc
             })} />
         </Field>
         <Field label="Tax Code" faf hint="S=5%, Z=0%, E=Exempt, O=OOS">
-          <input placeholder="S / Z / E / O" className={inputCls()} {...register(`items.${idx}.tax_code`)} />
+          <select className={selectCls} {...register(`items.${idx}.tax_code`)}>
+            <option value="">— Select —</option>
+            <option value="S">S — Standard 5%</option>
+            <option value="Z">Z — Zero Rate 0%</option>
+            <option value="E">E — Exempt</option>
+            <option value="O">O — Out of Scope</option>
+          </select>
         </Field>
       </div>
 
@@ -757,13 +785,23 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, produc
             </select>
           )}
         </Field>
-        <Field label="Debit Amount (AED)" faf
-          tooltip="FAF ledger debit amount in AED for this line, if applicable. Optional.">
-          <input type="number" step="0.01" min="0" placeholder="0.00" className={inputCls()} {...register(`items.${idx}.debit_amount`)} />
+        <Field label="Debit Amount (AED)" faf required
+          tooltip="FAF ledger debit amount in AED for this line.">
+          <input type="number" step="0.01" min="0" placeholder="0.00"
+            className={inputCls(errors.items?.[idx]?.debit_amount?.message)}
+            {...register(`items.${idx}.debit_amount`, {
+              required: 'Required',
+              min: { value: 0, message: 'Cannot be negative' },
+            })} />
         </Field>
-        <Field label="Credit Amount (AED)" faf
-          tooltip="FAF ledger credit amount in AED for this line, if applicable. Optional.">
-          <input type="number" step="0.01" min="0" placeholder="0.00" className={inputCls()} {...register(`items.${idx}.credit_amount`)} />
+        <Field label="Credit Amount (AED)" faf required
+          tooltip="FAF ledger credit amount in AED for this line.">
+          <input type="number" step="0.01" min="0" placeholder="0.00"
+            className={inputCls(errors.items?.[idx]?.credit_amount?.message)}
+            {...register(`items.${idx}.credit_amount`, {
+              required: 'Required',
+              min: { value: 0, message: 'Cannot be negative' },
+            })} />
         </Field>
       </div>
     </div>

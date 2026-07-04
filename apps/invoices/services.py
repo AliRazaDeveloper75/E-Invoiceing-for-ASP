@@ -774,9 +774,13 @@ def _send_buyer_invoice_email(invoice: 'Invoice') -> None:
         items = invoice.items.filter(is_active=True).order_by('sort_order', 'created_at')
 
         # Generate PDF
+        from apps.invoices.utils import generate_invoice_qr_base64
+        qr_code = generate_invoice_qr_base64(invoice)
+
         html = render_to_string('invoices/invoice_pdf.html', {
             'invoice': invoice,
             'items': items,
+            'qr_code': qr_code,
         })
         buf = _io.BytesIO()
         pisa.CreatePDF(html, dest=buf, encoding='utf-8')

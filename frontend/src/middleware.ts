@@ -16,6 +16,11 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const access = request.cookies.get('access_token')?.value;
 
+  // Allow static files through without auth checks
+  if (/\.(png|svg|jpg|jpeg|gif|webp|ico|css|js|woff2?)$/i.test(pathname)) {
+    return NextResponse.next();
+  }
+
   // Registration is disabled — invite-only platform
   if (pathname === '/register' || pathname.startsWith('/register/')) {
     return NextResponse.redirect(new URL('/login', request.url));

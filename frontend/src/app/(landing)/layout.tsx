@@ -50,14 +50,8 @@ function Navbar() {
         <div className="flex items-center justify-between h-16 md:h-20">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg shadow-blue-500/25 group-hover:shadow-blue-500/40 transition-shadow">
-              <FileText className="h-[18px] w-[18px] text-white" />
-            </div>
-            <div className="leading-tight">
-              <span className="text-white font-bold text-sm tracking-wide">E-Numerak</span>
-              <span className="block text-blue-300/70 text-[10px] font-medium tracking-widest uppercase">E-Invoicing Platform</span>
-            </div>
+          <Link href="/" className="block overflow-hidden leading-none">
+            <img src="/numerak-logo.png" alt="E-Numerak" className="h-32 w-auto object-contain -mt-12 -mb-12 -ml-7" />
           </Link>
 
           {/* Desktop nav */}
@@ -213,14 +207,8 @@ function Footer() {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 py-14">
           <div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg shadow-blue-500/20">
-                <FileText className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <span className="text-white font-bold text-base tracking-wide">E-Numerak</span>
-                <p className="text-blue-200/60 text-[10px] font-medium tracking-widest uppercase">E-Invoicing Platform</p>
-              </div>
+            <div className="mb-4 overflow-hidden">
+              <img src="/numerak-logo.png" alt="E-Numerak" className="h-28 w-auto object-contain -mt-10 -mb-12 -ml-7" />
             </div>
             <p className="text-xs leading-relaxed text-blue-200/70 max-w-sm mb-5">
               {t('footer.tagline')}

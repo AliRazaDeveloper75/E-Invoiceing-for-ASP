@@ -12,7 +12,7 @@ import { PDFDownloadButton } from '@/components/invoice/PDFDownloadButton';
 import { AnimatedSection } from '@/app/(landing)/AnimatedSection';
 import { useCompany } from '@/hooks/useCompany';
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-import { Download, Send, XCircle, ArrowLeft, RefreshCw, Ban, FileMinus, Wallet, Building2, User, Calendar, Receipt, Activity, Clock } from 'lucide-react';
+import {   Download, Send, XCircle, ArrowLeft, RefreshCw, Ban, FileMinus, Wallet, Building2, User, Calendar, Receipt, Activity, Clock, FileText } from 'lucide-react';
 import { AxiosError } from 'axios';
 import type { Invoice, InvoiceTimeline as InvoiceTimelineType } from '@/types';
 
@@ -507,95 +507,129 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
         </AnimatedSection>
       )}
 
-      {/* ── Main content grid: Supplier | Buyer | Dates ── */}
+      {/* ── Main 3-col: Supplier | Buyer | Notes (equal height) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {/* Supplier */}
-            <AnimatedSection delay={150} direction="up">
-              <div className={`${sectionCard} p-6`}>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
-                    <Building2 className="h-4 w-4 text-white" />
-                  </div>
-                  <h2 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Supplier</h2>
+        {/* Supplier */}
+        <AnimatedSection delay={150} direction="up">
+          <div className={`${sectionCard} p-6 h-full`}>
+            <div className="flex flex-col h-full">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shrink-0">
+                  <Building2 className="h-4 w-4 text-white" />
                 </div>
-                <div className="flex items-start gap-4">
-                  {co?.logo_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={co.logo_url} alt={`${invoice.company_name} logo`}
-                      className="w-14 h-14 rounded-xl object-contain border-2 border-gray-200 bg-white shrink-0 shadow-sm" />
-                  ) : (
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-700 to-blue-800 text-white flex items-center justify-center font-bold text-lg shrink-0 shadow-md shadow-blue-200/50">
-                      {(invoice.company_name || '?').slice(0, 2).toUpperCase()}
-                    </div>
+                <h2 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Supplier</h2>
+              </div>
+              <div className="flex items-start gap-4 flex-1">
+                {co?.logo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={co.logo_url} alt={`${invoice.company_name} logo`}
+                    className="w-14 h-14 rounded-xl object-contain border-2 border-gray-200 bg-white shrink-0 shadow-sm" />
+                ) : (
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-700 to-blue-800 text-white flex items-center justify-center font-bold text-lg shrink-0 shadow-md shadow-blue-200/50">
+                    {(invoice.company_name || '?').slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0 space-y-1">
+                  <p className="font-bold text-gray-900">{invoice.company_name}</p>
+                  {co?.legal_name && co.legal_name !== invoice.company_name && (
+                    <p className="text-xs text-gray-500">{co.legal_name}</p>
                   )}
-                  <div className="min-w-0 space-y-1">
-                    <p className="font-bold text-gray-900">{invoice.company_name}</p>
-                    {co?.legal_name && co.legal_name !== invoice.company_name && (
-                      <p className="text-xs text-gray-500">{co.legal_name}</p>
-                    )}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">TRN</span>
+                    <span className="text-xs font-mono font-semibold text-gray-700">{invoice.company_trn}</span>
+                  </div>
+                  {(invoice.company_trn_issue_date || invoice.company_trn_expiry_date) && (
+                    <p className="text-[10px] text-gray-400">
+                      {invoice.company_trn_issue_date && <>Issued: {invoice.company_trn_issue_date}</>}
+                      {invoice.company_trn_expiry_date && <> · Expires: {invoice.company_trn_expiry_date}</>}
+                    </p>
+                  )}
+                  {supplierAddr && <p className="text-xs text-gray-500 leading-relaxed">{supplierAddr}</p>}
+                  {co?.phone && <p className="text-xs text-gray-500">{co.phone}</p>}
+                  {co?.email && <p className="text-xs text-gray-500">{co.email}</p>}
+                </div>
+              </div>
+            </div>
+          </div>
+        </AnimatedSection>
+
+        {/* Buyer */}
+        <AnimatedSection delay={250} direction="up">
+          <div className={`${sectionCard} p-6 h-full`}>
+            <div className="flex flex-col h-full">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-indigo-700 flex items-center justify-center shrink-0">
+                  <User className="h-4 w-4 text-white" />
+                </div>
+                <h2 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Buyer</h2>
+              </div>
+              <div className="flex items-start gap-4 flex-1">
+                {invoice.customer_logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={invoice.customer_logo.startsWith('/') ? `${BACKEND_URL}${invoice.customer_logo}` : invoice.customer_logo} alt={`${invoice.customer_name} logo`}
+                    className="w-14 h-14 rounded-xl object-contain border-2 border-gray-200 bg-white shrink-0 shadow-sm" />
+                ) : (
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 text-white flex items-center justify-center font-bold text-lg shrink-0 shadow-md shadow-indigo-200/50">
+                    {(invoice.customer_name || '?').slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0 space-y-1">
+                  <p className="font-bold text-gray-900">{invoice.customer_name}</p>
+                  {invoice.customer_trn && (
                     <div className="flex items-center gap-1.5">
                       <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">TRN</span>
-                      <span className="text-xs font-mono font-semibold text-gray-700">{invoice.company_trn}</span>
-                    </div>
-                    {(invoice.company_trn_issue_date || invoice.company_trn_expiry_date) && (
-                      <p className="text-[10px] text-gray-400">
-                        {invoice.company_trn_issue_date && <>Issued: {invoice.company_trn_issue_date}</>}
-                        {invoice.company_trn_expiry_date && <> · Expires: {invoice.company_trn_expiry_date}</>}
-                      </p>
-                    )}
-                    {supplierAddr && <p className="text-xs text-gray-500 leading-relaxed">{supplierAddr}</p>}
-                    {co?.phone && <p className="text-xs text-gray-500">{co.phone}</p>}
-                    {co?.email && <p className="text-xs text-gray-500">{co.email}</p>}
-                  </div>
-                </div>
-              </div>
-            </AnimatedSection>
-
-            {/* Buyer */}
-            <AnimatedSection delay={250} direction="up">
-              <div className={`${sectionCard} p-6`}>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-indigo-700 flex items-center justify-center">
-                    <User className="h-4 w-4 text-white" />
-                  </div>
-                  <h2 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Buyer</h2>
-                </div>
-                <div className="flex items-start gap-4">
-                  {invoice.customer_logo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={invoice.customer_logo.startsWith('/') ? `${BACKEND_URL}${invoice.customer_logo}` : invoice.customer_logo} alt={`${invoice.customer_name} logo`}
-                      className="w-14 h-14 rounded-xl object-contain border-2 border-gray-200 bg-white shrink-0 shadow-sm" />
-                  ) : (
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 text-white flex items-center justify-center font-bold text-lg shrink-0 shadow-md shadow-indigo-200/50">
-                      {(invoice.customer_name || '?').slice(0, 2).toUpperCase()}
+                      <span className="text-xs font-mono font-semibold text-gray-700">{invoice.customer_trn}</span>
                     </div>
                   )}
-                  <div className="min-w-0 space-y-1">
-                    <p className="font-bold text-gray-900">{invoice.customer_name}</p>
-                    {invoice.customer_trn && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">TRN</span>
-                        <span className="text-xs font-mono font-semibold text-gray-700">{invoice.customer_trn}</span>
-                      </div>
-                    )}
-                    {(invoice.customer_trn_issue_date || invoice.customer_trn_expiry_date) && (
-                      <p className="text-[10px] text-gray-400">
-                        {invoice.customer_trn_issue_date && <>Issued: {invoice.customer_trn_issue_date}</>}
-                        {invoice.customer_trn_expiry_date && <> · Expires: {invoice.customer_trn_expiry_date}</>}
-                      </p>
-                    )}
-                    {buyerAddr && <p className="text-xs text-gray-500 leading-relaxed">{buyerAddr}</p>}
-                    {invoice.customer_phone && <p className="text-xs text-gray-500">{invoice.customer_phone}</p>}
-                    {invoice.customer_email && <p className="text-xs text-gray-500">{invoice.customer_email}</p>}
-                  </div>
+                  {(invoice.customer_trn_issue_date || invoice.customer_trn_expiry_date) && (
+                    <p className="text-[10px] text-gray-400">
+                      {invoice.customer_trn_issue_date && <>Issued: {invoice.customer_trn_issue_date}</>}
+                      {invoice.customer_trn_expiry_date && <> · Expires: {invoice.customer_trn_expiry_date}</>}
+                    </p>
+                  )}
+                  {buyerAddr && <p className="text-xs text-gray-500 leading-relaxed">{buyerAddr}</p>}
+                  {invoice.customer_phone && <p className="text-xs text-gray-500">{invoice.customer_phone}</p>}
+                  {invoice.customer_email && <p className="text-xs text-gray-500">{invoice.customer_email}</p>}
                 </div>
               </div>
-            </AnimatedSection>
+            </div>
           </div>
+        </AnimatedSection>
 
-          {/* Dates card */}
+        {/* Notes */}
+        <AnimatedSection delay={350} direction="up">
+          <div className={`${sectionCard} p-6 h-full`}>
+            <div className="flex flex-col h-full">
+              <div className="flex items-center gap-3 pb-4 mb-4 border-b border-gray-100">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shrink-0 shadow-sm shadow-amber-200/30">
+                  <FileText className="h-[18px] w-[18px] text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Notes</h2>
+                  <p className="text-[10px] text-gray-400 mt-0.5">Additional information</p>
+                </div>
+              </div>
+              <div className="flex-1">
+                {invoice.notes ? (
+                  <div className="bg-amber-50/40 rounded-xl p-5 h-full border border-amber-100/40">
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap leading-7">{invoice.notes}</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/30">
+                    <FileText className="h-8 w-8 text-gray-300 mb-3" />
+                    <p className="text-sm text-gray-400">No notes</p>
+                    <p className="text-[11px] text-gray-300 mt-1">Additional details will appear here</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </AnimatedSection>
+      </div>
+
+      {/* ── Secondary row: Dates + ASP/FTA ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
           <AnimatedSection delay={200} direction="up">
             <div className={`${sectionCard} p-6`}>
               <div className="flex items-center gap-2 mb-4">
@@ -640,7 +674,6 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
           </AnimatedSection>
         </div>
 
-        {/* ── Right sidebar: ASP / FTA / Notes ── */}
         <div className="space-y-6">
           {(invoice.asp_submission_id || invoice.asp_submitted_at) && (
             <AnimatedSection delay={350} direction="up">
@@ -691,15 +724,6 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
               </AnimatedSection>
             ) : null;
           })()}
-
-          {invoice.notes && (
-            <AnimatedSection delay={400} direction="up">
-              <div className={`${sectionCard} p-6`}>
-                <h2 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Notes</h2>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{invoice.notes}</p>
-              </div>
-            </AnimatedSection>
-          )}
         </div>
       </div>
 

@@ -13,10 +13,9 @@ import {
   CheckCircle2,
   Loader2,
   AlertCircle,
+  Activity,
 } from 'lucide-react';
 import type { TimelineEvent, CornerFlowStatus } from '@/types';
-
-// ─── Event type → visual config ──────────────────────────────────────────────
 
 interface EventConfig {
   Icon:      React.ComponentType<{ className?: string }>;
@@ -62,11 +61,11 @@ function getEventConfig(event: TimelineEvent): EventConfig {
 }
 
 const CORNER_LABEL: Record<number, string> = {
-  1: 'C1 · Supplier',
-  2: 'C2 · Sending ASP',
-  3: 'C3 · E-Invoice Network',
-  4: 'C4 · Buyer',
-  5: 'C5 · FTA',
+  1: 'C1 \u00B7 Supplier',
+  2: 'C2 \u00B7 Sending ASP',
+  3: 'C3 \u00B7 E-Invoice Network',
+  4: 'C4 \u00B7 Buyer',
+  5: 'C5 \u00B7 FTA',
 };
 
 const CORNER_BADGE: Record<number, string> = {
@@ -112,8 +111,6 @@ function StatusChip({ status }: { status: CornerFlowStatus }) {
   return null;
 }
 
-// ─── Data Pills ───────────────────────────────────────────────────────────────
-
 function DataPills({ data }: { data: Record<string, unknown> }) {
   const entries = Object.entries(data).filter(([, v]) => v !== '' && v != null);
   if (entries.length === 0) return null;
@@ -131,20 +128,17 @@ function DataPills({ data }: { data: Record<string, unknown> }) {
   );
 }
 
-// ─── Single Event Row ─────────────────────────────────────────────────────────
-
 function EventRow({ event, isLast }: { event: TimelineEvent; isLast: boolean }) {
   const { Icon, iconBg, iconColor, dotColor } = getEventConfig(event);
   const { date, time } = formatTimestamp(event.timestamp);
   const cornerBadge = CORNER_BADGE[event.corner] ?? CORNER_BADGE[1];
 
   return (
-    <div className="flex gap-4">
-      {/* Timeline spine */}
+    <div className="flex gap-3 group">
       <div className="flex flex-col items-center">
         <div
           className={clsx(
-            'flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0',
+            'flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0 transition-transform duration-200 group-hover:scale-110',
             iconBg,
           )}
         >
@@ -155,11 +149,10 @@ function EventRow({ event, isLast }: { event: TimelineEvent; isLast: boolean }) 
         )}
       </div>
 
-      {/* Content */}
-      <div className={clsx('pb-5 flex-1', isLast && 'pb-1')}>
+      <div className={clsx('pb-5 flex-1 min-w-0', isLast && 'pb-1')}>
         <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-semibold text-gray-800">{event.title}</p>
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
+            <p className="text-sm font-semibold text-gray-900 group-hover:text-gray-700 transition-colors">{event.title}</p>
             <StatusChip status={event.status} />
             <span
               className={clsx(
@@ -179,7 +172,7 @@ function EventRow({ event, isLast }: { event: TimelineEvent; isLast: boolean }) 
         </div>
 
         {event.description && (
-          <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{event.description}</p>
+          <p className="text-xs text-gray-500 mt-1 leading-relaxed">{event.description}</p>
         )}
 
         <DataPills data={event.data} />
@@ -188,8 +181,6 @@ function EventRow({ event, isLast }: { event: TimelineEvent; isLast: boolean }) 
   );
 }
 
-// ─── Invoice Timeline ─────────────────────────────────────────────────────────
-
 interface InvoiceTimelineProps {
   events: TimelineEvent[];
 }
@@ -197,30 +188,25 @@ interface InvoiceTimelineProps {
 export function InvoiceTimeline({ events }: InvoiceTimelineProps) {
   if (!events || events.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center">
-        <p className="text-sm text-gray-400">No events recorded yet.</p>
+      <div className="text-center py-10">
+        <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
+          <Activity className="h-6 w-6 text-gray-300" />
+        </div>
+        <p className="text-sm font-medium text-gray-500">No events yet</p>
+        <p className="text-xs text-gray-400 mt-1">Events appear here as the invoice progresses.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <h2 className="text-sm font-semibold text-gray-800">Event Timeline</h2>
-        <p className="text-xs text-gray-400 mt-0.5">
-          {events.length} event{events.length !== 1 ? 's' : ''} · chronological order
-        </p>
-      </div>
-
-      <div className="px-5 py-5">
-        {events.map((event, idx) => (
-          <EventRow
-            key={`${event.type}-${event.timestamp}-${idx}`}
-            event={event}
-            isLast={idx === events.length - 1}
-          />
-        ))}
-      </div>
+    <div>
+      {events.map((event, idx) => (
+        <EventRow
+          key={`${event.type}-${event.timestamp}-${idx}`}
+          event={event}
+          isLast={idx === events.length - 1}
+        />
+      ))}
     </div>
   );
 }

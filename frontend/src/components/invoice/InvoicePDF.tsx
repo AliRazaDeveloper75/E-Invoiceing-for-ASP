@@ -9,9 +9,10 @@
  *  • Image src must be absolute URL or data URI
  */
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Document, Page, Text, View, StyleSheet, Image, Svg, Path, Rect, Circle, Line } from '@react-pdf/renderer'
 import type { Company, Invoice } from '@/types'
+import QRCodeLib from 'qrcode'
 
 const C = {
   navy:     '#0f2557',
@@ -259,7 +260,7 @@ const S = StyleSheet.create({
   tdC:    { alignItems: 'center' },
 
   tdBold:  { fontSize: 8.5, fontFamily: 'Helvetica-Bold', color: C.navy, marginBottom: 2 },
-  tdSub:   { fontSize: 7, color: C.n500, lineHeight: 1.5 },
+  tdSub:   { fontSize: 7, color: C.n500, lineHeight: 1.5, marginBottom: 4 },
   tdNum:   { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: C.n800 },
   tdMuted: { fontSize: 7, color: C.n500 },
   tdTotal: { fontSize: 8, fontFamily: 'Helvetica-Bold', color: C.navy },
@@ -269,7 +270,7 @@ const S = StyleSheet.create({
   vatTxt:  { fontSize: 6, fontFamily: 'Helvetica-Bold' },
 
   // ── Totals ────────────────────────────────────────────────────────────────
-  totOuter: { flexDirection: 'row', marginHorizontal: 30, marginBottom: 16 },
+  totOuter: { flexDirection: 'row', marginHorizontal: 30, marginBottom: 0 },
   totLeft:  { flex: 1, paddingRight: 14 },
 
   notesBox: {
@@ -286,6 +287,55 @@ const S = StyleSheet.create({
   notesLbl: { fontSize: 6, fontFamily: 'Helvetica-Bold', color: C.gold, letterSpacing: 0.7, marginBottom: 4 },
   notesTxt: { fontSize: 7, color: C.n700, lineHeight: 1.6 },
 
+  qrCard: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: C.n200,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  qrCardHdr: {
+    backgroundColor: C.navy,
+    paddingHorizontal: 10,
+    paddingTop: 6,
+    paddingBottom: 6,
+  },
+  qrCardHdrTxt: {
+    fontSize: 6,
+    fontFamily: 'Helvetica-Bold',
+    color: C.tealLt,
+    letterSpacing: 0.8,
+  },
+  qrCardBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  qrCardImgWrap: {
+    width: 76,
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qrCardImg: {
+    width: 60,
+    height: 60,
+  },
+  qrCardDetails: {
+    flex: 1,
+    paddingRight: 10,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  qrCardLine: {
+    fontSize: 6,
+    color: C.n500,
+    lineHeight: 1.9,
+  },
+  qrCardStrong: {
+    fontFamily: 'Helvetica-Bold',
+    color: C.navy,
+  },
+
   totRight: {
     width: '50%',
     borderWidth: 1,
@@ -293,6 +343,7 @@ const S = StyleSheet.create({
     borderRadius: 6,
     overflow: 'hidden',
   },
+  totRowsWrap: { flex: 1 },
   totRow:    { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: C.n100 },
   totKey:    { flex: 1, paddingHorizontal: 12, paddingTop: 7, paddingBottom: 7, fontSize: 7.5, color: C.n500 },
   totVal:    { paddingHorizontal: 12, paddingTop: 7, paddingBottom: 7, fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: C.ink, textAlign: 'right', minWidth: 100 },
@@ -317,7 +368,7 @@ const S = StyleSheet.create({
   botInfoBar: {
     flexDirection: 'row',
     marginHorizontal: 30,
-    marginBottom: 12,
+    marginBottom: 0,
     borderWidth: 1,
     borderColor: C.n200,
     borderRadius: 6,
@@ -336,6 +387,15 @@ const S = StyleSheet.create({
   botInfoKey:  { fontSize: 5.5, fontFamily: 'Helvetica-Bold', color: C.n400, letterSpacing: 0.6, marginBottom: 2 },
   botInfoVal:  { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: C.n800 },
   botInfoMono: { fontSize: 7, fontFamily: 'Courier', color: C.n800 },
+  botInfoQrCell: {
+    width: 62,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 5,
+    paddingBottom: 5,
+    backgroundColor: C.navyTint,
+  },
+  botInfoQrImg: { width: 48, height: 48 },
 
   // ── QR + payment info bar ─────────────────────────────────────────────────
   infoBar: {
@@ -381,7 +441,7 @@ const S = StyleSheet.create({
   // ── ASP refs ──────────────────────────────────────────────────────────────
   refBox: {
     marginHorizontal: 30,
-    marginBottom: 12,
+    marginBottom: 0,
     borderWidth: 1,
     borderColor: C.n200,
     borderRadius: 6,
@@ -703,15 +763,33 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
 
   const coInitial = (company?.name || invoice.company_name || 'A').charAt(0).toUpperCase()
 
+  const qrLines = [
+    'E-NUMERAK',
+    `INV:${invoice.invoice_number}`,
+    `SELLER:${company?.name || invoice.company_name || ''}`,
+    `STRN:${company?.trn || invoice.company_trn || ''}`,
+    `BUYER:${invoice.customer_name || ''}`,
+    `BTRN:${invoice.customer_trn || invoice.customer_vat_number || ''}`,
+    `TOTAL:${invoice.currency} ${invoice.total_amount}`,
+    `DATE:${invoice.issue_date || ''}`,
+  ]
+  const qrText = qrLines.join('|')
+  const [qrUrl, setQrUrl] = useState('')
+  useEffect(() => {
+    QRCodeLib.toDataURL(qrText, { margin: 1, width: 220, errorCorrectionLevel: 'M' })
+      .then(setQrUrl)
+      .catch(() => setQrUrl(''))
+  }, [qrText])
+
   return (
     <Document title={invoice.invoice_number} author="E-Numerak">
       <Page size="A4" style={S.page}>
 
         {/* 1 ── Top accent bar */}
-        <View style={S.topBar} />
+        <View fixed style={S.topBar} />
 
         {/* 2 ── Header */}
-        <View style={S.header}>
+        <View fixed style={S.header}>
           <View style={S.hdrLeft}>
             <View style={S.coLogoRow}>
               {company?.logo_url ? (
@@ -869,9 +947,46 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
                 <Text style={S.notesTxt}>{invoice.notes}</Text>
               </View>
             )}
+            {qrUrl && (
+              <View style={S.qrCard}>
+                <View style={S.qrCardHdr}>
+                  <Text style={S.qrCardHdrTxt}>VERIFICATION QR CODE</Text>
+                </View>
+                <View style={S.qrCardBody}>
+                  <View style={S.qrCardImgWrap}>
+                    <Image src={qrUrl} style={S.qrCardImg} />
+                  </View>
+                  <View style={S.qrCardDetails}>
+                    <Text style={S.qrCardLine}>
+                      <Text style={S.qrCardStrong}>INV </Text>
+                      {invoice.invoice_number}
+                    </Text>
+                    <Text style={S.qrCardLine}>
+                      <Text style={S.qrCardStrong}>SELLER </Text>
+                      {company?.name || invoice.company_name || ''}
+                    </Text>
+                    <Text style={S.qrCardLine}>
+                      <Text style={S.qrCardStrong}>TRN </Text>
+                      {company?.trn || invoice.company_trn || ''}
+                    </Text>
+                    <Text style={S.qrCardLine}>
+                      <Text style={S.qrCardStrong}>TOTAL </Text>
+                      {invoice.currency} {fmt(invoice.total_amount)}
+                    </Text>
+                    <Text style={S.qrCardLine}>
+                      <Text style={S.qrCardStrong}>DATE </Text>
+                      {fmtDate(invoice.issue_date)}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
           </View>
 
           <View style={S.totRight}>
+
+            <View style={S.totRowsWrap}>
+
             <View style={S.totRow}>
               <Text style={S.totKey}>Subtotal</Text>
               <Text style={S.totVal}>{invoice.currency} {fmt(invoice.subtotal)}</Text>
@@ -891,15 +1006,10 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
               <Text style={[S.totVal, S.totBluVal]}>{invoice.currency} {fmt(invoice.total_vat)}</Text>
             </View>
 
-            <View style={S.totGrand}>
-              <Text style={S.totGrandKey}>Total Due</Text>
-              <Text style={S.totGrandVal}>{invoice.currency} {fmt(invoice.total_amount)}</Text>
-            </View>
-
             {hasPaid && (
               <View style={S.totPaidRow}>
                 <Text style={S.totPaidKey}>Amount Paid</Text>
-                <Text style={S.totPaidVal}>\u2212 {invoice.currency} {fmt(invoice.amount_paid)}</Text>
+                <Text style={S.totPaidVal}>&minus; {invoice.currency} {fmt(invoice.amount_paid)}</Text>
               </View>
             )}
 
@@ -909,6 +1019,13 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
                 <Text style={S.totBalVal}>{invoice.currency} {fmt(balanceDue)}</Text>
               </View>
             )}
+
+            </View>
+
+            <View style={S.totGrand}>
+              <Text style={S.totGrandKey}>Total Due</Text>
+              <Text style={S.totGrandVal}>{invoice.currency} {fmt(invoice.total_amount)}</Text>
+            </View>
           </View>
         </View>
 
@@ -954,7 +1071,7 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
         {/* 10 ── Footer */}
         </View>
 
-        <View style={S.footer}>
+        <View fixed style={S.footer}>
           <View style={S.footerLeft}>
             <Text style={S.footerTxt}>
               {'Computer-generated tax invoice  \u00B7  UAE Federal Decree-Law No. 8 of 2017\n'}
@@ -974,7 +1091,7 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
         </View>
 
         {/* 11 ── Bottom teal accent bar */}
-        <View style={S.bottomBar} />
+        <View fixed style={S.bottomBar} />
 
       </Page>
     </Document>

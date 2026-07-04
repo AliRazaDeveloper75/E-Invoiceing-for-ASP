@@ -412,10 +412,14 @@ class InvoicePDFDownloadView(APIView):
 
         items = invoice.items.filter(is_active=True).order_by('sort_order', 'created_at')
 
+        from apps.invoices.utils import generate_invoice_qr_base64
+        qr_code = generate_invoice_qr_base64(invoice)
+
         try:
             html = render_to_string('invoices/invoice_pdf.html', {
                 'invoice': invoice,
                 'items': items,
+                'qr_code': qr_code,
             })
         except Exception as exc:
             logger.exception('Template rendering failed for invoice %s', invoice_id)

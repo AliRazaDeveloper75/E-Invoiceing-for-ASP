@@ -91,23 +91,21 @@ export function Sidebar() {
       {/* ── Logo + toggle ─────────────────────────────────────── */}
       <div className={clsx(
         'flex items-center border-b border-white/[0.08] shrink-0',
-        collapsed ? 'justify-center px-0 py-4' : 'justify-between px-5 py-4',
+        collapsed ? 'justify-center px-0 py-4' : 'justify-between pl-0 pr-1 py-0',
       )}>
         {!collapsed && (
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
-                <span className="text-white text-xs font-black">E</span>
-              </div>
-              <h1 className="text-[15px] font-bold tracking-tight text-white">E-Numerak</h1>
-            </div>
-            <p className="text-[10px] text-white/40 mt-0.5 ml-9">E-Invoicing Platform</p>
-          </div>
+          <Link href="/dashboard" className="flex items-center group overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/numerak-logo.png" alt="Numerak" className="h-32 w-auto object-contain drop-shadow-lg group-hover:opacity-80 transition-opacity duration-200 -mt-6 -mb-8 -ml-2" />
+          </Link>
         )}
         {collapsed && (
-          <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center">
-            <span className="text-white text-sm font-black">E</span>
-          </div>
+          <NavTooltip label="Numerak">
+            <Link href="/dashboard" className="flex items-center justify-center group overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/numerak-logo.png" alt="Numerak" className="h-24 w-auto object-contain drop-shadow-lg group-hover:opacity-80 transition-opacity duration-200 -mt-4 -mb-6" />
+            </Link>
+          </NavTooltip>
         )}
         {!collapsed && (
           <button

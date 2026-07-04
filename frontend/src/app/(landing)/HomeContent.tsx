@@ -827,11 +827,8 @@ export function HomeContent() {
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <AnimatedSection direction="up">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg shadow-blue-500/20">
-                <FileText className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-white font-bold text-xl tracking-tight">{t('home.tagline.brand')}</span>
+            <div className="mb-6 overflow-hidden flex justify-center">
+              <img src="/numerak-logo.png" alt="E-Numerak" className="h-32 w-auto object-contain -mt-12 -mb-12 -ml-8" />
             </div>
             <p className="text-blue-200/70 text-sm leading-relaxed max-w-2xl mx-auto mb-3">
               {t('home.tagline.p1')}

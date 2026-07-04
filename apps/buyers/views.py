@@ -259,8 +259,16 @@ class BuyerInvoicePDFView(APIView):
             return error_response('Invoice not found.', status_code=404)
 
         items = invoice.items.filter(is_active=True).order_by('sort_order', 'created_at')
+
+        from apps.invoices.utils import generate_invoice_qr_base64
+        qr_code = generate_invoice_qr_base64(invoice)
+
         try:
-            html = render_to_string('invoices/invoice_pdf.html', {'invoice': invoice, 'items': items})
+            html = render_to_string('invoices/invoice_pdf.html', {
+                'invoice': invoice,
+                'items': items,
+                'qr_code': qr_code,
+            })
         except Exception as exc:
             return error_response(f'PDF template error: {exc}', status_code=500)
 
