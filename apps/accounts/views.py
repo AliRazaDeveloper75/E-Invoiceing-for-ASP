@@ -496,6 +496,57 @@ class MFAVerifyLoginView(APIView):
         )
 
 
+# ─── MFA — recovery (lost authenticator → email verify → re-enroll) ──────────
+
+class MFAResetRequestView(APIView):
+    """
+    POST /api/v1/auth/mfa/reset-request/  { email, password }
+
+    Step 1 of MFA recovery. Verifies credentials and emails a 6-digit code.
+    Always returns 200 (no user/credential enumeration).
+    """
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').strip()
+        password = request.data.get('password', '')
+        if not email or not password:
+            return error_response('Email and password are required.', status_code=400)
+        MFAService.send_reset_email(email, password)
+        return success_response(
+            message='If the credentials are correct, an authenticator reset code has been sent to your email.'
+        )
+
+
+class MFAResetVerifyView(APIView):
+    """
+    POST /api/v1/auth/mfa/reset-verify/  { email, code }
+
+    Step 2 of MFA recovery. Verifies the emailed code, resets MFA, and returns a
+    setup_token so the client can enroll a new authenticator via
+    /mfa/setup-login/ then /mfa/enable-login/.
+    """
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').strip()
+        code = request.data.get('code', '').strip()
+        if not email or not code:
+            return error_response('Email and code are required.', status_code=400)
+        try:
+            user, setup_token = MFAService.verify_reset(email, code)
+        except DRFValidationError as exc:
+            msg = exc.detail[0] if isinstance(exc.detail, list) else str(exc.detail)
+            return error_response(str(msg), status_code=400)
+
+        return success_response(
+            data={'email': user.email, 'setup_token': setup_token},
+            message='Identity verified. Please set up a new authenticator.',
+        )
+
+
 # ─── MFA — login-time setup (forced first-time setup) ────────────────────────
 
 class MFASetupLoginView(APIView):

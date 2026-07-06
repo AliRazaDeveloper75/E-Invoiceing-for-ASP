@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { FlowTracker } from '@/components/invoice/FlowTracker';
+import { PDFDownloadButton } from '@/components/invoice/PDFDownloadButton';
 import type { InvoiceTimeline } from '@/types';
 import {
   ArrowLeft, RefreshCw, Send, ShieldCheck, ShieldX,
@@ -157,6 +158,25 @@ export default function AdminInvoiceDetailPage() {
   const { data: timeline, isLoading: tlLoading, mutate: mutateTl } =
     useSWR<InvoiceTimeline>(`/admin/invoices/${id}/timeline/`, fetcher);
 
+  // Full invoice (with items + company) for the premium client-side PDF,
+  // so the admin PDF matches the supplier/buyer PDF exactly.
+  const { data: fullInvoice } = useSWR(id ? `/invoices/${id}/` : null, fetcher);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfCompany: any = fullInvoice ? {
+    name:           fullInvoice.company_name,
+    legal_name:     fullInvoice.company_legal_name,
+    trn:            fullInvoice.company_trn,
+    logo_url:       fullInvoice.company_logo,
+    street_address: fullInvoice.company_street_address,
+    city:           fullInvoice.company_city,
+    emirate:        fullInvoice.company_emirate,
+    po_box:         fullInvoice.company_po_box,
+    country:        fullInvoice.company_country,
+    phone:          fullInvoice.company_phone,
+    email:          fullInvoice.company_email,
+    website:        fullInvoice.company_website,
+  } : null;
+
   const [actionLoading, setActionLoading] = useState<ActionKey | null>(null);
   const [lastMessage, setLastMessage]     = useState<string | null>(null);
   const [lastError, setLastError]         = useState<string | null>(null);
@@ -218,17 +238,9 @@ export default function AdminInvoiceDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {invoice && (
-              <button
-                onClick={() => downloadFile(
-                  `/invoices/${invoice.id}/download-pdf/`,
-                  `${invoice.invoice_number}.pdf`,
-                  'application/pdf',
-                )}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-500/25 transition-all duration-200"
-              >
-                <FileText className="h-3.5 w-3.5" /> PDF
-              </button>
+            {fullInvoice && (
+              // Premium client-side PDF — identical to the supplier/buyer download.
+              <PDFDownloadButton invoice={fullInvoice} company={pdfCompany} />
             )}
             {invoice && (
               <button

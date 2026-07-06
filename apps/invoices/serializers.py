@@ -139,6 +139,15 @@ class InvoiceSerializer(serializers.ModelSerializer):
     company_trn      = serializers.CharField(source='company.trn',             read_only=True)
     company_trn_issue_date  = serializers.DateField(source='company.trn_issue_date',  read_only=True, default=None)
     company_trn_expiry_date = serializers.DateField(source='company.trn_expiry_date', read_only=True, default=None)
+    company_legal_name     = serializers.CharField(source='company.legal_name',     read_only=True, default='')
+    company_street_address = serializers.CharField(source='company.street_address', read_only=True, default='')
+    company_city           = serializers.CharField(source='company.city',           read_only=True, default='')
+    company_emirate        = serializers.CharField(source='company.emirate',         read_only=True, default='')
+    company_po_box         = serializers.CharField(source='company.po_box',          read_only=True, default='')
+    company_country        = serializers.CharField(source='company.country',         read_only=True, default='')
+    company_phone          = serializers.CharField(source='company.phone',           read_only=True, default='')
+    company_email          = serializers.EmailField(source='company.email',          read_only=True, default='')
+    company_website        = serializers.CharField(source='company.website',         read_only=True, default='')
     status_display  = serializers.CharField(source='get_status_display',     read_only=True)
     type_display    = serializers.CharField(source='get_invoice_type_display', read_only=True)
     is_editable     = serializers.BooleanField(read_only=True)
@@ -158,6 +167,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'transaction_type', 'status', 'status_display',
             # Parties
             'company_name', 'company_trn', 'company_trn_issue_date', 'company_trn_expiry_date', 'company_logo',
+            'company_legal_name', 'company_street_address', 'company_city', 'company_emirate',
+            'company_po_box', 'company_country', 'company_phone', 'company_email', 'company_website',
             'customer', 'customer_name', 'customer_trn',
             'customer_trn_issue_date', 'customer_trn_expiry_date',
             'customer_address', 'customer_city', 'customer_country', 'customer_phone', 'customer_email',

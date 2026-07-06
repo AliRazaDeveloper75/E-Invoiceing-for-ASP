@@ -18,6 +18,8 @@ from .views import (
     MFAVerifyLoginView,
     MFASetupLoginView,
     MFAEnableLoginView,
+    MFAResetRequestView,
+    MFAResetVerifyView,
     MFASetupView,
     MFAEnableView,
     MFADisableView,
@@ -50,6 +52,10 @@ urlpatterns = [
     path('mfa/verify-login/',  MFAVerifyLoginView.as_view(),  name='mfa-verify-login'),
     path('mfa/setup-login/',   MFASetupLoginView.as_view(),   name='mfa-setup-login'),
     path('mfa/enable-login/',  MFAEnableLoginView.as_view(),  name='mfa-enable-login'),
+
+    # ── MFA — recovery (lost authenticator) ───────────────────────────────────
+    path('mfa/reset-request/', MFAResetRequestView.as_view(), name='mfa-reset-request'),
+    path('mfa/reset-verify/',  MFAResetVerifyView.as_view(),  name='mfa-reset-verify'),
 
     # ── MFA — account settings ────────────────────────────────────────────────
     path('mfa/setup/',   MFASetupView.as_view(),   name='mfa-setup'),

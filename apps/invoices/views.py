@@ -64,7 +64,7 @@ def _resolve_invoice(request, invoice_id: str):
         return None, None, error_response('Invoice not found.', status_code=status.HTTP_404_NOT_FOUND)
 
     # Admin users bypass company membership — they can access any invoice
-    if request.user.role == 'admin':
+    if getattr(request.user, 'role', None) == 'admin' or request.user.is_staff:
         return invoice, None, None
 
     company, membership = get_company_and_membership(request.user, invoice.company.id)

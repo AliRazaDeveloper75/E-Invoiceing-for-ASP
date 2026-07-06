@@ -322,6 +322,101 @@ class MFAService:
         logger.info('MFA disabled for user: %s', user.email)
 
     @staticmethod
+    def send_reset_email(email: str, password: str) -> None:
+        """
+        MFA recovery — step 1.
+
+        Verify the account credentials, then email a 6-digit code the user can
+        use to reset (re-enroll) their authenticator when the old device is lost.
+        Silent on any failure (unknown email / wrong password) to avoid
+        user + credential enumeration.
+        """
+        from apps.accounts.models import EmailVerificationToken
+        email = (email or '').strip().lower()
+        try:
+            user = User.objects.get(email=email, is_active=True)
+        except User.DoesNotExist:
+            return
+        if not user.check_password(password or ''):
+            return
+
+        record = EmailVerificationToken.create_for_user(user)
+        code = record.code
+
+        if settings.DEBUG:
+            logger.info('DEV — MFA reset code for %s: %s', user.email, code)
+
+        subject = f'Your {getattr(settings, "COMPANY_NAME", "E-Numerak")} authenticator reset code'
+        body_html = f"""
+          <p style="margin:0 0 18px;">We received a request to reset the two-factor
+          authenticator on your account. Enter this 6-digit code to verify your
+          identity and set up a new authenticator:</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
+            <tr><td style="background:#eff6ff;border-radius:10px;padding:16px 30px;
+                           font-family:'Courier New',Courier,monospace;font-size:30px;font-weight:800;
+                           color:#1e40af;letter-spacing:8px;">{code}</td></tr>
+          </table>
+          <p style="margin:0;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 6px 6px 0;
+                    padding:10px 14px;font-size:13px;color:#92400e;">
+            Expires in <strong>15 minutes</strong>. If you did not request this, ignore this email —
+            your current authenticator stays active.
+          </p>"""
+
+        from services.emails import send_branded_email
+        if send_branded_email(
+            subject=subject,
+            to=user.email,
+            heading='Reset your authenticator',
+            intro=f'Hi {user.full_name},',
+            body_html=body_html,
+            preheader=f'Your authenticator reset code is {code}',
+        ):
+            logger.info('MFA reset code sent to %s', user.email)
+        else:
+            logger.warning('Failed to send MFA reset code to %s', user.email)
+
+    @staticmethod
+    def verify_reset(email: str, code: str):
+        """
+        MFA recovery — step 2.
+
+        Verify the emailed code, wipe the old MFA secret, and return
+        (user, setup_token) so the client can immediately enroll a new
+        authenticator via /mfa/setup-login/ + /mfa/enable-login/.
+        """
+        from apps.accounts.models import EmailVerificationToken, MFALoginToken
+        email = (email or '').strip().lower()
+        code = (code or '').strip()
+        try:
+            record = EmailVerificationToken.objects.select_related('user').get(
+                code=code, used=False
+            )
+        except EmailVerificationToken.DoesNotExist:
+            raise ValidationError('Invalid or expired code.')
+
+        # Tie the code to the account that requested it.
+        if record.user.email.lower() != email:
+            raise ValidationError('Invalid or expired code.')
+        if record.is_expired:
+            raise ValidationError('Code has expired. Please request a new one.')
+
+        record.used = True
+        record.save(update_fields=['used'])
+
+        user = record.user
+        # Reset MFA — old authenticator is gone; force a fresh enrollment.
+        user.mfa_enabled = False
+        user.mfa_secret = ''
+        user.mfa_verified_at = None
+        user.email_verified = True
+        user.save(update_fields=['mfa_enabled', 'mfa_secret', 'mfa_verified_at', 'email_verified'])
+
+        # Issue a setup token so the user can enroll a new authenticator now.
+        token_record = MFALoginToken.create_for_user(user)
+        logger.info('MFA reset via email for user: %s', user.email)
+        return user, str(token_record.token)
+
+    @staticmethod
     def verify_login(mfa_token_str: str, code: str):
         """
         Verify TOTP code during the MFA login step.

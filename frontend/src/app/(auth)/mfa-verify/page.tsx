@@ -156,6 +156,17 @@ export default function MFAVerifyPage() {
               Verify Code
             </Button>
           </form>
+
+          {/* Lost authenticator → email-based recovery */}
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => router.push('/mfa-reset')}
+              className="text-xs font-medium text-brand-600 hover:text-brand-700 hover:underline"
+            >
+              Lost your authenticator? Reset it
+            </button>
+          </div>
         </div>
 
         {/* Back link */}
