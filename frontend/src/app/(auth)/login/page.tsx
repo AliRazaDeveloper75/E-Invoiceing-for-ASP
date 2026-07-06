@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -38,12 +38,31 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>();
+
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Prefill the email if the user chose "Remember me" last time.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('remembered_email');
+      if (saved) {
+        setValue('email', saved);
+        setRememberMe(true);
+      }
+    } catch { /* ignore */ }
+  }, [setValue]);
 
   const onSubmit = async (data: LoginForm) => {
     setServerError('');
     setUnverified(false);
+    // Persist / clear the remembered email based on the checkbox.
+    try {
+      if (rememberMe) localStorage.setItem('remembered_email', data.email);
+      else localStorage.removeItem('remembered_email');
+    } catch { /* ignore */ }
     try {
       await login(data.email, data.password);
     } catch (err) {
@@ -186,7 +205,16 @@ export default function LoginPage() {
                   error={errors.password?.message}
                   {...register('password', { required: t('login.passwordRequired') })}
                 />
-                <div className="mt-1.5 text-end">
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
+                    />
+                    <span className="text-xs text-gray-600 font-medium">{t('login.rememberMe')}</span>
+                  </label>
                   <Link
                     href="/forgot-password"
                     className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors"
