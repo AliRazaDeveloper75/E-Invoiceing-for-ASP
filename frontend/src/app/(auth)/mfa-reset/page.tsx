@@ -15,24 +15,23 @@ export default function MFAResetPage() {
 
   const [step, setStep] = useState<Step>('request');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Step 1 — verify credentials and email a reset code
+  // Step 1 — email a reset code to the registered account
   const handleRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password) {
-      setError('Enter your email and password.');
+    if (!email.trim()) {
+      setError('Enter your email address.');
       return;
     }
     setError('');
     setLoading(true);
     try {
-      await api.post('/auth/mfa/reset-request/', { email: email.trim(), password });
-      setNotice('If the credentials are correct, a 6-digit reset code has been sent to your email.');
+      await api.post('/auth/mfa/reset-request/', { email: email.trim() });
+      setNotice('If that email is registered, a 6-digit reset code has been sent. Check your inbox (and spam).');
       setStep('verify');
     } catch {
       setError('Something went wrong. Please try again.');
@@ -108,14 +107,6 @@ export default function MFAResetPage() {
                 placeholder="you@company.ae"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-              />
-              <Input
-                label="Password"
-                type="password"
-                autoComplete="current-password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
               />
               {error && (
                 <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">

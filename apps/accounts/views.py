@@ -500,22 +500,21 @@ class MFAVerifyLoginView(APIView):
 
 class MFAResetRequestView(APIView):
     """
-    POST /api/v1/auth/mfa/reset-request/  { email, password }
+    POST /api/v1/auth/mfa/reset-request/  { email }
 
-    Step 1 of MFA recovery. Verifies credentials and emails a 6-digit code.
-    Always returns 200 (no user/credential enumeration).
+    Step 1 of MFA recovery. Emails a 6-digit code to a registered account.
+    Always returns 200 (no user enumeration).
     """
     authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
         email = request.data.get('email', '').strip()
-        password = request.data.get('password', '')
-        if not email or not password:
-            return error_response('Email and password are required.', status_code=400)
-        MFAService.send_reset_email(email, password)
+        if not email:
+            return error_response('Email is required.', status_code=400)
+        MFAService.send_reset_email(email)
         return success_response(
-            message='If the credentials are correct, an authenticator reset code has been sent to your email.'
+            message='If that email is registered, an authenticator reset code has been sent.'
         )
 
 

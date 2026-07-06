@@ -178,6 +178,10 @@ class AuthService:
         try:
             user = User.objects.get(email=email.strip().lower(), is_active=True)
         except User.DoesNotExist:
+            # No account for this email (or inactive). We intentionally do NOT
+            # reveal this to the caller (no user enumeration) — but log it in dev
+            # so developers know why no email was sent.
+            logger.info('Password reset requested for non-existent/inactive email: %s', email.strip().lower())
             return
 
         record = PasswordResetToken.create_for_user(user)
@@ -322,22 +326,21 @@ class MFAService:
         logger.info('MFA disabled for user: %s', user.email)
 
     @staticmethod
-    def send_reset_email(email: str, password: str) -> None:
+    def send_reset_email(email: str) -> None:
         """
         MFA recovery — step 1.
 
-        Verify the account credentials, then email a 6-digit code the user can
-        use to reset (re-enroll) their authenticator when the old device is lost.
-        Silent on any failure (unknown email / wrong password) to avoid
-        user + credential enumeration.
+        Email a 6-digit code the user can use to reset (re-enroll) their
+        authenticator when the old device is lost. Silent if the email is not a
+        registered active account (no user enumeration). Mirrors the email-based
+        password-reset flow.
         """
         from apps.accounts.models import EmailVerificationToken
         email = (email or '').strip().lower()
         try:
             user = User.objects.get(email=email, is_active=True)
         except User.DoesNotExist:
-            return
-        if not user.check_password(password or ''):
+            logger.info('MFA reset requested for non-existent/inactive email: %s', email)
             return
 
         record = EmailVerificationToken.create_for_user(user)
