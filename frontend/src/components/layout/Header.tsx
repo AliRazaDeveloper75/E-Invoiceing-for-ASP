@@ -1,13 +1,60 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Bell, ChevronRight, User, Settings, LogOut, ExternalLink, Menu, Building2 } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import useSWR from 'swr';
+import {
+  Bell, ChevronRight, User, Settings, LogOut, ExternalLink, Menu, Building2,
+  FileText, Wallet, ShieldAlert, CheckCheck,
+} from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/hooks/useCompany';
 import { useSidebar } from '@/context/SidebarContext';
+import { api } from '@/lib/api';
 import { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
+
+// ─── Notifications ──────────────────────────────────────────────────────────
+
+interface NotificationItem {
+  id: string;
+  category: 'invoice' | 'payment' | 'fraud' | 'admin';
+  event: string;
+  title: string;
+  message: string;
+  link: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+const NOTIF_ICON: Record<string, React.ElementType> = {
+  invoice: FileText,
+  payment: Wallet,
+  fraud: ShieldAlert,
+  admin: Building2,
+};
+
+const NOTIF_TONE: Record<string, string> = {
+  invoice: 'text-blue-600 bg-blue-50',
+  payment: 'text-emerald-600 bg-emerald-50',
+  fraud: 'text-red-600 bg-red-50',
+  admin: 'text-indigo-600 bg-indigo-50',
+};
+
+function relativeTime(iso: string): string {
+  const d = new Date(iso).getTime();
+  const s = Math.floor((Date.now() - d) / 1000);
+  if (s < 60) return 'just now';
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const days = Math.floor(h / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
+const notifFetcher = (url: string) => api.get(url).then((r) => r.data?.data ?? r.data);
 
 // ─── Breadcrumb map ───────────────────────────────────────────────────────────
 

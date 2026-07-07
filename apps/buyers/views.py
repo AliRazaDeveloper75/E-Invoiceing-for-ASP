@@ -221,6 +221,13 @@ class BuyerInvoiceDetailView(APIView):
                 buyer_viewed_at=timezone.now()
             )
             invoice.buyer_viewed_at = timezone.now()
+            # Notify the supplier who created the invoice that the buyer opened it.
+            from apps.notifications.services import NotificationService
+            NotificationService.invoice_event(
+                invoice, event='buyer_viewed',
+                title=f'Buyer viewed — {invoice.invoice_number}',
+                message='The buyer has opened this invoice.',
+            )
 
         serializer = InvoiceSerializer(invoice)
         data = serializer.data

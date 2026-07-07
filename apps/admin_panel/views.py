@@ -411,6 +411,13 @@ class AdminInvoiceApproveASPView(APIView):
         from apps.invoices.services import _send_buyer_invoice_email
         _send_buyer_invoice_email(invoice)
 
+        from apps.notifications.services import NotificationService
+        NotificationService.invoice_event(
+            invoice, event='invoice_validated',
+            title=f'Invoice validated — {invoice.invoice_number}',
+            message='Your invoice was validated by the ASP and delivered to the buyer.',
+        )
+
         return success_response(
             message=f'Invoice {invoice.invoice_number} approved — marked as validated.',
         )
@@ -437,6 +444,14 @@ class AdminInvoiceRejectASPView(APIView):
         invoice.save(update_fields=['status', 'updated_at'])
 
         logger.info('Admin %s rejected invoice %s via ASP', request.user.email, invoice.invoice_number)
+
+        from apps.notifications.services import NotificationService
+        NotificationService.invoice_event(
+            invoice, event='invoice_rejected',
+            title=f'Invoice rejected — {invoice.invoice_number}',
+            message='Your invoice was rejected by the ASP. Please review and correct it.',
+        )
+
         return success_response(
             message=f'Invoice {invoice.invoice_number} rejected.',
         )
@@ -469,6 +484,14 @@ class AdminInvoiceReportFTAView(APIView):
         invoice.save(update_fields=['fta_status', 'fta_reported_at'])
 
         logger.info('Admin %s reported invoice %s to FTA', request.user.email, invoice.invoice_number)
+
+        from apps.notifications.services import NotificationService
+        NotificationService.invoice_event(
+            invoice, event='invoice_fta_reported',
+            title=f'Reported to FTA — {invoice.invoice_number}',
+            message='Your invoice was reported to the Federal Tax Authority (Corner 5).',
+        )
+
         return success_response(message=f'Invoice {invoice.invoice_number} reported to FTA.')
 
 

@@ -52,6 +52,7 @@ LOCAL_APPS = [
     'apps.reporting',
     'apps.ai_ocr',
     'apps.onboarding',
+    'apps.notifications',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -275,6 +276,11 @@ CELERY_BEAT_SCHEDULE = {
         'task':     'tasks.fraud_tasks.scan_recent_invoices',
         'schedule': crontab(minute=0),
         'options':  {'queue': 'fraud_analysis'},
+    },
+    # Daily at 06:00 UAE (02:00 UTC): due-soon + overdue receivable reminders
+    'notify-receivable-reminders': {
+        'task':     'tasks.notification_tasks.notify_receivable_reminders',
+        'schedule': crontab(hour=2, minute=0),
     },
 }
 

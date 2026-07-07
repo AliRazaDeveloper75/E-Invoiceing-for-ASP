@@ -37,6 +37,8 @@ urlpatterns = [
     path('api/v1/fraud/',        include('apps.invoices.fraud_list_urls')),
     # Onboarding & Invitations
     path('api/v1/onboarding/',   include('apps.onboarding.urls',    namespace='onboarding')),
+    # In-app notifications
+    path('api/v1/notifications/', include('apps.notifications.urls', namespace='notifications')),
 ]
 
 # Serve media files in development only
