@@ -103,6 +103,13 @@ function Breadcrumbs() {
 function NotificationBell() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  const { data, mutate } = useSWR<{ unread_count: number; results: NotificationItem[] }>(
+    '/notifications/', notifFetcher, { refreshInterval: 45000, revalidateOnFocus: true },
+  );
+  const unread = data?.unread_count ?? 0;
+  const items = data?.results ?? [];
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -112,6 +119,24 @@ function NotificationBell() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  async function openItem(n: NotificationItem) {
+    setOpen(false);
+    try {
+      if (!n.is_read) {
+        await api.post(`/notifications/${n.id}/read/`);
+        mutate();
+      }
+    } catch { /* ignore */ }
+    if (n.link) router.push(n.link);
+  }
+
+  async function markAll() {
+    try {
+      await api.post('/notifications/read-all/');
+      mutate();
+    } catch { /* ignore */ }
+  }
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -120,17 +145,61 @@ function NotificationBell() {
         aria-label="Notifications"
       >
         <Bell className="h-[18px] w-[18px]" />
+        {unread > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+            {unread > 9 ? '9+' : unread}
+          </span>
+        )}
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-72 rounded-xl border border-blue-100/60 bg-white shadow-lg shadow-blue-500/5 z-50">
-          <div className="px-4 py-3 border-b border-blue-50">
+        <div className="absolute right-0 mt-2 w-80 rounded-xl border border-blue-100/60 bg-white shadow-lg shadow-blue-500/5 z-50">
+          <div className="px-4 py-3 border-b border-blue-50 flex items-center justify-between">
             <p className="text-sm font-semibold text-gray-900">Notifications</p>
+            {unread > 0 && (
+              <button
+                onClick={markAll}
+                className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              >
+                <CheckCheck className="h-3.5 w-3.5" /> Mark all read
+              </button>
+            )}
           </div>
-          <div className="px-4 py-8 text-center">
-            <Bell className="h-6 w-6 mx-auto text-blue-200 mb-2" />
-            <p className="text-sm text-gray-500">You&apos;re all caught up</p>
-            <p className="text-xs text-gray-400 mt-0.5">No new notifications</p>
-          </div>
+          {items.length === 0 ? (
+            <div className="px-4 py-8 text-center">
+              <Bell className="h-6 w-6 mx-auto text-blue-200 mb-2" />
+              <p className="text-sm text-gray-500">You&apos;re all caught up</p>
+              <p className="text-xs text-gray-400 mt-0.5">No new notifications</p>
+            </div>
+          ) : (
+            <div className="max-h-96 overflow-y-auto">
+              {items.map((n) => {
+                const Icon = NOTIF_ICON[n.category] ?? Bell;
+                return (
+                  <button
+                    key={n.id}
+                    onClick={() => openItem(n)}
+                    className={clsx(
+                      'w-full text-left px-4 py-3 flex gap-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0',
+                      !n.is_read && 'bg-blue-50/40',
+                    )}
+                  >
+                    <span className={clsx(
+                      'h-8 w-8 rounded-lg flex items-center justify-center shrink-0',
+                      NOTIF_TONE[n.category] ?? 'text-gray-600 bg-gray-100',
+                    )}>
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium text-gray-900 truncate">{n.title}</span>
+                      {n.message && <span className="block text-xs text-gray-500 leading-snug">{n.message}</span>}
+                      <span className="block text-[10px] text-gray-400 mt-0.5">{relativeTime(n.created_at)}</span>
+                    </span>
+                    {!n.is_read && <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0 mt-1.5" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

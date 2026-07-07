@@ -72,7 +72,8 @@ export const metadata: Metadata = {
     shortcut: '/favicon.svg',
   },
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+      || 'fMNTVRRaulXB7hrkLS5Jjjfb4GAI25S3n5z76iEz1Ds',
   },
 };
 
