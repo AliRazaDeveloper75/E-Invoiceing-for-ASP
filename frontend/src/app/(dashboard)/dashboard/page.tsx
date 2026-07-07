@@ -27,6 +27,7 @@ const STATUS_ORDER: InvoiceStatus[] = [
 
 const STATUS_META: Record<InvoiceStatus, { color: string; light: string; icon: React.ElementType }> = {
   draft:          { color: '#6b7280', light: 'bg-gray-100',  icon: Clock },
+  awaiting_approval: { color: '#d97706', light: 'bg-amber-100', icon: Clock },
   pending:        { color: '#d97706', light: 'bg-amber-100', icon: Clock },
   submitted:      { color: '#6366f1', light: 'bg-indigo-100', icon: ArrowUpRight },
   validated:      { color: '#059669', light: 'bg-emerald-100',icon: CheckCircle2 },

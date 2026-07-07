@@ -1,8 +1,8 @@
 'use client';
 
-import { use } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useCompany } from '@/hooks/useCompany';
 import { AnimatedSection } from '@/app/(landing)/AnimatedSection';
@@ -38,8 +38,8 @@ const STATUS_LABEL: Record<string, string> = {
   validated: 'Validated', pending: 'Pending', draft: 'Draft', cancelled: 'Cancelled',
 };
 
-export default function CustomerStatementPage({ params }: { params: Promise<{ customerId: string }> }) {
-  const { customerId } = use(params);
+export default function CustomerStatementPage() {
+  const { customerId } = useParams<{ customerId: string }>();
   const { activeId } = useCompany();
   const { data } = useSWR<Statement>(
     activeId ? `/reports/ar/customer/${customerId}/statement/?company_id=${activeId}` : null,
@@ -48,7 +48,7 @@ export default function CustomerStatementPage({ params }: { params: Promise<{ cu
   const cur = data?.currency ?? 'AED';
 
   const totalOutstanding = fmt(data?.total_outstanding ?? 0);
-  const overdueLines = data?.lines.filter((l) => l.is_overdue) ?? [];
+  const overdueLines = data?.lines?.filter((l) => l.is_overdue) ?? [];
   const overdueTotal = overdueLines.reduce((s, l) => s + Number(l.balance_due), 0);
 
   return (

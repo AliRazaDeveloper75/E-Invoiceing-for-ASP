@@ -9,7 +9,7 @@ import { api } from '@/lib/api';
 import {
   ArrowLeft, Download, FileText, CreditCard, CheckCircle2,
   Loader2, X, AlertCircle, Calendar, Receipt, Building2,
-  ChevronLeft, Ban,
+  ChevronLeft, Ban, ShieldCheck, PenLine,
 } from 'lucide-react';
 import type { Invoice, Payment, PaymentSummary, PaymentMethod, PaymentConfig } from '@/types';
 
@@ -31,8 +31,9 @@ async function fetchPaymentConfig(url: string) {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  draft:          'bg-gray-100 text-gray-600',
-  pending:        'bg-yellow-100 text-yellow-700',
+  draft:            'bg-gray-100 text-gray-600',
+  awaiting_approval:'bg-amber-100 text-amber-700',
+  pending:          'bg-yellow-100 text-yellow-700',
   submitted:      'bg-blue-100 text-blue-700',
   validated:      'bg-emerald-100 text-emerald-700',
   rejected:       'bg-red-100 text-red-700',
@@ -582,6 +583,13 @@ export default function BuyerInvoiceDetailPage() {
   const router = useRouter();
   const [showPayment, setShowPayment] = useState(false);
 
+  const [signName, setSignName] = useState('');
+  const [confirmChecked, setConfirmChecked] = useState(false);
+  const [approving, setApproving] = useState(false);
+  const [approvalError, setApprovalError] = useState('');
+  const [showReject, setShowReject] = useState(false);
+  const [rejectNote, setRejectNote] = useState('');
+
   const { data: invoice, isLoading, mutate } = useSWR(
     id ? `/buyer/invoices/${id}/` : null,
     fetchInvoice,
@@ -614,6 +622,31 @@ export default function BuyerInvoiceDetailPage() {
     setShowPayment(false);
     mutate();
     mutatePayments();
+  }
+
+  async function handleApprove() {
+    if (!signName.trim() || !confirmChecked) {
+      setApprovalError('Type your full name and tick the confirmation box to e-sign.');
+      return;
+    }
+    setApproving(true); setApprovalError('');
+    try {
+      await api.post(`/buyer/invoices/${id}/approve/`, { signed_name: signName.trim() });
+      await mutate();
+    } catch (err: any) {
+      setApprovalError(err?.response?.data?.error?.message || 'Could not confirm the order. Please try again.');
+    } finally { setApproving(false); }
+  }
+
+  async function handleReject() {
+    setApproving(true); setApprovalError('');
+    try {
+      await api.post(`/buyer/invoices/${id}/reject/`, { note: rejectNote.trim() });
+      setShowReject(false);
+      await mutate();
+    } catch (err: any) {
+      setApprovalError(err?.response?.data?.error?.message || 'Could not reject the invoice.');
+    } finally { setApproving(false); }
   }
 
   if (isLoading) {
@@ -713,6 +746,123 @@ export default function BuyerInvoiceDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Approval / e-signature (awaiting buyer approval) */}
+      {invoice.status === 'awaiting_approval' && (
+        <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 sm:p-6">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-800">Review &amp; confirm this order</h3>
+              <p className="text-sm text-slate-500 mt-0.5">
+                Please review the invoice below. To confirm the order, type your full name to
+                e-sign — it will then be submitted to the tax authority network.
+              </p>
+            </div>
+          </div>
+
+          {!showReject ? (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  Your full name (e-signature) <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <PenLine className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={signName}
+                    onChange={(e) => setSignName(e.target.value)}
+                    placeholder="e.g. Ahmed Al Rashid"
+                    className="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <label className="flex items-start gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={confirmChecked}
+                  onChange={(e) => setConfirmChecked(e.target.checked)}
+                  className="h-4 w-4 mt-0.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                />
+                <span className="text-xs text-slate-600 leading-relaxed">
+                  I confirm this order is correct and authorise it to be submitted. I understand
+                  typing my name constitutes my electronic signature.
+                </span>
+              </label>
+
+              {approvalError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
+                  <AlertCircle className="w-4 h-4 shrink-0" /> {approvalError}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-3 pt-1">
+                <button
+                  onClick={handleApprove}
+                  disabled={approving}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                >
+                  {approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  Approve &amp; Confirm Order
+                </button>
+                <button
+                  onClick={() => { setApprovalError(''); setShowReject(true); }}
+                  disabled={approving}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  <X className="w-4 h-4" /> Reject
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-slate-700">Reason for rejection (optional)</label>
+              <textarea
+                rows={3}
+                value={rejectNote}
+                onChange={(e) => setRejectNote(e.target.value)}
+                placeholder="Let the supplier know what needs to change…"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-400 resize-none"
+              />
+              {approvalError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
+                  <AlertCircle className="w-4 h-4 shrink-0" /> {approvalError}
+                </div>
+              )}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowReject(false)}
+                  disabled={approving}
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleReject}
+                  disabled={approving}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                >
+                  {approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                  Confirm Rejection
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Signed confirmation (after approval) */}
+      {invoice.buyer_signed_name && invoice.status !== 'awaiting_approval' && (
+        <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          E-signed by <strong>{invoice.buyer_signed_name}</strong>
+          {invoice.buyer_signed_at ? ` on ${new Date(invoice.buyer_signed_at).toLocaleString()}` : ''}
+        </div>
+      )}
 
       {/* Deactivated notice (read-only for buyer) */}
       {invoice.status === 'deactivated' && (

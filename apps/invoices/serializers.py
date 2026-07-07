@@ -193,8 +193,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'is_editable', 'is_submittable', 'is_cancellable', 'is_deactivatable',
             # Deactivation
             'deactivation_reason', 'deactivated_at',
-            # Buyer engagement
+            # Buyer engagement + approval / e-signature
             'buyer_viewed_at',
+            'buyer_signed_name', 'buyer_signed_at', 'buyer_approval_note',
             # Meta
             'notes', 'created_at', 'updated_at',
         ]

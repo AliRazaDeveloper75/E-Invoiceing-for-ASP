@@ -18,8 +18,8 @@ const fmt = (v: string | number) =>
   Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-function absUrl(url: string | null | undefined): string | null | undefined {
-  if (!url) return url;
+function absUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
   return url.startsWith('/') ? `${BACKEND_URL}${url}` : url;
 }
 

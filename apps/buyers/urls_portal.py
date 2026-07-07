@@ -7,6 +7,8 @@ from .views import (
     BuyerInvoiceDetailView,
     BuyerInvoicePDFView,
     BuyerInvoiceXMLView,
+    BuyerInvoiceApproveView,
+    BuyerInvoiceRejectView,
     BuyerPaymentConfigView,
 )
 from apps.payments.views import (
@@ -31,6 +33,11 @@ urlpatterns = [
          BuyerInvoicePDFView.as_view(),                       name='invoice-pdf'),
     path('invoices/<uuid:invoice_id>/download-xml/',
          BuyerInvoiceXMLView.as_view(),                       name='invoice-xml'),
+    # Approval / e-signature (pre-ASP review flow)
+    path('invoices/<uuid:invoice_id>/approve/',
+         BuyerInvoiceApproveView.as_view(),                   name='invoice-approve'),
+    path('invoices/<uuid:invoice_id>/reject/',
+         BuyerInvoiceRejectView.as_view(),                    name='invoice-reject'),
     # Payments
     path('invoices/<uuid:invoice_id>/pay/',
          BuyerPaymentCreateView.as_view(),                    name='pay'),

@@ -65,3 +65,17 @@ def notify_receivable_reminders():
 
     logger.info('Receivable reminders: %s notifications created.', made)
     return made
+
+
+@shared_task(name='tasks.notification_tasks.cleanup_old_notifications')
+def cleanup_old_notifications():
+    """
+    Delete notifications older than 1 day — they are only valid for a day
+    ("next day remove"). Keeps the table small and the bell relevant.
+    """
+    from apps.notifications.models import Notification
+
+    cutoff = timezone.now() - timedelta(days=1)
+    deleted, _ = Notification.objects.filter(created_at__lt=cutoff).delete()
+    logger.info('Notification cleanup: deleted %s old notifications.', deleted)
+    return deleted

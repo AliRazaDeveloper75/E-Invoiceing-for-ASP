@@ -207,6 +207,64 @@ class InvoiceSubmitView(APIView):
         )
 
 
+class InvoiceSendForApprovalView(APIView):
+    """
+    POST /api/v1/invoices/{id}/send-for-approval/
+
+    Send a DRAFT invoice to the buyer for review + e-signature before it is
+    submitted to the ASP. DRAFT → AWAITING_APPROVAL. Notifies the buyer.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, invoice_id):
+        from apps.common.constants import (
+            INVOICE_STATUS_DRAFT, INVOICE_STATUS_AWAITING_APPROVAL,
+        )
+        invoice, membership, err = _resolve_invoice(request, invoice_id)
+        if err:
+            return err
+
+        if invoice.status != INVOICE_STATUS_DRAFT:
+            return error_response(
+                f'Only DRAFT invoices can be sent for approval. Current status: "{invoice.status}".',
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        if not invoice.items.filter(is_active=True).exists():
+            return error_response('Add at least one line item before sending for approval.',
+                                  status_code=status.HTTP_400_BAD_REQUEST)
+        if not invoice.customer.email:
+            return error_response('The customer has no email address — cannot request approval.',
+                                  status_code=status.HTTP_400_BAD_REQUEST)
+
+        invoice.status = INVOICE_STATUS_AWAITING_APPROVAL
+        invoice.save(update_fields=['status', 'updated_at'])
+
+        # Notify the buyer (portal notification + email) if they have a portal login.
+        try:
+            from apps.buyers.models import BuyerProfile
+            from apps.notifications.services import NotificationService
+            from apps.notifications.models import Notification
+            profile = BuyerProfile.objects.filter(customer=invoice.customer, is_active=True).first()
+            if profile:
+                NotificationService.notify(
+                    profile.user, category=Notification.CAT_INVOICE,
+                    event='approval_requested',
+                    title=f'Approval requested — {invoice.invoice_number}',
+                    message='A supplier has sent you an invoice to review and approve.',
+                    link=f'/buyer/invoices/{invoice.id}',
+                )
+            # Email the buyer regardless (portal invite link).
+            from apps.invoices.services import _send_buyer_invoice_email
+            _send_buyer_invoice_email(invoice)
+        except Exception:
+            logger.warning('send-for-approval: buyer notification failed for %s', invoice.invoice_number)
+
+        return success_response(
+            data=InvoiceSerializer(invoice).data,
+            message=f'Invoice {invoice.invoice_number} sent to the buyer for approval.',
+        )
+
+
 class InvoiceCancelView(APIView):
     """POST /api/v1/invoices/{id}/cancel/ — DRAFT|PENDING → CANCELLED"""
     permission_classes = [IsAuthenticated]

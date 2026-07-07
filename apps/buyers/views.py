@@ -318,6 +318,137 @@ class BuyerInvoiceXMLView(APIView):
         return response
 
 
+def _client_ip(request):
+    xff = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    if xff:
+        return xff.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
+
+class BuyerInvoiceApproveView(APIView):
+    """
+    POST /api/v1/buyer/invoices/{id}/approve/  { signed_name }
+
+    Buyer reviews, e-signs (typed name + confirmation), and confirms the order.
+    AWAITING_APPROVAL → PENDING, then the ASP submission pipeline is triggered.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, invoice_id):
+        from apps.common.constants import (
+            INVOICE_STATUS_AWAITING_APPROVAL, INVOICE_STATUS_PENDING,
+        )
+        profile, err = _require_buyer(request)
+        if err:
+            return err
+
+        signed_name = (request.data.get('signed_name') or '').strip()
+        if not signed_name:
+            return error_response('Please type your full name to e-sign and confirm the order.',
+                                  status_code=400)
+
+        try:
+            invoice = Invoice.objects.get(
+                id=invoice_id, customer=profile.customer, is_active=True,
+            )
+        except Invoice.DoesNotExist:
+            return error_response('Invoice not found.', status_code=404)
+
+        if invoice.status != INVOICE_STATUS_AWAITING_APPROVAL:
+            return error_response(
+                f'This invoice is not awaiting your approval (status: "{invoice.status}").',
+                status_code=400,
+            )
+
+        # Capture the e-signature.
+        invoice.buyer_signed_name = signed_name
+        invoice.buyer_signed_at = timezone.now()
+        invoice.buyer_signature_ip = _client_ip(request)
+        invoice.status = INVOICE_STATUS_PENDING
+        invoice.save(update_fields=[
+            'buyer_signed_name', 'buyer_signed_at', 'buyer_signature_ip',
+            'status', 'updated_at',
+        ])
+
+        # Trigger the ASP submission pipeline (async, sync fallback).
+        try:
+            from tasks.invoice_tasks import process_invoice
+            try:
+                process_invoice.apply_async(args=[str(invoice.id)], queue='invoice_processing')
+            except Exception:
+                process_invoice.apply(args=[str(invoice.id)])
+        except Exception:
+            logger.warning('Buyer approve: pipeline trigger failed for %s', invoice.invoice_number)
+
+        # Notify the supplier who created the invoice.
+        try:
+            from apps.notifications.services import NotificationService
+            NotificationService.invoice_event(
+                invoice, event='buyer_approved',
+                title=f'Buyer approved — {invoice.invoice_number}',
+                message=f'{signed_name} approved & e-signed the order. Submitting to the ASP.',
+            )
+        except Exception:
+            pass
+
+        return success_response(
+            message='Order confirmed and e-signed. The invoice is now being submitted.',
+            data={'invoice_status': invoice.status},
+        )
+
+
+class BuyerInvoiceRejectView(APIView):
+    """
+    POST /api/v1/buyer/invoices/{id}/reject/  { note }
+
+    Buyer rejects the invoice; it returns to the supplier as DRAFT.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, invoice_id):
+        from apps.common.constants import (
+            INVOICE_STATUS_AWAITING_APPROVAL, INVOICE_STATUS_DRAFT,
+        )
+        profile, err = _require_buyer(request)
+        if err:
+            return err
+
+        note = (request.data.get('note') or '').strip()
+
+        try:
+            invoice = Invoice.objects.get(
+                id=invoice_id, customer=profile.customer, is_active=True,
+            )
+        except Invoice.DoesNotExist:
+            return error_response('Invoice not found.', status_code=404)
+
+        if invoice.status != INVOICE_STATUS_AWAITING_APPROVAL:
+            return error_response(
+                f'This invoice is not awaiting your approval (status: "{invoice.status}").',
+                status_code=400,
+            )
+
+        invoice.status = INVOICE_STATUS_DRAFT
+        invoice.buyer_approval_note = note
+        invoice.save(update_fields=['status', 'buyer_approval_note', 'updated_at'])
+
+        try:
+            from apps.notifications.services import NotificationService
+            NotificationService.invoice_event(
+                invoice, event='buyer_rejected',
+                title=f'Buyer rejected — {invoice.invoice_number}',
+                message=(f'The buyer rejected the invoice. Reason: {note}' if note
+                         else 'The buyer rejected the invoice. It is back in Draft.'),
+            )
+        except Exception:
+            pass
+
+        return success_response(
+            message='Invoice rejected and returned to the supplier.',
+            data={'invoice_status': invoice.status},
+        )
+
+
 class BuyerPaymentConfigView(APIView):
     """GET /api/v1/buyer/payment-config/ — returns enabled payment gateways and public keys."""
     permission_classes = [IsAuthenticated]

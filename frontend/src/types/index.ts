@@ -104,6 +104,7 @@ export interface Customer {
 
 export type InvoiceStatus =
   | 'draft'
+  | 'awaiting_approval'
   | 'pending'
   | 'submitted'
   | 'validated'
@@ -188,6 +189,9 @@ export interface Invoice {
   is_deactivatable: boolean;
   deactivation_reason: string;
   deactivated_at: string | null;
+  buyer_signed_name?: string;
+  buyer_signed_at?: string | null;
+  buyer_approval_note?: string;
   notes: string;
   created_at: string;
   updated_at: string;

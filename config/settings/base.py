@@ -282,6 +282,11 @@ CELERY_BEAT_SCHEDULE = {
         'task':     'tasks.notification_tasks.notify_receivable_reminders',
         'schedule': crontab(hour=2, minute=0),
     },
+    # Hourly: delete notifications older than 1 day (1-day validity)
+    'cleanup-old-notifications': {
+        'task':     'tasks.notification_tasks.cleanup_old_notifications',
+        'schedule': crontab(minute=30),
+    },
 }
 
 # ─── CORS ─────────────────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@ import type { InvoiceStatus } from '@/types';
 
 const STATUS_STYLES: Record<InvoiceStatus, string> = {
   draft:          'bg-gray-100 text-gray-700',
+  awaiting_approval: 'bg-amber-100 text-amber-800',
   pending:        'bg-yellow-100 text-yellow-800',
   submitted:      'bg-blue-100 text-blue-800',
   validated:      'bg-green-100 text-green-800',
@@ -15,6 +16,7 @@ const STATUS_STYLES: Record<InvoiceStatus, string> = {
 
 const STATUS_LABELS: Record<InvoiceStatus, string> = {
   draft:          'Draft',
+  awaiting_approval: 'Awaiting Approval',
   pending:        'Pending',
   submitted:      'Submitted',
   validated:      'Validated',

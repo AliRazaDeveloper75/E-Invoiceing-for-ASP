@@ -243,6 +243,24 @@ class Invoice(BaseModel):
         help_text='Timestamp when a buyer first opened this invoice via the Buyer Portal.'
     )
 
+    # ── Buyer approval / e-signature (pre-ASP review flow) ──────────────────────
+    buyer_signed_name = models.CharField(
+        max_length=160, blank=True, default='',
+        help_text='Name the buyer typed when e-signing / confirming the order.'
+    )
+    buyer_signed_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Timestamp when the buyer approved & e-signed the invoice.'
+    )
+    buyer_signature_ip = models.GenericIPAddressField(
+        null=True, blank=True,
+        help_text='IP address captured at the time of the buyer e-signature.'
+    )
+    buyer_approval_note = models.TextField(
+        blank=True, default='',
+        help_text='Buyer note / reason (e.g. on rejection).'
+    )
+
     # ── Notes ──────────────────────────────────────────────────────────────────
     notes = models.TextField(blank=True, default='')
 

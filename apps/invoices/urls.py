@@ -7,6 +7,7 @@ from .views import (
     InvoiceListCreateView,
     InvoiceDetailView,
     InvoiceSubmitView,
+    InvoiceSendForApprovalView,
     InvoiceCancelView,
     InvoiceDeactivateView,
     InvoiceCreditNoteView,
@@ -63,6 +64,10 @@ urlpatterns = [
     path('<uuid:invoice_id>/submit/',
          InvoiceSubmitView.as_view(),
          name='invoice-submit'),
+
+    path('<uuid:invoice_id>/send-for-approval/',
+         InvoiceSendForApprovalView.as_view(),
+         name='invoice-send-for-approval'),
 
     path('<uuid:invoice_id>/cancel/',
          InvoiceCancelView.as_view(),

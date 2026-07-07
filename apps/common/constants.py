@@ -38,6 +38,7 @@ USER_ROLE_CHOICES = [
 # ─── Invoice Status ───────────────────────────────────────────────────────────
 # Internal lifecycle status
 INVOICE_STATUS_DRAFT           = 'draft'
+INVOICE_STATUS_AWAITING_APPROVAL = 'awaiting_approval'  # Sent to buyer for review + e-sign
 INVOICE_STATUS_PENDING         = 'pending'          # Queued for ASP submission
 INVOICE_STATUS_PROCESSING      = 'processing'       # Celery worker actively processing (locked)
 INVOICE_STATUS_SUBMITTED       = 'submitted'        # Sent to ASP
@@ -50,6 +51,7 @@ INVOICE_STATUS_DEACTIVATED     = 'deactivated'      # Deactivated by user (with 
 
 INVOICE_STATUS_CHOICES = [
     (INVOICE_STATUS_DRAFT,          'Draft'),
+    (INVOICE_STATUS_AWAITING_APPROVAL, 'Awaiting Buyer Approval'),
     (INVOICE_STATUS_PENDING,        'Pending Submission'),
     (INVOICE_STATUS_PROCESSING,     'Processing'),
     (INVOICE_STATUS_SUBMITTED,      'Submitted to ASP'),

@@ -208,6 +208,18 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
     }
   }
 
+  async function handleSendForApproval() {
+    if (!confirm('Send this invoice to the buyer for review & e-signature before ASP submission?')) return;
+    setIsActing(true); setActionError('');
+    try {
+      await api.post(`/invoices/${params.id}/send-for-approval/`);
+      await mutateAll();
+    } catch (e) {
+      const err = e as AxiosError<{ error?: { message?: string } }>;
+      setActionError(err.response?.data?.error?.message ?? 'Could not send for approval.');
+    } finally { setIsActing(false); }
+  }
+
   async function handleCancel() {
     if (!confirm('Cancel this invoice? This cannot be undone.')) return;
     setIsActing(true); setActionError('');
@@ -336,9 +348,19 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                   <Download className="h-4 w-4" /> XML
                 </Button>
                 {invoice.is_submittable && (
+                  <Button size="sm" variant="secondary" onClick={handleSendForApproval} loading={isActing}>
+                    <Send className="h-4 w-4" /> Send for Buyer Approval
+                  </Button>
+                )}
+                {invoice.is_submittable && (
                   <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 border-emerald-500" onClick={handleSubmit} loading={isActing}>
                     <Send className="h-4 w-4" /> Submit
                   </Button>
+                )}
+                {invoice.status === 'awaiting_approval' && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold">
+                    <Send className="h-3.5 w-3.5" /> Awaiting buyer approval
+                  </span>
                 )}
                 {['submitted', 'validated', 'partially_paid', 'pending'].includes(invoice.status)
                   && Number(invoice.balance_due ?? 0) > 0 && (
