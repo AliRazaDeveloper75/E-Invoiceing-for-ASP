@@ -66,8 +66,8 @@ const S = StyleSheet.create({
   header: {
     flexDirection: 'row',
     paddingHorizontal: 30,
-    paddingTop: 22,
-    paddingBottom: 20,
+    paddingTop: 16,
+    paddingBottom: 14,
     backgroundColor: C.navy,
   },
   hdrLeft:  { flex: 1, paddingRight: 20 },
@@ -785,11 +785,11 @@ export function InvoicePDF({ invoice, company }: InvoicePDFProps) {
     <Document title={invoice.invoice_number} author="E-Numerak">
       <Page size="A4" style={S.page}>
 
-        {/* 1 ── Top accent bar */}
-        <View fixed style={S.topBar} />
+        {/* 1 ── Top accent bar (page 1 only — avoids duplicated header on overflow) */}
+        <View style={S.topBar} />
 
-        {/* 2 ── Header */}
-        <View fixed style={S.header}>
+        {/* 2 ── Header (page 1 only) */}
+        <View style={S.header}>
           <View style={S.hdrLeft}>
             <View style={S.coLogoRow}>
               {company?.logo_url ? (
