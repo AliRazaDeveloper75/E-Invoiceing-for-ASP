@@ -36,3 +36,22 @@ def generate_invoice_qr_base64(invoice):
 
     data_uri = 'data:image/png;base64,' + base64.b64encode(buf.read()).decode('ascii')
     return data_uri
+
+
+def parse_invoice_faf_meta(notes: str) -> dict:
+    result = {
+        'permit_number': '',
+        'transaction_id': '',
+        'gl_account_id': '',
+    }
+    if not notes:
+        return result
+    for line in notes.split('\n'):
+        line = line.strip()
+        if line.startswith('Permit:'):
+            result['permit_number'] = line[len('Permit:'):].strip()
+        elif line.startswith('Txn ID:'):
+            result['transaction_id'] = line[len('Txn ID:'):].strip()
+        elif line.startswith('GL/ID:'):
+            result['gl_account_id'] = line[len('GL/ID:'):].strip()
+    return result

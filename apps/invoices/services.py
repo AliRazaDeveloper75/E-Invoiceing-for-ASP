@@ -775,7 +775,10 @@ def _send_buyer_invoice_email(invoice: 'Invoice') -> None:
 
         # Generate PDF
         from apps.invoices.utils import generate_invoice_qr_base64
-        qr_code = generate_invoice_qr_base64(invoice)
+        try:
+            qr_code = generate_invoice_qr_base64(invoice)
+        except Exception:
+            qr_code = None
 
         html = render_to_string('invoices/invoice_pdf.html', {
             'invoice': invoice,

@@ -191,6 +191,7 @@ export interface Invoice {
   deactivated_at: string | null;
   buyer_signed_name?: string;
   buyer_signed_at?: string | null;
+  buyer_signature_ip?: string | null;
   buyer_approval_note?: string;
   notes: string;
   created_at: string;

@@ -195,7 +195,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'deactivation_reason', 'deactivated_at',
             # Buyer engagement + approval / e-signature
             'buyer_viewed_at',
-            'buyer_signed_name', 'buyer_signed_at', 'buyer_approval_note',
+            'buyer_signed_name', 'buyer_signed_at', 'buyer_signature_ip', 'buyer_approval_note',
             # Meta
             'notes', 'created_at', 'updated_at',
         ]

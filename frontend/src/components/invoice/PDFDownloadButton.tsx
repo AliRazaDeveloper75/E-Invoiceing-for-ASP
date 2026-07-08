@@ -31,16 +31,29 @@ async function toDataUrl(url?: string | null): Promise<string | null> {
 }
 
 async function generateAndDownload(invoice: Invoice, company: Company | null) {
-  const [{ pdf }, { InvoicePDF }, { createElement }] = await Promise.all([
+  const [{ pdf }, { InvoicePDF }, { createElement }, QRCodeLib] = await Promise.all([
     import('@react-pdf/renderer'),
     import('./InvoicePDF'),
     import('react'),
+    import('qrcode'),
   ]);
 
   // Pre-embed the company logo + customer logo as data URIs so they render.
-  const [companyLogo, customerLogo] = await Promise.all([
+  // Also pre-generate QR code so it's ready before PDF rendering.
+  const qrText = [
+    'E-NUMERAK',
+    `INV:${invoice.invoice_number}`,
+    `SELLER:${company?.name || invoice.company_name || ''}`,
+    `STRN:${company?.trn || invoice.company_trn || ''}`,
+    `BUYER:${invoice.customer_name || ''}`,
+    `BTRN:${invoice.customer_trn || invoice.customer_vat_number || ''}`,
+    `TOTAL:${invoice.currency} ${invoice.total_amount}`,
+    `DATE:${invoice.issue_date || ''}`,
+  ].join('|')
+  const [companyLogo, customerLogo, qrCode] = await Promise.all([
     toDataUrl(company?.logo_url),
     toDataUrl(invoice.customer_logo),
+    QRCodeLib.toDataURL(qrText, { margin: 1, width: 220, errorCorrectionLevel: 'M' }).catch(() => ''),
   ]);
   const companyForPdf: Company | null = company
     ? { ...company, logo_url: companyLogo ?? company.logo_url }
@@ -51,7 +64,7 @@ async function generateAndDownload(invoice: Invoice, company: Company | null) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const blob = await pdf(
-    createElement(InvoicePDF, { invoice: invoiceForPdf, company: companyForPdf }) as any
+    createElement(InvoicePDF, { invoice: invoiceForPdf, company: companyForPdf, qrCode }) as any
   ).toBlob();
 
   const url = URL.createObjectURL(blob);

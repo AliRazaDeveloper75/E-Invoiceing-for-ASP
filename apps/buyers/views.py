@@ -267,14 +267,34 @@ class BuyerInvoicePDFView(APIView):
 
         items = invoice.items.filter(is_active=True).order_by('sort_order', 'created_at')
 
-        from apps.invoices.utils import generate_invoice_qr_base64
-        qr_code = generate_invoice_qr_base64(invoice)
+        from decimal import Decimal
+        paid = invoice.amount_paid or Decimal('0.00')
+        balance_due = max(invoice.total_amount - paid, Decimal('0.00')) if paid > 0 else None
+
+        payment_means_label = ''
+        if invoice.payment_means_code:
+            payment_means_label = invoice.get_payment_means_code_display()
+
+        try:
+            from apps.invoices.utils import generate_invoice_qr_base64
+            qr_code = generate_invoice_qr_base64(invoice)
+        except Exception:
+            qr_code = None
+
+        from apps.invoices.utils import parse_invoice_faf_meta
+
+        faf = parse_invoice_faf_meta(invoice.notes)
 
         try:
             html = render_to_string('invoices/invoice_pdf.html', {
                 'invoice': invoice,
                 'items': items,
                 'qr_code': qr_code,
+                'balance_due': balance_due,
+                'payment_means_label': payment_means_label,
+                'permit_number': faf.get('permit_number', ''),
+                'transaction_id': faf.get('transaction_id', ''),
+                'gl_account_id': faf.get('gl_account_id', ''),
             })
         except Exception as exc:
             return error_response(f'PDF template error: {exc}', status_code=500)

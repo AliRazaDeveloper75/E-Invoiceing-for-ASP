@@ -5,31 +5,131 @@ import Link from 'next/link';
 import {
   FileText, CheckCircle2, Clock, AlertTriangle,
   TrendingUp, ArrowRight, Calendar, DollarSign,
+  Receipt, Activity, ArrowUpRight,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { BuyerDashboard, InvoiceListItem } from '@/types';
 
-function StatCard({
-  icon: Icon, label, value, sub, color,
-}: {
-  icon: React.ElementType; label: string; value: string | number;
-  sub?: string; color: string;
-}) {
+// ─── Skeleton Loader ─────────────────────────────────────────────────────
+
+function SkeletonBlock({ className }: { className?: string }) {
+  return <div className={`rounded-lg animate-shimmer ${className ?? ''}`} />;
+}
+
+function DashboardSkeleton() {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-slate-500 font-medium">{label}</p>
-          <p className="text-2xl font-bold text-slate-800 mt-1">{value}</p>
-          {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
+    <div className="p-6 max-w-6xl mx-auto space-y-6">
+      <div className="space-y-3">
+        <SkeletonBlock className="h-8 w-52" />
+        <SkeletonBlock className="h-5 w-80" />
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="bg-white rounded-xl border border-slate-200 p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-3">
+                <SkeletonBlock className="h-4 w-20" />
+                <SkeletonBlock className="h-8 w-24" />
+                <SkeletonBlock className="h-3 w-28" />
+              </div>
+              <SkeletonBlock className="w-10 h-10" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="bg-white rounded-xl border border-slate-200">
+        <div className="px-5 py-4 border-b border-slate-100">
+          <SkeletonBlock className="h-5 w-36" />
         </div>
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
-          <Icon className="w-5 h-5" />
+        <div className="divide-y divide-slate-100">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center justify-between px-5 py-4">
+              <div className="flex items-center gap-4">
+                <SkeletonBlock className="w-9 h-9" />
+                <div className="space-y-2">
+                  <SkeletonBlock className="h-4 w-28" />
+                  <SkeletonBlock className="h-3 w-20" />
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <SkeletonBlock className="h-5 w-16 rounded-full" />
+                <SkeletonBlock className="h-4 w-24" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 }
+
+// ─── Stat Card ───────────────────────────────────────────────────────────
+
+const statCardConfig = [
+  {
+    icon: FileText,
+    label: 'Total Invoices',
+    color: 'bg-blue-50 text-blue-600',
+    gradient: 'bg-gradient-to-r from-blue-500 to-blue-400',
+    borderHover: 'group-hover:border-blue-200',
+  },
+  {
+    icon: DollarSign,
+    label: 'Total Amount',
+    color: 'bg-slate-100 text-slate-600',
+    gradient: 'bg-gradient-to-r from-slate-500 to-slate-400',
+    borderHover: 'group-hover:border-slate-300',
+  },
+  {
+    icon: Clock,
+    label: 'Unpaid',
+    color: 'bg-orange-50 text-orange-600',
+    gradient: 'bg-gradient-to-r from-orange-500 to-orange-400',
+    borderHover: 'group-hover:border-orange-200',
+  },
+  {
+    icon: CheckCircle2,
+    label: 'Paid',
+    color: 'bg-emerald-50 text-emerald-600',
+    gradient: 'bg-gradient-to-r from-emerald-500 to-emerald-400',
+    borderHover: 'group-hover:border-emerald-200',
+  },
+];
+
+function StatCard({
+  icon: Icon, label, value, sub, color, gradient, delay,
+}: {
+  icon: React.ElementType; label: string; value: string | number;
+  sub?: string; color: string; gradient: string; delay: number;
+}) {
+  return (
+    <div
+      className="group bg-white rounded-xl border border-slate-200 p-5 transition-all duration-300 animate-fade-in hover:shadow-lg hover:-translate-y-0.5"
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      <div className="flex items-start justify-between">
+        <div className="space-y-1">
+          <p className="text-sm text-slate-500 font-medium">{label}</p>
+          <p className="text-2xl font-bold text-slate-800 group-hover:text-slate-900 transition-colors">
+            {value}
+          </p>
+          {sub && (
+            <p className="text-xs text-slate-400 flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" />
+              {sub}
+            </p>
+          )}
+        </div>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color} transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg`}>
+          <Icon className="w-5 h-5" />
+        </div>
+      </div>
+      <div className={`mt-4 h-1 rounded-full ${gradient} opacity-0 group-hover:opacity-100 transition-all duration-500 scale-x-0 group-hover:scale-x-100 origin-left`} />
+    </div>
+  );
+}
+
+// ─── Status Helpers ──────────────────────────────────────────────────────
 
 function statusBadge(status: string) {
   const map: Record<string, string> = {
@@ -43,6 +143,20 @@ function statusBadge(status: string) {
     partially_paid: 'bg-orange-100 text-orange-700',
   };
   return map[status] ?? 'bg-slate-100 text-slate-600';
+}
+
+function statusDot(status: string) {
+  const map: Record<string, string> = {
+    draft:          'bg-slate-400',
+    pending:        'bg-yellow-500',
+    submitted:      'bg-blue-500',
+    validated:      'bg-emerald-500',
+    rejected:       'bg-red-500',
+    cancelled:      'bg-slate-400',
+    paid:           'bg-green-500',
+    partially_paid: 'bg-orange-500',
+  };
+  return map[status] ?? 'bg-slate-400';
 }
 
 function statusLabel(status: string) {
@@ -59,6 +173,8 @@ function statusLabel(status: string) {
   return map[status] ?? status;
 }
 
+// ─── Main Page ───────────────────────────────────────────────────────────
+
 export default function BuyerDashboardPage() {
   const [data, setData] = useState<BuyerDashboard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,35 +187,70 @@ export default function BuyerDashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <DashboardSkeleton />;
 
   if (error || !data) {
     return (
-      <div className="p-8 text-center text-slate-500">{error || 'No data available.'}</div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center space-y-3 animate-fade-in">
+          <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-7 h-7 text-red-400" />
+          </div>
+          <p className="text-slate-500 font-medium">{error || 'No data available.'}</p>
+        </div>
+      </div>
     );
   }
 
+  const stats = [
+    { ...statCardConfig[0], value: data.total_invoices },
+    {
+      ...statCardConfig[1],
+      value: `AED ${parseFloat(data.total_amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}`,
+    },
+    {
+      ...statCardConfig[2],
+      value: data.unpaid_count,
+      sub: `AED ${parseFloat(data.unpaid_amount || '0').toLocaleString('en-AE', { minimumFractionDigits: 2 })}`,
+    },
+    {
+      ...statCardConfig[3],
+      value: data.paid_count,
+      sub: `AED ${parseFloat(data.paid_amount || '0').toLocaleString('en-AE', { minimumFractionDigits: 2 })}`,
+    },
+  ];
+
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Welcome back</h1>
-        <p className="text-slate-500 mt-1">
-          Viewing invoices for <span className="font-semibold text-slate-700">{data.customer_name}</span>
-          {' '}from <span className="font-semibold text-slate-700">{data.company_name}</span>
+      {/* ── Header ────────────────────────────────────────────────────── */}
+      <div className="animate-fade-in">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse-soft" />
+          <span className="text-xs font-medium text-blue-600 uppercase tracking-wider">Dashboard</span>
+        </div>
+        <h1 className="text-2xl font-bold text-slate-800">
+          Welcome back
+        </h1>
+        <p className="text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
+          <span>Viewing invoices for</span>
+          <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-sm">
+            {data.customer_name}
+          </span>
+          <span>from</span>
+          <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-sm">
+            {data.company_name}
+          </span>
         </p>
+        <div className="mt-4 h-px bg-gradient-to-r from-blue-200 via-slate-200 to-transparent" />
       </div>
 
-      {/* Overdue alert */}
+      {/* ── Overdue Alert ─────────────────────────────────────────────── */}
       {data.overdue_count > 0 && (
-        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-5 py-4">
-          <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
+        <div className="group flex items-center gap-3 bg-gradient-to-r from-red-50 to-red-50/50 border border-red-200 rounded-xl px-5 py-4 animate-slide-up">
+          <div className="relative">
+            <AlertTriangle className="w-5 h-5 text-red-500" />
+            <span className="absolute inset-0 w-5 h-5 rounded-full bg-red-400/20 animate-ping" />
+          </div>
           <div className="flex-1">
             <p className="text-sm font-semibold text-red-700">
               {data.overdue_count} overdue invoice{data.overdue_count > 1 ? 's' : ''}
@@ -108,88 +259,86 @@ export default function BuyerDashboardPage() {
           </div>
           <Link
             href="/buyer/invoices?status=validated"
-            className="text-sm font-medium text-red-700 hover:text-red-800 flex items-center gap-1"
+            className="text-sm font-medium text-red-700 hover:text-red-800 flex items-center gap-1.5 bg-red-100/50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-all duration-200"
           >
-            View <ArrowRight className="w-4 h-4" />
+            View <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       )}
 
-      {/* Stats grid */}
+      {/* ── Stats Grid ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          icon={FileText}
-          label="Total Invoices"
-          value={data.total_invoices}
-          color="bg-blue-50 text-blue-600"
-        />
-        <StatCard
-          icon={DollarSign}
-          label="Total Amount"
-          value={`AED ${parseFloat(data.total_amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}`}
-          color="bg-slate-100 text-slate-600"
-        />
-        <StatCard
-          icon={Clock}
-          label="Unpaid"
-          value={data.unpaid_count}
-          sub={`AED ${parseFloat(data.unpaid_amount || '0').toLocaleString('en-AE', { minimumFractionDigits: 2 })}`}
-          color="bg-orange-50 text-orange-600"
-        />
-        <StatCard
-          icon={CheckCircle2}
-          label="Paid"
-          value={data.paid_count}
-          sub={`AED ${parseFloat(data.paid_amount || '0').toLocaleString('en-AE', { minimumFractionDigits: 2 })}`}
-          color="bg-emerald-50 text-emerald-600"
-        />
+        {stats.map((s, i) => (
+          <StatCard key={s.label} {...s} delay={i * 100} />
+        ))}
       </div>
 
-      {/* Recent invoices */}
-      <div className="bg-white rounded-xl border border-slate-200">
+      {/* ── Recent Invoices ───────────────────────────────────────────── */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm animate-fade-in" style={{ animationDelay: '400ms' }}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-800">Recent Invoices</h2>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+              <Receipt className="w-4 h-4 text-blue-600" />
+            </div>
+            <h2 className="font-semibold text-slate-800">Recent Invoices</h2>
+          </div>
           <Link
             href="/buyer/invoices"
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+            className="group text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1.5 transition-colors"
           >
-            View all <ArrowRight className="w-4 h-4" />
+            View all
+            <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
         </div>
 
         {data.recent_invoices.length === 0 ? (
-          <div className="py-12 text-center text-slate-400">
-            <FileText className="w-10 h-10 mx-auto mb-3 opacity-40" />
-            <p>No invoices yet</p>
+          <div className="py-16 text-center animate-fade-in">
+            <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-7 h-7 text-slate-300" />
+            </div>
+            <p className="text-slate-400 font-medium">No invoices yet</p>
+            <p className="text-xs text-slate-300 mt-1">Invoices will appear here once received.</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {data.recent_invoices.map((inv: InvoiceListItem) => (
+            {data.recent_invoices.map((inv: InvoiceListItem, idx: number) => (
               <Link
                 key={inv.id}
                 href={`/buyer/invoices/${inv.id}`}
-                className="flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors"
+                className="group flex items-center justify-between px-5 py-4 transition-all duration-200 hover:bg-slate-50 relative overflow-hidden animate-slide-up"
+                style={{ animationDelay: `${500 + idx * 80}ms` }}
               >
+                {/* Left accent on hover */}
+                <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-500 scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-top" />
+
                 <div className="flex items-center gap-4">
-                  <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-slate-500" />
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 flex items-center justify-center group-hover:border-blue-200 group-hover:shadow-sm transition-all duration-200">
+                    <FileText className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors duration-200" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">{inv.invoice_number}</p>
-                    <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                    <p className="text-sm font-semibold text-slate-800 group-hover:text-blue-600 transition-colors duration-200">
+                      {inv.invoice_number}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
                       <Calendar className="w-3 h-3" />
-                      {new Date(inv.issue_date).toLocaleDateString('en-AE')}
+                      {new Date(inv.issue_date).toLocaleDateString('en-AE', {
+                        day: 'numeric', month: 'short', year: 'numeric',
+                      })}
                     </p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-4">
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusBadge(inv.status)}`}>
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full transition-all duration-200 ${statusBadge(inv.status)}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${statusDot(inv.status)}`} />
                     {statusLabel(inv.status)}
                   </span>
-                  <p className="text-sm font-bold text-slate-800">
+                  <p className="text-sm font-bold text-slate-800 tabular-nums">
                     {inv.currency} {parseFloat(inv.total_amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}
                   </p>
-                  <ArrowRight className="w-4 h-4 text-slate-300" />
+                  <div className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors duration-200">
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-500 transition-colors duration-200" />
+                  </div>
                 </div>
               </Link>
             ))}

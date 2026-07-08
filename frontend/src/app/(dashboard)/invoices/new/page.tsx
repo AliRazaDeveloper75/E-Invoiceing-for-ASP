@@ -1660,7 +1660,8 @@ export default function NewInvoicePage() {
                     <option value="b2g">B2G — Business to Government</option>
                   </select>
                 </Field>
-                <Field label="Payment Method" hint="UN/ECE UNCL 4461 — mandatory for UBL PaymentMeans element"
+                <Field label="Payment Method" required
+                  hint="UN/ECE UNCL 4461 — mandatory for UBL PaymentMeans element"
                   error={errors.payment_means_code?.message}>
                   <select className={selectCls} {...register('payment_means_code', { required: 'Payment method is required' })}>
                     <option value="30">30 — Credit Transfer</option>
@@ -1802,24 +1803,30 @@ export default function NewInvoicePage() {
                 <input disabled value={invoiceNo} readOnly
                   className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-700 font-mono cursor-not-allowed" />
               </Field>
-              <Field label="Permit Number" faf error={errors.permit_number?.message}>
+              <Field label="Permit Number" faf required error={errors.permit_number?.message}
+                tooltip="Regulatory permit number — required for FTA Audit File (FAF).">
                 <input placeholder="e.g. UAE-PERMIT-2024-XXXX" maxLength={40}
                   className={inputCls(errors.permit_number?.message)}
                   {...register('permit_number', {
+                    required: 'Permit number is required for FAF',
                     pattern: { value: /^[A-Za-z0-9\-/ ]*$/, message: 'Letters, numbers, - or / only' },
                   })} />
               </Field>
-              <Field label="Transaction ID" faf error={errors.transaction_id?.message}>
+              <Field label="Transaction ID" faf required error={errors.transaction_id?.message}
+                tooltip="Unique transaction reference — required for FTA Audit File (FAF).">
                 <input placeholder="e.g. TXN-2024-000001" maxLength={40}
                   className={inputCls(errors.transaction_id?.message)}
                   {...register('transaction_id', {
+                    required: 'Transaction ID is required for FAF',
                     pattern: { value: /^[A-Za-z0-9\-/ ]*$/, message: 'Letters, numbers, - or / only' },
                   })} />
               </Field>
-              <Field label="Purchase Order Number" error={errors.purchase_order_number?.message}>
+              <Field label="Purchase Order Number" required error={errors.purchase_order_number?.message}
+                tooltip="Buyer purchase order reference — required for compliance.">
                 <input placeholder="Buyer PO reference" maxLength={40}
                   className={inputCls(errors.purchase_order_number?.message)}
                   {...register('purchase_order_number', {
+                    required: 'Purchase order number is required',
                     pattern: { value: /^[A-Za-z0-9\-/ ]*$/, message: 'Letters, numbers, - or / only' },
                   })} />
               </Field>

@@ -7,11 +7,12 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import {
-  ArrowLeft, Download, FileText, CreditCard, CheckCircle2,
+  ArrowLeft, FileText, CreditCard, CheckCircle2,
   Loader2, X, AlertCircle, Calendar, Receipt, Building2,
   ChevronLeft, Ban, ShieldCheck, PenLine,
 } from 'lucide-react';
 import type { Invoice, Payment, PaymentSummary, PaymentMethod, PaymentConfig } from '@/types';
+import { PDFDownloadButton } from '@/components/invoice/PDFDownloadButton';
 
 type InvoiceWithPayment = Invoice & { amount_paid: string; amount_due: string };
 
@@ -602,21 +603,37 @@ export default function BuyerInvoiceDetailPage() {
 
   const { stripeMsg, clearStripeMsg } = useStripeSuccessHandler(id, mutate, mutatePayments);
 
-  async function downloadFile(type: 'pdf' | 'xml') {
+  async function downloadXML() {
     try {
-      const resp = await api.get(`/buyer/invoices/${id}/download-${type}/`, {
+      const resp = await api.get(`/buyer/invoices/${id}/download-xml/`, {
         responseType: 'blob',
       });
       const url = URL.createObjectURL(new Blob([resp.data as BlobPart]));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${invoice?.invoice_number ?? id}.${type}`;
+      a.download = `${invoice?.invoice_number ?? id}.xml`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      alert(`Could not download ${type.toUpperCase()}.`);
+      alert('Could not download XML.');
     }
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfCompany: any = invoice ? {
+    name:           invoice.company_name,
+    trn:            invoice.company_trn,
+    logo_url:       (invoice as any).company_logo,
+    legal_name:     (invoice as any).company_legal_name,
+    street_address: (invoice as any).company_street_address,
+    city:           (invoice as any).company_city,
+    emirate:        (invoice as any).company_emirate,
+    po_box:         (invoice as any).company_po_box,
+    country:        (invoice as any).company_country,
+    phone:          (invoice as any).company_phone,
+    email:          (invoice as any).company_email,
+    website:        (invoice as any).company_website,
+  } : null;
 
   function handlePaymentSuccess() {
     setShowPayment(false);
@@ -713,16 +730,10 @@ export default function BuyerInvoiceDetailPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => downloadFile('pdf')}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" />
-            PDF
-          </button>
+          <PDFDownloadButton invoice={invoice as any} company={pdfCompany as any} />
           {invoice.xml_file && (
             <button
-              onClick={() => downloadFile('xml')}
+              onClick={downloadXML}
               className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
             >
               <FileText className="w-3.5 h-3.5" />

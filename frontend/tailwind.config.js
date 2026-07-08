@@ -19,6 +19,8 @@ module.exports = {
         'float-slow': 'float 8s ease-in-out 1.5s infinite',
         'gradient': 'gradient 8s ease infinite',
         'pulse-glow': 'pulse-glow 3s ease-in-out infinite',
+        'shimmer': 'shimmer 2s linear infinite',
+        'slide-in-left': 'slideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
       },
       keyframes: {
         float: {
@@ -32,6 +34,14 @@ module.exports = {
         'pulse-glow': {
           '0%, 100%': { opacity: '0.4' },
           '50%': { opacity: '0.8' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        slideInLeft: {
+          '0%': { transform: 'translateX(-100%)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
         },
       },
     },
