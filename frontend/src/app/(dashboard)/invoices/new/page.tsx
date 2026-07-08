@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { useAutosaveDraft, loadDraft, clearDraft, type DraftEnvelope } from '@/hooks/useAutosaveDraft';
+import { useAutosaveDraft, type DraftEnvelope } from '@/hooks/useAutosaveDraft';
 import useSWR from 'swr';
 import QRCode from 'qrcode';
 import { api } from '@/lib/api';
@@ -1211,6 +1211,8 @@ export default function NewInvoicePage() {
   const draftSnapshot = useMemo<DraftShape>(() => ({ form: allValues, selected }),
     [JSON.stringify(allValues), selected]);
   const [restorable,   setRestorable]   = useState<DraftEnvelope<DraftShape> | null>(null);
+  const restorableRef = useRef(restorable);
+  useEffect(() => { restorableRef.current = restorable; }, [restorable]);
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
 
   const serverSave = useCallback(async (snap: DraftShape) => {
@@ -1234,13 +1236,11 @@ export default function NewInvoicePage() {
     onServerSave: serverSave,
   });
 
-  // Resume an unsaved draft — local first (same device), then server (cross-device).
+  // Resume an unsaved draft from the server (cross-device).
   const restoreCheckedRef = useRef(false);
   useEffect(() => {
     if (restoreCheckedRef.current || !activeId) return;
     restoreCheckedRef.current = true;
-    const local = loadDraft<DraftShape>(draftKey);
-    if (local && !draftIsEmpty(local.data)) { setRestorable(local); return; }
     api.get(`/invoices/draft-autosave/?company_id=${activeId}&form_type=new`)
       .then((res) => {
         const d = res.data?.data;
@@ -1254,19 +1254,16 @@ export default function NewInvoicePage() {
   const [restoreForm, setRestoreForm] = useState<InvoiceForm | null>(null);
 
   const resumeDraft = useCallback(() => {
-    let data: DraftShape | null = null;
-    setRestorable((cur) => {
-      data = cur?.data ?? null;
-      return null;
-    });
-    if (data) {
-      if (data.selected) {
-        const allCards = [...DOCUMENT_TYPES, ...SALES_TYPES, ...PURCHASE_TYPES];
-        const match = allCards.find(c => c.value === data.selected!.value);
-        setSelected(match ?? data.selected);
-      }
-      setRestoreForm(data.form);
+    const envelope = restorableRef.current;
+    setRestorable(null);
+    if (!envelope?.data) return;
+    const saved = envelope.data;
+    if (saved.selected) {
+      const allCards = [...DOCUMENT_TYPES, ...SALES_TYPES, ...PURCHASE_TYPES];
+      const match = allCards.find(c => c.value === saved.selected!.value);
+      setSelected(match ?? saved.selected);
     }
+    setRestoreForm(saved.form);
   }, []);
 
   useEffect(() => {
@@ -1277,10 +1274,9 @@ export default function NewInvoicePage() {
   }, [restoreForm, selected, reset]);
 
   const discardDraft = useCallback(() => {
-    clearDraft(draftKey);
     serverClear();
     setRestorable(null);
-  }, [draftKey, serverClear]);
+  }, [serverClear]);
 
   // Supplier location derived from the active company's profile address.
   const supplierLoc =
@@ -1493,8 +1489,7 @@ export default function NewInvoicePage() {
 
       const res = await api.post('/invoices/', payload);
       setSubmitted(true);
-      clearDraft(draftKey);   // invoice saved — drop the local + server autosave draft
-      serverClear();
+      serverClear();          // invoice saved — drop the server autosave draft
       router.push(`/invoices/${res.data.data.id}`);
     } catch (err) {
       const e = err as AxiosError<{ error?: { message?: string; details?: Record<string, string[]> } }>;

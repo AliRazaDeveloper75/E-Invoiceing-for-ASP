@@ -312,6 +312,7 @@ class InvoiceService:
 
     @staticmethod
     @transaction.atomic
+    @staticmethod
     def create_invoice(
         company: Company,
         membership: CompanyMember,
@@ -326,27 +327,28 @@ class InvoiceService:
         if membership.role not in ('admin', 'accountant'):
             raise PermissionDenied('Admin or Accountant role required to create invoices.')
 
-        # Resolve and validate customer belongs to this company
+        customer = None
         customer_id = data.get('customer_id') or data.get('customer')
-        try:
-            customer = Customer.objects.get(
-                id=customer_id,
-                company=company,
-                is_active=True,
-            )
-        except Customer.DoesNotExist:
-            raise ValidationError({'customer_id': 'Customer not found in this company.'})
+        if customer_id:
+            try:
+                customer = Customer.objects.get(
+                    id=customer_id,
+                    company=company,
+                    is_active=True,
+                )
+            except Customer.DoesNotExist:
+                raise ValidationError({'customer_id': 'Customer not found in this company.'})
 
-        # An invoice must not be issued to a customer with incomplete details.
-        if not customer.is_complete:
-            raise ValidationError({
-                'customer_id': (
-                    f"Customer '{customer.name}' is missing required details: "
-                    f"{', '.join(customer.missing_fields)}. Complete the customer "
-                    f"before creating an invoice."
-                ),
-                'missing_fields': customer.missing_fields,
-            })
+            # An invoice must not be issued to a customer with incomplete details.
+            if not customer.is_complete:
+                raise ValidationError({
+                    'customer_id': (
+                        f"Customer '{customer.name}' is missing required details: "
+                        f"{', '.join(customer.missing_fields)}. Complete the customer "
+                        f"before creating an invoice."
+                    ),
+                    'missing_fields': customer.missing_fields,
+                })
 
         # Validate credit note has a reference
         invoice_type = data.get('invoice_type', 'tax_invoice')
@@ -384,9 +386,50 @@ class InvoiceService:
         for item_data in items_data:
             InvoiceItemService.add_item(invoice, membership, item_data)
 
+        customer_name = customer.name if customer else '(no customer)'
         logger.info(
             'Invoice created: %s (company: %s, customer: %s)',
-            invoice.invoice_number, company.name, customer.name
+            invoice.invoice_number, company.name, customer_name
+        )
+        return invoice
+
+    @staticmethod
+    def create_draft_invoice(
+        company: Company,
+        membership: CompanyMember,
+        data: dict,
+    ) -> Invoice:
+        """
+        Create a minimal draft invoice record (no customer required).
+
+        This is called when the user first starts filling the form, so the actual
+        Invoice record is created in the database early (not just an InvoiceDraft
+        JSON snapshot). The caller should subsequently call update_invoice() and
+        add items as the user fills out the form.
+        """
+        if membership.role not in ('admin', 'accountant'):
+            raise PermissionDenied('Admin or Accountant role required to create invoices.')
+
+        invoice_number, sequence = InvoiceNumberService.generate(company)
+
+        invoice = Invoice.objects.create(
+            company=company,
+            customer=None,
+            created_by=membership.user,
+            invoice_number=invoice_number,
+            invoice_sequence=sequence,
+            invoice_type=data.get('invoice_type', 'tax_invoice'),
+            transaction_type=data.get('transaction_type', 'b2b'),
+            issue_date=data.get('issue_date', timezone.localdate()),
+            due_date=data.get('due_date'),
+            currency=data.get('currency', 'AED'),
+            notes=data.get('notes', ''),
+            form_payload=data.get('form_payload'),
+        )
+
+        logger.info(
+            'Draft invoice created: %s (company: %s)',
+            invoice.invoice_number, company.name
         )
         return invoice
 
@@ -413,15 +456,19 @@ class InvoiceService:
 
         # Validate customer belongs to same company if being changed
         if 'customer_id' in data:
-            try:
-                customer = Customer.objects.get(
-                    id=data['customer_id'],
-                    company=invoice.company,
-                    is_active=True,
-                )
-                invoice.customer = customer
-            except Customer.DoesNotExist:
-                raise ValidationError({'customer_id': 'Customer not found in this company.'})
+            cid = data['customer_id']
+            if cid is None:
+                invoice.customer = None
+            else:
+                try:
+                    customer = Customer.objects.get(
+                        id=cid,
+                        company=invoice.company,
+                        is_active=True,
+                    )
+                    invoice.customer = customer
+                except Customer.DoesNotExist:
+                    raise ValidationError({'customer_id': 'Customer not found in this company.'})
 
         updatable = [
             'invoice_type', 'transaction_type', 'issue_date', 'due_date',
@@ -440,6 +487,10 @@ class InvoiceService:
 
         if 'customer' in locals():
             changed.append('customer')
+
+        if 'form_payload' in data:
+            invoice.form_payload = data['form_payload']
+            changed.append('form_payload')
 
         if changed:
             invoice.save(update_fields=changed + ['updated_at'])

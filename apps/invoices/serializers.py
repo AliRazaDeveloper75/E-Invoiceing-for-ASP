@@ -197,7 +197,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'buyer_viewed_at',
             'buyer_signed_name', 'buyer_signed_at', 'buyer_signature_ip', 'buyer_approval_note',
             # Meta
-            'notes', 'created_at', 'updated_at',
+            'notes', 'form_payload', 'created_at', 'updated_at',
         ]
         read_only_fields = [
             'id', 'invoice_number', 'subtotal', 'taxable_amount',
@@ -247,7 +247,7 @@ class InvoiceCreateSerializer(serializers.Serializer):
     """Validates input for creating a new invoice (optionally with items)."""
 
     company_id       = serializers.UUIDField()
-    customer_id      = serializers.UUIDField()
+    customer_id      = serializers.UUIDField(required=False, allow_null=True)
     invoice_type     = serializers.ChoiceField(
         choices=[c[0] for c in INVOICE_TYPE_CHOICES],
         default='tax_invoice'
@@ -313,7 +313,7 @@ class InvoiceCreateSerializer(serializers.Serializer):
 class InvoiceUpdateSerializer(serializers.Serializer):
     """Update invoice header fields (only DRAFT invoices)."""
 
-    customer_id            = serializers.UUIDField(required=False)
+    customer_id            = serializers.UUIDField(required=False, allow_null=True)
     invoice_type           = serializers.ChoiceField(
         choices=[c[0] for c in INVOICE_TYPE_CHOICES], required=False
     )
@@ -339,6 +339,7 @@ class InvoiceUpdateSerializer(serializers.Serializer):
     reference_number       = serializers.CharField(max_length=100, required=False)
     purchase_order_number  = serializers.CharField(max_length=100, required=False)
     notes                  = serializers.CharField(required=False)
+    form_payload           = serializers.JSONField(required=False, allow_null=True)
 
     def validate(self, attrs):
         if not attrs:
@@ -347,6 +348,27 @@ class InvoiceUpdateSerializer(serializers.Serializer):
 
 
 # ─── List Filters ─────────────────────────────────────────────────────────────
+
+class InvoiceCreateDraftSerializer(serializers.Serializer):
+    """Minimal input for creating an early draft Invoice record (no customer required)."""
+    company_id = serializers.UUIDField()
+    invoice_type = serializers.ChoiceField(
+        choices=[c[0] for c in INVOICE_TYPE_CHOICES],
+        default='tax_invoice', required=False,
+    )
+    transaction_type = serializers.ChoiceField(
+        choices=[c[0] for c in TRANSACTION_TYPE_CHOICES],
+        default='b2b', required=False,
+    )
+    issue_date = serializers.DateField(required=False)
+    due_date = serializers.DateField(required=False)
+    currency = serializers.ChoiceField(
+        choices=[c[0] for c in CURRENCY_CHOICES],
+        default='AED', required=False,
+    )
+    notes = serializers.CharField(required=False, default='')
+    form_payload = serializers.JSONField(required=False, allow_null=True)
+
 
 class InvoiceFilterSerializer(serializers.Serializer):
     """Validates query params for the invoice list endpoint."""

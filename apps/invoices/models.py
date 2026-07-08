@@ -64,6 +64,8 @@ class Invoice(BaseModel):
     customer = models.ForeignKey(
         'customers.Customer',
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name='invoices',
         help_text='Buyer / invoice recipient.'
     )
@@ -264,6 +266,14 @@ class Invoice(BaseModel):
     # ── Notes ──────────────────────────────────────────────────────────────────
     notes = models.TextField(blank=True, default='')
 
+    # ── Form Payload (early draft invoices) ────────────────────────────────────
+    form_payload = models.JSONField(
+        null=True, blank=True, default=None,
+        help_text='Full form snapshot for early-draft invoices that the user has '
+                  'not yet submitted. Stores PINT-field values, line items, and '
+                  'UI state so the form can be resumed from any device.',
+    )
+
     class Meta:
         db_table = 'invoices'
         verbose_name = 'Invoice'
@@ -279,7 +289,8 @@ class Invoice(BaseModel):
         ]
 
     def __str__(self):
-        return f'{self.invoice_number} — {self.customer.name} ({self.get_status_display()})'
+        customer_name = self.customer.name if self.customer else '(no customer)'
+        return f'{self.invoice_number} — {customer_name} ({self.get_status_display()})'
 
     @property
     def is_editable(self) -> bool:

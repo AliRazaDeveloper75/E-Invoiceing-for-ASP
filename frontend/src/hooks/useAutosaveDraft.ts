@@ -1,47 +1,41 @@
 'use client';
 
 /**
- * useAutosaveDraft — crash/power-loss-proof autosave to localStorage.
+ * useAutosaveDraft — autosave to the server (database).
  *
- * Persists a serializable form snapshot to localStorage on every change
- * (debounced), plus a final synchronous flush when the tab is hidden or
- * closed. localStorage writes hit disk immediately, so an abrupt power cut
- * or browser crash keeps the last snapshot — the user can resume their
- * in-progress invoice instead of losing it.
+ * Persists a serializable form snapshot to the backend via onServerSave
+ * on every change (debounced), plus a final flush when the tab is hidden or
+ * closed. The server-side InvoiceDraft model stores the raw JSON so the user
+ * can resume an in-progress invoice from any device.
  *
- * Pair with `loadDraft()` (restore on mount) and `clearDraft()` (after a
- * successful save) — see usage in the invoice create forms.
+ * Pair with the server GET endpoint to restore on mount and DELETE to clear
+ * after a successful save — see usage in the invoice create forms.
+ *
+ * Legacy localStorage helpers loadDraft / clearDraft are kept as no-ops
+ * for backward compatibility.
  */
 import { useCallback, useEffect, useRef } from 'react';
 
 export type DraftEnvelope<T> = { data: T; savedAt: number };
 
-/** Read a saved draft (returns null if none / corrupt). */
-export function loadDraft<T>(key: string): DraftEnvelope<T> | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as DraftEnvelope<T>;
-    if (!parsed || typeof parsed.savedAt !== 'number') return null;
-    return parsed;
-  } catch {
-    return null;
-  }
+/**
+ * Deprecated — localStorage is no longer used.
+ * Returns null; restore drafts from the server instead.
+ */
+export function loadDraft<T>(_key: string): DraftEnvelope<T> | null {
+  return null;
 }
 
-/** Remove a saved draft (call after the invoice is successfully saved). */
-export function clearDraft(key: string): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.removeItem(key);
-  } catch {
-    /* ignore */
-  }
+/**
+ * Deprecated — localStorage is no longer used.
+ * No-op kept for backward compatibility; clear drafts via the server API.
+ */
+export function clearDraft(_key: string): void {
+  /* no-op — use server-side API for clearing drafts */
 }
 
 type Options<T> = {
-  /** localStorage key, e.g. `invoice-draft:pint`. */
+  /** Deprecated — previously the localStorage key. Kept for interface compat. */
   key: string;
   /** Current serializable snapshot of the form. */
   data: T;
@@ -54,30 +48,26 @@ type Options<T> = {
   /** Called after each successful save with the timestamp (for a "Saved" badge). */
   onSaved?: (savedAt: number) => void;
   /**
-   * Optional server sync — persists the same snapshot to the backend on a
-   * longer debounce (cross-device durability). Failures are swallowed so the
-   * local autosave is never blocked.
+   * Server-side persistence callback. Required for actual saving — saves the
+   * snapshot to the backend (InvoiceDraft model). Failures are swallowed so
+   * the UI is never blocked.
    */
   onServerSave?: (data: T) => void | Promise<void>;
-  /** Debounce window for server saves (ms). Default 10000. */
-  serverDebounceMs?: number;
 };
 
 /**
- * Returns `{ flush }` — call `flush()` to force an immediate save.
+ * Returns `{ flush }` — call `flush()` to force an immediate save to the server.
  */
 export function useAutosaveDraft<T>({
-  key,
+  key: _key,
   data,
   enabled = true,
   isEmpty,
   debounceMs = 800,
   onSaved,
   onServerSave,
-  serverDebounceMs = 10000,
 }: Options<T>) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const serverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef(data);
   latest.current = data;
   const serverSaveRef = useRef(onServerSave);
@@ -86,14 +76,16 @@ export function useAutosaveDraft<T>({
   const flush = useCallback(() => {
     const d = latest.current;
     if (isEmpty && isEmpty(d)) return;
-    try {
-      const savedAt = Date.now();
-      localStorage.setItem(key, JSON.stringify({ data: d, savedAt }));
-      onSaved?.(savedAt);
-    } catch {
-      /* localStorage full / unavailable — best effort */
+    if (serverSaveRef.current) {
+      try {
+        Promise.resolve(serverSaveRef.current(d)).catch(() => {});
+      } catch {
+        /* ignore — best-effort */
+      }
     }
-  }, [key, isEmpty, onSaved]);
+    const savedAt = Date.now();
+    onSaved?.(savedAt);
+  }, [isEmpty, onSaved]);
 
   // Debounced save whenever the snapshot changes.
   useEffect(() => {
@@ -105,23 +97,6 @@ export function useAutosaveDraft<T>({
       if (timer.current) clearTimeout(timer.current);
     };
   }, [data, enabled, debounceMs, flush, isEmpty]);
-
-  // Debounced server sync (longer interval) — best-effort durability.
-  useEffect(() => {
-    if (!enabled || !serverSaveRef.current) return;
-    if (isEmpty && isEmpty(data)) return;
-    if (serverTimer.current) clearTimeout(serverTimer.current);
-    serverTimer.current = setTimeout(() => {
-      try {
-        Promise.resolve(serverSaveRef.current?.(latest.current)).catch(() => {});
-      } catch {
-        /* ignore — local autosave already protects the user */
-      }
-    }, serverDebounceMs);
-    return () => {
-      if (serverTimer.current) clearTimeout(serverTimer.current);
-    };
-  }, [data, enabled, serverDebounceMs, isEmpty]);
 
   // Final flush on tab hide / close — best-effort capture before the page dies.
   useEffect(() => {

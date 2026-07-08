@@ -34,7 +34,7 @@ from apps.common.utils import success_response, error_response, StandardResultsP
 from .models import Invoice, InvoiceItem, InvoiceDraft
 from .serializers import (
     InvoiceSerializer, InvoiceListSerializer,
-    InvoiceCreateSerializer, InvoiceUpdateSerializer,
+    InvoiceCreateSerializer, InvoiceCreateDraftSerializer, InvoiceUpdateSerializer,
     InvoiceFilterSerializer,
     InvoiceItemSerializer, InvoiceItemCreateSerializer, InvoiceItemUpdateSerializer,
     InvoiceDraftSerializer,
@@ -135,6 +135,44 @@ class InvoiceListCreateView(APIView):
         return success_response(
             data=InvoiceSerializer(invoice).data,
             message='Invoice created successfully.',
+            status_code=status.HTTP_201_CREATED
+        )
+
+
+# ─── Invoice Create Draft (early Invoice record, not InvoiceDraft JSON) ──────
+
+class InvoiceCreateDraftView(APIView):
+    """
+    POST /api/v1/invoices/create-draft/
+
+    Creates a minimal Invoice record in DRAFT status with just a company.
+    No customer or items required — the caller fills those in later via
+    PUT /invoices/{id}/ and the items endpoints.
+
+    This replaces the old InvoiceDraft JSON-snapshot approach: the actual
+    Invoice is created early so data persists in the database even if
+    the user never clicks Submit.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = InvoiceCreateDraftSerializer(data=request.data)
+        if not serializer.is_valid():
+            return error_response('Draft creation failed.', details=serializer.errors,
+                                  status_code=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        company, membership = get_company_and_membership(request.user, data['company_id'])
+        if not company:
+            return error_response('Company not found or you are not a member.',
+                                  status_code=status.HTTP_404_NOT_FOUND)
+
+        invoice = InvoiceService.create_draft_invoice(
+            company=company, membership=membership, data=data
+        )
+        return success_response(
+            data=InvoiceSerializer(invoice).data,
+            message='Draft invoice created.',
             status_code=status.HTTP_201_CREATED
         )
 

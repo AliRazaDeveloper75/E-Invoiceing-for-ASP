@@ -9,7 +9,8 @@ import { api } from '@/lib/api';
 import {
   ArrowLeft, FileText, CreditCard, CheckCircle2,
   Loader2, X, AlertCircle, Calendar, Receipt, Building2,
-  ChevronLeft, Ban, ShieldCheck, PenLine,
+  ChevronLeft, Ban, ShieldCheck, PenLine, Mail, Phone,
+  Globe, MapPin, Clock, Hash, FileSignature,
 } from 'lucide-react';
 import type { Invoice, Payment, PaymentSummary, PaymentMethod, PaymentConfig } from '@/types';
 import { PDFDownloadButton } from '@/components/invoice/PDFDownloadButton';
@@ -32,16 +33,16 @@ async function fetchPaymentConfig(url: string) {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  draft:            'bg-gray-100 text-gray-600',
-  awaiting_approval:'bg-amber-100 text-amber-700',
-  pending:          'bg-yellow-100 text-yellow-700',
-  submitted:      'bg-blue-100 text-blue-700',
-  validated:      'bg-emerald-100 text-emerald-700',
-  rejected:       'bg-red-100 text-red-700',
-  cancelled:      'bg-gray-100 text-gray-500',
-  paid:           'bg-emerald-100 text-emerald-700',
-  partially_paid: 'bg-orange-100 text-orange-700',
-  deactivated:    'bg-amber-100 text-amber-700',
+  draft:            'bg-gray-100 text-gray-700 ring-1 ring-gray-300/50 shadow-sm',
+  awaiting_approval:'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 ring-1 ring-amber-300/50 shadow-sm animate-pulse-soft',
+  pending:          'bg-gradient-to-r from-yellow-50 to-amber-50 text-yellow-700 ring-1 ring-yellow-300/50 shadow-sm',
+  submitted:        'bg-gradient-to-r from-blue-50 to-sky-50 text-blue-700 ring-1 ring-blue-300/50 shadow-sm',
+  validated:        'bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 ring-1 ring-emerald-300/50 shadow-sm',
+  rejected:         'bg-gradient-to-r from-red-50 to-rose-50 text-red-700 ring-1 ring-red-300/50 shadow-sm',
+  cancelled:        'bg-gradient-to-r from-slate-100 to-gray-100 text-gray-500 ring-1 ring-gray-300/50',
+  paid:             'bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 ring-1 ring-emerald-300/50 shadow-sm',
+  partially_paid:   'bg-gradient-to-r from-orange-50 to-amber-50 text-orange-700 ring-1 ring-orange-300/50 shadow-sm',
+  deactivated:      'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 ring-1 ring-amber-300/50 shadow-sm',
 };
 
 const METHOD_LABELS: Record<string, string> = {
@@ -90,23 +91,28 @@ function MethodCard({
     <button
       onClick={onClick}
       className="w-full flex items-center gap-4 p-4 border border-slate-200 rounded-xl
-                 hover:border-blue-400 hover:bg-blue-50/40 transition-all text-left group"
+                 hover:border-blue-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50/80
+                 transition-all duration-300 text-left group
+                 shadow-sm hover:shadow-md hover:shadow-blue-100/50"
     >
-      <div className="w-12 h-12 rounded-xl bg-slate-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors shrink-0">
+      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100
+                      group-hover:from-blue-100 group-hover:to-indigo-100
+                      flex items-center justify-center transition-all duration-300 shrink-0 shadow-sm
+                      ring-1 ring-slate-200/50 group-hover:ring-blue-300/50">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="font-semibold text-slate-800 text-sm">{title}</p>
+          <p className="font-semibold text-slate-800 text-sm group-hover:text-blue-700 transition-colors">{title}</p>
           {badge && (
-            <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 ring-1 ring-emerald-200/50">
               {badge}
             </span>
           )}
         </div>
-        <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
+        <p className="text-xs text-slate-500 mt-0.5 group-hover:text-slate-600 transition-colors">{subtitle}</p>
       </div>
-      <ChevronLeft className="w-4 h-4 text-slate-300 group-hover:text-blue-400 rotate-180 shrink-0" />
+      <ChevronLeft className="w-4 h-4 text-slate-300 group-hover:text-blue-500 group-hover:translate-x-0.5 rotate-180 shrink-0 transition-all" />
     </button>
   );
 }
@@ -138,21 +144,21 @@ function StripeStep({ invoiceId, amountDue, currency, onBack }: {
 
   return (
     <div className="px-6 py-5 space-y-5">
-      <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-blue-100 rounded-xl p-5 text-center">
-        <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
-          <CreditCard className="w-6 h-6 text-blue-600" />
+      <div className="bg-gradient-to-br from-indigo-50 via-blue-50 to-sky-50 border border-indigo-200/60 rounded-xl p-5 text-center shadow-sm">
+        <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-md shadow-indigo-200">
+          <CreditCard className="w-6 h-6 text-white" />
         </div>
         <p className="text-sm font-semibold text-slate-700">Secure Card Payment via Stripe</p>
         <p className="text-xs text-slate-500 mt-1">
           You will be redirected to Stripe&apos;s secure checkout page.
         </p>
-        <p className="text-2xl font-bold text-slate-800 mt-4">
+        <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600 mt-4">
           {currency} {amountDue.toFixed(2)}
         </p>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
+        <div className="animate-fade-in-down bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
           <AlertCircle className="w-4 h-4 shrink-0" />
           {error}
         </div>
@@ -162,14 +168,19 @@ function StripeStep({ invoiceId, amountDue, currency, onBack }: {
         <button
           onClick={onBack}
           disabled={loading}
-          className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-40"
+          className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium
+                     text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all
+                     disabled:opacity-40 active:scale-[0.98]"
         >
           Back
         </button>
         <button
           onClick={handlePay}
           disabled={loading}
-          className="flex-1 px-4 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 via-blue-600 to-sky-600
+                     hover:from-indigo-700 hover:via-blue-700 hover:to-sky-700 text-white text-sm font-semibold
+                     transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2
+                     shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/40 active:scale-[0.98] btn-primary"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
           {loading ? 'Redirecting…' : 'Pay with Card'}
@@ -177,7 +188,7 @@ function StripeStep({ invoiceId, amountDue, currency, onBack }: {
       </div>
 
       <p className="text-center text-xs text-slate-400">
-        🔒 Powered by Stripe — your card details are never stored on our servers.
+        <span className="inline-block mr-1">🔒</span> Powered by Stripe — your card details are never stored on our servers.
       </p>
     </div>
   );
@@ -267,12 +278,12 @@ function PayPalStep({ invoiceId, amountDue, currency, clientId, sandbox, onBack,
       </div>
 
       {sdkError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+        <div className="animate-fade-in-down bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
           {sdkError}
         </div>
       )}
       {payError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
+        <div className="animate-fade-in-down bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
           <AlertCircle className="w-4 h-4 shrink-0" />
           {payError}
         </div>
@@ -288,7 +299,9 @@ function PayPalStep({ invoiceId, amountDue, currency, clientId, sandbox, onBack,
 
       <button
         onClick={onBack}
-        className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+        className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium
+                   text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all
+                   active:scale-[0.98]"
       >
         Back
       </button>
@@ -361,7 +374,8 @@ function ManualStep({ invoiceId, amountDue, currency, onBack, onSuccess }: {
               type="number" step="0.01" min="0.01" max={amountDue} required
               value={form.amount}
               onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-              className="w-full border border-slate-200 rounded-lg pl-14 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-200 rounded-lg pl-14 pr-3 py-2.5 text-sm
+                         outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-300 transition-all"
             />
           </div>
         </div>
@@ -373,7 +387,8 @@ function ManualStep({ invoiceId, amountDue, currency, onBack, onSuccess }: {
             type="date" required
             value={form.payment_date}
             onChange={e => setForm(f => ({ ...f, payment_date: e.target.value }))}
-            className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm
+                       outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-300 transition-all"
           />
         </div>
       </div>
@@ -383,7 +398,8 @@ function ManualStep({ invoiceId, amountDue, currency, onBack, onSuccess }: {
         <select
           value={form.method}
           onChange={e => setForm(f => ({ ...f, method: e.target.value as PaymentMethod }))}
-          className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm
+                     outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-300 transition-all"
         >
           {MANUAL_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
         </select>
@@ -395,7 +411,8 @@ function ManualStep({ invoiceId, amountDue, currency, onBack, onSuccess }: {
           type="text" value={form.reference}
           onChange={e => setForm(f => ({ ...f, reference: e.target.value }))}
           placeholder="e.g. TXN-123456 or cheque no."
-          className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm
+                     outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-300 transition-all"
         />
       </div>
 
@@ -404,12 +421,13 @@ function ManualStep({ invoiceId, amountDue, currency, onBack, onSuccess }: {
         <textarea
           rows={2} value={form.notes}
           onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-          className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm
+                     outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-300 transition-all resize-none"
         />
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
+        <div className="animate-fade-in-down bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
           <AlertCircle className="w-4 h-4 shrink-0" />
           {error}
         </div>
@@ -418,13 +436,17 @@ function ManualStep({ invoiceId, amountDue, currency, onBack, onSuccess }: {
       <div className="flex gap-3 pt-1">
         <button
           type="button" onClick={onBack}
-          className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+          className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium
+                     text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-[0.98]"
         >
           Back
         </button>
         <button
           type="submit" disabled={saving}
-          className="flex-1 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500
+                     hover:from-blue-600 hover:via-indigo-600 hover:to-violet-600 text-white text-sm font-medium
+                     transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2
+                     shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/40 active:scale-[0.98] btn-primary"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Receipt className="w-4 h-4" />}
           {saving ? 'Saving…' : 'Record Payment'}
@@ -452,18 +474,18 @@ function PaymentModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-br from-black/40 via-black/30 to-transparent backdrop-blur-sm">
+      <div className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-up ring-1 ring-white/20">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-indigo-100/50 bg-gradient-to-r from-indigo-50 via-blue-50 to-white">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Pay Invoice</h2>
+            <h2 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-blue-700">Pay Invoice</h2>
             <p className="text-sm text-slate-500 mt-0.5">
-              Remaining: <span className="font-semibold text-slate-700">{currency} {amountDue.toFixed(2)}</span>
+              Remaining: <span className="font-semibold text-indigo-700">{currency} {amountDue.toFixed(2)}</span>
             </p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
-            <X className="w-4 h-4 text-slate-500" />
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/80 hover:text-slate-600 transition-all active:scale-90 ring-1 ring-transparent hover:ring-slate-200">
+            <X className="w-4 h-4 text-slate-400" />
           </button>
         </div>
 
@@ -577,6 +599,51 @@ function useStripeSuccessHandler(invoiceId: string, mutate: () => void, mutatePa
   return { stripeMsg, clearStripeMsg: () => setStripeMsg(null) };
 }
 
+// ── Loading Skeleton ──────────────────────────────────────────────────────────
+
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Header skeleton */}
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-slate-200 animate-shimmer" />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-40 rounded-md bg-slate-200 animate-shimmer" />
+              <div className="h-5 w-20 rounded-full bg-slate-200 animate-shimmer" />
+            </div>
+            <div className="h-4 w-56 rounded-md bg-slate-200 animate-shimmer" />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <div className="h-9 w-24 rounded-lg bg-slate-200 animate-shimmer" />
+          <div className="h-9 w-20 rounded-lg bg-slate-200 animate-shimmer" />
+          <div className="h-9 w-28 rounded-lg bg-slate-200 animate-shimmer" />
+        </div>
+      </div>
+
+      {/* Party cards skeleton */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="h-24 rounded-xl bg-slate-200 animate-shimmer" />
+        <div className="h-24 rounded-xl bg-slate-200 animate-shimmer" />
+      </div>
+
+      {/* Main content skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="h-80 rounded-xl bg-slate-200 animate-shimmer" />
+        </div>
+        <div className="space-y-4">
+          <div className="h-48 rounded-xl bg-slate-200 animate-shimmer" />
+          <div className="h-40 rounded-xl bg-slate-200 animate-shimmer" />
+          <div className="h-52 rounded-xl bg-slate-200 animate-shimmer" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function BuyerInvoiceDetailPage() {
@@ -667,15 +734,26 @@ export default function BuyerInvoiceDetailPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="animate-spin h-6 w-6 rounded-full border-4 border-blue-600 border-t-transparent" />
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
 
   if (!invoice) {
-    return <div className="text-center py-24 text-slate-500">Invoice not found.</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
+        <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+          <FileText className="w-8 h-8 text-slate-300" />
+        </div>
+        <p className="text-slate-500 font-medium">Invoice not found</p>
+        <p className="text-sm text-slate-400 mt-1">The requested invoice could not be loaded.</p>
+        <button
+          onClick={() => router.back()}
+          className="mt-4 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700
+                     bg-blue-50 hover:bg-blue-100 rounded-lg transition-all"
+        >
+          Go back
+        </button>
+      </div>
+    );
   }
 
   const canPay = ['pending', 'validated', 'submitted', 'partially_paid'].includes(invoice.status);
@@ -686,10 +764,10 @@ export default function BuyerInvoiceDetailPage() {
   const payments = paymentData?.payments ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fade-in-up">
       {/* Stripe result banner */}
       {stripeMsg && (
-        <div className={`flex items-center gap-3 px-5 py-4 rounded-xl border ${
+        <div className={`animate-fade-in-down flex items-center gap-3 px-5 py-4 rounded-xl border ${
           stripeMsg.type === 'success'
             ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
             : stripeMsg.type === 'cancelled'
@@ -700,58 +778,76 @@ export default function BuyerInvoiceDetailPage() {
             ? <CheckCircle2 className="w-5 h-5 shrink-0" />
             : <AlertCircle className="w-5 h-5 shrink-0" />}
           <p className="text-sm font-medium flex-1">{stripeMsg.text}</p>
-          <button onClick={clearStripeMsg} className="opacity-60 hover:opacity-100">
+          <button onClick={clearStripeMsg} className="opacity-60 hover:opacity-100 transition-opacity">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+            className="p-2 rounded-lg hover:bg-slate-100 hover:text-slate-600 transition-all active:scale-90"
           >
             <ArrowLeft className="w-4 h-4 text-slate-500" />
           </button>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-slate-800">{invoice.invoice_number}</h1>
-              <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${STATUS_STYLES[invoice.status] ?? 'bg-gray-100 text-gray-600'}`}>
+              <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${STATUS_STYLES[invoice.status] ?? 'bg-gray-100 text-gray-600 ring-1 ring-gray-200'}`}>
                 {invoice.status_display}
               </span>
             </div>
-            <p className="text-sm text-slate-500 mt-0.5">
+            <p className="text-sm text-slate-500 mt-0.5 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
               Issued {invoice.issue_date}
-              {invoice.due_date ? ` · Due ${invoice.due_date}` : ''}
+              {invoice.due_date ? (
+                <span className="flex items-center gap-1.5 ml-1">
+                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                  Due {invoice.due_date}
+                </span>
+              ) : ''}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <PDFDownloadButton invoice={invoice as any} company={pdfCompany as any} />
           {invoice.xml_file && (
             <button
               onClick={downloadXML}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+              className="group flex items-center gap-1.5 px-3 py-2 text-sm font-medium
+                         text-slate-600 border border-slate-200 rounded-lg
+                         hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50
+                         hover:border-orange-200 hover:text-orange-700
+                         transition-all duration-300 active:scale-[0.97]
+                         shadow-sm hover:shadow-md hover:shadow-orange-100/50"
             >
-              <FileText className="w-3.5 h-3.5" />
+              <FileText className="w-3.5 h-3.5 text-slate-400 group-hover:text-orange-500 transition-colors" />
               XML
             </button>
           )}
           {canPay && (
             <button
               onClick={() => setShowPayment(true)}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold
+                         bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500
+                         hover:from-blue-600 hover:via-indigo-600 hover:to-violet-600 text-white rounded-lg
+                         transition-all duration-300 shadow-md shadow-blue-200/50
+                         hover:shadow-lg hover:shadow-indigo-300/40
+                         active:scale-[0.97] btn-primary"
             >
               <CreditCard className="w-3.5 h-3.5" />
               Pay Now
             </button>
           )}
           {invoice.status === 'paid' && (
-            <div className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-lg">
-              <CheckCircle2 className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium
+                            text-emerald-700 bg-gradient-to-r from-emerald-50 to-green-50
+                            border border-emerald-200/70 rounded-lg shadow-sm">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
               Fully Paid
             </div>
           )}
@@ -760,10 +856,10 @@ export default function BuyerInvoiceDetailPage() {
 
       {/* Approval / e-signature (awaiting buyer approval) */}
       {invoice.status === 'awaiting_approval' && (
-        <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 sm:p-6">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-5 h-5 text-amber-600" />
+        <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-amber-50/30 p-5 sm:p-6 shadow-md shadow-amber-100/30">
+          <div className="flex items-start gap-4 mb-4">
+            <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center shrink-0 shadow-md shadow-amber-200/50">
+              <ShieldCheck className="w-5 h-5 text-white" />
             </div>
             <div>
               <h3 className="font-bold text-slate-800">Review &amp; confirm this order</h3>
@@ -787,7 +883,8 @@ export default function BuyerInvoiceDetailPage() {
                     value={signName}
                     onChange={(e) => setSignName(e.target.value)}
                     placeholder="e.g. Ahmed Al Rashid"
-                    className="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2.5 text-sm
+                               outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-300 transition-all"
                   />
                 </div>
               </div>
@@ -797,7 +894,7 @@ export default function BuyerInvoiceDetailPage() {
                   type="checkbox"
                   checked={confirmChecked}
                   onChange={(e) => setConfirmChecked(e.target.checked)}
-                  className="h-4 w-4 mt-0.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                  className="h-4 w-4 mt-0.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500 transition-all"
                 />
                 <span className="text-xs text-slate-600 leading-relaxed">
                   I confirm this order is correct and authorise it to be submitted. I understand
@@ -806,7 +903,7 @@ export default function BuyerInvoiceDetailPage() {
               </label>
 
               {approvalError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
+                <div className="animate-fade-in-down bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
                   <AlertCircle className="w-4 h-4 shrink-0" /> {approvalError}
                 </div>
               )}
@@ -815,7 +912,13 @@ export default function BuyerInvoiceDetailPage() {
                 <button
                   onClick={handleApprove}
                   disabled={approving}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-lg
+                             bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600
+                             hover:from-emerald-600 hover:via-green-600 hover:to-emerald-700
+                             text-white text-sm font-semibold transition-all duration-300
+                             disabled:opacity-50 shadow-md shadow-emerald-200/50
+                             hover:shadow-lg hover:shadow-emerald-300/40
+                             active:scale-[0.97] btn-primary"
                 >
                   {approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   Approve &amp; Confirm Order
@@ -823,7 +926,11 @@ export default function BuyerInvoiceDetailPage() {
                 <button
                   onClick={() => { setApprovalError(''); setShowReject(true); }}
                   disabled={approving}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-slate-200
+                             text-slate-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-rose-50
+                             hover:border-red-200 hover:text-red-600
+                             text-sm font-medium transition-all duration-200
+                             disabled:opacity-50 active:scale-[0.97] shadow-sm hover:shadow-md hover:shadow-red-100/50"
                 >
                   <X className="w-4 h-4" /> Reject
                 </button>
@@ -837,10 +944,11 @@ export default function BuyerInvoiceDetailPage() {
                 value={rejectNote}
                 onChange={(e) => setRejectNote(e.target.value)}
                 placeholder="Let the supplier know what needs to change…"
-                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-400 resize-none"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm
+                           outline-none focus:ring-2 focus:ring-red-400 focus:border-red-300 transition-all resize-none"
               />
               {approvalError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
+                <div className="animate-fade-in-down bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
                   <AlertCircle className="w-4 h-4 shrink-0" /> {approvalError}
                 </div>
               )}
@@ -848,14 +956,19 @@ export default function BuyerInvoiceDetailPage() {
                 <button
                   onClick={() => setShowReject(false)}
                   disabled={approving}
-                  className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium
+                             text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-50 active:scale-[0.98]"
                 >
                   Back
                 </button>
                 <button
                   onClick={handleReject}
                   disabled={approving}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
+                             bg-gradient-to-r from-red-500 via-rose-500 to-pink-500
+                             hover:from-red-600 hover:via-rose-600 hover:to-pink-600 text-white text-sm font-semibold
+                             transition-all duration-300 disabled:opacity-50 shadow-md shadow-red-200/50
+                             hover:shadow-lg hover:shadow-red-300/40 active:scale-[0.97] btn-primary"
                 >
                   {approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
                   Confirm Rejection
@@ -868,16 +981,23 @@ export default function BuyerInvoiceDetailPage() {
 
       {/* Signed confirmation (after approval) */}
       {invoice.buyer_signed_name && invoice.status !== 'awaiting_approval' && (
-        <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800 flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          E-signed by <strong>{invoice.buyer_signed_name}</strong>
-          {invoice.buyer_signed_at ? ` on ${new Date(invoice.buyer_signed_at).toLocaleString()}` : ''}
+        <div className="animate-fade-in-up rounded-xl bg-gradient-to-r from-emerald-50 to-green-50/50
+                        border border-emerald-200/70 px-4 py-3 text-sm text-emerald-800
+                        flex items-center gap-3 shadow-sm shadow-emerald-100/50">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shrink-0 shadow-sm">
+            <FileSignature className="w-4 h-4 text-white" />
+          </div>
+          <span>
+            E-signed by <strong>{invoice.buyer_signed_name}</strong>
+            {invoice.buyer_signed_at ? ` on ${new Date(invoice.buyer_signed_at).toLocaleString()}` : ''}
+          </span>
         </div>
       )}
 
       {/* Deactivated notice (read-only for buyer) */}
       {invoice.status === 'deactivated' && (
-        <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+        <div className="animate-fade-in-up rounded-xl bg-gradient-to-r from-amber-50 to-orange-50/50
+                        border border-amber-200/70 px-4 py-3 text-sm text-amber-800 shadow-sm shadow-amber-100/50">
           <p className="font-semibold flex items-center gap-1.5">
             <Ban className="w-4 h-4" /> This invoice has been deactivated by the supplier.
           </p>
@@ -889,22 +1009,26 @@ export default function BuyerInvoiceDetailPage() {
 
       {/* Payment Progress */}
       {(invoice.status === 'partially_paid' || invoice.status === 'paid') && (
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
+        <div className="bg-white border border-emerald-200/60 rounded-xl p-5 bg-gradient-to-br from-emerald-50/30 via-white to-green-50/30 shadow-sm shadow-emerald-100/30">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold text-slate-700">Payment Progress</span>
-            <span className="text-sm text-slate-500">
+            <span className="text-sm font-semibold text-emerald-700 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              Payment Progress
+            </span>
+            <span className="text-sm text-emerald-600 font-medium">
               {invoice.currency} {amountPaid.toFixed(2)} of {invoice.currency} {totalAmount.toFixed(2)}
             </span>
           </div>
-          <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+          <div className="h-3.5 bg-emerald-100/60 rounded-full overflow-hidden shadow-inner">
             <div
-              className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-emerald-400 via-green-400 to-emerald-500 rounded-full
+                         transition-all duration-1000 ease-out animate-progress-glow"
               style={{ width: `${paidPct}%` }}
             />
           </div>
-          <div className="flex justify-between mt-2 text-xs text-slate-500">
-            <span>{paidPct.toFixed(0)}% paid</span>
-            {amountDue > 0 && <span>{invoice.currency} {amountDue.toFixed(2)} remaining</span>}
+          <div className="flex justify-between mt-2 text-xs">
+            <span className="text-emerald-600 font-medium">{paidPct.toFixed(0)}% paid</span>
+            {amountDue > 0 && <span className="font-medium text-slate-500">{invoice.currency} {amountDue.toFixed(2)} remaining</span>}
           </div>
         </div>
       )}
@@ -913,79 +1037,118 @@ export default function BuyerInvoiceDetailPage() {
         {/* Left: Invoice details */}
         <div className="lg:col-span-2 space-y-6">
           {/* Party Cards */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white border border-slate-200 rounded-xl p-5">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">From (Supplier)</p>
-              <p className="font-semibold text-slate-800">{invoice.company_name}</p>
-              {invoice.company_trn && (
-                <p className="text-xs text-slate-500 mt-1">TRN: {invoice.company_trn}</p>
-              )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden card-hover shadow-sm hover:shadow-md hover:shadow-blue-100/50"
+                 style={{ animationDelay: '0.05s', animationFillMode: 'both' }}>
+              <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-400" />
+              <div className="p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center ring-1 ring-blue-200/50">
+                    <Building2 className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">From (Supplier)</p>
+                </div>
+                <p className="font-semibold text-slate-800">{invoice.company_name}</p>
+                {invoice.company_trn && (
+                  <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5 bg-blue-50/50 px-2 py-1 rounded-md">
+                    <Hash className="w-3 h-3 text-blue-400" /> <span className="font-medium text-slate-600">TRN:</span> {invoice.company_trn}
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="bg-white border border-slate-200 rounded-xl p-5">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">To (Buyer)</p>
-              <p className="font-semibold text-slate-800">{invoice.customer_name}</p>
-              {invoice.customer_trn && (
-                <p className="text-xs text-slate-500 mt-1">TRN: {invoice.customer_trn}</p>
-              )}
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden card-hover shadow-sm hover:shadow-md hover:shadow-emerald-100/50"
+                 style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
+              <div className="h-1 bg-gradient-to-r from-emerald-400 to-teal-400" />
+              <div className="p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center ring-1 ring-emerald-200/50">
+                    <Building2 className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">To (Buyer)</p>
+                </div>
+                <p className="font-semibold text-slate-800">{invoice.customer_name}</p>
+                {invoice.customer_trn && (
+                  <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5 bg-emerald-50/50 px-2 py-1 rounded-md">
+                    <Hash className="w-3 h-3 text-emerald-400" /> <span className="font-medium text-slate-600">TRN:</span> {invoice.customer_trn}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Line Items */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100">
-              <h3 className="text-sm font-semibold text-slate-700">Line Items</h3>
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden card-hover-sm shadow-sm">
+            <div className="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-indigo-50/50 via-blue-50/30 to-white">
+              <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-indigo-500" />
+                Line Items
+              </h3>
             </div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Description</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Qty</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Unit Price</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">VAT</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {invoice.items.map(item => (
-                  <tr key={item.id} className="hover:bg-slate-50/50">
-                    <td className="px-5 py-3.5 text-slate-800">{item.description}</td>
-                    <td className="px-5 py-3.5 text-right text-slate-600">{item.quantity}</td>
-                    <td className="px-5 py-3.5 text-right text-slate-600">{parseFloat(item.unit_price).toFixed(2)}</td>
-                    <td className="px-5 py-3.5 text-right text-slate-500 text-xs">{item.vat_rate_type_display}</td>
-                    <td className="px-5 py-3.5 text-right font-medium text-slate-800">{parseFloat(item.total_amount).toFixed(2)}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gradient-to-r from-indigo-50/40 to-blue-50/20 border-b border-slate-100">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-indigo-600 uppercase tracking-wider">Description</th>
+                    <th className="px-5 py-3 text-right text-xs font-semibold text-indigo-600 uppercase tracking-wider">Qty</th>
+                    <th className="px-5 py-3 text-right text-xs font-semibold text-indigo-600 uppercase tracking-wider">Unit Price</th>
+                    <th className="px-5 py-3 text-right text-xs font-semibold text-indigo-600 uppercase tracking-wider">VAT</th>
+                    <th className="px-5 py-3 text-right text-xs font-semibold text-indigo-600 uppercase tracking-wider">Total</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100/50">
+                  {invoice.items.map((item, idx) => (
+                    <tr key={item.id}
+                        className={`transition-all duration-200 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-blue-50/30 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                        style={{ animationDelay: `${idx * 0.05}s`, animationFillMode: 'both' }}>
+                      <td className="px-5 py-3.5 text-slate-800 font-medium">{item.description}</td>
+                      <td className="px-5 py-3.5 text-right text-slate-600 font-mono">{item.quantity}</td>
+                      <td className="px-5 py-3.5 text-right text-slate-600 font-mono">{parseFloat(item.unit_price).toFixed(2)}</td>
+                      <td className="px-5 py-3.5 text-right">
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-700 ring-1 ring-indigo-200/50">
+                          {item.vat_rate_type_display}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-right font-semibold text-slate-800 font-mono">{parseFloat(item.total_amount).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             {/* Totals */}
-            <div className="border-t border-slate-100 px-5 py-4 space-y-2">
+            <div className="border-t border-slate-100 px-5 py-4 space-y-2 bg-gradient-to-b from-indigo-50/30 via-white to-white">
               <div className="flex justify-between text-sm text-slate-600">
                 <span>Subtotal</span>
-                <span>{invoice.currency} {parseFloat(invoice.subtotal).toFixed(2)}</span>
+                <span className="font-medium text-slate-700">{invoice.currency} {parseFloat(invoice.subtotal).toFixed(2)}</span>
               </div>
               {parseFloat(invoice.discount_amount) > 0 && (
                 <div className="flex justify-between text-sm text-slate-600">
                   <span>Discount</span>
-                  <span>−{invoice.currency} {parseFloat(invoice.discount_amount).toFixed(2)}</span>
+                  <span className="font-medium text-emerald-600 bg-emerald-50/50 px-1.5 rounded">−{invoice.currency} {parseFloat(invoice.discount_amount).toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm text-slate-600">
                 <span>VAT</span>
-                <span>{invoice.currency} {parseFloat(invoice.total_vat).toFixed(2)}</span>
+                <span className="font-medium text-slate-700">{invoice.currency} {parseFloat(invoice.total_vat).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-base font-bold text-slate-800 pt-2 border-t border-slate-100">
-                <span>Total</span>
-                <span>{invoice.currency} {parseFloat(invoice.total_amount).toFixed(2)}</span>
+              <div className="flex justify-between text-base font-bold pt-2 border-t border-slate-200">
+                <span className="text-slate-800">Total</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600">{invoice.currency} {parseFloat(invoice.total_amount).toFixed(2)}</span>
               </div>
             </div>
           </div>
 
           {/* Notes */}
           {invoice.notes && (
-            <div className="bg-white border border-slate-200 rounded-xl p-5">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Notes</p>
-              <p className="text-sm text-slate-600 whitespace-pre-wrap">{invoice.notes}</p>
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden card-hover-sm">
+              <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-400" />
+              <div className="p-5">
+                <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5 text-amber-500" />
+                  Notes
+                </p>
+                <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{invoice.notes}</p>
+              </div>
             </div>
           )}
         </div>
@@ -993,101 +1156,130 @@ export default function BuyerInvoiceDetailPage() {
         {/* Right: Summary + Payment History */}
         <div className="space-y-4">
           {/* Invoice Meta */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Invoice Details</p>
-            <div className="space-y-2.5 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Type</span>
-                <span className="font-medium text-slate-700">{invoice.type_display}</span>
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden card-hover-sm"
+               style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
+            <div className="h-1.5 bg-gradient-to-r from-blue-400 via-indigo-400 to-violet-400" />
+            <div className="p-5 space-y-3">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <FileText className="w-3.5 h-3.5 text-blue-500" />
+                Invoice Details
+              </p>
+              <div className="space-y-2.5 text-sm">
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-slate-500">Type</span>
+                  <span className="font-medium text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md ring-1 ring-blue-100/50">{invoice.type_display}</span>
+                </div>
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-slate-500">Currency</span>
+                  <span className="font-medium text-slate-700">{invoice.currency}</span>
+                </div>
+                {invoice.due_date && (
+                  <div className="flex justify-between items-center py-1 px-2.5 -mx-2.5 rounded-lg bg-amber-50/50">
+                    <span className="text-slate-500">Due Date</span>
+                    <span className="font-medium text-amber-700 flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-amber-500" />
+                      {invoice.due_date}
+                    </span>
+                  </div>
+                )}
+                {invoice.purchase_order_number && (
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-slate-500">PO Number</span>
+                    <span className="font-medium text-slate-700 font-mono text-xs bg-slate-50 px-2 py-0.5 rounded">{invoice.purchase_order_number}</span>
+                  </div>
+                )}
+                {invoice.contract_reference && (
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-slate-500">Contract Ref</span>
+                    <span className="font-medium text-slate-700 font-mono text-xs bg-slate-50 px-2 py-0.5 rounded">{invoice.contract_reference}</span>
+                  </div>
+                )}
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Currency</span>
-                <span className="font-medium text-slate-700">{invoice.currency}</span>
-              </div>
-              {invoice.due_date && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Due Date</span>
-                  <span className="font-medium text-slate-700 flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    {invoice.due_date}
-                  </span>
-                </div>
-              )}
-              {invoice.purchase_order_number && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">PO Number</span>
-                  <span className="font-medium text-slate-700">{invoice.purchase_order_number}</span>
-                </div>
-              )}
-              {invoice.contract_reference && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Contract Ref</span>
-                  <span className="font-medium text-slate-700">{invoice.contract_reference}</span>
-                </div>
-              )}
             </div>
           </div>
 
           {/* Amount Summary */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Amount Summary</p>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Invoice Total</span>
-                <span className="font-semibold text-slate-800">{invoice.currency} {totalAmount.toFixed(2)}</span>
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden card-hover-sm"
+               style={{ animationDelay: '0.15s', animationFillMode: 'both' }}>
+            <div className="h-1.5 bg-gradient-to-r from-emerald-400 via-green-400 to-teal-400" />
+            <div className="p-5 space-y-3">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <Receipt className="w-3.5 h-3.5 text-emerald-500" />
+                Amount Summary
+              </p>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between py-1.5">
+                  <span className="text-slate-500">Invoice Total</span>
+                  <span className="font-semibold text-slate-800">{invoice.currency} {totalAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between py-1.5">
+                  <span className="text-slate-500">Amount Paid</span>
+                  <span className="font-semibold text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                    {invoice.currency} {amountPaid.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-1.5 border-t border-slate-100 pt-2.5">
+                  <span className="text-slate-700 font-medium">Balance Due</span>
+                  <span className={`text-base font-bold ${amountDue > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                    {invoice.currency} {amountDue.toFixed(2)}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Amount Paid</span>
-                <span className="font-semibold text-emerald-600">{invoice.currency} {amountPaid.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between border-t border-slate-100 pt-2">
-                <span className="text-slate-700 font-medium">Balance Due</span>
-                <span className={`font-bold ${amountDue > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                  {invoice.currency} {amountDue.toFixed(2)}
-                </span>
-              </div>
-            </div>
 
-            {canPay && (
-              <button
-                onClick={() => setShowPayment(true)}
-                className="w-full mt-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2"
-              >
-                <CreditCard className="w-4 h-4" />
-                Pay {invoice.currency} {amountDue.toFixed(2)}
-              </button>
-            )}
+              {canPay && (
+                <button
+                  onClick={() => setShowPayment(true)}
+                  className="w-full mt-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500
+                             hover:from-emerald-600 hover:via-green-600 hover:to-teal-600 text-white text-sm font-semibold
+                             transition-all duration-300 flex items-center justify-center gap-2
+                             shadow-md shadow-emerald-200/50 hover:shadow-lg hover:shadow-emerald-300/40 active:scale-[0.97] btn-primary"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  Pay {invoice.currency} {amountDue.toFixed(2)}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Payment History */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-              Payment History{payments.length > 0 ? ` (${payments.length})` : ''}
-            </p>
-            {payments.length === 0 ? (
-              <div className="text-center py-6 text-slate-400">
-                <Receipt className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">No payments recorded</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {payments.map((p: Payment) => (
-                  <div key={p.id} className="border border-slate-100 rounded-lg p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-slate-800">
-                        {invoice.currency} {parseFloat(p.amount).toFixed(2)}
-                      </span>
-                      <span className="text-xs text-slate-500">{p.payment_date}</span>
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden card-hover-sm"
+               style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
+            <div className="h-1.5 bg-gradient-to-r from-violet-400 via-purple-400 to-fuchsia-400" />
+            <div className="p-5">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5 text-violet-500" />
+                Payment History{payments.length > 0 ? ` (${payments.length})` : ''}
+              </p>
+              {payments.length === 0 ? (
+                <div className="text-center py-6 text-slate-400">
+                  <Receipt className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                  <p className="text-sm">No payments recorded</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {payments.map((p: Payment, idx: number) => (
+                    <div key={p.id}
+                         className="border border-slate-100 rounded-lg p-3 hover:bg-gradient-to-r hover:from-violet-50/40 hover:to-fuchsia-50/30 hover:border-violet-200/50 transition-all duration-300"
+                         style={{ animationDelay: `${0.25 + idx * 0.08}s`, animationFillMode: 'both' }}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-slate-800">
+                          {invoice.currency} {parseFloat(p.amount).toFixed(2)}
+                        </span>
+                        <span className="text-xs text-slate-500">{p.payment_date}</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gradient-to-r from-violet-50 to-fuchsia-50 text-violet-700 ring-1 ring-violet-200/50">
+                          {METHOD_LABELS[p.method] ?? p.method}
+                        </span>
+                        {p.reference && <span className="text-xs font-mono text-slate-400">{p.reference}</span>}
+                      </div>
+                      {p.notes && <p className="text-xs text-slate-400 mt-1 italic">{p.notes}</p>}
                     </div>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-xs text-slate-500">{METHOD_LABELS[p.method] ?? p.method}</span>
-                      {p.reference && <span className="text-xs font-mono text-slate-400">{p.reference}</span>}
-                    </div>
-                    {p.notes && <p className="text-xs text-slate-400 mt-1">{p.notes}</p>}
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

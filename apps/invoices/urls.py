@@ -22,6 +22,7 @@ from .views import (
     InvoiceExportView,
     InvoiceGapReportView,
     InvoiceDraftAutosaveView,
+    InvoiceCreateDraftView,
 )
 from apps.payments.views import SupplierPaymentListView
 from .workflow_views import WorkflowEvaluateView
@@ -44,6 +45,12 @@ urlpatterns = [
     path('dashboard/',
          InvoiceDashboardView.as_view(),
          name='invoice-dashboard'),
+
+    # ── Draft create (real Invoice record, not JSON snapshot) ─────────────────
+    # Must be declared before <uuid:invoice_id>/ to avoid URL collision
+    path('create-draft/',
+         InvoiceCreateDraftView.as_view(),
+         name='invoice-create-draft'),
 
     # ── Draft autosave (server-side scratchpad) ───────────────────────────────
     # Must be declared before <uuid:invoice_id>/ to avoid URL collision

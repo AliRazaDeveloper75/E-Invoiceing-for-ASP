@@ -21,6 +21,14 @@ module.exports = {
         'pulse-glow': 'pulse-glow 3s ease-in-out infinite',
         'shimmer': 'shimmer 2s linear infinite',
         'slide-in-left': 'slideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+        'fade-in-down': 'fadeInDown 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+        'fade-in-left': 'fadeInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+        'fade-in-right': 'fadeInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+        'scale-up': 'scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        'glow': 'glow 2s ease-in-out infinite',
+        'progress-glow': 'progressGlow 2s ease-in-out infinite',
+        'fade-in-scale': 'fadeInScale 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
       },
       keyframes: {
         float: {
@@ -42,6 +50,38 @@ module.exports = {
         slideInLeft: {
           '0%': { transform: 'translateX(-100%)', opacity: '0' },
           '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        fadeInUp: {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        fadeInDown: {
+          '0%': { transform: 'translateY(-16px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        fadeInLeft: {
+          '0%': { transform: 'translateX(-16px)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        fadeInRight: {
+          '0%': { transform: 'translateX(16px)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        scaleUp: {
+          '0%': { transform: 'scale(0.9)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        glow: {
+          '0%, 100%': { boxShadow: '0 0 8px rgba(59, 130, 246, 0.2)' },
+          '50%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.4)' },
+        },
+        progressGlow: {
+          '0%, 100%': { opacity: '0.6' },
+          '50%': { opacity: '1' },
+        },
+        fadeInScale: {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
         },
       },
     },

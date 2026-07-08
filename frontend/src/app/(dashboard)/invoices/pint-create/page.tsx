@@ -13,7 +13,7 @@ import { PINT_FIELDS } from '@/data/pint-invoice-fields';
 import type { PintField, MandatoryType } from '@/data/pint-invoice-fields';
 import { useCompany } from '@/hooks/useCompany';
 import { api } from '@/lib/api';
-import { useAutosaveDraft, loadDraft, clearDraft, type DraftEnvelope } from '@/hooks/useAutosaveDraft';
+import { useAutosaveDraft, type DraftEnvelope } from '@/hooks/useAutosaveDraft';
 import type { Customer, Company } from '@/types';
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -1065,6 +1065,8 @@ export default function PintCreatePage() {
     [],
   );
   const [restorable,  setRestorable]  = useState<DraftEnvelope<typeof draftSnapshot> | null>(null);
+  const restorableRef = useRef(restorable);
+  useEffect(() => { restorableRef.current = restorable; }, [restorable]);
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
 
   const serverSave = useCallback(async (snap: typeof draftSnapshot) => {
@@ -1088,14 +1090,11 @@ export default function PintCreatePage() {
     onServerSave: serverSave,
   });
 
-  // On mount, offer to resume an unsaved draft — local first (same device,
-  // newest), then the server (cross-device).
+  // On mount, offer to resume an unsaved draft from the server (cross-device).
   const restoreCheckedRef = useRef(false);
   useEffect(() => {
     if (restoreCheckedRef.current || !activeId) return;
     restoreCheckedRef.current = true;
-    const local = loadDraft<typeof draftSnapshot>(draftKey);
-    if (local && !draftIsEmpty(local.data)) { setRestorable(local); return; }
     api.get(`/invoices/draft-autosave/?company_id=${activeId}&form_type=pint`)
       .then((res) => {
         const d = res.data?.data;
@@ -1107,25 +1106,21 @@ export default function PintCreatePage() {
   }, [activeId, draftKey, draftIsEmpty]);
 
   const resumeDraft = useCallback(() => {
-    let data: typeof draftSnapshot | null = null;
-    setRestorable((cur) => {
-      data = cur?.data ?? null;
-      return null;
-    });
-    if (data) {
-      setValues(data.values);
-      setLineItems(data.lineItems);
-      setSelectedBuyer(data.selectedBuyer);
-      setCurrentStep(data.currentStep);
-      autoFilledRef.current = true;
-    }
+    const envelope = restorableRef.current;
+    setRestorable(null);
+    if (!envelope?.data) return;
+    const saved = envelope.data;
+    setValues(saved.values);
+    setLineItems(saved.lineItems);
+    setSelectedBuyer(saved.selectedBuyer);
+    setCurrentStep(saved.currentStep);
+    autoFilledRef.current = true;
   }, []);
 
   const discardDraft = useCallback(() => {
-    clearDraft(draftKey);
     serverClear();
     setRestorable(null);
-  }, [draftKey, serverClear]);
+  }, [serverClear]);
 
   useEffect(() => {
     if (!activeCompany || autoFilledRef.current) return;
@@ -1277,8 +1272,7 @@ export default function PintCreatePage() {
       };
 
       await api.post('/invoices/', payload);
-      clearDraft(draftKey);   // invoice saved — drop the local + server autosave draft
-      serverClear();
+      serverClear();          // invoice saved — drop the server autosave draft
       router.push('/invoices');
     } catch (err: unknown) {
       // Backend returns { error: { message, details } }. Surface the real reason.
