@@ -804,7 +804,6 @@ def _send_buyer_invoice_email(invoice: 'Invoice') -> None:
     import io
     from django.conf import settings
     from django.core.mail import EmailMultiAlternatives
-    from django.template.loader import render_to_string
 
     buyer_email = getattr(invoice.customer, 'email', None)
     if not buyer_email:
@@ -815,32 +814,21 @@ def _send_buyer_invoice_email(invoice: 'Invoice') -> None:
         return
 
     try:
-        from xhtml2pdf import pisa
-    except ImportError:
-        logger.warning('xhtml2pdf not installed — skipping buyer PDF email for %s', invoice.invoice_number)
+        # Use the @react-pdf renderer (same engine as frontend downloads)
+        from apps.invoices.pdf_generator import generate_invoice_pdf_fallback
+        pdf_bytes = generate_invoice_pdf_fallback(invoice)
+    except Exception:
+        logger.exception(
+            'PDF generation failed for invoice %s — skipping buyer PDF email.',
+            invoice.invoice_number,
+        )
+        return
+
+    if not pdf_bytes:
+        logger.warning('PDF generation returned empty for invoice %s', invoice.invoice_number)
         return
 
     try:
-        import io as _io
-        items = invoice.items.filter(is_active=True).order_by('sort_order', 'created_at')
-
-        # Generate PDF
-        from apps.invoices.utils import generate_invoice_qr_base64
-        try:
-            qr_code = generate_invoice_qr_base64(invoice)
-        except Exception:
-            qr_code = None
-
-        html = render_to_string('invoices/invoice_pdf.html', {
-            'invoice': invoice,
-            'items': items,
-            'qr_code': qr_code,
-        })
-        buf = _io.BytesIO()
-        pisa.CreatePDF(html, dest=buf, encoding='utf-8')
-        buf.seek(0)
-        pdf_bytes = buf.read()
-
         supplier_name = invoice.company.name
         subject = f'Invoice {invoice.invoice_number} from {supplier_name}'
 

@@ -250,6 +250,10 @@ class Invoice(BaseModel):
         max_length=160, blank=True, default='',
         help_text='Name the buyer typed when e-signing / confirming the order.'
     )
+    buyer_signature_image = models.TextField(
+        blank=True, default='',
+        help_text='Base64-encoded PNG image of the buyer drawn signature.'
+    )
     buyer_signed_at = models.DateTimeField(
         null=True, blank=True,
         help_text='Timestamp when the buyer approved & e-signed the invoice.'

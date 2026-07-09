@@ -1,0 +1,16 @@
+{
+  "name": "e-numerak-pdf-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Server-side PDF generation using @react-pdf/renderer (same component as the frontend)",
+  "scripts": {
+    "generate": "node generate-pdf.js",
+    "generate:ts": "tsx generate-pdf.ts"
+  },
+  "dependencies": {
+    "@react-pdf/renderer": "^4.5.1",
+    "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "tsx": "^4.7.0"
+  }
+}

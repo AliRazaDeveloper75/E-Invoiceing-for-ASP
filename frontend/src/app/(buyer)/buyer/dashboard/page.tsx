@@ -25,7 +25,7 @@ function DashboardSkeleton() {
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white rounded-xl border border-slate-200 p-5">
+          <div key={i} className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-start justify-between">
               <div className="space-y-3">
                 <SkeletonBlock className="h-4 w-20" />
@@ -37,11 +37,11 @@ function DashboardSkeleton() {
           </div>
         ))}
       </div>
-      <div className="bg-white rounded-xl border border-slate-200">
-        <div className="px-5 py-4 border-b border-slate-100">
+      <div className="bg-white rounded-xl border border-gray-200">
+        <div className="px-5 py-4 border-b border-gray-100">
           <SkeletonBlock className="h-5 w-36" />
         </div>
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-gray-100">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex items-center justify-between px-5 py-4">
               <div className="flex items-center gap-4">
@@ -74,18 +74,18 @@ const statCardConfig = [
     borderHover: 'group-hover:border-blue-200',
   },
   {
-    icon: DollarSign,
+    icon: TrendingUp,
     label: 'Total Amount',
-    color: 'bg-slate-100 text-slate-600',
-    gradient: 'bg-gradient-to-r from-slate-500 to-slate-400',
-    borderHover: 'group-hover:border-slate-300',
+    color: 'bg-indigo-50 text-indigo-600',
+    gradient: 'bg-gradient-to-r from-indigo-500 to-indigo-400',
+    borderHover: 'group-hover:border-indigo-200',
   },
   {
     icon: Clock,
     label: 'Unpaid',
-    color: 'bg-orange-50 text-orange-600',
-    gradient: 'bg-gradient-to-r from-orange-500 to-orange-400',
-    borderHover: 'group-hover:border-orange-200',
+    color: 'bg-amber-50 text-amber-600',
+    gradient: 'bg-gradient-to-r from-amber-500 to-amber-400',
+    borderHover: 'group-hover:border-amber-200',
   },
   {
     icon: CheckCircle2,
@@ -104,17 +104,17 @@ function StatCard({
 }) {
   return (
     <div
-      className="group bg-white rounded-xl border border-slate-200 p-5 transition-all duration-300 animate-fade-in hover:shadow-lg hover:-translate-y-0.5"
+      className="group bg-white rounded-xl border border-gray-200 p-5 transition-all duration-300 animate-fade-in hover:shadow-lg hover:-translate-y-0.5"
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <p className="text-sm text-slate-500 font-medium">{label}</p>
-          <p className="text-2xl font-bold text-slate-800 group-hover:text-slate-900 transition-colors">
+          <p className="text-sm text-gray-500 font-medium">{label}</p>
+          <p className="text-2xl font-bold text-gray-900 group-hover:text-gray-900 transition-colors">
             {value}
           </p>
           {sub && (
-            <p className="text-xs text-slate-400 flex items-center gap-1">
+            <p className="text-xs text-gray-400 flex items-center gap-1">
               <TrendingUp className="w-3 h-3" />
               {sub}
             </p>
@@ -133,30 +133,30 @@ function StatCard({
 
 function statusBadge(status: string) {
   const map: Record<string, string> = {
-    draft:          'bg-slate-100 text-slate-600',
+    draft:          'bg-gray-100 text-gray-600',
     pending:        'bg-yellow-100 text-yellow-700',
     submitted:      'bg-blue-100 text-blue-700',
     validated:      'bg-emerald-100 text-emerald-700',
     rejected:       'bg-red-100 text-red-700',
-    cancelled:      'bg-slate-100 text-slate-500',
+    cancelled:      'bg-gray-100 text-gray-500',
     paid:           'bg-green-100 text-green-700',
     partially_paid: 'bg-orange-100 text-orange-700',
   };
-  return map[status] ?? 'bg-slate-100 text-slate-600';
+  return map[status] ?? 'bg-gray-100 text-gray-600';
 }
 
 function statusDot(status: string) {
   const map: Record<string, string> = {
-    draft:          'bg-slate-400',
+    draft:          'bg-gray-400',
     pending:        'bg-yellow-500',
     submitted:      'bg-blue-500',
     validated:      'bg-emerald-500',
     rejected:       'bg-red-500',
-    cancelled:      'bg-slate-400',
+    cancelled:      'bg-gray-400',
     paid:           'bg-green-500',
     partially_paid: 'bg-orange-500',
   };
-  return map[status] ?? 'bg-slate-400';
+  return map[status] ?? 'bg-gray-400';
 }
 
 function statusLabel(status: string) {
@@ -196,7 +196,7 @@ export default function BuyerDashboardPage() {
           <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
             <AlertTriangle className="w-7 h-7 text-red-400" />
           </div>
-          <p className="text-slate-500 font-medium">{error || 'No data available.'}</p>
+          <p className="text-gray-500 font-medium">{error || 'No data available.'}</p>
         </div>
       </div>
     );
@@ -228,20 +228,20 @@ export default function BuyerDashboardPage() {
           <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse-soft" />
           <span className="text-xs font-medium text-blue-600 uppercase tracking-wider">Dashboard</span>
         </div>
-        <h1 className="text-2xl font-bold text-slate-800">
+        <h1 className="text-2xl font-bold text-gray-900">
           Welcome back
         </h1>
-        <p className="text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
+        <p className="text-gray-500 mt-1 flex items-center gap-1.5 flex-wrap">
           <span>Viewing invoices for</span>
-          <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-sm">
+          <span className="font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md text-sm">
             {data.customer_name}
           </span>
           <span>from</span>
-          <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-sm">
+          <span className="font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md text-sm">
             {data.company_name}
           </span>
         </p>
-        <div className="mt-4 h-px bg-gradient-to-r from-blue-200 via-slate-200 to-transparent" />
+        <div className="mt-4 h-px bg-gradient-to-r from-blue-200 via-gray-200 to-transparent" />
       </div>
 
       {/* ── Overdue Alert ─────────────────────────────────────────────── */}
@@ -274,13 +274,13 @@ export default function BuyerDashboardPage() {
       </div>
 
       {/* ── Recent Invoices ───────────────────────────────────────────── */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm animate-fade-in" style={{ animationDelay: '400ms' }}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm animate-fade-in" style={{ animationDelay: '400ms' }}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
               <Receipt className="w-4 h-4 text-blue-600" />
             </div>
-            <h2 className="font-semibold text-slate-800">Recent Invoices</h2>
+            <h2 className="font-semibold text-gray-800">Recent Invoices</h2>
           </div>
           <Link
             href="/buyer/invoices"
@@ -293,33 +293,33 @@ export default function BuyerDashboardPage() {
 
         {data.recent_invoices.length === 0 ? (
           <div className="py-16 text-center animate-fade-in">
-            <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-4">
-              <FileText className="w-7 h-7 text-slate-300" />
+            <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-7 h-7 text-gray-300" />
             </div>
-            <p className="text-slate-400 font-medium">No invoices yet</p>
-            <p className="text-xs text-slate-300 mt-1">Invoices will appear here once received.</p>
+            <p className="text-gray-400 font-medium">No invoices yet</p>
+            <p className="text-xs text-gray-300 mt-1">Invoices will appear here once received.</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-gray-100">
             {data.recent_invoices.map((inv: InvoiceListItem, idx: number) => (
               <Link
                 key={inv.id}
                 href={`/buyer/invoices/${inv.id}`}
-                className="group flex items-center justify-between px-5 py-4 transition-all duration-200 hover:bg-slate-50 relative overflow-hidden animate-slide-up"
+                className="group flex items-center justify-between px-5 py-4 transition-all duration-200 hover:bg-gray-50 relative overflow-hidden animate-slide-up"
                 style={{ animationDelay: `${500 + idx * 80}ms` }}
               >
                 {/* Left accent on hover */}
                 <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-500 scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-top" />
 
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 flex items-center justify-center group-hover:border-blue-200 group-hover:shadow-sm transition-all duration-200">
-                    <FileText className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors duration-200" />
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 flex items-center justify-center group-hover:border-blue-200 group-hover:shadow-sm transition-all duration-200">
+                    <FileText className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors duration-200" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-800 group-hover:text-blue-600 transition-colors duration-200">
+                    <p className="text-sm font-semibold text-gray-800 group-hover:text-blue-600 transition-colors duration-200">
                       {inv.invoice_number}
                     </p>
-                    <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
+                    <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
                       <Calendar className="w-3 h-3" />
                       {new Date(inv.issue_date).toLocaleDateString('en-AE', {
                         day: 'numeric', month: 'short', year: 'numeric',
@@ -333,11 +333,11 @@ export default function BuyerDashboardPage() {
                     <span className={`w-1.5 h-1.5 rounded-full ${statusDot(inv.status)}`} />
                     {statusLabel(inv.status)}
                   </span>
-                  <p className="text-sm font-bold text-slate-800 tabular-nums">
+                  <p className="text-sm font-bold text-gray-800 tabular-nums">
                     {inv.currency} {parseFloat(inv.total_amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}
                   </p>
-                  <div className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors duration-200">
-                    <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-500 transition-colors duration-200" />
+                  <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors duration-200">
+                    <ArrowRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-blue-500 transition-colors duration-200" />
                   </div>
                 </div>
               </Link>

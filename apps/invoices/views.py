@@ -490,70 +490,27 @@ class InvoicePDFDownloadView(APIView):
     Generates and streams a human-readable PDF for any invoice (Visual Invoice).
     Available for all statuses — the PDF is generated on-the-fly from invoice data.
     This is the document delivered to Corner 4 (Buyer) alongside the UBL XML.
+    Uses @react-pdf renderer (same engine as frontend downloads) for visual consistency.
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, invoice_id):
-        try:
-            from xhtml2pdf import pisa
-        except ImportError:
-            return error_response(
-                'PDF generation is not available. Install xhtml2pdf.',
-                status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            )
-
         invoice, _, err = _resolve_invoice(request, invoice_id)
         if err:
             return err
 
-        items = invoice.items.filter(is_active=True).order_by('sort_order', 'created_at')
-
-        from decimal import Decimal
-        paid = invoice.amount_paid or Decimal('0.00')
-        balance_due = max(invoice.total_amount - paid, Decimal('0.00')) if paid > 0 else None
-
-        payment_means_label = ''
-        if invoice.payment_means_code:
-            payment_means_label = invoice.get_payment_means_code_display()
-
         try:
-            from apps.invoices.utils import generate_invoice_qr_base64
-            qr_code = generate_invoice_qr_base64(invoice)
-        except Exception:
-            qr_code = None
-
-        from apps.invoices.utils import parse_invoice_faf_meta
-        faf = parse_invoice_faf_meta(invoice.notes)
-
-        try:
-            html = render_to_string('invoices/invoice_pdf.html', {
-                'invoice': invoice,
-                'items': items,
-                'qr_code': qr_code,
-                'balance_due': balance_due,
-                'payment_means_label': payment_means_label,
-                'permit_number': faf.get('permit_number', ''),
-                'transaction_id': faf.get('transaction_id', ''),
-                'gl_account_id': faf.get('gl_account_id', ''),
-            })
+            from apps.invoices.pdf_generator import generate_invoice_pdf_fallback
+            pdf_bytes = generate_invoice_pdf_fallback(invoice)
         except Exception as exc:
-            logger.exception('Template rendering failed for invoice %s', invoice_id)
-            return error_response(f'PDF template error: {exc}', status_code=500)
+            logger.exception('PDF generation failed for invoice %s', invoice_id)
+            return error_response(f'PDF generation error: {exc}', status_code=500)
 
-        buffer = io.BytesIO()
-        try:
-            result = pisa.CreatePDF(html, dest=buffer, encoding='utf-8')
-        except Exception as exc:
-            logger.exception('pisa.CreatePDF raised an exception for invoice %s', invoice_id)
-            return error_response(f'PDF engine error: {exc}', status_code=500)
+        if not pdf_bytes:
+            return error_response('PDF could not be generated.', status_code=500)
 
-        if result.err:
-            logger.error('PDF generation failed for invoice %s (err=%s)', invoice.invoice_number, result.err)
-            return error_response(f'PDF could not be generated (err={result.err}).', status_code=500)
-
-        buffer.seek(0)
         filename = f'{invoice.invoice_number}.pdf'
-        response = HttpResponse(buffer.read(), content_type='application/pdf')
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
 

@@ -14,7 +14,6 @@ Two groups:
        GET  /api/v1/buyer/invoices/{id}/download-pdf/
        GET  /api/v1/buyer/invoices/{id}/download-xml/
 """
-import io
 import logging
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -249,11 +248,6 @@ class BuyerInvoicePDFView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, invoice_id):
-        try:
-            from xhtml2pdf import pisa
-        except ImportError:
-            return error_response('PDF generation not available.', status_code=501)
-
         profile, err = _require_buyer(request)
         if err:
             return err
@@ -265,47 +259,16 @@ class BuyerInvoicePDFView(APIView):
         except Invoice.DoesNotExist:
             return error_response('Invoice not found.', status_code=404)
 
-        items = invoice.items.filter(is_active=True).order_by('sort_order', 'created_at')
-
-        from decimal import Decimal
-        paid = invoice.amount_paid or Decimal('0.00')
-        balance_due = max(invoice.total_amount - paid, Decimal('0.00')) if paid > 0 else None
-
-        payment_means_label = ''
-        if invoice.payment_means_code:
-            payment_means_label = invoice.get_payment_means_code_display()
-
         try:
-            from apps.invoices.utils import generate_invoice_qr_base64
-            qr_code = generate_invoice_qr_base64(invoice)
-        except Exception:
-            qr_code = None
-
-        from apps.invoices.utils import parse_invoice_faf_meta
-
-        faf = parse_invoice_faf_meta(invoice.notes)
-
-        try:
-            html = render_to_string('invoices/invoice_pdf.html', {
-                'invoice': invoice,
-                'items': items,
-                'qr_code': qr_code,
-                'balance_due': balance_due,
-                'payment_means_label': payment_means_label,
-                'permit_number': faf.get('permit_number', ''),
-                'transaction_id': faf.get('transaction_id', ''),
-                'gl_account_id': faf.get('gl_account_id', ''),
-            })
+            from apps.invoices.pdf_generator import generate_invoice_pdf_fallback
+            pdf_bytes = generate_invoice_pdf_fallback(invoice)
         except Exception as exc:
-            return error_response(f'PDF template error: {exc}', status_code=500)
+            return error_response(f'PDF generation error: {exc}', status_code=500)
 
-        buffer = io.BytesIO()
-        result = pisa.CreatePDF(html, dest=buffer, encoding='utf-8')
-        if result.err:
+        if not pdf_bytes:
             return error_response('PDF could not be generated.', status_code=500)
 
-        buffer.seek(0)
-        response = HttpResponse(buffer.read(), content_type='application/pdf')
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{invoice.invoice_number}.pdf"'
         return response
 
@@ -347,9 +310,9 @@ def _client_ip(request):
 
 class BuyerInvoiceApproveView(APIView):
     """
-    POST /api/v1/buyer/invoices/{id}/approve/  { signed_name }
+    POST /api/v1/buyer/invoices/{id}/approve/
 
-    Buyer reviews, e-signs (typed name + confirmation), and confirms the order.
+    Buyer reviews, e-signs (profile full name + confirmation), and confirms the order.
     AWAITING_APPROVAL → PENDING, then the ASP submission pipeline is triggered.
     """
     permission_classes = [IsAuthenticated]
@@ -361,11 +324,6 @@ class BuyerInvoiceApproveView(APIView):
         profile, err = _require_buyer(request)
         if err:
             return err
-
-        signed_name = (request.data.get('signed_name') or '').strip()
-        if not signed_name:
-            return error_response('Please type your full name to e-sign and confirm the order.',
-                                  status_code=400)
 
         try:
             invoice = Invoice.objects.get(
@@ -380,13 +338,25 @@ class BuyerInvoiceApproveView(APIView):
                 status_code=400,
             )
 
-        # Capture the e-signature.
-        invoice.buyer_signed_name = signed_name
+        # Capture the e-signature — typed name and/or drawn image.
+        signed_name = request.data.get('signed_name', '').strip()
+        signature_image = request.data.get('signature_image', '')
+
+        if signed_name:
+            invoice.buyer_signed_name = signed_name
+        elif not invoice.buyer_signed_name:
+            # Fallback: use the buyer's profile full name when neither is given.
+            invoice.buyer_signed_name = request.user.full_name
+
+        if signature_image:
+            invoice.buyer_signature_image = signature_image
+
         invoice.buyer_signed_at = timezone.now()
         invoice.buyer_signature_ip = _client_ip(request)
         invoice.status = INVOICE_STATUS_PENDING
         invoice.save(update_fields=[
-            'buyer_signed_name', 'buyer_signed_at', 'buyer_signature_ip',
+            'buyer_signed_name', 'buyer_signature_image',
+            'buyer_signed_at', 'buyer_signature_ip',
             'status', 'updated_at',
         ])
 
@@ -403,10 +373,11 @@ class BuyerInvoiceApproveView(APIView):
         # Notify the supplier who created the invoice.
         try:
             from apps.notifications.services import NotificationService
+            display_name = signed_name or request.user.full_name
             NotificationService.invoice_event(
                 invoice, event='buyer_approved',
                 title=f'Buyer approved — {invoice.invoice_number}',
-                message=f'{signed_name} approved & e-signed the order. Submitting to the ASP.',
+                message=f'{display_name} approved & e-signed the order. Submitting to the ASP.',
             )
         except Exception:
             pass

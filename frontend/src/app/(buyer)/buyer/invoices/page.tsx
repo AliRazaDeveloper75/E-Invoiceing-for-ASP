@@ -20,16 +20,16 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 
 function statusBadge(status: InvoiceStatus) {
   const map: Record<string, string> = {
-    draft: 'bg-slate-100 text-slate-600',
+    draft: 'bg-gray-100 text-gray-600',
     pending: 'bg-yellow-100 text-yellow-700',
     submitted: 'bg-blue-100 text-blue-700',
     validated: 'bg-sky-100 text-sky-700',
     rejected: 'bg-red-100 text-red-700',
-    cancelled: 'bg-slate-100 text-slate-500',
+    cancelled: 'bg-gray-100 text-gray-500',
     paid: 'bg-emerald-100 text-emerald-700',
     partially_paid: 'bg-orange-100 text-orange-700',
   };
-  return map[status] ?? 'bg-slate-100 text-slate-600';
+  return map[status] ?? 'bg-gray-100 text-gray-600';
 }
 
 function statusLabel(status: InvoiceStatus) {
@@ -81,13 +81,13 @@ export default function BuyerInvoiceListPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">My Invoices</h1>
-          <p className="text-slate-500 mt-1">{pagination.count} invoice{pagination.count !== 1 ? 's' : ''} total</p>
+          <h1 className="text-2xl font-bold text-gray-900">My Invoices</h1>
+          <p className="text-gray-500 mt-1">{pagination.count} invoice{pagination.count !== 1 ? 's' : ''} total</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4">
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
         <div className="flex flex-wrap gap-2">
           {STATUS_OPTIONS.map(opt => (
             <button
@@ -96,7 +96,7 @@ export default function BuyerInvoiceListPage() {
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 statusFilter === opt.value
                   ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               {opt.label}
@@ -106,13 +106,13 @@ export default function BuyerInvoiceListPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : invoices.length === 0 ? (
-          <div className="py-16 text-center text-slate-400">
+          <div className="py-16 text-center text-gray-400">
             <FileText className="w-12 h-12 mx-auto mb-3 opacity-40" />
             <p className="font-medium">No invoices found</p>
             <p className="text-sm mt-1">Try changing the filter above</p>
@@ -120,7 +120,7 @@ export default function BuyerInvoiceListPage() {
         ) : (
           <>
             {/* Table header */}
-            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 px-5 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
               <span>Invoice</span>
               <span>Date</span>
               <span>Due</span>
@@ -129,34 +129,34 @@ export default function BuyerInvoiceListPage() {
             </div>
 
             {/* Rows */}
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-gray-100">
               {invoices.map(inv => (
                 <Link
                   key={inv.id}
                   href={`/buyer/invoices/${inv.id}`}
-                  className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 items-center px-5 py-4 hover:bg-slate-50 transition-colors"
+                  className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 items-center px-5 py-4 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
                       <FileText className="w-4 h-4 text-blue-600" />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-semibold text-slate-800 text-sm">{inv.invoice_number}</p>
-                      <p className="text-xs text-slate-400">{inv.type_display}</p>
+                      <p className="font-semibold text-gray-800 text-sm">{inv.invoice_number}</p>
+                      <p className="text-xs text-gray-400">{inv.type_display}</p>
                     </div>
                   </div>
 
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-gray-600">
                     {new Date(inv.issue_date).toLocaleDateString('en-AE', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </p>
 
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-gray-600">
                     {inv.due_date
                       ? new Date(inv.due_date).toLocaleDateString('en-AE', { day: '2-digit', month: 'short', year: 'numeric' })
                       : '—'}
                   </p>
 
-                  <p className="text-sm font-bold text-slate-800">
+                  <p className="text-sm font-bold text-gray-800">
                     {inv.currency} {parseFloat(inv.total_amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}
                   </p>
 
@@ -164,7 +164,7 @@ export default function BuyerInvoiceListPage() {
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${statusBadge(inv.status)}`}>
                       {statusLabel(inv.status)}
                     </span>
-                    <ArrowRight className="w-4 h-4 text-slate-300" />
+                    <ArrowRight className="w-4 h-4 text-gray-300" />
                   </div>
                 </Link>
               ))}
@@ -175,22 +175,22 @@ export default function BuyerInvoiceListPage() {
 
       {/* Pagination */}
       {pagination.total_pages > 1 && (
-        <div className="flex items-center justify-between bg-white rounded-xl border border-slate-200 px-5 py-3">
-          <p className="text-sm text-slate-500">
+        <div className="flex items-center justify-between bg-white rounded-xl border border-gray-200 px-5 py-3">
+          <p className="text-sm text-gray-500">
             Page {pagination.current_page} of {pagination.total_pages}
           </p>
           <div className="flex gap-2">
             <button
               disabled={page <= 1}
               onClick={() => setPage(p => p - 1)}
-              className="p-2 rounded-lg border border-slate-200 disabled:opacity-40 hover:bg-slate-50 transition-colors"
+              className="p-2 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               disabled={page >= pagination.total_pages}
               onClick={() => setPage(p => p + 1)}
-              className="p-2 rounded-lg border border-slate-200 disabled:opacity-40 hover:bg-slate-50 transition-colors"
+              className="p-2 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

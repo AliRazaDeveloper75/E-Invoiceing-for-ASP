@@ -36,20 +36,20 @@ function BuyerSidebar({ profile, onClose }: { profile: BuyerProfile | null; onCl
   }
 
   return (
-    <aside className="flex flex-col h-full bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 text-white w-64 shrink-0">
+    <aside className="flex flex-col h-full bg-gradient-to-b from-blue-950 to-indigo-950 text-white w-64 shrink-0 border-r border-white/[0.06] shadow-2xl">
       {/* Logo */}
-      <div className="flex items-center justify-between px-5 py-5 border-b border-slate-700/50">
+      <div className="flex items-center justify-between px-5 py-5 border-b border-white/[0.08]">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-sm font-bold shadow-lg shadow-blue-600/20">
             EN
           </div>
           <div>
             <div className="text-base font-bold tracking-tight">E-Numerak</div>
-            <div className="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider">Buyer Portal</div>
+            <div className="text-[10px] text-blue-200/60 mt-0.5 uppercase tracking-wider">Buyer Portal</div>
           </div>
         </div>
         {onClose && (
-          <button onClick={onClose} className="text-slate-400 hover:text-white lg:hidden transition-colors">
+          <button onClick={onClose} className="text-blue-200/40 hover:text-white lg:hidden transition-colors">
             <X className="w-5 h-5" />
           </button>
         )}
@@ -64,7 +64,7 @@ function BuyerSidebar({ profile, onClose }: { profile: BuyerProfile | null; onCl
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-sm font-semibold truncate">{profile.customer_name}</div>
-              <div className="text-[11px] text-slate-400 truncate">{profile.email}</div>
+              <div className="text-[11px] text-blue-200/50 truncate">{profile.email}</div>
             </div>
           </div>
         </div>
@@ -81,12 +81,12 @@ function BuyerSidebar({ profile, onClose }: { profile: BuyerProfile | null; onCl
               onClick={onClose}
               className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative ${
                 active
-                  ? 'bg-blue-600/20 text-white'
-                  : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                  ? 'bg-blue-500/20 text-white'
+                  : 'text-blue-200/60 hover:bg-white/5 hover:text-white'
               }`}
             >
               {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-blue-500 rounded-r-full animate-scale-in" />
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-blue-400 rounded-r-full animate-scale-in" />
               )}
               <Icon className={`w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110 ${
                 active ? 'text-blue-400' : ''
@@ -98,10 +98,10 @@ function BuyerSidebar({ profile, onClose }: { profile: BuyerProfile | null; onCl
       </nav>
 
       {/* Footer */}
-      <div className="px-3 pb-4 border-t border-slate-700/50 pt-4">
+      <div className="px-3 pb-4 border-t border-white/[0.08] pt-4">
         <button
           onClick={handleLogout}
-          className="group flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm text-slate-400 hover:bg-white/5 hover:text-white transition-all duration-200"
+          className="group flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm text-blue-200/40 hover:bg-white/5 hover:text-white transition-all duration-200"
         >
           <LogOut className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:-translate-x-1" />
           Sign out
@@ -129,20 +129,20 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/40">
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
             <div className="w-10 h-10 border-[3px] border-blue-600 border-t-transparent rounded-full animate-spin" />
             <div className="absolute inset-0 w-10 h-10 border-[3px] border-blue-400/30 border-b-transparent rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '0.8s' }} />
           </div>
-          <p className="text-sm text-slate-400 animate-pulse-soft">Loading your dashboard...</p>
+          <p className="text-sm text-gray-400 animate-pulse-soft">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50/40 overflow-hidden">
       {/* Desktop sidebar */}
       <div className="hidden lg:flex lg:flex-col">
         <BuyerSidebar profile={profile} />
@@ -172,11 +172,11 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar (mobile) */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white/80 backdrop-blur-md border-b border-slate-200 shrink-0">
-          <button onClick={() => setSidebarOpen(true)} className="text-slate-600 hover:text-slate-800 transition-colors p-1">
+        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white/80 backdrop-blur-md border-b border-gray-200 shrink-0">
+          <button onClick={() => setSidebarOpen(true)} className="text-gray-600 hover:text-gray-800 transition-colors p-1">
             <Menu className="w-5 h-5" />
           </button>
-          <span className="font-semibold text-slate-800">Buyer Portal</span>
+          <span className="font-semibold text-gray-800">Buyer Portal</span>
           <div className="w-5" />
         </header>
 

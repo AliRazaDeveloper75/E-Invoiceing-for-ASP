@@ -258,12 +258,14 @@ export default function DashboardPage() {
                     )}
                   </div>
                 </div>
-                <a
-                  href="/invoices/new"
-                  className="inline-flex items-center gap-2 rounded-xl bg-white text-slate-800 hover:bg-blue-50 px-5 py-2.5 text-sm font-semibold shadow-lg shadow-black/10 hover:shadow-xl transition-all shrink-0 self-start sm:self-auto group/btn"
-                >
-                  <PlusCircle className="h-4 w-4 group-hover/btn:rotate-90 transition-transform duration-300" /> New Invoice
-                </a>
+                {user?.role !== 'admin' && (
+                  <a
+                    href="/invoices/new"
+                    className="inline-flex items-center gap-2 rounded-xl bg-white text-slate-800 hover:bg-blue-50 px-5 py-2.5 text-sm font-semibold shadow-lg shadow-black/10 hover:shadow-xl transition-all shrink-0 self-start sm:self-auto group/btn"
+                  >
+                    <PlusCircle className="h-4 w-4 group-hover/btn:rotate-90 transition-transform duration-300" /> New Invoice
+                  </a>
+                )}
               </div>
             </div>
           </div>

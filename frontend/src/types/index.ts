@@ -148,6 +148,7 @@ export interface Invoice {
   company_trn_expiry_date: string | null;
   customer: string;
   customer_name: string;
+  customer_legal_name?: string;
   customer_trn: string;
   customer_trn_issue_date: string | null;
   customer_trn_expiry_date: string | null;
@@ -155,6 +156,7 @@ export interface Invoice {
   company_logo?: string | null;
   customer_address?: string;
   customer_city?: string;
+  customer_state_province?: string;
   customer_country?: string;
   customer_phone?: string;
   customer_email?: string;
@@ -190,6 +192,7 @@ export interface Invoice {
   deactivation_reason: string;
   deactivated_at: string | null;
   buyer_signed_name?: string;
+  buyer_signature_image?: string;
   buyer_signed_at?: string | null;
   buyer_signature_ip?: string | null;
   buyer_approval_note?: string;
