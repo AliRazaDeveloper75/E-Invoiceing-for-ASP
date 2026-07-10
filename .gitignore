@@ -61,6 +61,7 @@ coverage.xml
 
 # ─── Node / Next.js ───────────────────────────────────────────────────────────
 frontend/node_modules/
+backend/pdf-service/node_modules/
 frontend/.next/
 frontend/out/
 frontend/.turbo/
