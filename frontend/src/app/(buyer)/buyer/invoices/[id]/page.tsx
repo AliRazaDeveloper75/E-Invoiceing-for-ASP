@@ -34,16 +34,16 @@ async function fetchPaymentConfig(url: string) {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  draft:            'bg-gray-100 text-gray-700 ring-1 ring-gray-300/50 shadow-sm',
-  awaiting_approval:'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 ring-1 ring-amber-300/50 shadow-sm animate-pulse-soft',
-  pending:          'bg-gradient-to-r from-yellow-50 to-amber-50 text-yellow-700 ring-1 ring-yellow-300/50 shadow-sm',
-  submitted:        'bg-gradient-to-r from-blue-50 to-sky-50 text-blue-700 ring-1 ring-blue-300/50 shadow-sm',
-  validated:        'bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 ring-1 ring-emerald-300/50 shadow-sm',
-  rejected:         'bg-gradient-to-r from-red-50 to-rose-50 text-red-700 ring-1 ring-red-300/50 shadow-sm',
-  cancelled:        'bg-gradient-to-r from-gray-100 to-gray-100 text-gray-500 ring-1 ring-gray-300/50',
-  paid:             'bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 ring-1 ring-emerald-300/50 shadow-sm',
-  partially_paid:   'bg-gradient-to-r from-orange-50 to-amber-50 text-orange-700 ring-1 ring-orange-300/50 shadow-sm',
-  deactivated:      'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 ring-1 ring-amber-300/50 shadow-sm',
+  draft:             'bg-slate-100 text-slate-600 border-slate-200',
+  awaiting_approval: 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse',
+  pending:           'bg-amber-50 text-amber-700 border-amber-200',
+  submitted:         'bg-blue-50 text-blue-700 border-blue-200',
+  validated:         'bg-emerald-50 text-emerald-700 border-emerald-200',
+  rejected:          'bg-red-50 text-red-700 border-red-200',
+  cancelled:         'bg-slate-50 text-slate-500 border-slate-200',
+  paid:              'bg-emerald-50 text-emerald-700 border-emerald-200',
+  partially_paid:    'bg-orange-50 text-orange-700 border-orange-200',
+  deactivated:       'bg-amber-50 text-amber-700 border-amber-200',
 };
 
 const METHOD_LABELS: Record<string, string> = {
@@ -71,14 +71,14 @@ function MethodCard({
 }) {
   if (comingSoon) {
     return (
-      <div className="w-full flex items-center gap-4 p-4 border border-slate-100 rounded-xl bg-slate-50/50 opacity-60 cursor-not-allowed select-none">
-        <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+      <div className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100 opacity-60 cursor-not-allowed select-none">
+        <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
           {icon}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-semibold text-slate-500 text-sm">{title}</p>
-            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-500">
+            <p className="font-medium text-slate-500 text-sm">{title}</p>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-500 uppercase tracking-wide">
               Coming Soon
             </span>
           </div>
@@ -91,22 +91,21 @@ function MethodCard({
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-4 p-4 border border-slate-200 rounded-xl
-                 hover:border-blue-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50/80
-                 transition-all duration-300 text-left group
-                 shadow-sm hover:shadow-md hover:shadow-blue-100/50"
+      className="w-full flex items-center gap-4 p-4 rounded-xl border border-slate-200
+                 hover:border-blue-300 hover:bg-blue-50/50
+                 transition-all duration-200 text-left group
+                 shadow-sm hover:shadow-md"
     >
-      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100
-                      group-hover:from-blue-100 group-hover:to-indigo-100
-                      flex items-center justify-center transition-all duration-300 shrink-0 shadow-sm
-                      ring-1 ring-slate-200/50 group-hover:ring-blue-300/50">
+      <div className="w-11 h-11 rounded-xl bg-slate-100
+                      group-hover:bg-blue-100
+                      flex items-center justify-center transition-colors duration-200 shrink-0">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="font-semibold text-slate-800 text-sm group-hover:text-blue-700 transition-colors">{title}</p>
+          <p className="font-medium text-slate-800 text-sm group-hover:text-blue-700 transition-colors">{title}</p>
           {badge && (
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 ring-1 ring-emerald-200/50">
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wide">
               {badge}
             </span>
           )}
@@ -145,24 +144,21 @@ function StripeStep({ invoiceId, amountDue, currency, onBack }: {
 
   return (
     <div className="px-6 py-5 space-y-5">
-      <div className="bg-gradient-to-br from-indigo-50 via-blue-50 to-sky-50 border border-indigo-200/60 rounded-xl p-5 text-center shadow-sm relative overflow-hidden">
-        <div className="h-1 bg-gradient-to-r from-indigo-400 via-blue-400 to-sky-400 rounded-t-xl absolute top-0 left-0 right-0" />
-        <div className="pt-3">
-          <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-md shadow-indigo-200">
-            <CreditCard className="w-6 h-6 text-white" />
-          </div>
-          <p className="text-sm font-semibold text-slate-800">Secure Card Payment via Stripe</p>
-          <p className="text-xs text-slate-500 mt-1">
-            You will be redirected to Stripe&apos;s secure checkout page.
-          </p>
-          <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600 mt-4">
-            {currency} {amountDue.toFixed(2)}
-          </p>
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 text-center">
+        <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-3">
+          <CreditCard className="w-5 h-5 text-white" />
         </div>
+        <p className="text-sm font-semibold text-slate-900">Secure Card Payment via Stripe</p>
+        <p className="text-xs text-slate-500 mt-1">
+          You will be redirected to Stripe&apos;s secure checkout page.
+        </p>
+        <p className="text-2xl font-bold text-slate-900 mt-4">
+          {currency} {amountDue.toFixed(2)}
+        </p>
       </div>
 
       {error && (
-        <div className="animate-fade-in-down bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
+        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
           <AlertCircle className="w-4 h-4 shrink-0" />
           {error}
         </div>
@@ -173,17 +169,16 @@ function StripeStep({ invoiceId, amountDue, currency, onBack }: {
           onClick={onBack}
           disabled={loading}
           className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium
-                     text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-[0.98] shadow-sm"
+                     text-slate-600 hover:bg-slate-50 transition-all active:scale-[0.98]"
         >
           Back
         </button>
         <button
           onClick={handlePay}
           disabled={loading}
-          className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 via-blue-600 to-sky-600
-                     hover:from-indigo-700 hover:via-blue-700 hover:to-sky-700 text-white text-sm font-semibold
-                     transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2
-                     shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/40 active:scale-[0.98] btn-primary"
+          className="flex-1 px-4 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold
+                     transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2
+                     shadow-sm hover:shadow-md active:scale-[0.98]"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
           {loading ? 'Redirecting…' : 'Pay with Card'}
@@ -274,22 +269,19 @@ function PayPalStep({ invoiceId, amountDue, currency, clientId, sandbox, onBack,
 
   return (
     <div className="px-6 py-5 space-y-4">
-      <div className="bg-gradient-to-br from-indigo-50 via-blue-50 to-sky-50 border border-indigo-200/60 rounded-xl p-4 text-center shadow-sm relative overflow-hidden">
-        <div className="h-1 bg-gradient-to-r from-indigo-400 via-blue-400 to-sky-400 rounded-t-xl absolute top-0 left-0 right-0" />
-        <div className="pt-3">
-          <p className="text-sm text-slate-600">
-            Amount: <span className="font-bold text-slate-900 text-lg">{currency} {amountDue.toFixed(2)}</span>
-          </p>
-        </div>
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+        <p className="text-sm text-slate-600">
+          Amount: <span className="font-bold text-slate-900 text-lg">{currency} {amountDue.toFixed(2)}</span>
+        </p>
       </div>
 
       {sdkError && (
-        <div className="animate-fade-in-down bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
           {sdkError}
         </div>
       )}
       {payError && (
-        <div className="animate-fade-in-down bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
+        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
           <AlertCircle className="w-4 h-4 shrink-0" />
           {payError}
         </div>
@@ -306,8 +298,7 @@ function PayPalStep({ invoiceId, amountDue, currency, clientId, sandbox, onBack,
       <button
         onClick={onBack}
         className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium
-                   text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all
-                   active:scale-[0.98] shadow-sm"
+                   text-slate-600 hover:bg-slate-50 transition-all active:scale-[0.98]"
       >
         Back
       </button>
@@ -368,10 +359,10 @@ function ManualStep({ invoiceId, amountDue, currency, onBack, onSuccess }: {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
+    <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
             Amount <span className="text-red-500">*</span>
           </label>
           <div className="relative">
@@ -381,12 +372,12 @@ function ManualStep({ invoiceId, amountDue, currency, onBack, onSuccess }: {
               value={form.amount}
               onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
               className="w-full border border-slate-200 rounded-lg pl-14 pr-3 py-2.5 text-sm
-                         outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-300 transition-all bg-white"
+                         outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all bg-white"
             />
           </div>
         </div>
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
             Date <span className="text-red-500">*</span>
           </label>
           <input
@@ -394,46 +385,46 @@ function ManualStep({ invoiceId, amountDue, currency, onBack, onSuccess }: {
             value={form.payment_date}
             onChange={e => setForm(f => ({ ...f, payment_date: e.target.value }))}
             className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm
-                       outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-300 transition-all bg-white"
+                       outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all bg-white"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Method <span className="text-red-500">*</span></label>
+        <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">Method <span className="text-red-500">*</span></label>
         <select
           value={form.method}
           onChange={e => setForm(f => ({ ...f, method: e.target.value as PaymentMethod }))}
           className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm
-                     outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-300 transition-all bg-white"
+                     outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all bg-white"
         >
           {MANUAL_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
         </select>
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Reference / Transaction ID</label>
+        <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">Reference / Transaction ID</label>
         <input
           type="text" value={form.reference}
           onChange={e => setForm(f => ({ ...f, reference: e.target.value }))}
           placeholder="e.g. TXN-123456 or cheque no."
           className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm
-                     outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-300 transition-all bg-white placeholder:text-slate-400"
+                     outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all bg-white placeholder:text-slate-400"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Notes</label>
+        <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">Notes</label>
         <textarea
           rows={2} value={form.notes}
           onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
           className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm
-                     outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-300 transition-all resize-none bg-white placeholder:text-slate-400"
+                     outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all resize-none bg-white placeholder:text-slate-400"
         />
       </div>
 
       {error && (
-        <div className="animate-fade-in-down bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700 shadow-sm">
+        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
           <AlertCircle className="w-4 h-4 shrink-0" />
           {error}
         </div>
@@ -443,16 +434,15 @@ function ManualStep({ invoiceId, amountDue, currency, onBack, onSuccess }: {
         <button
           type="button" onClick={onBack}
           className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium
-                     text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-[0.98] shadow-sm"
+                     text-slate-600 hover:bg-slate-50 transition-all active:scale-[0.98]"
         >
           Back
         </button>
         <button
           type="submit" disabled={saving}
-          className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500
-                     hover:from-blue-600 hover:via-indigo-600 hover:to-violet-600 text-white text-sm font-semibold
-                     transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2
-                     shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/40 active:scale-[0.97] btn-primary"
+          className="flex-1 px-4 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold
+                     transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2
+                     shadow-sm hover:shadow-md active:scale-[0.98]"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Receipt className="w-4 h-4" />}
           {saving ? 'Saving…' : 'Record Payment'}
@@ -480,17 +470,17 @@ function PaymentModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-up ring-1 ring-black/5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-indigo-50 via-blue-50 to-white">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div>
-            <h2 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-blue-700">Pay Invoice</h2>
+            <h2 className="text-lg font-bold text-slate-900">Pay Invoice</h2>
             <p className="text-sm text-slate-500 mt-0.5">
-              Remaining: <span className="font-semibold text-indigo-700">{currency} {amountDue.toFixed(2)}</span>
+              Remaining: <span className="font-semibold text-slate-900">{currency} {amountDue.toFixed(2)}</span>
             </p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/80 hover:text-slate-600 transition-all active:scale-90 ring-1 ring-transparent hover:ring-slate-200">
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
             <X className="w-4 h-4 text-slate-400" />
           </button>
         </div>
@@ -498,13 +488,12 @@ function PaymentModal({
         {/* Content */}
         {flow === 'select' && (
           <div className="px-6 py-5 space-y-3">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <span className="w-1 h-4 bg-gradient-to-b from-indigo-400 to-blue-400 rounded-full" />
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
               Choose payment method
             </p>
 
             <MethodCard
-              icon={<CreditCard className="w-5 h-5 text-indigo-400" />}
+              icon={<CreditCard className="w-5 h-5 text-slate-400" />}
               title="Pay by Card (Stripe)"
               subtitle="Visa, Mastercard, Amex — secured by Stripe"
               comingSoon
@@ -610,48 +599,63 @@ function useStripeSuccessHandler(invoiceId: string, mutate: () => void, mutatePa
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header skeleton */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-        <div className="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500" />
-        <div className="p-5 sm:p-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div className="h-1 bg-slate-100" />
+        <div className="p-6 sm:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-slate-200 animate-shimmer" />
+              <div className="w-12 h-12 rounded-xl bg-slate-100 animate-pulse" />
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-7 w-48 rounded-md bg-slate-200 animate-shimmer" />
-                  <div className="h-5 w-20 rounded-full bg-slate-200 animate-shimmer" />
+                <div className="flex items-center gap-3">
+                  <div className="h-7 w-48 rounded-lg bg-slate-100 animate-pulse" />
+                  <div className="h-6 w-24 rounded-full bg-slate-100 animate-pulse" />
                 </div>
-                <div className="h-4 w-64 rounded-md bg-slate-200 animate-shimmer" />
+                <div className="h-4 w-64 rounded-lg bg-slate-100 animate-pulse" />
               </div>
             </div>
             <div className="flex gap-2">
-              <div className="h-9 w-24 rounded-lg bg-slate-200 animate-shimmer" />
-              <div className="h-9 w-20 rounded-lg bg-slate-200 animate-shimmer" />
-              <div className="h-9 w-28 rounded-lg bg-slate-200 animate-shimmer" />
+              <div className="h-10 w-24 rounded-lg bg-slate-100 animate-pulse" />
+              <div className="h-10 w-20 rounded-lg bg-slate-100 animate-pulse" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Party cards skeleton */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <div className="h-28 rounded-xl bg-slate-200 animate-shimmer" />
-        <div className="h-28 rounded-xl bg-slate-200 animate-shimmer" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="h-28 rounded-2xl bg-white border border-slate-200 animate-pulse" />
+        <div className="h-28 rounded-2xl bg-white border border-slate-200 animate-pulse" />
       </div>
 
-      {/* Main content skeleton */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="h-96 rounded-xl bg-slate-200 animate-shimmer" />
+          <div className="h-96 rounded-2xl bg-white border border-slate-200 animate-pulse" />
         </div>
-        <div className="space-y-5">
-          <div className="h-48 rounded-xl bg-slate-200 animate-shimmer" />
-          <div className="h-44 rounded-xl bg-slate-200 animate-shimmer" />
-          <div className="h-56 rounded-xl bg-slate-200 animate-shimmer" />
+        <div className="space-y-4">
+          <div className="h-56 rounded-2xl bg-white border border-slate-200 animate-pulse" />
+          <div className="h-44 rounded-2xl bg-white border border-slate-200 animate-pulse" />
+          <div className="h-48 rounded-2xl bg-white border border-slate-200 animate-pulse" />
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Section Card Wrapper ─────────────────────────────────────────────────────
+
+function SectionCard({
+  children,
+  className = '',
+  header,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  header?: React.ReactNode;
+}) {
+  return (
+    <div className={`bg-white border border-slate-200 rounded-2xl overflow-hidden ${className}`}>
+      {header}
+      {children}
     </div>
   );
 }
@@ -755,16 +759,16 @@ export default function BuyerInvoiceDetailPage() {
 
   if (!invoice) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mb-5 shadow-sm">
-          <FileText className="w-10 h-10 text-slate-300" />
+      <div className="flex flex-col items-center justify-center py-24">
+        <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+          <FileText className="w-8 h-8 text-slate-300" />
         </div>
-        <p className="text-slate-600 font-semibold text-lg">Invoice not found</p>
+        <p className="text-slate-700 font-semibold text-lg">Invoice not found</p>
         <p className="text-sm text-slate-400 mt-1">The requested invoice could not be loaded.</p>
         <button
           onClick={() => router.back()}
-          className="mt-6 px-5 py-2.5 text-sm font-semibold text-blue-600 hover:text-blue-700
-                     bg-blue-50 hover:bg-blue-100 rounded-xl transition-all shadow-sm active:scale-[0.97]"
+          className="mt-5 px-5 py-2.5 text-sm font-semibold text-blue-600 hover:text-blue-700
+                     bg-blue-50 hover:bg-blue-100 rounded-xl transition-all active:scale-[0.97]"
         >
           Go back
         </button>
@@ -780,10 +784,11 @@ export default function BuyerInvoiceDetailPage() {
   const payments = paymentData?.payments ?? [];
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fade-in-up">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+
       {/* Stripe result banner */}
       {stripeMsg && (
-        <div className={`animate-fade-in-down flex items-center gap-3 px-5 py-4 rounded-xl border ${
+        <div className={`flex items-center gap-3 px-5 py-4 rounded-xl border ${
           stripeMsg.type === 'success'
             ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
             : stripeMsg.type === 'cancelled'
@@ -800,22 +805,21 @@ export default function BuyerInvoiceDetailPage() {
         </div>
       )}
 
-      {/* Header Card */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
-        <div className="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500" />
+      {/* ─── Header ─────────────────────────────────────────────────────── */}
+      <SectionCard>
         <div className="p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.back()}
-                className="p-2.5 rounded-xl hover:bg-slate-100 hover:text-slate-700 transition-all active:scale-90 bg-slate-50 ring-1 ring-slate-200/50"
+                className="p-2.5 rounded-xl hover:bg-slate-100 transition-colors bg-slate-50 border border-slate-200"
               >
                 <ArrowLeft className="w-4 h-4 text-slate-500" />
               </button>
               <div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{invoice.invoice_number}</h1>
-                  <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${STATUS_STYLES[invoice.status] ?? 'bg-blue-50 text-blue-600 ring-1 ring-blue-200'}`}>
+                  <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${STATUS_STYLES[invoice.status] ?? 'bg-blue-50 text-blue-600 border-blue-200'}`}>
                     {invoice.status_display}
                   </span>
                 </div>
@@ -839,14 +843,12 @@ export default function BuyerInvoiceDetailPage() {
               {invoice.xml_file && (
                 <button
                   onClick={downloadXML}
-                  className="group flex items-center gap-1.5 px-3 py-2 text-sm font-medium
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium
                              text-slate-600 border border-slate-200 rounded-lg
-                             hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50
-                             hover:border-orange-200 hover:text-orange-700
-                             transition-all duration-300 active:scale-[0.97]
-                             shadow-sm hover:shadow-md hover:shadow-orange-100/50"
+                             hover:bg-orange-50 hover:border-orange-200 hover:text-orange-700
+                             transition-all active:scale-[0.97]"
                 >
-                  <FileText className="w-3.5 h-3.5 text-slate-400 group-hover:text-orange-500 transition-colors" />
+                  <FileText className="w-3.5 h-3.5" />
                   XML
                 </button>
               )}
@@ -854,11 +856,8 @@ export default function BuyerInvoiceDetailPage() {
                 <button
                   onClick={() => setShowPayment(true)}
                   className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold
-                             bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500
-                             hover:from-blue-600 hover:via-indigo-600 hover:to-violet-600 text-white rounded-lg
-                             transition-all duration-300 shadow-md shadow-blue-200/50
-                             hover:shadow-lg hover:shadow-indigo-300/40
-                             active:scale-[0.97] btn-primary"
+                             bg-slate-900 hover:bg-slate-800 text-white rounded-lg
+                             transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.97]"
                 >
                   <CreditCard className="w-3.5 h-3.5" />
                   Pay Now
@@ -866,8 +865,7 @@ export default function BuyerInvoiceDetailPage() {
               )}
               {invoice.status === 'paid' && (
                 <div className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium
-                                text-emerald-700 bg-gradient-to-r from-emerald-50 to-green-50
-                                border border-emerald-200/70 rounded-lg shadow-sm">
+                                text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                   Fully Paid
                 </div>
@@ -875,74 +873,78 @@ export default function BuyerInvoiceDetailPage() {
             </div>
           </div>
         </div>
-      </div>
+      </SectionCard>
 
-      {/* Approval / e-signature (awaiting buyer approval) */}
+      {/* ─── Approval / e-signature (awaiting buyer approval) ────────────── */}
       {invoice.status === 'awaiting_approval' && (
-        <div className="rounded-xl border border-blue-200/70 bg-white shadow-xl shadow-blue-100/30 overflow-hidden">
-          <div className="h-1.5 bg-gradient-to-r from-blue-600 via-indigo-500 to-violet-500" />
-          <div className="p-6 sm:p-8 space-y-6">
-            <div className="flex items-start gap-5">
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-md shadow-blue-200/50">
-                <ShieldCheck className="w-6 h-6 text-white" />
+        <SectionCard className="border-blue-200 shadow-lg shadow-blue-100/40">
+          <div className="bg-gradient-to-r from-blue-950 to-indigo-950 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">
+                <ShieldCheck className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-xl tracking-tight">Review &amp; confirm this order</h3>
-                <p className="text-sm text-slate-500 mt-1.5 leading-relaxed max-w-2xl">
-                  Please review the invoice details above. To confirm this order, provide your
-                  signature below — it will be submitted to the tax authority network.
+                <h3 className="font-bold text-white text-lg">Review &amp; confirm this order</h3>
+                <p className="text-sm text-blue-200/70 mt-0.5">
+                  Please review the invoice details above. Provide your signature to confirm and submit to the tax authority.
                 </p>
               </div>
             </div>
+          </div>
 
+          <div className="p-6 sm:p-8">
             {!showReject ? (
               <div className="space-y-6">
-                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm shadow-blue-200/50">
-                    <PenLine className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-800">Signature options</p>
-                    <p className="text-xs text-slate-500">Provide at least one signature method below</p>
-                  </div>
+                {/* Step indicators */}
+                <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+                  <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors ${(signName.trim() || signatureImage) ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${(signName.trim() || signatureImage) ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                      {(signName.trim() || signatureImage) ? '✓' : '1'}
+                    </span>
+                    Signature
+                  </span>
+                  <span className="w-6 h-px bg-slate-200" />
+                  <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors ${confirmChecked ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${confirmChecked ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                      {confirmChecked ? '✓' : '2'}
+                    </span>
+                    Confirm
+                  </span>
                 </div>
 
-                <div className="bg-white border border-blue-100/80 rounded-xl overflow-hidden shadow-sm">
-                  <div className="px-4 py-3 border-b border-blue-100/60 bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center gap-2.5">
-                    <div className="w-6 h-6 rounded-md bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                      <PenLine className="w-3 h-3 text-white" />
-                    </div>
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">Type your name</span>
-                    <span className="text-[10px] font-medium text-blue-200 ml-auto">(optional)</span>
+                {/* Signature: Type name */}
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2.5">
+                    <PenLine className="w-4 h-4 text-slate-500" />
+                    <span className="text-sm font-semibold text-slate-700">Type your name</span>
+                    <span className="text-xs text-slate-400 ml-auto">optional</span>
                   </div>
                   <div className="p-4">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={signName}
-                        onChange={(e) => setSignName(e.target.value)}
-                        placeholder="e.g. Ahmed Al Rashid"
-                        className="w-full border border-slate-200 rounded-lg pl-3.5 pr-3.5 py-2.5 text-sm
-                                   outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400
-                                   transition-all bg-white placeholder:text-slate-400"
-                      />
-                    </div>
+                    <input
+                      type="text"
+                      value={signName}
+                      onChange={(e) => setSignName(e.target.value)}
+                      placeholder="e.g. Ahmed Al Rashid"
+                      className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm
+                                 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400
+                                 transition-all bg-white placeholder:text-slate-400"
+                    />
                   </div>
                 </div>
 
+                {/* Divider */}
                 <div className="flex items-center gap-4">
-                  <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Or</span>
-                  <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+                  <div className="flex-1 h-px bg-slate-200" />
+                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">or</span>
+                  <div className="flex-1 h-px bg-slate-200" />
                 </div>
 
-                <div className="bg-white border border-blue-100/80 rounded-xl overflow-hidden shadow-sm">
-                  <div className="px-4 py-3 border-b border-blue-100/60 bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center gap-2.5">
-                    <div className="w-6 h-6 rounded-md bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                      <FileSignature className="w-3 h-3 text-white" />
-                    </div>
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">Draw your signature</span>
-                    <span className="text-[10px] font-medium text-blue-200 ml-auto">(optional)</span>
+                {/* Signature: Draw */}
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2.5">
+                    <FileSignature className="w-4 h-4 text-slate-500" />
+                    <span className="text-sm font-semibold text-slate-700">Draw your signature</span>
+                    <span className="text-xs text-slate-400 ml-auto">optional</span>
                   </div>
                   <div className="p-4">
                     <SignatureCanvas
@@ -951,7 +953,7 @@ export default function BuyerInvoiceDetailPage() {
                       height={130}
                     />
                     {signatureImage && (
-                      <div className="mt-2 flex items-center gap-1.5 text-xs text-blue-600 font-medium">
+                      <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         Signature captured successfully
                       </div>
@@ -959,17 +961,18 @@ export default function BuyerInvoiceDetailPage() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-4 shadow-sm">
+                {/* Confirmation checkbox */}
+                <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
                   <label className="flex items-start gap-3 cursor-pointer select-none group">
-                    <div className="relative flex items-center justify-center shrink-0">
+                    <div className="relative flex items-center justify-center shrink-0 mt-0.5">
                       <input
                         type="checkbox"
                         checked={confirmChecked}
                         onChange={(e) => setConfirmChecked(e.target.checked)}
-                        className="h-4.5 w-4.5 mt-0.5 rounded border-blue-300 text-blue-600 focus:ring-blue-500 transition-all group-hover:border-blue-400"
+                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 transition-all"
                       />
                     </div>
-                    <span className="text-xs text-slate-600 leading-relaxed group-hover:text-slate-700 transition-colors">
+                    <span className="text-sm text-slate-600 leading-relaxed group-hover:text-slate-700 transition-colors">
                       I confirm this order is correct and authorise it to be submitted to the tax authority.
                       I understand my typed name and/or drawn signature constitutes my electronic signature.
                     </span>
@@ -977,22 +980,21 @@ export default function BuyerInvoiceDetailPage() {
                 </div>
 
                 {approvalError && (
-                  <div className="animate-fade-in-down bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700 shadow-sm">
+                  <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
                     <AlertCircle className="w-4 h-4 shrink-0" /> {approvalError}
                   </div>
                 )}
 
+                {/* Action buttons */}
                 <div className="flex flex-wrap gap-3 pt-1">
                   <button
                     onClick={handleApprove}
                     disabled={approving || (!signName.trim() && !signatureImage) || !confirmChecked}
                     className="flex items-center gap-2.5 px-6 py-2.5 rounded-lg
-                               bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700
-                               hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800
-                               text-white text-sm font-semibold transition-all duration-300
-                               disabled:opacity-40 shadow-md shadow-blue-200/50
-                               hover:shadow-lg hover:shadow-blue-300/40
-                               active:scale-[0.97] btn-primary"
+                               bg-slate-900 hover:bg-slate-800
+                               text-white text-sm font-semibold transition-all duration-200
+                               disabled:opacity-40 shadow-sm
+                               hover:shadow-md active:scale-[0.97]"
                   >
                     {approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                     Approve &amp; Confirm Order
@@ -1003,13 +1005,14 @@ export default function BuyerInvoiceDetailPage() {
                     className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-slate-200
                                text-slate-600 hover:bg-red-50 hover:border-red-300 hover:text-red-700
                                text-sm font-medium transition-all duration-200
-                               disabled:opacity-40 active:scale-[0.97] shadow-sm hover:shadow-md hover:shadow-red-200/40"
+                               disabled:opacity-40 active:scale-[0.97]"
                   >
                     <X className="w-4 h-4" /> Reject
                   </button>
                 </div>
               </div>
             ) : (
+              /* ── Reject flow ── */
               <div className="space-y-5">
                 <label className="block text-sm font-semibold text-slate-700">Reason for rejection <span className="text-slate-400 font-normal">(optional)</span></label>
                 <textarea
@@ -1018,11 +1021,11 @@ export default function BuyerInvoiceDetailPage() {
                   onChange={(e) => setRejectNote(e.target.value)}
                   placeholder="Let the supplier know what needs to change…"
                   className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm
-                             outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300
+                             outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400
                              transition-all resize-none bg-white placeholder:text-slate-400"
                 />
                 {approvalError && (
-                  <div className="animate-fade-in-down bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700 shadow-sm">
+                  <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-red-700">
                     <AlertCircle className="w-4 h-4 shrink-0" /> {approvalError}
                   </div>
                 )}
@@ -1031,7 +1034,7 @@ export default function BuyerInvoiceDetailPage() {
                     onClick={() => setShowReject(false)}
                     disabled={approving}
                     className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium
-                               text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-50 active:scale-[0.98] shadow-sm"
+                               text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50 active:scale-[0.98]"
                   >
                     Back
                   </button>
@@ -1039,10 +1042,9 @@ export default function BuyerInvoiceDetailPage() {
                     onClick={handleReject}
                     disabled={approving}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
-                               bg-gradient-to-r from-red-600 to-red-500
-                               hover:from-red-700 hover:to-red-600 text-white text-sm font-semibold
-                               transition-all duration-300 disabled:opacity-50 shadow-md shadow-red-300/40
-                               hover:shadow-lg hover:shadow-red-400/50 active:scale-[0.97] btn-primary"
+                               bg-red-600 hover:bg-red-700 text-white text-sm font-semibold
+                               transition-all duration-200 disabled:opacity-50 shadow-sm
+                               hover:shadow-md active:scale-[0.97]"
                   >
                     {approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
                     Confirm Rejection
@@ -1051,162 +1053,154 @@ export default function BuyerInvoiceDetailPage() {
               </div>
             )}
           </div>
-        </div>
+        </SectionCard>
       )}
 
-      {/* Signed confirmation (after approval) */}
+      {/* ─── Signed confirmation (after approval) ────────────────────────── */}
       {(invoice.buyer_signed_name || (invoice as any).buyer_signature_image) && invoice.status !== 'awaiting_approval' && (
-        <div className="animate-fade-in-up rounded-xl bg-white border border-emerald-200/70 overflow-hidden shadow-sm">
-          <div className="h-1 bg-gradient-to-r from-emerald-400 to-green-400" />
-          <div className="px-5 py-4 flex items-center gap-3 text-sm text-emerald-800">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shrink-0 shadow-sm">
-              <FileSignature className="w-4 h-4 text-white" />
-            </div>
-            <span>
-              E-signed
-              {invoice.buyer_signed_name ? <> by <strong>{invoice.buyer_signed_name}</strong></> : ''}
-              {(invoice as any).buyer_signature_image ? ' (with drawn signature)' : ''}
-              {invoice.buyer_signed_at ? ` on ${new Date(invoice.buyer_signed_at).toLocaleString()}` : ''}
-            </span>
+        <div className="flex items-center gap-3 px-5 py-4 rounded-xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-800">
+          <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+            <FileSignature className="w-4 h-4 text-emerald-600" />
           </div>
+          <span>
+            E-signed
+            {invoice.buyer_signed_name ? <> by <strong>{invoice.buyer_signed_name}</strong></> : ''}
+            {(invoice as any).buyer_signature_image ? ' (with drawn signature)' : ''}
+            {invoice.buyer_signed_at ? ` on ${new Date(invoice.buyer_signed_at).toLocaleString()}` : ''}
+          </span>
         </div>
       )}
 
-      {/* Deactivated notice (read-only for buyer) */}
+      {/* ─── Deactivated notice ──────────────────────────────────────────── */}
       {invoice.status === 'deactivated' && (
-        <div className="animate-fade-in-up rounded-xl bg-white border border-amber-200/70 overflow-hidden shadow-sm">
-          <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-400" />
-          <div className="px-5 py-4 text-sm text-amber-800">
-            <p className="font-semibold flex items-center gap-1.5">
-              <Ban className="w-4 h-4" /> This invoice has been deactivated by the supplier.
-            </p>
+        <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800">
+          <Ban className="w-4 h-4 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-semibold">This invoice has been deactivated by the supplier.</p>
             {invoice.deactivation_reason && (
-              <p className="mt-1.5 ml-6"><span className="font-medium">Reason:</span> {invoice.deactivation_reason}</p>
+              <p className="mt-1 text-amber-700"><span className="font-medium">Reason:</span> {invoice.deactivation_reason}</p>
             )}
           </div>
         </div>
       )}
 
-      {/* Payment Progress */}
+      {/* ─── Payment Progress ────────────────────────────────────────────── */}
       {(invoice.status === 'partially_paid' || invoice.status === 'paid') && (
-        <div className="bg-white border border-emerald-200/60 rounded-xl overflow-hidden shadow-sm">
-          <div className="h-1 bg-gradient-to-r from-emerald-400 via-green-400 to-emerald-500" />
+        <SectionCard className="border-emerald-200">
           <div className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-semibold text-emerald-700 flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-100 to-green-100 flex items-center justify-center ring-1 ring-emerald-200/50">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                </div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 Payment Progress
               </span>
-              <span className="text-sm font-medium text-emerald-600 bg-emerald-50/60 px-3 py-1 rounded-lg ring-1 ring-emerald-100/50">
+              <span className="text-sm font-medium text-slate-600">
                 {invoice.currency} {amountPaid.toFixed(2)} / {invoice.currency} {totalAmount.toFixed(2)}
               </span>
             </div>
-            <div className="h-3 bg-emerald-100/70 rounded-full overflow-hidden shadow-inner">
+            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-emerald-400 via-green-400 to-emerald-500 rounded-full
-                           transition-all duration-1000 ease-out animate-progress-glow"
+                className="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out"
                 style={{ width: `${paidPct}%` }}
               />
             </div>
-            <div className="flex justify-between mt-2.5 text-sm">
-              <span className="font-semibold text-emerald-600">{paidPct.toFixed(0)}% paid</span>
-              {amountDue > 0 && (
+            <div className="flex justify-between mt-2 text-xs">
+              <span className="font-medium text-slate-500">{paidPct.toFixed(0)}% paid</span>
+              {amountDue > 0 ? (
                 <span className="text-slate-500">
-                  <span className="font-medium text-slate-600">{invoice.currency} {amountDue.toFixed(2)}</span> remaining
+                  <span className="font-medium text-slate-700">{invoice.currency} {amountDue.toFixed(2)}</span> remaining
                 </span>
-              )}
-              {amountDue <= 0 && (
-                <span className="font-semibold text-emerald-600 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Fully Paid
+              ) : (
+                <span className="font-medium text-emerald-600 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Fully Paid
                 </span>
               )}
             </div>
           </div>
-        </div>
+        </SectionCard>
       )}
 
+      {/* ─── Main Grid ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Invoice details */}
+
+        {/* Left Column — Invoice Details */}
         <div className="lg:col-span-2 space-y-6">
+
           {/* Party Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="group bg-white border border-slate-200 rounded-xl overflow-hidden card-hover shadow-sm hover:shadow-md hover:shadow-blue-100/50 transition-all duration-300"
-                 style={{ animationDelay: '0.05s', animationFillMode: 'both' }}>
-              <div className="h-1.5 bg-gradient-to-r from-blue-500 to-indigo-500" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Supplier */}
+            <SectionCard>
               <div className="p-5">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center ring-1 ring-blue-200/50 group-hover:ring-blue-300/70 transition-all">
+                  <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center">
                     <Building2 className="w-4.5 h-4.5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">From (Supplier)</p>
-                    <p className="font-semibold text-slate-800 mt-0.5">{invoice.company_name}</p>
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">From</p>
+                    <p className="font-semibold text-slate-900 text-sm">{invoice.company_name}</p>
                   </div>
                 </div>
                 {invoice.company_trn && (
-                  <div className="flex items-center gap-2 text-xs text-slate-500 bg-blue-50/60 px-3 py-2 rounded-lg border border-blue-100/50">
-                    <Hash className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
+                    <Hash className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span className="font-medium text-slate-600">TRN:</span>
                     <span className="font-mono text-slate-700">{invoice.company_trn}</span>
                   </div>
                 )}
               </div>
-            </div>
-            <div className="group bg-white border border-slate-200 rounded-xl overflow-hidden card-hover shadow-sm hover:shadow-md hover:shadow-blue-100/50 transition-all duration-300"
-                 style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
-              <div className="h-1.5 bg-gradient-to-r from-blue-500 to-indigo-500" />
+            </SectionCard>
+
+            {/* Buyer */}
+            <SectionCard>
               <div className="p-5">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center ring-1 ring-blue-200/50 group-hover:ring-blue-300/70 transition-all">
-                    <Building2 className="w-4.5 h-4.5 text-blue-600" />
+                  <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+                    <Building2 className="w-4.5 h-4.5 text-indigo-600" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">To (Buyer)</p>
-                    <p className="font-semibold text-slate-800 mt-0.5">{invoice.customer_name}</p>
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">To</p>
+                    <p className="font-semibold text-slate-900 text-sm">{invoice.customer_name}</p>
                   </div>
                 </div>
                 {invoice.customer_trn && (
-                  <div className="flex items-center gap-2 text-xs text-slate-500 bg-blue-50/60 px-3 py-2 rounded-lg border border-blue-100/50">
-                    <Hash className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
+                    <Hash className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span className="font-medium text-slate-600">TRN:</span>
                     <span className="font-mono text-slate-700">{invoice.customer_trn}</span>
                   </div>
                 )}
               </div>
-            </div>
+            </SectionCard>
           </div>
 
           {/* Line Items */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-            <div className="px-6 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <Receipt className="w-3.5 h-3.5 text-white" />
-              </div>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Line Items</h3>
+          <SectionCard>
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2.5">
+              <Receipt className="w-4 h-4 text-slate-500" />
+              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Line Items</h3>
+              <span className="text-xs text-slate-400 font-medium ml-auto">{invoice.items.length} item{invoice.items.length !== 1 ? 's' : ''}</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gradient-to-r from-slate-50 to-blue-50/40 border-b border-slate-200">
-                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Description</th>
-                    <th className="px-6 py-3.5 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">Qty</th>
-                    <th className="px-6 py-3.5 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">Unit Price</th>
-                    <th className="px-6 py-3.5 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">VAT</th>
-                    <th className="px-6 py-3.5 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">Total</th>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="px-6 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider">Description</th>
+                    <th className="px-6 py-3 text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider">Qty</th>
+                    <th className="px-6 py-3 text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider">Unit Price</th>
+                    <th className="px-6 py-3 text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider">VAT</th>
+                    <th className="px-6 py-3 text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {invoice.items.map((item, idx) => (
-                    <tr key={item.id}
-                        className={`transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/30 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}`}
-                        style={{ animationDelay: `${idx * 0.05}s`, animationFillMode: 'both' }}>
-                      <td className="px-6 py-4 text-slate-800 font-medium">{item.description}</td>
-                      <td className="px-6 py-4 text-right text-slate-600 font-mono">{item.quantity}</td>
-                      <td className="px-6 py-4 text-right text-slate-600 font-mono">{parseFloat(item.unit_price).toFixed(2)}</td>
-                      <td className="px-6 py-4 text-right text-slate-600 font-mono">{item.vat_rate_type_display}</td>
-                      <td className="px-6 py-4 text-right font-semibold text-slate-800 font-mono">{parseFloat(item.total_amount).toFixed(2)}</td>
+                    <tr
+                      key={item.id}
+                      className={`hover:bg-slate-50/80 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}
+                    >
+                      <td className="px-6 py-3.5 text-slate-800 font-medium">{item.description}</td>
+                      <td className="px-6 py-3.5 text-right text-slate-600 font-mono text-xs">{item.quantity}</td>
+                      <td className="px-6 py-3.5 text-right text-slate-600 font-mono text-xs">{parseFloat(item.unit_price).toFixed(2)}</td>
+                      <td className="px-6 py-3.5 text-right text-slate-500 font-mono text-xs">{item.vat_rate_type_display}</td>
+                      <td className="px-6 py-3.5 text-right font-semibold text-slate-800 font-mono text-xs">{parseFloat(item.total_amount).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1214,72 +1208,66 @@ export default function BuyerInvoiceDetailPage() {
             </div>
 
             {/* Totals */}
-            <div className="border-t border-slate-200 px-6 py-4 space-y-2.5 bg-gradient-to-b from-slate-50 to-white">
+            <div className="border-t border-slate-200 px-6 py-4 space-y-2 bg-slate-50/50">
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">Subtotal</span>
-                <span className="font-medium text-slate-700">{invoice.currency} {parseFloat(invoice.subtotal).toFixed(2)}</span>
+                <span className="font-medium text-slate-700 font-mono">{invoice.currency} {parseFloat(invoice.subtotal).toFixed(2)}</span>
               </div>
               {parseFloat(invoice.discount_amount) > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Discount</span>
-                  <span className="font-medium text-emerald-600 bg-emerald-50/60 px-2 py-0.5 rounded-md">−{invoice.currency} {parseFloat(invoice.discount_amount).toFixed(2)}</span>
+                  <span className="font-medium text-emerald-600 font-mono">−{invoice.currency} {parseFloat(invoice.discount_amount).toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">VAT</span>
-                <span className="font-medium text-slate-700">{invoice.currency} {parseFloat(invoice.total_vat).toFixed(2)}</span>
+                <span className="font-medium text-slate-700 font-mono">{invoice.currency} {parseFloat(invoice.total_vat).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-base font-bold pt-2.5 border-t border-slate-200">
-                <span className="text-slate-800">Total</span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600">{invoice.currency} {parseFloat(invoice.total_amount).toFixed(2)}</span>
+                <span className="text-slate-900">Total</span>
+                <span className="text-slate-900 font-mono">{invoice.currency} {parseFloat(invoice.total_amount).toFixed(2)}</span>
               </div>
             </div>
-          </div>
+          </SectionCard>
 
           {/* Notes */}
           {invoice.notes && (
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
-              <div className="h-1 bg-gradient-to-r from-blue-400 to-cyan-400" />
+            <SectionCard>
               <div className="p-5">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center ring-1 ring-blue-200/50">
-                    <FileText className="w-3.5 h-3.5 text-blue-600" />
-                  </div>
-                  <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Notes</p>
+                  <FileText className="w-4 h-4 text-slate-400" />
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Notes</p>
                 </div>
                 <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{invoice.notes}</p>
               </div>
-            </div>
+            </SectionCard>
           )}
         </div>
 
-        {/* Right: Summary + Payment History */}
-        <div className="space-y-5">
+        {/* Right Column — Sidebar */}
+        <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+
           {/* Invoice Meta */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
-               style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
-            <div className="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500" />
-            <div className="p-5 space-y-4">
+          <SectionCard>
+            <div className="p-5 space-y-3.5">
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center ring-1 ring-blue-200/50">
-                  <FileText className="w-3.5 h-3.5 text-blue-600" />
-                </div>
+                <FileText className="w-3.5 h-3.5" />
                 Invoice Details
               </p>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">Type</span>
-                  <span className="font-medium text-blue-700 bg-blue-50 px-3 py-1 rounded-lg ring-1 ring-blue-100/60">{invoice.type_display}</span>
+                  <span className="font-medium text-slate-700 bg-slate-100 px-3 py-1 rounded-lg text-xs">{invoice.type_display}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">Currency</span>
                   <span className="font-semibold text-slate-800">{invoice.currency}</span>
                 </div>
                 {invoice.due_date && (
-                  <div className="flex justify-between items-center px-3 -mx-3 py-2 rounded-lg bg-amber-50/60 border border-amber-100/50">
+                  <div className="flex justify-between items-center">
                     <span className="text-slate-500">Due Date</span>
-                    <span className="font-medium text-amber-700 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="font-medium text-slate-700 flex items-center gap-1.5 text-xs">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
                       {invoice.due_date}
                     </span>
                   </div>
@@ -1287,45 +1275,40 @@ export default function BuyerInvoiceDetailPage() {
                 {invoice.purchase_order_number && (
                   <div className="flex justify-between items-center">
                     <span className="text-slate-500">PO Number</span>
-                    <span className="font-medium text-slate-700 font-mono text-xs bg-slate-100/60 px-2.5 py-1 rounded-lg">{invoice.purchase_order_number}</span>
+                    <span className="font-medium text-slate-700 font-mono text-xs bg-slate-100 px-2.5 py-1 rounded-lg">{invoice.purchase_order_number}</span>
                   </div>
                 )}
                 {invoice.contract_reference && (
                   <div className="flex justify-between items-center">
                     <span className="text-slate-500">Contract Ref</span>
-                    <span className="font-medium text-slate-700 font-mono text-xs bg-slate-100/60 px-2.5 py-1 rounded-lg">{invoice.contract_reference}</span>
+                    <span className="font-medium text-slate-700 font-mono text-xs bg-slate-100 px-2.5 py-1 rounded-lg">{invoice.contract_reference}</span>
                   </div>
                 )}
               </div>
             </div>
-          </div>
+          </SectionCard>
 
           {/* Amount Summary */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
-               style={{ animationDelay: '0.15s', animationFillMode: 'both' }}>
-            <div className="h-1.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500" />
-            <div className="p-5 space-y-4">
+          <SectionCard>
+            <div className="p-5 space-y-3.5">
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-100 to-blue-100 flex items-center justify-center ring-1 ring-cyan-200/50">
-                  <Receipt className="w-3.5 h-3.5 text-cyan-600" />
-                </div>
+                <Receipt className="w-3.5 h-3.5" />
                 Amount Summary
               </p>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center py-1">
                   <span className="text-slate-500">Invoice Total</span>
-                  <span className="font-semibold text-slate-800">{invoice.currency} {totalAmount.toFixed(2)}</span>
+                  <span className="font-semibold text-slate-800 font-mono">{invoice.currency} {totalAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center py-1">
                   <span className="text-slate-500">Amount Paid</span>
-                  <span className="font-semibold text-emerald-600 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  <span className="font-semibold text-emerald-600 font-mono flex items-center gap-1.5">
                     {invoice.currency} {amountPaid.toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-t border-slate-100 mt-2">
-                  <span className="text-slate-700 font-medium">Balance Due</span>
-                  <span className={`text-lg font-bold ${amountDue > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                <div className="flex justify-between items-center py-2.5 border-t border-slate-200 mt-1">
+                  <span className="text-slate-700 font-semibold">Balance Due</span>
+                  <span className={`text-lg font-bold font-mono ${amountDue > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                     {invoice.currency} {amountDue.toFixed(2)}
                   </span>
                 </div>
@@ -1334,59 +1317,52 @@ export default function BuyerInvoiceDetailPage() {
               {canPay && (
                 <button
                   onClick={() => setShowPayment(true)}
-                  className="w-full px-4 py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500
-                             hover:from-emerald-600 hover:via-green-600 hover:to-teal-600 text-white text-sm font-semibold
-                             transition-all duration-300 flex items-center justify-center gap-2
-                             shadow-md shadow-emerald-200/50 hover:shadow-lg hover:shadow-emerald-300/40 active:scale-[0.97] btn-primary"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold
+                             transition-all duration-200 flex items-center justify-center gap-2
+                             shadow-sm hover:shadow-md active:scale-[0.98] mt-2"
                 >
                   <CreditCard className="w-4 h-4" />
                   Pay {invoice.currency} {amountDue.toFixed(2)}
                 </button>
               )}
             </div>
-          </div>
+          </SectionCard>
 
           {/* Payment History */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
-               style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
-            <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-blue-500 to-sky-500" />
+          <SectionCard>
             <div className="p-5">
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-100 to-blue-100 flex items-center justify-center ring-1 ring-indigo-200/50">
-                  <Clock className="w-3.5 h-3.5 text-indigo-600" />
-                </div>
+                <Clock className="w-3.5 h-3.5" />
                 Payment History{payments.length > 0 ? ` (${payments.length})` : ''}
               </p>
               {payments.length === 0 ? (
-                <div className="text-center py-8 text-slate-400">
-                  <Receipt className="w-10 h-10 mx-auto mb-3 opacity-20" />
-                  <p className="text-sm font-medium text-slate-500">No payments recorded</p>
+                <div className="text-center py-8">
+                  <Receipt className="w-8 h-8 mx-auto mb-2 text-slate-200" />
+                  <p className="text-sm text-slate-400">No payments recorded</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {payments.map((p: Payment, idx: number) => (
-                    <div key={p.id}
-                         className="border border-slate-100 rounded-lg p-3.5 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-blue-50/30 hover:border-indigo-200/50 transition-all duration-300"
-                         style={{ animationDelay: `${0.25 + idx * 0.08}s`, animationFillMode: 'both' }}>
+                  {payments.map((p: Payment) => (
+                    <div key={p.id} className="border border-slate-100 rounded-xl p-3.5 hover:bg-slate-50 transition-colors">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-sm font-bold text-slate-800">
+                        <span className="text-sm font-bold text-slate-900 font-mono">
                           {invoice.currency} {parseFloat(p.amount).toFixed(2)}
                         </span>
-                        <span className="text-xs text-slate-500 bg-slate-100/60 px-2 py-0.5 rounded-md">{p.payment_date}</span>
+                        <span className="text-xs text-slate-400">{p.payment_date}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-700 ring-1 ring-indigo-200/60">
+                        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
                           {METHOD_LABELS[p.method] ?? p.method}
                         </span>
-                        {p.reference && <span className="text-xs font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded">{p.reference}</span>}
+                        {p.reference && <span className="text-xs font-mono text-slate-400">{p.reference}</span>}
                       </div>
-                      {p.notes && <p className="text-xs text-slate-400 mt-1.5 italic border-t border-slate-50 pt-1.5">{p.notes}</p>}
+                      {p.notes && <p className="text-xs text-slate-400 mt-2 italic border-t border-slate-100 pt-2">{p.notes}</p>}
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          </div>
+          </SectionCard>
         </div>
       </div>
 

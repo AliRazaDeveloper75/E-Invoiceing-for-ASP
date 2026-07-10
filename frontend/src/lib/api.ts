@@ -31,6 +31,8 @@ const PUBLIC_AUTH_PATHS = [
   '/auth/mfa/verify-login/',
   '/auth/mfa/setup-login/',
   '/auth/mfa/enable-login/',
+  '/auth/mfa/reset-request/',
+  '/auth/mfa/reset-verify/',
 ];
 
 // ── Request interceptor: attach access token ───────────────────────────────
