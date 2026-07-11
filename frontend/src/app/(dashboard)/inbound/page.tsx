@@ -439,18 +439,18 @@ export default function InboundPage() {
       )}
 
       {/* ── Header ───────────────────────────────────────────── */}
-      <div className="bg-gradient-to-br from-white via-blue-50/30 to-white rounded-2xl p-6 shadow-[0_8px_30px_-8px_rgba(59,130,246,0.15)] border border-blue-100/70 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+      <div className="bg-gradient-to-r from-blue-950 to-indigo-950 rounded-2xl p-6 shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <div className="h-2 w-2 rounded-full bg-gradient-to-r from-blue-400 to-blue-600" />
-              <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-[0.12em]">Inbound</span>
+              <div className="h-2 w-2 rounded-full bg-blue-400" />
+              <span className="text-[11px] font-semibold text-blue-300/70 uppercase tracking-[0.12em]">Inbound</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">Inbound Invoices</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h1 className="text-xl font-bold text-white tracking-tight">Inbound Invoices</h1>
+            <p className="text-sm text-blue-200/60 mt-0.5">
               Supplier-submitted invoices — validate, review, and submit to FTA
               {activeCompany?.name && (
-                <><span className="text-gray-300 mx-1.5">·</span>{activeCompany.name}</>
+                <><span className="text-blue-300/40 mx-1.5">·</span>{activeCompany.name}</>
               )}
             </p>
           </div>
@@ -458,14 +458,14 @@ export default function InboundPage() {
             {activeId && (
               <button
                 onClick={() => setShowAddSupplier(true)}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                className="inline-flex items-center gap-2 rounded-xl bg-white text-blue-950 hover:bg-blue-50 px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200"
               >
                 <UserPlus className="h-4 w-4" /> Add Supplier
               </button>
             )}
             <button
               onClick={() => mutate()}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200/80 bg-white text-sm font-medium text-gray-600 hover:text-blue-600 hover:border-blue-200/60 hover:bg-blue-50/40 shadow-sm transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/10 text-sm font-medium text-white/80 hover:bg-white/20 hover:text-white transition-all"
             >
               <RefreshCw className="h-4 w-4" /> Refresh
             </button>

@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { CheckCircle2, Loader2, Eye, EyeOff } from 'lucide-react';
 import { api, setTokens } from '@/lib/api';
 
@@ -133,6 +134,13 @@ export default function AcceptInvitePage() {
             {saving ? 'Creating account…' : 'Create Account & Continue'}
           </button>
         </form>
+
+        <p className="text-center text-sm text-slate-500 mt-6">
+          Already have an account?{' '}
+          <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+            Sign in
+          </Link>
+        </p>
       </div>
     </div>
   );

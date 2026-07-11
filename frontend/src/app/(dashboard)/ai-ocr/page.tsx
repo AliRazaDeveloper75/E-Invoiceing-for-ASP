@@ -392,18 +392,18 @@ export default function AIocrPage() {
     <div className="space-y-6 animate-fade-in">
 
       {/* ── Header ───────────────────────────────────────────── */}
-      <div className="bg-gradient-to-br from-white via-blue-50/30 to-white rounded-2xl p-6 shadow-[0_8px_30px_-8px_rgba(59,130,246,0.15)] border border-blue-100/70 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+      <div className="bg-gradient-to-r from-blue-950 to-indigo-950 rounded-2xl p-6 shadow-lg">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/25 shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
             <ScanLine className="h-5 w-5 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2.5 mb-0.5">
-              <div className="h-2 w-2 rounded-full bg-gradient-to-r from-blue-400 to-blue-600" />
-              <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-[0.12em]">AI Scanner</span>
+              <div className="h-2 w-2 rounded-full bg-blue-400" />
+              <span className="text-[11px] font-semibold text-blue-300/70 uppercase tracking-[0.12em]">AI Scanner</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">AI Document Scanner</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h1 className="text-xl font-bold text-white tracking-tight">AI Document Scanner</h1>
+            <p className="text-sm text-blue-200/60 mt-0.5">
               Upload PDF or image invoices — AI extracts supplier, customer, amounts, and line items automatically.
             </p>
           </div>

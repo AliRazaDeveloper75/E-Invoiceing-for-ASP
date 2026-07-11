@@ -69,52 +69,44 @@ const statCardConfig = [
   {
     icon: FileText,
     label: 'Total Invoices',
-    color: 'bg-blue-50 text-blue-600',
-    gradient: 'bg-gradient-to-r from-blue-500 to-blue-400',
-    borderHover: 'group-hover:border-blue-200',
+    color: 'bg-white/15 text-white',
   },
   {
     icon: TrendingUp,
     label: 'Total Amount',
-    color: 'bg-indigo-50 text-indigo-600',
-    gradient: 'bg-gradient-to-r from-indigo-500 to-indigo-400',
-    borderHover: 'group-hover:border-indigo-200',
+    color: 'bg-white/15 text-white',
   },
   {
     icon: Clock,
     label: 'Unpaid',
-    color: 'bg-amber-50 text-amber-600',
-    gradient: 'bg-gradient-to-r from-amber-500 to-amber-400',
-    borderHover: 'group-hover:border-amber-200',
+    color: 'bg-white/15 text-white',
   },
   {
     icon: CheckCircle2,
     label: 'Paid',
-    color: 'bg-emerald-50 text-emerald-600',
-    gradient: 'bg-gradient-to-r from-emerald-500 to-emerald-400',
-    borderHover: 'group-hover:border-emerald-200',
+    color: 'bg-white/15 text-white',
   },
 ];
 
 function StatCard({
-  icon: Icon, label, value, sub, color, gradient, delay,
+  icon: Icon, label, value, sub, color, delay,
 }: {
   icon: React.ElementType; label: string; value: string | number;
-  sub?: string; color: string; gradient: string; delay: number;
+  sub?: string; color: string; delay: number;
 }) {
   return (
     <div
-      className="group bg-white rounded-xl border border-gray-200 p-5 transition-all duration-300 animate-fade-in hover:shadow-lg hover:-translate-y-0.5"
+      className="group bg-gradient-to-br from-blue-950 to-indigo-950 rounded-xl border border-white/10 p-5 transition-all duration-300 animate-fade-in hover:shadow-lg hover:-translate-y-0.5"
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <p className="text-sm text-gray-500 font-medium">{label}</p>
-          <p className="text-2xl font-bold text-gray-900 group-hover:text-gray-900 transition-colors">
+          <p className="text-sm text-blue-200/70 font-medium">{label}</p>
+          <p className="text-2xl font-bold text-white">
             {value}
           </p>
           {sub && (
-            <p className="text-xs text-gray-400 flex items-center gap-1">
+            <p className="text-xs text-blue-300/60 flex items-center gap-1">
               <TrendingUp className="w-3 h-3" />
               {sub}
             </p>
@@ -124,7 +116,7 @@ function StatCard({
           <Icon className="w-5 h-5" />
         </div>
       </div>
-      <div className={`mt-4 h-1 rounded-full ${gradient} opacity-0 group-hover:opacity-100 transition-all duration-500 scale-x-0 group-hover:scale-x-100 origin-left`} />
+      <div className="mt-4 h-1 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 transition-all duration-500 scale-x-0 group-hover:scale-x-100 origin-left" />
     </div>
   );
 }

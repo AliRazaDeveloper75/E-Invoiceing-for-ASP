@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   LayoutDashboard,
@@ -18,11 +18,7 @@ import { ChatWidget } from '@/components/chat/ChatWidget';
 
 function BuyerSidebar({ profile, onClose }: { profile: BuyerProfile | null; onClose?: () => void }) {
   const router = useRouter();
-  const [pathname, setPathname] = useState('');
-
-  useEffect(() => {
-    setPathname(window.location.pathname);
-  }, []);
+  const pathname = usePathname();
 
   const navItems = [
     { href: '/buyer/dashboard', icon: LayoutDashboard, label: 'Dashboard' },

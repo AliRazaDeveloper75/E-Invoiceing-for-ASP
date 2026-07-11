@@ -98,22 +98,29 @@ function QueueCard({
 }) {
   return (
     <Link href={href}>
-      <div className={`group bg-white rounded-xl shadow-sm border border-gray-100/80 p-5 transition-all duration-200 hover:shadow-md hover:border-gray-200/80 hover:-translate-y-0.5 ${urgent && count > 0 ? 'border-l-2 border-l-red-400' : ''}`}>
+      <div className="group relative bg-white rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-gray-100"
+        style={{ boxShadow: '0 4px 20px -4px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)' }}
+      >
         <div className="flex items-start justify-between mb-4">
-          <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform duration-300">
             <Icon className="h-5 w-5 text-white" />
           </div>
           {count > 0 && (
-            <span className={`text-sm font-bold px-2.5 py-1 rounded-full ${urgent ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
-              {count}
+            <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+              urgent
+                ? 'bg-red-50 text-red-600 border border-red-100'
+                : 'bg-blue-50 text-blue-600 border border-blue-100'
+            }`}>
+              {count.toLocaleString()}
             </span>
           )}
         </div>
-        <p className="font-semibold text-gray-900">{title}</p>
-        <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{subtitle}</p>
-        <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:gap-1.5 transition-all">
-          Manage <ArrowRight className="h-3.5 w-3.5" />
+        <p className="font-semibold text-gray-900 text-sm">{title}</p>
+        <p className="text-xs text-gray-500 mt-1 leading-relaxed line-clamp-2">{subtitle}</p>
+        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:text-blue-700 transition-colors">
+          Manage <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
         </div>
+        <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-gray-900/5 pointer-events-none" />
       </div>
     </Link>
   );
@@ -421,35 +428,75 @@ export default function ManagementPage() {
                   View all <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <StatCard
-                  label="Pending Invitations"
-                  value={pendingInvites}
-                  sub="awaiting registration"
-                  icon={Mail}
-                  color="blue"
-                  href="/management/invitations"
-                />
-                <StatCard
-                  label="Companies Under Review"
-                  value={reviewCount}
-                  sub="submitted or under review"
-                  icon={ClipboardList}
-                  color="amber"
-                  href="/management/invitations"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Pending Invitations */}
+                <Link href="/management/invitations">
+                  <div className="group relative bg-white rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-gray-100"
+                    style={{ boxShadow: '0 4px 20px -4px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)' }}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform duration-300">
+                        <Mail className="h-5 w-5 text-white" />
+                      </div>
+                      {pendingInvites > 0 && (
+                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
+                          {pendingInvites}
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-semibold text-gray-900 text-sm">Pending Invitations</p>
+                    <p className="text-xs text-gray-500 mt-1 leading-relaxed">Awaiting company registration via email</p>
+                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:text-blue-700 transition-colors">
+                      View all <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                    <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-gray-900/5 pointer-events-none" />
+                  </div>
+                </Link>
+
+                {/* Companies Under Review */}
+                <Link href="/management/invitations">
+                  <div className="group relative bg-white rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-gray-100"
+                    style={{ boxShadow: '0 4px 20px -4px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)' }}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg shadow-amber-500/25 group-hover:scale-105 transition-transform duration-300">
+                        <ClipboardList className="h-5 w-5 text-white" />
+                      </div>
+                      {reviewCount > 0 && (
+                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-100">
+                          {reviewCount}
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-semibold text-gray-900 text-sm">Companies Under Review</p>
+                    <p className="text-xs text-gray-500 mt-1 leading-relaxed">Submitted or under review registrations</p>
+                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:text-blue-700 transition-colors">
+                      View all <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                    <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-gray-900/5 pointer-events-none" />
+                  </div>
+                </Link>
+
+                {/* Send Invitation CTA */}
                 <div
                   onClick={() => setModalOpen(true)}
-                  className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md"
+                  className="group relative bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 cursor-pointer hover:from-blue-700 hover:to-indigo-800 transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+                  style={{ boxShadow: '0 4px 20px -4px rgba(37,99,235,0.3), 0 1px 3px rgba(37,99,235,0.15)' }}
                 >
-                  <div className="p-2.5 rounded-xl bg-white/20">
-                    <UserPlus className="h-5 w-5 text-white" />
+                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wOCI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyek0zNiAxNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-40" />
+                  <div className="relative">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="p-2.5 rounded-xl bg-white/20 group-hover:scale-105 transition-transform duration-300">
+                        <UserPlus className="h-5 w-5 text-white" />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-white text-sm">Send Invitation</p>
+                    <p className="text-xs text-blue-200/80 mt-1 leading-relaxed">Invite a company to register on the platform</p>
+                    <div className="mt-4 pt-3 border-t border-white/15 flex items-center gap-1 text-xs font-semibold text-white/90 group-hover:text-white transition-colors">
+                      Open form <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-base font-bold text-white">Send Invitation</p>
-                    <p className="text-xs text-blue-200">Invite a company by email</p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-white/50 shrink-0" />
+                  <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10 pointer-events-none" />
                 </div>
               </div>
             </section>

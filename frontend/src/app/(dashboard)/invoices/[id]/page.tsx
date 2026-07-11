@@ -140,6 +140,8 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
   const { activeCompany } = useCompany();
   const [actionError, setActionError] = useState('');
   const [isActing, setIsActing] = useState(false);
+  const [showSendApproval, setShowSendApproval] = useState(false);
+  const [showCancel, setShowCancel] = useState(false);
   const [showDeactivate, setShowDeactivate] = useState(false);
   const [deactivateReason, setDeactivateReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -208,11 +210,16 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
     }
   }
 
-  async function handleSendForApproval() {
-    if (!confirm('Send this invoice to the buyer for review & e-signature before ASP submission?')) return;
+  function handleSendForApproval() {
+    setActionError('');
+    setShowSendApproval(true);
+  }
+
+  async function confirmSendForApproval() {
     setIsActing(true); setActionError('');
     try {
       await api.post(`/invoices/${params.id}/send-for-approval/`);
+      setShowSendApproval(false);
       await mutateAll();
     } catch (e) {
       const err = e as AxiosError<{ error?: { message?: string } }>;
@@ -220,11 +227,16 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
     } finally { setIsActing(false); }
   }
 
-  async function handleCancel() {
-    if (!confirm('Cancel this invoice? This cannot be undone.')) return;
+  function handleCancel() {
+    setActionError('');
+    setShowCancel(true);
+  }
+
+  async function confirmCancel() {
     setIsActing(true); setActionError('');
     try {
       await api.post(`/invoices/${params.id}/cancel/`);
+      setShowCancel(false);
       await mutateAll();
     } catch (e) {
       const err = e as AxiosError<{ error?: { message?: string } }>;
@@ -462,6 +474,66 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
         </div>
       )}
 
+      {/* ── Send for Approval modal ── */}
+      {showSendApproval && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-fade-in" onClick={() => setShowSendApproval(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <Send className="h-5 w-5 text-blue-600" /> Send for buyer approval
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              This invoice will be sent to the buyer for review &amp; e-signature before ASP submission.
+            </p>
+            <div className="mt-4 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800">
+              <p className="font-medium">What happens next?</p>
+              <ul className="mt-1.5 space-y-1 list-disc list-inside text-blue-700">
+                <li>The buyer receives an email notification</li>
+                <li>They review the invoice and e-sign to approve</li>
+                <li>Once approved, the invoice is submitted to ASP</li>
+              </ul>
+            </div>
+            {actionError && <p className="mt-2 text-sm text-red-600">{actionError}</p>}
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setShowSendApproval(false)} disabled={isActing}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={confirmSendForApproval} loading={isActing}>
+                <Send className="h-4 w-4" /> Send for Approval
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Cancel invoice modal ── */}
+      {showCancel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-fade-in" onClick={() => setShowCancel(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-red-500" /> Cancel invoice
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Are you sure you want to cancel this invoice? This action cannot be undone.
+            </p>
+            <div className="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+              <p className="font-medium">Warning</p>
+              <p className="mt-1 text-red-700">
+                Cancelling will permanently void this invoice. The buyer will be notified and the invoice status will change to cancelled.
+              </p>
+            </div>
+            {actionError && <p className="mt-2 text-sm text-red-600">{actionError}</p>}
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setShowCancel(false)} disabled={isActing}>
+                Go back
+              </Button>
+              <Button variant="danger" size="sm" onClick={confirmCancel} loading={isActing}>
+                <XCircle className="h-4 w-4" /> Cancel Invoice
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Payment modal ── */}
       {showPayment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-fade-in" onClick={() => setShowPayment(false)}>
@@ -514,7 +586,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
       )}
 
       {/* ── Error banner ── */}
-      {actionError && !showPayment && !showDeactivate && (
+      {actionError && !showPayment && !showDeactivate && !showSendApproval && !showCancel && (
         <AnimatedSection delay={100}>
           <div className="rounded-xl bg-red-50 border-2 border-red-200 px-6 py-3.5 text-sm text-red-700 shadow-lg shadow-red-100/20">
             {actionError}

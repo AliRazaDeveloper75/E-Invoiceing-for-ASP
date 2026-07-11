@@ -114,7 +114,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Hard redirect so the browser sends a fresh HTTP request with the new
     // access_token cookie — avoids a race where router.push fires the middleware
     // before js-cookie's document.cookie write is picked up by Next.js.
-    const dest = user.role === 'inbound_supplier' ? '/supplier-portal' : '/dashboard';
+    const dest = user.role === 'inbound_supplier' ? '/supplier-portal'
+      : user.role === 'buyer' ? '/buyer/dashboard'
+      : '/dashboard';
     window.location.href = dest;
   };
 

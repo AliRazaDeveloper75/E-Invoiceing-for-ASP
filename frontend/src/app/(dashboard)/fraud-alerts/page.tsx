@@ -254,21 +254,21 @@ export default function FraudAlertsPage() {
     <div className="space-y-6 animate-fade-in">
 
       {/* ── Header ───────────────────────────────────────────── */}
-      <div className="bg-gradient-to-br from-white via-blue-50/30 to-white rounded-2xl p-6 shadow-[0_8px_30px_-8px_rgba(59,130,246,0.15)] border border-blue-100/70 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+      <div className="bg-gradient-to-r from-blue-950 to-indigo-950 rounded-2xl p-6 shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <div className="h-2 w-2 rounded-full bg-gradient-to-r from-blue-400 to-blue-600" />
-              <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-[0.12em]">Fraud Detection</span>
+              <div className="h-2 w-2 rounded-full bg-blue-400" />
+              <span className="text-[11px] font-semibold text-blue-300/70 uppercase tracking-[0.12em]">Fraud Detection</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">Fraud Detection</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h1 className="text-xl font-bold text-white tracking-tight">Fraud Detection</h1>
+            <p className="text-sm text-blue-200/60 mt-0.5">
               AI-powered invoice anomaly detection. Alerts are generated automatically for all submitted invoices.
             </p>
           </div>
           <button
             onClick={() => mutate(`/fraud/alerts/?${params}`)}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shrink-0"
+            className="inline-flex items-center gap-2 rounded-xl bg-white text-blue-950 hover:bg-blue-50 px-5 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 shrink-0"
           >
             <RefreshCw className="h-4 w-4" /> Refresh
           </button>

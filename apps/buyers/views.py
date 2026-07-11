@@ -187,10 +187,14 @@ class BuyerInvoiceListView(APIView):
             customer=profile.customer, is_active=True
         ).select_related('customer', 'company').order_by('-issue_date')
 
-        # Filter by status
+        # Filter by status (supports comma-separated values)
         status_filter = request.query_params.get('status')
         if status_filter:
-            qs = qs.filter(status=status_filter)
+            statuses = [s.strip() for s in status_filter.split(',') if s.strip()]
+            if len(statuses) == 1:
+                qs = qs.filter(status=statuses[0])
+            elif statuses:
+                qs = qs.filter(status__in=statuses)
 
         paginator = StandardResultsPagination()
         page = paginator.paginate_queryset(qs, request)

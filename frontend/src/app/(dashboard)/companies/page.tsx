@@ -57,17 +57,17 @@ function ViewModal({ company, onClose }: { company: Company; onClose: () => void
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 sm:p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-blue-100/60">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-blue-100/60">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
               <Building2 className="h-5 w-5 text-white" />
             </div>
-            <div>
-              <h2 className="font-bold text-gray-900">{company.name}</h2>
+            <div className="min-w-0">
+              <h2 className="font-bold text-gray-900 truncate">{company.name}</h2>
               {company.legal_name && company.legal_name !== company.name && (
-                <p className="text-xs text-gray-400">{company.legal_name}</p>
+                <p className="text-xs text-gray-400 truncate">{company.legal_name}</p>
               )}
             </div>
           </div>
@@ -76,23 +76,23 @@ function ViewModal({ company, onClose }: { company: Company; onClose: () => void
           </button>
         </div>
 
-        <div className="px-6 py-4 space-y-4">
+        <div className="px-4 sm:px-6 py-4 space-y-4">
           {rows.map(({ icon: Icon, label, value }) =>
             value ? (
               <div key={label} className="flex items-start gap-3">
                 <div className="h-7 w-7 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
                   <Icon className="h-3.5 w-3.5 text-blue-500" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">{label}</p>
-                  <p className="text-sm text-gray-800 font-medium">{String(value)}</p>
+                  <p className="text-sm text-gray-800 font-medium break-words">{String(value)}</p>
                 </div>
               </div>
             ) : null
           )}
         </div>
 
-        <div className="px-6 pb-5 flex justify-end">
+        <div className="px-4 sm:px-6 pb-5 flex justify-end">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 rounded-xl hover:bg-gray-50 transition-colors"
@@ -145,11 +145,11 @@ function DeleteModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent">
-        <div className="px-6 py-5 flex items-start gap-4">
-          <div className="h-10 w-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
-            <AlertTriangle className="h-5 w-5 text-red-600" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 sm:p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-red-200/60 before:to-transparent">
+        <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-red-100/60">
+          <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="font-bold text-gray-900">
@@ -172,7 +172,7 @@ function DeleteModal({
         </div>
 
         {loading && isBulk && (
-          <div className="mx-6 mb-4">
+          <div className="mx-4 sm:mx-6 mb-4">
             <div className="flex justify-between text-xs text-gray-500 mb-1">
               <span>Deleting…</span>
               <span>{progress} / {targets.length}</span>
@@ -187,14 +187,14 @@ function DeleteModal({
         )}
 
         {errors.length > 0 && (
-          <div className="mx-6 mb-4 rounded-xl bg-red-50/80 border border-red-200/60 px-4 py-3 space-y-1">
+          <div className="mx-4 sm:mx-6 mb-4 rounded-xl bg-red-50/80 border border-red-200/60 px-4 py-3 space-y-1">
             {errors.map((e, i) => (
               <p key={i} className="text-sm text-red-700">{e}</p>
             ))}
           </div>
         )}
 
-        <div className="px-6 pb-5 flex gap-3 justify-end">
+        <div className="px-4 sm:px-6 pb-5 flex gap-3 justify-end">
           <button
             onClick={onClose}
             disabled={loading}
@@ -289,17 +289,17 @@ function CompanyFormPanel({
   };
 
   return (
-    <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-6 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+    <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-4 sm:p-6 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
       <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
             <Building2 className="h-4 w-4 text-white" />
           </div>
-          <h2 className="text-sm font-semibold text-gray-900">
+          <h2 className="text-sm font-semibold text-gray-900 truncate">
             {mode === 'create' ? 'New Company' : `Edit — ${initial?.name}`}
           </h2>
         </div>
-        <button onClick={onClose} className="p-2 rounded-lg hover:bg-blue-50 transition-colors">
+        <button onClick={onClose} className="p-2 rounded-lg hover:bg-blue-50 transition-colors shrink-0">
           <X className="h-4 w-4 text-gray-400" />
         </button>
       </div>
@@ -566,22 +566,22 @@ export default function CompaniesPage() {
     <div className="space-y-6 animate-fade-in">
 
       {/* ── Header ───────────────────────────────────────────── */}
-      <div className="bg-gradient-to-br from-white via-blue-50/30 to-white rounded-2xl p-6 shadow-[0_8px_30px_-8px_rgba(59,130,246,0.15)] border border-blue-100/70 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+      <div className="bg-gradient-to-r from-blue-950 to-indigo-950 rounded-2xl p-6 shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <div className="h-2 w-2 rounded-full bg-gradient-to-r from-blue-400 to-blue-600" />
-              <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-[0.12em]">Companies</span>
+              <div className="h-2 w-2 rounded-full bg-blue-400" />
+              <span className="text-[11px] font-semibold text-blue-300/70 uppercase tracking-[0.12em]">Companies</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">Companies</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h1 className="text-xl font-bold text-white tracking-tight">Companies</h1>
+            <p className="text-sm text-blue-200/60 mt-0.5">
               {companies.length > 0 ? `${companies.length} total` : 'Manage your companies'}
             </p>
           </div>
           {!panelMode && (
             <button
               onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shrink-0"
+              className="inline-flex items-center gap-2 rounded-xl bg-white text-blue-950 hover:bg-blue-50 px-5 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 shrink-0"
             >
               <Plus className="h-4 w-4" /> Add Company
             </button>
@@ -665,7 +665,7 @@ export default function CompaniesPage() {
               <div
                 key={company.id}
                 className={clsx(
-                  'group relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border p-5',
+                  'group relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border p-4 sm:p-5',
                   'shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.2)] hover:-translate-y-[1px] transition-all duration-300',
                   'before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent',
                   isChecked
@@ -673,8 +673,81 @@ export default function CompaniesPage() {
                     : 'border-blue-100/70',
                 )}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3 min-w-0">
+                {/* Desktop layout */}
+                <div className="hidden sm:block">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {isAdmin && (
+                        <button
+                          onClick={() => toggleSelect(company.id)}
+                          className="shrink-0 text-gray-300 hover:text-blue-500 transition-colors"
+                        >
+                          {isChecked
+                            ? <CheckSquare className="h-5 w-5 text-blue-500" />
+                            : <Square className="h-5 w-5" />
+                          }
+                        </button>
+                      )}
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+                        <span className="text-white font-bold text-sm">
+                          {company.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-gray-900 truncate">{company.name}</h3>
+                        {company.legal_name && company.legal_name !== company.name && (
+                          <p className="text-sm text-gray-500 truncate">{company.legal_name}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="text-right">
+                        <p className="text-xs font-mono text-gray-500">TRN: {company.trn}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {company.member_count} member{company.member_count !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+
+                      {isAdmin && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setViewTarget(company)}
+                            title="View details"
+                            className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => openEdit(company)}
+                            title="Edit company"
+                            className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setDelTargets([company])}
+                            title="Delete company"
+                            className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50/60 transition-all"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {company.formatted_address && (
+                    <p className="text-sm text-gray-400 mt-3 flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-gray-300 shrink-0" />
+                      {company.formatted_address}
+                    </p>
+                  )}
+                </div>
+
+                {/* Mobile layout */}
+                <div className="sm:hidden">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     {isAdmin && (
                       <button
                         onClick={() => toggleSelect(company.id)}
@@ -691,60 +764,49 @@ export default function CompaniesPage() {
                         {company.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <h3 className="font-semibold text-gray-900 truncate">{company.name}</h3>
                       {company.legal_name && company.legal_name !== company.name && (
-                        <p className="text-sm text-gray-500 truncate">{company.legal_name}</p>
+                        <p className="text-xs text-gray-500 truncate">{company.legal_name}</p>
                       )}
-                      <div className="flex items-center gap-3 mt-1 sm:hidden">
-                        <span className="text-xs font-mono text-gray-400">TRN: {company.trn}</span>
-                        <span className="text-xs text-gray-400">{company.member_count} member{company.member_count !== 1 ? 's' : ''}</span>
-                      </div>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="text-right hidden sm:block">
-                      <p className="text-xs font-mono text-gray-500">TRN: {company.trn}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {company.member_count} member{company.member_count !== 1 ? 's' : ''}
-                      </p>
+                  <div className="flex items-center justify-between mt-2.5 ml-[52px]">
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <span className="font-mono">TRN: {company.trn}</span>
+                      <span className="text-gray-200">|</span>
+                      <span>{company.member_count} member{company.member_count !== 1 ? 's' : ''}</span>
                     </div>
-
                     {isAdmin && (
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setViewTarget(company)}
-                          title="View details"
-                          className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => openEdit(company)}
-                          title="Edit company"
-                          className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => setDelTargets([company])}
-                          title="Delete company"
-                          className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50/60 transition-all"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50/60 transition-all"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     )}
                   </div>
+                  {company.formatted_address && (
+                    <p className="text-xs text-gray-400 mt-2 ml-[52px] flex items-center gap-1.5">
+                      <MapPin className="h-3 w-3 text-gray-300 shrink-0" />
+                      {company.formatted_address}
+                    </p>
+                  )}
                 </div>
-
-                {company.formatted_address && (
-                  <p className="text-sm text-gray-400 mt-3 flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5 text-gray-300 shrink-0" />
-                    {company.formatted_address}
-                  </p>
-                )}
               </div>
             );
           })}
