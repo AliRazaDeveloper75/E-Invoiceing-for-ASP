@@ -272,7 +272,7 @@ export default function DashboardPage() {
         </AnimatedSection>
 
         {/* ── Stats ────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           {CARD_CONFIG.map((cfg, i) => {
             const getVal = () => {
               if (i === 0) return stats?.total_invoices ?? '\u2014';
@@ -288,36 +288,34 @@ export default function DashboardPage() {
             return (
               <div
                 key={cfg.label}
-                className="relative group bg-gradient-to-b from-blue-50 to-white rounded-xl border border-blue-200/80 p-5 shadow-[0_2px_8px_-2px_rgba(59,130,246,0.12),0_4px_12px_-2px_rgba(59,130,246,0.06)] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgba(59,130,246,0.2),0_4px_12px_-2px_rgba(59,130,246,0.1)] hover:-translate-y-1.5 animate-slide-up"
+                className="relative group bg-gradient-to-b from-blue-50 to-white rounded-xl border border-blue-200/80 p-3.5 sm:p-5 shadow-[0_2px_8px_-2px_rgba(59,130,246,0.12),0_4px_12px_-2px_rgba(59,130,246,0.06)] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgba(59,130,246,0.2),0_4px_12px_-2px_rgba(59,130,246,0.1)] hover:-translate-y-1.5 animate-slide-up overflow-hidden"
                 style={{ animationDelay: `${i * 100}ms` }}
               >
                 <div className={clsx('absolute top-0 left-5 right-5 h-0.5 rounded-full bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-300', cfg.from, cfg.to)} />
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{cfg.label}</p>
-                    <p className={clsx('text-2xl sm:text-3xl font-bold tracking-tight mt-1.5 truncate', cfg.color)}>
-                      {getVal()}
-                    </p>
-                    {sub && (
-                      <div className="flex items-center gap-1.5 mt-2.5">
-                        <div className={clsx('flex items-center gap-0.5 text-[11px] font-semibold', sub.up ? 'text-emerald-600' : 'text-red-500')}>
-                          {sub.up ? (
-                            <TrendingUp className="h-3 w-3" />
-                          ) : (
-                            <TrendingDown className="h-3 w-3" />
-                          )}
-                          {sub.text}
-                        </div>
+                <div className={clsx(
+                  'absolute top-3 right-3 sm:static sm:shrink-0 w-8 h-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-gradient-to-br flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:shadow-md transition-all duration-300',
+                  cfg.from,
+                  cfg.to,
+                )}>
+                  <cfg.icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                </div>
+                <div className="relative space-y-0.5 sm:space-y-1 pr-10 sm:pr-0">
+                  <p className="text-[10px] sm:text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{cfg.label}</p>
+                  <p className={clsx('text-base sm:text-2xl lg:text-3xl font-bold tracking-tight whitespace-nowrap leading-tight', cfg.color)}>
+                    {getVal()}
+                  </p>
+                  {sub && (
+                    <div className="flex items-center gap-1.5 mt-0.5 sm:mt-2">
+                      <div className={clsx('flex items-center gap-0.5 text-[10px] sm:text-[11px] font-semibold', sub.up ? 'text-emerald-600' : 'text-red-500')}>
+                        {sub.up ? (
+                          <TrendingUp className="h-3 w-3" />
+                        ) : (
+                          <TrendingDown className="h-3 w-3" />
+                        )}
+                        <span className="truncate">{sub.text}</span>
                       </div>
-                    )}
-                  </div>
-                  <div className={clsx(
-                    'h-12 w-12 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 group-hover:shadow-md transition-all duration-300',
-                    cfg.from,
-                    cfg.to,
-                  )}>
-                    <cfg.icon className="h-5 w-5 text-white" />
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );
