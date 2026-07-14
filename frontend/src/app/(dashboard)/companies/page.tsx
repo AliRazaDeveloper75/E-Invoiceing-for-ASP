@@ -402,25 +402,43 @@ function CompanyFormPanel({
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <CountrySelect
-            label="Country"
-            required
-            tooltip="Select the country where your company is registered."
-            error={errors.country?.message}
-            {...register('country', { required: 'Country is required' })}
-            onChange={(e) => {
-              setValue('country', e.target.value, { shouldValidate: true });
-              setValue('city', '');
-              countryForm.handleCountryChange(e.target.value);
-            }}
+          <Controller
+            name="country"
+            control={control}
+            rules={{ required: 'Country is required' }}
+            render={({ field, fieldState }) => (
+              <CountrySelect
+                label="Country"
+                required
+                tooltip="Select the country where your company is registered."
+                value={field.value ?? ''}
+                onChange={(val) => {
+                  field.onChange(val);
+                  setValue('country', val, { shouldValidate: true });
+                  setValue('city', '');
+                  countryForm.handleCountryChange(val);
+                }}
+                error={fieldState.error?.message}
+              />
+            )}
           />
-          <CitySelect
-            label="City"
-            required
-            tooltip="Select your company's city. Options update based on the selected country."
-            countryCode={watchedCountry}
-            error={errors.city?.message}
-            {...register('city', { required: 'City is required' })}
+          <Controller
+            name="city"
+            control={control}
+            rules={{ required: 'City is required' }}
+            render={({ field, fieldState }) => (
+              <CitySelect
+                label="City"
+                required
+                tooltip="Select your company's city. Options update based on the selected country."
+                countryCode={watchedCountry}
+                value={field.value ?? ''}
+                onChange={(val) => {
+                  field.onChange(val);
+                }}
+                error={fieldState.error?.message}
+              />
+            )}
           />
         </div>
 

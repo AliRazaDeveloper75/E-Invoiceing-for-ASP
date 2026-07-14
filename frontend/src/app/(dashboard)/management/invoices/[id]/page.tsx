@@ -209,24 +209,24 @@ export default function AdminInvoiceDetailPage() {
     : invoice?.status ?? 'draft';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
 
       {/* ── Gradient Card Header ──────────────────────────────────────────── */}
-      <div className="bg-gradient-to-br from-white via-blue-50/30 to-white rounded-2xl p-6 shadow-[0_8px_30px_-8px_rgba(59,130,246,0.15)] border border-blue-100/70 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
-        <div className="flex items-center gap-4">
+      <div className="bg-gradient-to-br from-white via-blue-50/30 to-white rounded-2xl p-4 sm:p-6 shadow-[0_8px_30px_-8px_rgba(59,130,246,0.15)] border border-blue-100/70 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={() => router.back()}
             className="p-2 rounded-xl border border-gray-200/80 text-gray-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200/60 transition-all shadow-sm"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2.5 mb-1">
               <div className="h-2 w-2 rounded-full bg-gradient-to-r from-blue-400 to-blue-600" />
               <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-[0.12em]">Invoice Detail</span>
             </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <h1 className="text-base sm:text-xl font-bold text-gray-900 tracking-tight truncate">
                 {invoice?.invoice_number ?? '…'}
               </h1>
               {invoice && <StatusBadge status={invoice.status} />}
@@ -237,7 +237,7 @@ export default function AdminInvoiceDetailPage() {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
             {fullInvoice && (
               // Premium client-side PDF — identical to the supplier/buyer download.
               <PDFDownloadButton invoice={fullInvoice} company={pdfCompany} />
@@ -292,13 +292,13 @@ export default function AdminInvoiceDetailPage() {
 
           {/* ── Admin Action Panel — 3D card ───────────────────────────────── */}
           {actions.length > 0 && (
-            <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-4 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+            <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-4 sm:p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-4 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 Admin Actions — Advance E-Invoice Flow
               </p>
 
               {/* Progress stepper */}
-              <div className="flex items-center gap-0">
+              <div className="flex items-center gap-0 overflow-x-auto">
                 {FLOW_STEPS.map((step, i) => {
                   const stepIdx    = FLOW_STEPS.indexOf(currentStep);
                   const isDone     = i < stepIdx || (step === 'fta' && invoice?.fta_status === 'reported');
@@ -326,7 +326,7 @@ export default function AdminInvoiceDetailPage() {
               </div>
 
               {/* Action buttons */}
-              <div className="flex flex-wrap gap-3 pt-1">
+              <div className="flex flex-wrap gap-2 sm:gap-3 pt-1">
                 {actions.map((action) => {
                   const Icon = action.icon;
                   return (
@@ -334,7 +334,7 @@ export default function AdminInvoiceDetailPage() {
                       key={action.key}
                       onClick={() => handleAction(action)}
                       disabled={actionLoading !== null}
-                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                      className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold
                                   transition-all duration-200 disabled:opacity-50 ${action.color}`}
                     >
                       {actionLoading === action.key
@@ -362,14 +362,14 @@ export default function AdminInvoiceDetailPage() {
 
           {/* ── Invoice Metadata — 3D cards ────────────────────────────────── */}
           {invoice && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {/* Supplier */}
-              <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-3 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+              <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-4 sm:p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-3 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Supplier</p>
                 <div className="flex items-start gap-3">
                   <Building2 className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-semibold text-gray-900">{invoice.company_name}</p>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-900 truncate">{invoice.company_name}</p>
                     {invoice.company_trn && <p className="text-sm text-gray-500">TRN: {invoice.company_trn}</p>}
                   </div>
                 </div>
@@ -382,29 +382,29 @@ export default function AdminInvoiceDetailPage() {
               </div>
 
               {/* Buyer */}
-              <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-3 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+              <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-4 sm:p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-3 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Buyer</p>
                 <div className="flex items-start gap-3">
                   <User className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
-                  <p className="font-semibold text-gray-900">{invoice.customer_name || '—'}</p>
+                  <p className="font-semibold text-gray-900 truncate">{invoice.customer_name || '—'}</p>
                 </div>
               </div>
 
               {/* Invoice details */}
-              <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-3 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+              <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-4 sm:p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-3 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Invoice Details</p>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 flex items-center gap-1.5"><Hash className="h-3.5 w-3.5" /> Invoice #</span>
-                    <span className="font-medium text-gray-900">{invoice.invoice_number}</span>
+                <div className="space-y-2 text-xs sm:text-sm">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-gray-500 flex items-center gap-1.5 shrink-0"><Hash className="h-3.5 w-3.5" /> Invoice #</span>
+                    <span className="font-medium text-gray-900 text-right truncate">{invoice.invoice_number}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" /> Type</span>
-                    <span className="text-gray-700">{invoice.type_display}</span>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-gray-500 flex items-center gap-1.5 shrink-0"><FileText className="h-3.5 w-3.5" /> Type</span>
+                    <span className="text-gray-700 text-right">{invoice.type_display}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> Issue Date</span>
-                    <span className="text-gray-700">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-gray-500 flex items-center gap-1.5 shrink-0"><Calendar className="h-3.5 w-3.5" /> Issue Date</span>
+                    <span className="text-gray-700 text-right">
                       {invoice.issue_date ? new Date(invoice.issue_date).toLocaleDateString('en-AE') : '—'}
                     </span>
                   </div>
@@ -418,9 +418,9 @@ export default function AdminInvoiceDetailPage() {
               </div>
 
               {/* Financials */}
-              <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-3 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+              <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-4 sm:p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-3 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Financials</p>
-                <div className="space-y-2 text-sm">
+                <div className="space-y-2 text-xs sm:text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-500">Subtotal</span>
                     <span className="text-gray-700">
@@ -446,11 +446,11 @@ export default function AdminInvoiceDetailPage() {
 
           {/* ── Event Log — 3D card ────────────────────────────────────────── */}
           {timeline?.events && timeline.events.length > 0 && (
-            <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-4 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+            <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-4 sm:p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] space-y-4 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Event Log</p>
               <div className="space-y-3">
                 {[...timeline.events].reverse().map((event, i) => (
-                  <div key={i} className="flex items-start gap-3">
+                  <div key={i} className="flex items-start gap-2.5 sm:gap-3">
                     <div className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${
                       event.status === 'complete'   ? 'bg-emerald-500' :
                       event.status === 'processing' ? 'bg-blue-500' :
@@ -458,13 +458,13 @@ export default function AdminInvoiceDetailPage() {
                     }`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium text-gray-900">{event.title}</p>
-                        <span className="text-xs text-gray-400">
+                        <p className="text-xs sm:text-sm font-medium text-gray-900">{event.title}</p>
+                        <span className="text-[10px] sm:text-xs text-gray-400">
                           Corner {event.corner}
                           {event.timestamp && ` · ${new Date(event.timestamp).toLocaleString('en-AE')}`}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">{event.description}</p>
+                      <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">{event.description}</p>
                     </div>
                   </div>
                 ))}

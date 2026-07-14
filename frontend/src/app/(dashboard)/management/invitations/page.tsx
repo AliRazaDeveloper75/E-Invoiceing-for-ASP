@@ -11,6 +11,7 @@ import {
   Building2, FileText, Eye, RotateCcw, ChevronDown, ChevronUp,
   MousePointerClick, AlertTriangle, Timer, X, UserPlus,
 } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 interface EmailLog {
   id: string;
@@ -194,17 +195,17 @@ function CreateInviteModal({ onClose, onCreated }: { onClose: () => void; onCrea
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-2.5 shadow-sm">
-            <Send className="h-5 w-5 text-white" />
+        <div className="flex items-center gap-3 px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-2 sm:p-2.5 shadow-sm">
+            <Send className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
           </div>
           <div className="flex-1">
-            <h2 className="text-lg font-bold text-gray-900">Send Invitation</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Link valid for 1 hour after sending</p>
+            <h2 className="text-base sm:text-lg font-bold text-gray-900">Send Invitation</h2>
+            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Link valid for 1 hour after sending</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400"><X className="h-4 w-4" /></button>
         </div>
-        <div className="p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Email address <span className="text-red-500">*</span>
@@ -213,7 +214,7 @@ function CreateInviteModal({ onClose, onCreated }: { onClose: () => void; onCrea
               placeholder="supplier@company.ae"
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">First name</label>
               <input value={form.first_name} onChange={e => set('first_name', e.target.value)}
@@ -235,27 +236,30 @@ function CreateInviteModal({ onClose, onCreated }: { onClose: () => void; onCrea
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Role</label>
-            <select value={form.role} onChange={e => set('role', e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
-              <option value="supplier">Supplier</option>
-              <option value="accountant">Accountant</option>
-              <option value="viewer">Viewer</option>
-            </select>
+            <CustomSelect
+              value={form.role}
+              onChange={(val) => set('role', val)}
+              options={[
+                { value: 'supplier', label: 'Supplier' },
+                { value: 'accountant', label: 'Accountant' },
+                { value: 'viewer', label: 'Viewer' },
+              ]}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Personal message (optional)</label>
             <textarea value={form.message} onChange={e => set('message', e.target.value)}
-              rows={2} placeholder="Welcome message shown on the invitation page\u2026"
+              rows={2} placeholder="Welcome message shown on the invitation page…"
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
           </div>
           {error && (
             <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
           )}
         </div>
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100">
-          <button onClick={onClose} className="px-4 py-2.5 text-sm font-medium border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 px-4 sm:px-6 py-4 border-t border-gray-100">
+          <button onClick={onClose} className="px-4 py-2.5 text-sm font-medium border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-center">Cancel</button>
           <button onClick={send} disabled={loading}
-            className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-60 shadow-sm transition-all">
+            className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-60 shadow-sm transition-all">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             Send Invitation
           </button>
@@ -291,22 +295,22 @@ function ReviewModal({ company, onClose, onReviewed }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100 sticky top-0 bg-white">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-2.5 shadow-sm">
-            <Eye className="h-5 w-5 text-white" />
+        <div className="flex items-center gap-3 px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 sticky top-0 bg-white">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-2 sm:p-2.5 shadow-sm">
+            <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
           </div>
-          <div className="flex-1">
-            <h2 className="text-lg font-bold text-gray-900">Review: {company.name}</h2>
-            <p className="text-sm text-gray-500">TRN: {company.trn}</p>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">Review: {company.name}</h2>
+            <p className="text-xs sm:text-sm text-gray-500">TRN: {company.trn}</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400"><X className="h-4 w-4" /></button>
         </div>
-        <div className="p-6 space-y-5">
+        <div className="p-4 sm:p-6 space-y-5">
           <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
             {company.logo_url && (
               <img src={company.logo_url} alt="Logo" className="h-12 w-12 rounded-lg object-cover border mb-3" />
             )}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div><span className="text-gray-500">Legal name:</span> <span className="font-medium">{company.legal_name}</span></div>
               <div><span className="text-gray-500">Type:</span> <span className="font-medium">{company.business_type || '\u2014'}</span></div>
               <div><span className="text-gray-500">Industry:</span> <span className="font-medium">{company.industry_type || '\u2014'}</span></div>
@@ -317,7 +321,7 @@ function ReviewModal({ company, onClose, onReviewed }: {
             {company.contact_person_name && (
               <div className="pt-2 border-t border-gray-200">
                 <p className="text-gray-500 text-xs font-medium mb-1">Contact person</p>
-                <p className="font-medium">{company.contact_person_name} \u2014 {company.contact_person_email}</p>
+                <p className="font-medium">{company.contact_person_name} — {company.contact_person_email}</p>
               </div>
             )}
           </div>
@@ -343,7 +347,7 @@ function ReviewModal({ company, onClose, onReviewed }: {
           )}
           <div>
             <p className="text-sm font-semibold text-gray-700 mb-3">Decision</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 max-sm:grid-cols-1 gap-2">
               {(['approve', 'request_changes', 'reject'] as const).map(a => (
                 <button key={a} type="button" onClick={() => setAction(a)}
                   className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-all
@@ -352,7 +356,7 @@ function ReviewModal({ company, onClose, onReviewed }: {
                         : a === 'reject' ? 'border-red-500 bg-red-50 text-red-700'
                         : 'border-amber-500 bg-amber-50 text-amber-700'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                  {a === 'approve' ? '\u2705 Approve' : a === 'reject' ? '\u274c Reject' : '\U0001f4cb Request Changes'}
+                  {a === 'approve' ? '\u2705 Approve' : a === 'reject' ? '\u274c Reject' : '\u{1F4CB} Request Changes'}
                 </button>
               ))}
             </div>
@@ -360,17 +364,17 @@ function ReviewModal({ company, onClose, onReviewed }: {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes (sent to company)</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
-              placeholder="Optional notes or reason for decision\u2026"
+              placeholder="Optional notes or reason for decision…"
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
           </div>
           {error && (
             <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
           )}
         </div>
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 sticky bottom-0 bg-white">
-          <button onClick={onClose} className="px-4 py-2.5 text-sm font-medium border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 px-4 sm:px-6 py-4 border-t border-gray-100 sticky bottom-0 bg-white">
+          <button onClick={onClose} className="px-4 py-2.5 text-sm font-medium border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-center">Cancel</button>
           <button onClick={submit} disabled={loading}
-            className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-60 shadow-sm transition-all">
+            className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-60 shadow-sm transition-all">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             Submit Decision
           </button>
@@ -478,7 +482,7 @@ export default function InvitationsPage() {
             {tab === 'invitations' && (
               <button
                 onClick={() => setShowCreate(true)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white text-blue-700 text-sm font-semibold rounded-xl hover:bg-blue-50 transition-all shadow-sm"
+                className="flex items-center gap-2 px-5 py-2.5 bg-white text-blue-700 text-sm font-semibold rounded-xl hover:bg-blue-50 transition-all shadow-sm sm:w-auto w-full justify-center"
               >
                 <Plus className="h-4 w-4" /> Send Invitation
               </button>
@@ -488,7 +492,7 @@ export default function InvitationsPage() {
       </div>
 
       {/* ── Tabs ─────────────────────────────────────────────────────── */}
-      <div className="flex gap-1 bg-gray-100/60 rounded-xl p-1 w-fit">
+      <div className="flex gap-1 bg-gray-100/60 rounded-xl p-1 w-full sm:w-fit">
         {(['invitations', 'onboarding'] as Tab[]).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-5 py-2 rounded-lg text-sm font-medium transition-all capitalize
@@ -500,25 +504,28 @@ export default function InvitationsPage() {
 
       {/* ── Filters ──────────────────────────────────────────────────── */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100/80 p-4">
-        <div className="flex gap-3 flex-wrap">
-          <div className="relative flex-1 min-w-56">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder={tab === 'invitations' ? 'Search by email or name\u2026' : 'Search by company or TRN\u2026'}
+              placeholder={tab === 'invitations' ? 'Search by email or name…' : 'Search by company or TRN…'}
               className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white"
             />
           </div>
           {tab === 'invitations' && (
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-              className="px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white">
-              <option value="">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="accepted">Accepted</option>
-              <option value="expired">Expired</option>
-              <option value="revoked">Revoked</option>
-            </select>
+            <CustomSelect
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: '', label: 'All statuses' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'accepted', label: 'Accepted' },
+                { value: 'expired', label: 'Expired' },
+                { value: 'revoked', label: 'Revoked' },
+              ]}
+            />
           )}
           <button onClick={load}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">
@@ -529,7 +536,7 @@ export default function InvitationsPage() {
 
       {/* ── Invitation Stats ─────────────────────────────────────────── */}
       {tab === 'invitations' && (
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {['pending', 'accepted', 'expired', 'revoked'].map(s => {
             const count = invitations.filter(i => i.status === s).length;
             const cfg = STATUS_CONFIG[s];
@@ -563,128 +570,234 @@ export default function InvitationsPage() {
                   <p className="text-sm mt-1">Send an invitation to onboard a new supplier</p>
                 </div>
               : (
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-100">
-                    <tr>
-                      <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Invitee</th>
-                      <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Company</th>
-                      <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-                      <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Delivery &amp; Engagement</th>
-                      <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Link</th>
-                      <th className="px-4 py-3.5" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
+                <>
+                  {/* Mobile card layout */}
+                  <div className="sm:hidden divide-y divide-gray-50">
                     {(filtered as Invitation[]).map((inv: Invitation) => (
-                      <>
-                        <tr key={inv.id} className="hover:bg-blue-50/30 transition-colors even:bg-blue-50/10">
-                          <td className="px-5 py-4">
-                            <p className="font-medium text-gray-900">{inv.email}</p>
+                      <div key={inv.id} className="p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{inv.email}</p>
                             {(inv.first_name || inv.last_name) && (
                               <p className="text-xs text-gray-400">{inv.first_name} {inv.last_name}</p>
                             )}
-                            <p className="text-[10px] text-gray-400 mt-0.5">
-                              Sent {inv.send_count}\u00d7 {inv.last_sent_at ? `\u00b7 last ${fmtTime(inv.last_sent_at)}` : ''}
-                            </p>
-                          </td>
-                          <td className="px-4 py-4">
-                            <p className="text-gray-700">{inv.company_name_hint || '\u2014'}</p>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600 capitalize">
-                              {inv.role}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4">
-                            <StatusBadge status={inv.status} />
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="flex flex-wrap gap-1">
-                              {inv.last_delivery_status === 'sent' && (
-                                <TrackPill
-                                  icon={CheckCircle2} label="Delivered" active
-                                  activeColor="bg-emerald-100 text-emerald-700"
-                                  tip={`Delivered ${inv.last_sent_at ? fmtTime(inv.last_sent_at) : ''}`}
-                                />
-                              )}
-                              {inv.last_delivery_status === 'failed' && (
-                                <TrackPill
-                                  icon={AlertTriangle} label="Failed" active
-                                  activeColor="bg-red-100 text-red-600"
-                                  tip={inv.last_error}
-                                />
-                              )}
-                              {!inv.last_delivery_status && (
-                                <TrackPill icon={Mail} label="Not sent" active={false} activeColor="" />
-                              )}
-                              <TrackPill
-                                icon={MousePointerClick} label="Link clicked"
-                                active={!!inv.link_accessed_at}
-                                activeColor="bg-violet-100 text-violet-700"
-                                tip={inv.link_accessed_at ? `Clicked ${fmtTime(inv.link_accessed_at)}` : 'Link not clicked yet'}
-                              />
-                            </div>
-                            {inv.email_logs.length > 0 && (
+                          </div>
+                          <StatusBadge status={inv.status} />
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {inv.company_name_hint && (
+                            <span className="text-xs text-gray-600">{inv.company_name_hint}</span>
+                          )}
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600 capitalize">
+                            {inv.role}
+                          </span>
+                          <LinkStatus inv={inv} />
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {inv.last_delivery_status === 'sent' && (
+                            <TrackPill
+                              icon={CheckCircle2} label="Delivered" active
+                              activeColor="bg-emerald-100 text-emerald-700"
+                              tip={`Delivered ${inv.last_sent_at ? fmtTime(inv.last_sent_at) : ''}`}
+                            />
+                          )}
+                          {inv.last_delivery_status === 'failed' && (
+                            <TrackPill
+                              icon={AlertTriangle} label="Failed" active
+                              activeColor="bg-red-100 text-red-600"
+                              tip={inv.last_error}
+                            />
+                          )}
+                          {!inv.last_delivery_status && (
+                            <TrackPill icon={Mail} label="Not sent" active={false} activeColor="" />
+                          )}
+                          <TrackPill
+                            icon={MousePointerClick} label="Link clicked"
+                            active={!!inv.link_accessed_at}
+                            activeColor="bg-violet-100 text-violet-700"
+                            tip={inv.link_accessed_at ? `Clicked ${fmtTime(inv.link_accessed_at)}` : 'Link not clicked yet'}
+                          />
+                        </div>
+                        {inv.email_logs.length > 0 && (
+                          <button
+                            onClick={() => setExpandedLogs(expandedLogs === inv.id ? null : inv.id)}
+                            className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-gray-600"
+                          >
+                            {expandedLogs === inv.id
+                              ? <><ChevronUp className="h-3 w-3" /> Hide logs</>
+                              : <><ChevronDown className="h-3 w-3" /> {inv.email_logs.length} send log{inv.email_logs.length > 1 ? 's' : ''}</>
+                            }
+                          </button>
+                        )}
+                        {expandedLogs === inv.id && (
+                          <div className="pt-2 border-t border-gray-100">
+                            <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Send History</p>
+                            <EmailLogsRow logs={inv.email_logs} />
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 pt-1">
+                          <p className="text-[10px] text-gray-400 flex-1">
+                            Sent {inv.send_count}× {inv.last_sent_at ? `· last ${fmtTime(inv.last_sent_at)}` : ''}
+                          </p>
+                          <div className="flex items-center gap-1.5">
+                            {['pending', 'expired'].includes(inv.status) && (
                               <button
-                                onClick={() => setExpandedLogs(expandedLogs === inv.id ? null : inv.id)}
-                                className="mt-1.5 flex items-center gap-1 text-[10px] text-gray-400 hover:text-gray-600"
+                                onClick={() => resend(inv.id)}
+                                disabled={resending === inv.id}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 transition-colors"
                               >
-                                {expandedLogs === inv.id
-                                  ? <><ChevronUp className="h-3 w-3" /> Hide logs</>
-                                  : <><ChevronDown className="h-3 w-3" /> {inv.email_logs.length} send log{inv.email_logs.length > 1 ? 's' : ''}</>
-                                }
+                                {resending === inv.id
+                                  ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  : <RotateCcw className="h-3.5 w-3.5" />}
+                                Resend
                               </button>
                             )}
-                          </td>
-                          <td className="px-4 py-4">
-                            <LinkStatus inv={inv} />
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-1.5 justify-end">
-                              {['pending', 'expired'].includes(inv.status) && (
+                            {inv.status === 'pending' && (
+                              <button
+                                onClick={() => copyLink(inv.id, inv.token)}
+                                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                              >
+                                {copied === inv.id ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                              </button>
+                            )}
+                            {inv.status === 'pending' && (
+                              <button
+                                onClick={() => revoke(inv.id)}
+                                className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop table layout */}
+                  <table className="w-full text-sm hidden sm:table">
+                    <thead className="bg-gray-50 border-b border-gray-100">
+                      <tr>
+                        <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Invitee</th>
+                        <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Company</th>
+                        <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+                        <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Delivery &amp; Engagement</th>
+                        <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Link</th>
+                        <th className="px-4 py-3.5" />
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {(filtered as Invitation[]).map((inv: Invitation) => (
+                        <>
+                          <tr key={inv.id} className="hover:bg-blue-50/30 transition-colors even:bg-blue-50/10">
+                            <td className="px-5 py-4">
+                              <p className="font-medium text-gray-900">{inv.email}</p>
+                              {(inv.first_name || inv.last_name) && (
+                                <p className="text-xs text-gray-400">{inv.first_name} {inv.last_name}</p>
+                              )}
+                              <p className="text-[10px] text-gray-400 mt-0.5">
+                                Sent {inv.send_count}× {inv.last_sent_at ? `· last ${fmtTime(inv.last_sent_at)}` : ''}
+                              </p>
+                            </td>
+                            <td className="px-4 py-4">
+                              <p className="text-gray-700">{inv.company_name_hint || '\u2014'}</p>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600 capitalize">
+                                {inv.role}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <StatusBadge status={inv.status} />
+                            </td>
+                            <td className="px-4 py-4">
+                              <div className="flex flex-wrap gap-1">
+                                {inv.last_delivery_status === 'sent' && (
+                                  <TrackPill
+                                    icon={CheckCircle2} label="Delivered" active
+                                    activeColor="bg-emerald-100 text-emerald-700"
+                                    tip={`Delivered ${inv.last_sent_at ? fmtTime(inv.last_sent_at) : ''}`}
+                                  />
+                                )}
+                                {inv.last_delivery_status === 'failed' && (
+                                  <TrackPill
+                                    icon={AlertTriangle} label="Failed" active
+                                    activeColor="bg-red-100 text-red-600"
+                                    tip={inv.last_error}
+                                  />
+                                )}
+                                {!inv.last_delivery_status && (
+                                  <TrackPill icon={Mail} label="Not sent" active={false} activeColor="" />
+                                )}
+                                <TrackPill
+                                  icon={MousePointerClick} label="Link clicked"
+                                  active={!!inv.link_accessed_at}
+                                  activeColor="bg-violet-100 text-violet-700"
+                                  tip={inv.link_accessed_at ? `Clicked ${fmtTime(inv.link_accessed_at)}` : 'Link not clicked yet'}
+                                />
+                              </div>
+                              {inv.email_logs.length > 0 && (
                                 <button
-                                  onClick={() => resend(inv.id)}
-                                  disabled={resending === inv.id}
-                                  title="Resend invitation (resets link to 1 hour)"
-                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 transition-colors"
+                                  onClick={() => setExpandedLogs(expandedLogs === inv.id ? null : inv.id)}
+                                  className="mt-1.5 flex items-center gap-1 text-[10px] text-gray-400 hover:text-gray-600"
                                 >
-                                  {resending === inv.id
-                                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                    : <RotateCcw className="h-3.5 w-3.5" />}
-                                  Resend
+                                  {expandedLogs === inv.id
+                                    ? <><ChevronUp className="h-3 w-3" /> Hide logs</>
+                                    : <><ChevronDown className="h-3 w-3" /> {inv.email_logs.length} send log{inv.email_logs.length > 1 ? 's' : ''}</>
+                                  }
                                 </button>
                               )}
-                              {inv.status === 'pending' && (
-                                <button
-                                  onClick={() => copyLink(inv.id, inv.token)}
-                                  title="Copy invite link"
-                                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-                                >
-                                  {copied === inv.id ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
-                                </button>
-                              )}
-                              {inv.status === 'pending' && (
-                                <button
-                                  onClick={() => revoke(inv.id)}
-                                  title="Revoke invitation"
-                                  className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                        {expandedLogs === inv.id && (
-                          <tr key={`${inv.id}-logs`} className="bg-gray-50">
-                            <td colSpan={6} className="px-5 py-3">
-                              <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Send History</p>
-                              <EmailLogsRow logs={inv.email_logs} />
+                            </td>
+                            <td className="px-4 py-4">
+                              <LinkStatus inv={inv} />
+                            </td>
+                            <td className="px-4 py-4">
+                              <div className="flex items-center gap-1.5 justify-end">
+                                {['pending', 'expired'].includes(inv.status) && (
+                                  <button
+                                    onClick={() => resend(inv.id)}
+                                    disabled={resending === inv.id}
+                                    title="Resend invitation (resets link to 1 hour)"
+                                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 transition-colors"
+                                  >
+                                    {resending === inv.id
+                                      ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      : <RotateCcw className="h-3.5 w-3.5" />}
+                                    Resend
+                                  </button>
+                                )}
+                                {inv.status === 'pending' && (
+                                  <button
+                                    onClick={() => copyLink(inv.id, inv.token)}
+                                    title="Copy invite link"
+                                    className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                                  >
+                                    {copied === inv.id ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                                  </button>
+                                )}
+                                {inv.status === 'pending' && (
+                                  <button
+                                    onClick={() => revoke(inv.id)}
+                                    title="Revoke invitation"
+                                    className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
-                        )}
-                      </>
-                    ))}
-                  </tbody>
-                </table>
+                          {expandedLogs === inv.id && (
+                            <tr key={`${inv.id}-logs`} className="bg-gray-50">
+                              <td colSpan={6} className="px-5 py-3">
+                                <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Send History</p>
+                                <EmailLogsRow logs={inv.email_logs} />
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
               )
           }
         </div>
@@ -704,64 +817,110 @@ export default function InvitationsPage() {
                   <p className="text-sm mt-1">Company onboarding submissions will appear here</p>
                 </div>
               : (
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-100">
-                    <tr>
-                      <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Company</th>
-                      <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">TRN</th>
-                      <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
-                      <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-                      <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Docs</th>
-                      <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Submitted</th>
-                      <th className="px-4 py-3.5" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
+                <>
+                  {/* Mobile card layout */}
+                  <div className="sm:hidden divide-y divide-gray-50">
                     {(filtered as OnboardingCompany[]).map(co => (
-                      <tr key={co.id} className="hover:bg-blue-50/30 transition-colors even:bg-blue-50/10">
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            {co.logo_url
-                              ? <img src={co.logo_url} alt="" className="h-8 w-8 rounded-lg object-cover border border-gray-200" />
-                              : <div className="h-8 w-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                                  <Building2 className="h-4 w-4 text-gray-400" />
-                                </div>
-                            }
-                            <div>
-                              <p className="font-medium text-gray-900">{co.name}</p>
-                              <p className="text-xs text-gray-400">{co.email || co.contact_person_email || '\u2014'}</p>
-                            </div>
+                      <div key={co.id} className="p-4 space-y-3">
+                        <div className="flex items-start gap-3">
+                          {co.logo_url
+                            ? <img src={co.logo_url} alt="" className="h-10 w-10 rounded-lg object-cover border border-gray-200 shrink-0" />
+                            : <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                                <Building2 className="h-5 w-5 text-gray-400" />
+                              </div>
+                          }
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{co.name}</p>
+                            <p className="text-xs text-gray-400 truncate">{co.email || co.contact_person_email || '\u2014'}</p>
                           </div>
-                        </td>
-                        <td className="px-4 py-4 font-mono text-xs text-gray-600">{co.trn}</td>
-                        <td className="px-4 py-4 text-gray-600 capitalize">{co.business_type || '\u2014'}</td>
-                        <td className="px-4 py-4"><StatusBadge status={co.onboarding_status} /></td>
-                        <td className="px-4 py-4">
-                          <span className="text-xs text-gray-500">{co.documents.length} file{co.documents.length !== 1 ? 's' : ''}</span>
-                        </td>
-                        <td className="px-4 py-4 text-xs text-gray-500">{fmt(co.created_at)}</td>
-                        <td className="px-4 py-4">
-                          {['submitted', 'under_review'].includes(co.onboarding_status) && (
-                            <button
-                              onClick={() => setReviewTarget(co)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
-                            >
-                              <Eye className="h-3.5 w-3.5" /> Review
-                            </button>
-                          )}
-                          {['approved', 'rejected'].includes(co.onboarding_status) && (
-                            <button
-                              onClick={() => setReviewTarget(co)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
-                            >
-                              <FileText className="h-3.5 w-3.5" /> Details
-                            </button>
-                          )}
-                        </td>
-                      </tr>
+                          <StatusBadge status={co.onboarding_status} />
+                        </div>
+                        <div className="flex items-center gap-3 flex-wrap text-xs text-gray-500">
+                          {co.trn && <span className="font-mono">TRN: {co.trn}</span>}
+                          {co.business_type && <span className="capitalize">{co.business_type}</span>}
+                          <span>{co.documents.length} file{co.documents.length !== 1 ? 's' : ''}</span>
+                          <span>{fmt(co.created_at)}</span>
+                        </div>
+                        {['submitted', 'under_review'].includes(co.onboarding_status) && (
+                          <button
+                            onClick={() => setReviewTarget(co)}
+                            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors w-full justify-center"
+                          >
+                            <Eye className="h-3.5 w-3.5" /> Review
+                          </button>
+                        )}
+                        {['approved', 'rejected'].includes(co.onboarding_status) && (
+                          <button
+                            onClick={() => setReviewTarget(co)}
+                            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors w-full justify-center"
+                          >
+                            <FileText className="h-3.5 w-3.5" /> Details
+                          </button>
+                        )}
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+
+                  {/* Desktop table layout */}
+                  <table className="w-full text-sm hidden sm:table">
+                    <thead className="bg-gray-50 border-b border-gray-100">
+                      <tr>
+                        <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Company</th>
+                        <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">TRN</th>
+                        <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
+                        <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+                        <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Docs</th>
+                        <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Submitted</th>
+                        <th className="px-4 py-3.5" />
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {(filtered as OnboardingCompany[]).map(co => (
+                        <tr key={co.id} className="hover:bg-blue-50/30 transition-colors even:bg-blue-50/10">
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-3">
+                              {co.logo_url
+                                ? <img src={co.logo_url} alt="" className="h-8 w-8 rounded-lg object-cover border border-gray-200" />
+                                : <div className="h-8 w-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                                    <Building2 className="h-4 w-4 text-gray-400" />
+                                  </div>
+                              }
+                              <div>
+                                <p className="font-medium text-gray-900">{co.name}</p>
+                                <p className="text-xs text-gray-400">{co.email || co.contact_person_email || '\u2014'}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 font-mono text-xs text-gray-600">{co.trn}</td>
+                          <td className="px-4 py-4 text-gray-600 capitalize">{co.business_type || '\u2014'}</td>
+                          <td className="px-4 py-4"><StatusBadge status={co.onboarding_status} /></td>
+                          <td className="px-4 py-4">
+                            <span className="text-xs text-gray-500">{co.documents.length} file{co.documents.length !== 1 ? 's' : ''}</span>
+                          </td>
+                          <td className="px-4 py-4 text-xs text-gray-500">{fmt(co.created_at)}</td>
+                          <td className="px-4 py-4">
+                            {['submitted', 'under_review'].includes(co.onboarding_status) && (
+                              <button
+                                onClick={() => setReviewTarget(co)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                              >
+                                <Eye className="h-3.5 w-3.5" /> Review
+                              </button>
+                            )}
+                            {['approved', 'rejected'].includes(co.onboarding_status) && (
+                              <button
+                                onClick={() => setReviewTarget(co)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
+                              >
+                                <FileText className="h-3.5 w-3.5" /> Details
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
               )
           }
         </div>

@@ -122,13 +122,13 @@ function StatCard({
       <div className={`absolute top-2.5 right-2.5 sm:static sm:shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center ${color} transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg`}>
         <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
       </div>
-      <div className="relative space-y-1.5 sm:space-y-2 pr-9 sm:pr-0">
+      <div className="relative space-y-1 sm:space-y-1.5 sm:space-y-2 pr-9 sm:pr-0 min-w-0">
         <p className="text-[10px] sm:text-sm text-blue-200/70 font-medium truncate">{label}</p>
-        <p className="text-sm sm:text-xl lg:text-2xl font-bold text-white whitespace-nowrap leading-tight">
+        <p className="text-xs sm:text-xl lg:text-2xl font-bold text-white leading-tight truncate">
           {value}
         </p>
         {sub && (
-          <p className="text-[10px] sm:text-xs text-blue-300/60 flex items-center gap-1">
+          <p className="text-[10px] sm:text-xs text-blue-300/60 flex items-center gap-1 min-w-0">
             <TrendingUp className="w-3 h-3 shrink-0" />
             <span className="truncate">{sub}</span>
           </p>
@@ -201,12 +201,12 @@ export default function BuyerDashboardPage() {
 
   if (error || !data) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center min-h-[50vh] px-4">
         <div className="text-center space-y-3 animate-fade-in">
-          <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
-            <AlertTriangle className="w-7 h-7 text-red-400" />
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-6 h-6 sm:w-7 sm:h-7 text-red-400" />
           </div>
-          <p className="text-gray-500 font-medium">{error || 'No data available.'}</p>
+          <p className="text-gray-500 font-medium text-sm sm:text-base">{error || 'No data available.'}</p>
         </div>
       </div>
     );
@@ -326,23 +326,23 @@ export default function BuyerDashboardPage() {
                 {/* Mobile: stacked layout */}
                 <div className="sm:hidden">
                   <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 flex items-center justify-center shrink-0 group-hover:border-blue-200 transition-all duration-200">
                         <FileText className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-500 transition-colors duration-200" />
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-[13px] font-semibold text-gray-800 group-hover:text-blue-600 transition-colors duration-200 truncate">
                           {inv.invoice_number}
                         </p>
                         <p className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1">
-                          <Calendar className="w-2.5 h-2.5" />
-                          {new Date(inv.issue_date).toLocaleDateString('en-AE', {
+                          <Calendar className="w-2.5 h-2.5 shrink-0" />
+                          <span className="truncate">{new Date(inv.issue_date).toLocaleDateString('en-AE', {
                             day: 'numeric', month: 'short', year: 'numeric',
-                          })}
+                          })}</span>
                         </p>
                       </div>
                     </div>
-                    <p className="text-[13px] font-bold text-gray-800 tabular-nums shrink-0">
+                    <p className="text-[12px] font-bold text-gray-800 tabular-nums shrink-0 ml-2">
                       {inv.currency} {parseFloat(inv.total_amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}
                     </p>
                   </div>

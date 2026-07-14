@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { clsx } from 'clsx';
 import { Eye, EyeOff } from 'lucide-react';
 import { FieldTooltip } from './FieldTooltip';
+import CustomSelect from './CustomSelect';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -75,49 +76,46 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
 Input.displayName = 'Input';
 
 
-interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+interface SelectProps {
   label?: string;
   error?: string;
   tooltip?: string;
   required?: boolean;
+  value?: string;
+  onChange?: (value: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  className?: string;
+  id?: string;
 }
 
-export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, tooltip, className, id, required, children, ...props }, ref) => {
-    const selectId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
-    return (
-      <div className="flex flex-col gap-1">
-        {label && (
-          <label htmlFor={selectId} className="flex items-center text-sm font-medium text-gray-700">
-            <span>
-              {label}
-              {required && <span className="text-red-500 ml-0.5">*</span>}
-            </span>
-            {tooltip && <FieldTooltip content={tooltip} />}
-          </label>
-        )}
-        <select
-          id={selectId}
-          ref={ref}
-          required={required}
-          {...props}
-          className={clsx(
-            'block w-full rounded-lg border px-3 py-2 text-sm shadow-sm bg-white',
-            'focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400',
-            'disabled:bg-gray-50',
-            error ? 'border-red-400 bg-red-50/30' : 'border-gray-300',
-            className
-          )}
-        >
-          {children}
-        </select>
-        {error && (
-          <p className="flex items-center gap-1 text-xs text-red-600">
-            <span>⚠</span> {error}
-          </p>
-        )}
-      </div>
-    );
-  }
-);
-Select.displayName = 'Select';
+export function Select({
+  label, error, tooltip, className, id, required, options, value = '', onChange, placeholder = 'Select...',
+}: SelectProps) {
+  const selectId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
+  return (
+    <div className="flex flex-col gap-1">
+      {label && (
+        <label htmlFor={selectId} className="flex items-center text-sm font-medium text-gray-700">
+          <span>
+            {label}
+            {required && <span className="text-red-500 ml-0.5">*</span>}
+          </span>
+          {tooltip && <FieldTooltip content={tooltip} />}
+        </label>
+      )}
+      <CustomSelect
+        value={value}
+        onChange={onChange ?? (() => {})}
+        options={options}
+        placeholder={placeholder}
+        className={clsx(error && '[&>button]:border-red-400', className)}
+      />
+      {error && (
+        <p className="flex items-center gap-1 text-xs text-red-600">
+          <span>⚠</span> {error}
+        </p>
+      )}
+    </div>
+  );
+}

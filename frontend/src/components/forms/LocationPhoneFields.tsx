@@ -108,9 +108,7 @@ export function LocationPhoneFields({
             <CountrySelect
               label="Country"
               value={field.value ?? ''}
-              onChange={(e) => handleCountryChange(e.target.value)}
-              onBlur={field.onBlur}
-              name={field.name}
+              onChange={(val) => handleCountryChange(val)}
               error={errors[fields.country]?.message as string | undefined}
             />
           )}
@@ -126,12 +124,10 @@ export function LocationPhoneFields({
               label="City"
               countryCode={watchedCountry}
               value={field.value ?? ''}
-              onChange={(e) => {
-                field.onChange(e);
-                countryForm.handleCityChange(e.target.value);
+              onChange={(val) => {
+                field.onChange(val);
+                countryForm.handleCityChange(val);
               }}
-              onBlur={field.onBlur}
-              name={field.name}
               error={errors[fields.city]?.message as string | undefined}
             />
           )}

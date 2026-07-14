@@ -12,6 +12,7 @@ import {
   Mail, Calendar, Clock, Building2, BadgeCheck, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { AxiosError } from 'axios';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -130,7 +131,7 @@ function ViewUserModal({ user, onClose, onEdit }: { user: AdminUser; onClose: ()
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
             <div className="flex items-start gap-2.5">
               <Mail className="h-4 w-4 text-blue-400 mt-0.5 shrink-0" />
               <div>
@@ -243,7 +244,7 @@ function EditUserModal({ user, onClose, onSaved }: { user: AdminUser; onClose: (
             <div className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500">{user.email}</div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">First Name *</label>
               <input required value={form.first_name} onChange={set('first_name')}
@@ -258,23 +259,23 @@ function EditUserModal({ user, onClose, onSaved }: { user: AdminUser; onClose: (
 
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Role</label>
-            <select value={form.role} onChange={set('role')}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
-              {ALL_ROLES.map((r) => (
-                <option key={r} value={r}>{ROLE_LABELS[r] ?? r}</option>
-              ))}
-            </select>
+            <CustomSelect
+              value={form.role}
+              onChange={(val) => set('role', val)}
+              options={ALL_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] ?? r }))}
+            />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Account Status</label>
-            <select
+            <CustomSelect
               value={form.is_active ? 'true' : 'false'}
-              onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.value === 'true' }))}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
+              onChange={(val) => setForm((f) => ({ ...f, is_active: val === 'true' }))}
+              options={[
+                { value: 'true', label: 'Active' },
+                { value: 'false', label: 'Inactive' },
+              ]}
+            />
           </div>
 
           {error && (
@@ -408,7 +409,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 pt-0 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">First Name *</label>
               <input required value={form.first_name} onChange={set('first_name')}
@@ -433,12 +434,11 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Role</label>
-            <select value={form.role} onChange={set('role')}
-              className="w-full text-sm border border-gray-300 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
-              {ALL_ROLES.map((r) => (
-                <option key={r} value={r}>{ROLE_LABELS[r] ?? r}</option>
-              ))}
-            </select>
+            <CustomSelect
+              value={form.role}
+              onChange={(val) => set('role', val)}
+              options={ALL_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] ?? r }))}
+            />
           </div>
 
           {error && <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
@@ -516,10 +516,10 @@ export default function ManagementUsersPage() {
 
       {/* Header */}
       <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.18),0_2px_6px_-2px_rgba(0,0,0,0.06)] transition-all duration-300">
-        <div className="px-6 py-5 flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-1 h-10 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full" />
-            <div className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-blue-100" />
+            <div className="w-1 h-10 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full hidden sm:block" />
+            <div className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-blue-100 hidden sm:block" />
             <div>
               <h1 className="text-lg font-bold text-gray-900 uppercase tracking-wider">User Management</h1>
               <p className="text-sm text-gray-500 mt-0.5">View, create, edit and delete platform users</p>
@@ -527,7 +527,7 @@ export default function ManagementUsersPage() {
           </div>
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/20 transition-all"
+            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/20 transition-all w-full sm:w-auto"
           >
             <Plus className="h-4 w-4" /> New User
           </button>
@@ -536,31 +536,38 @@ export default function ManagementUsersPage() {
 
       {/* Filters */}
       <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.18),0_2px_6px_-2px_rgba(0,0,0,0.06)] transition-all duration-300">
-        <div className="p-4 flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-[200px]">
+        <div className="p-4 flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name or email\u2026"
+              placeholder="Search by name or email…"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             />
           </div>
-          <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
-            className="text-sm border border-gray-300 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
-            <option value="">All roles</option>
-            {ALL_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r] ?? r}</option>)}
-          </select>
-          <select value={statusFilter} onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-            className="text-sm border border-gray-300 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
-            <option value="">All statuses</option>
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
-          </select>
-          <button onClick={() => mutate()} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-            <RefreshCw className="h-3.5 w-3.5" />
-          </button>
+          <div className="flex gap-3">
+            <CustomSelect
+              value={roleFilter}
+              onChange={(val) => { setRoleFilter(val); setPage(1); }}
+              options={[{ value: '', label: 'All roles' }, ...ALL_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] ?? r }))]}
+              className="flex-1 sm:flex-none"
+            />
+            <CustomSelect
+              value={statusFilter}
+              onChange={(val) => { setStatus(val); setPage(1); }}
+              options={[
+                { value: '', label: 'All statuses' },
+                { value: 'true', label: 'Active' },
+                { value: 'false', label: 'Inactive' },
+              ]}
+              className="flex-1 sm:flex-none"
+            />
+            <button onClick={() => mutate()} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors shrink-0">
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -578,7 +585,59 @@ export default function ManagementUsersPage() {
             <p className="font-medium text-gray-500">No users found</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <>
+            {/* Mobile card layout */}
+            <div className="sm:hidden divide-y divide-gray-100">
+              {users.map((user) => (
+                <div key={user.id} className="p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <Avatar user={user} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">{user.full_name}</p>
+                      <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                    </div>
+                    {user.is_active ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200 shrink-0">
+                        <CheckCircle2 className="h-2.5 w-2.5" /> Active
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded-full border border-gray-200 shrink-0">
+                        <XCircle className="h-2.5 w-2.5" /> Inactive
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${ROLE_BADGE[user.role] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                      {user.is_staff && <Shield className="h-2 w-2 mr-0.5" />}
+                      {ROLE_LABELS[user.role] ?? user.role}
+                    </span>
+                    <span className="text-[10px] text-gray-400">{user.company_count} companies</span>
+                    <span className="text-[10px] text-gray-400">Joined {fmtDate(user.date_joined)}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => setViewUser(user)}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                      <Eye className="h-3 w-3" /> View
+                    </button>
+                    <button onClick={() => setEditUser(user)}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <Edit2 className="h-3 w-3" /> Edit
+                    </button>
+                    <button onClick={() => toggleActive(user)}
+                      className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${user.is_active ? 'text-amber-600 bg-amber-50 hover:bg-amber-100' : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'}`}>
+                      {user.is_active ? <><UserX className="h-3 w-3" /> Deactivate</> : <><UserCheck className="h-3 w-3" /> Activate</>}
+                    </button>
+                    <button onClick={() => setDeleteUser(user)}
+                      className="flex items-center justify-center p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table layout */}
+            <table className="w-full text-sm hidden sm:table">
             <thead className="bg-gradient-to-r from-gray-50/80 to-blue-50/40 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">User</th>
@@ -660,6 +719,7 @@ export default function ManagementUsersPage() {
               ))}
             </tbody>
           </table>
+          </>
         )}
 
         {/* Pagination */}

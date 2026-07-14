@@ -9,6 +9,7 @@ import {
   CheckCircle2, AlertTriangle, ArrowLeft, DollarSign,
   Receipt, X, AlertCircle, ChevronLeft, ChevronRight,
 } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -157,12 +158,12 @@ function SummaryCard({
   icon: React.ElementType; label: string; value: string | number; gradient: string;
 }) {
   return (
-    <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.18),0_2px_6px_-2px_rgba(0,0,0,0.06)] transition-all duration-300 p-4 flex items-center gap-3">
-      <div className={`p-2.5 rounded-xl ${gradient}`}>
-        <Icon className="h-5 w-5 text-white" />
+    <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.18),0_2px_6px_-2px_rgba(0,0,0,0.06)] transition-all duration-300 p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3">
+      <div className={`p-2 sm:p-2.5 rounded-xl ${gradient}`}>
+        <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
       </div>
-      <div>
-        <p className="text-xl font-bold text-gray-900">{value}</p>
+      <div className="min-w-0">
+        <p className="text-lg sm:text-xl font-bold text-gray-900 truncate">{value}</p>
         <p className="text-xs text-gray-500">{label}</p>
       </div>
     </div>
@@ -239,13 +240,13 @@ export default function AdminPaymentsPage() {
 
       {/* Header */}
       <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.18),0_2px_6px_-2px_rgba(0,0,0,0.06)] transition-all duration-300">
-        <div className="px-6 py-5 flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link href="/management" className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
               <ArrowLeft className="h-4 w-4 text-gray-500" />
             </Link>
-            <div className="w-1 h-10 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full" />
-            <div className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-blue-100" />
+            <div className="w-1 h-10 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full hidden sm:block" />
+            <div className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-blue-100 hidden sm:block" />
             <div>
               <h1 className="text-lg font-bold text-gray-900 uppercase tracking-wider">Payment Management</h1>
               <p className="text-sm text-gray-500 mt-0.5">View and manage all buyer payments across the platform</p>
@@ -253,7 +254,7 @@ export default function AdminPaymentsPage() {
           </div>
           <button
             onClick={() => mutate()}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors w-full sm:w-auto"
           >
             <RefreshCw className="h-3.5 w-3.5" /> Refresh
           </button>
@@ -296,19 +297,17 @@ export default function AdminPaymentsPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search invoice, company, customer, reference\u2026"
+                placeholder="Search invoice, company, customer, reference…"
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }}
                 className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               />
             </div>
-            <select
+            <CustomSelect
               value={method}
-              onChange={e => { setMethod(e.target.value); setPage(1); }}
-              className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-            >
-              {METHOD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+              onChange={(val) => { setMethod(val); setPage(1); }}
+              options={METHOD_OPTIONS}
+            />
             <div className="flex gap-2">
               <input
                 type="date"
@@ -344,7 +343,47 @@ export default function AdminPaymentsPage() {
             <p className="text-sm mt-1">Try adjusting your filters</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <>
+            {/* Mobile card layout */}
+            <div className="sm:hidden divide-y divide-gray-100">
+              {payments.map((p) => (
+                <div key={p.id} className="p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <Link href={`/management/invoices/${p.invoice_id}`}
+                        className="font-semibold text-blue-600 hover:underline text-sm">
+                        {p.invoice_number}
+                      </Link>
+                      {p.reference && (
+                        <p className="text-[10px] text-gray-400 font-mono">{p.reference}</p>
+                      )}
+                    </div>
+                    <span className="font-bold text-gray-900 text-sm shrink-0">
+                      AED {parseFloat(p.amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${METHOD_COLORS[p.method] ?? 'bg-gray-100 text-gray-700'}`}>
+                      {p.method_display}
+                    </span>
+                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full capitalize ${INV_STATUS_COLORS[p.invoice_status] ?? 'bg-gray-100 text-gray-600'}`}>
+                      {p.invoice_status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">{p.company_name} — {p.customer_name}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">{p.payment_date}</span>
+                    <button onClick={() => setVoidTarget(p)}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table layout */}
+            <table className="w-full text-sm hidden sm:table">
             <thead>
               <tr className="bg-gradient-to-r from-gray-50/80 to-blue-50/40 border-b border-gray-200">
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Invoice</th>
@@ -408,11 +447,12 @@ export default function AdminPaymentsPage() {
               ))}
             </tbody>
           </table>
+          </>
         )}
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between text-sm">
+          <div className="px-4 sm:px-5 py-3 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
             <span className="text-gray-500">Page {page} of {totalPages} ({pagination?.count} total)</span>
             <div className="flex items-center gap-1.5">
               <button

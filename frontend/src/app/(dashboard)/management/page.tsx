@@ -12,6 +12,7 @@ import {
   Truck, UserCheck, MessageSquare, UserPlus, X, Loader2, Mail,
   ClipboardList, TrendingUp,
 } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 async function fetcher(url: string) {
   const r = await api.get(url);
@@ -75,12 +76,12 @@ function StatCard({
   icon: React.ElementType; color?: string; href?: string;
 }) {
   const inner = (
-    <div className={`group bg-white rounded-xl shadow-sm border border-gray-100/80 p-4 flex items-center gap-3 transition-all duration-200 ${href ? 'hover:shadow-md hover:border-gray-200/80 cursor-pointer' : ''}`}>
-      <div className={`p-2.5 rounded-xl bg-gradient-to-br ${iconColors[color] ?? iconColors.blue} shadow-sm`}>
-        <Icon className="h-5 w-5 text-white" />
+    <div className={`group bg-white rounded-xl shadow-sm border border-gray-100/80 p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 ${href ? 'hover:shadow-md hover:border-gray-200/80 cursor-pointer' : ''}`}>
+      <div className={`p-2 sm:p-2.5 rounded-xl bg-gradient-to-br ${iconColors[color] ?? iconColors.blue} shadow-sm`}>
+        <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-2xl font-bold text-gray-900">{value ?? 0}</p>
+        <p className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{value ?? 0}</p>
         <p className="text-xs text-gray-500">{label}</p>
         {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
       </div>
@@ -98,12 +99,12 @@ function QueueCard({
 }) {
   return (
     <Link href={href}>
-      <div className="group relative bg-white rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-gray-100"
+      <div className="group relative bg-white rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-gray-100"
         style={{ boxShadow: '0 4px 20px -4px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)' }}
       >
-        <div className="flex items-start justify-between mb-4">
-          <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform duration-300">
-            <Icon className="h-5 w-5 text-white" />
+        <div className="flex items-start justify-between mb-3 sm:mb-4">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform duration-300">
+            <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
           </div>
           {count > 0 && (
             <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
@@ -117,7 +118,7 @@ function QueueCard({
         </div>
         <p className="font-semibold text-gray-900 text-sm">{title}</p>
         <p className="text-xs text-gray-500 mt-1 leading-relaxed line-clamp-2">{subtitle}</p>
-        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:text-blue-700 transition-colors">
+        <div className="mt-3 sm:mt-4 pt-3 border-t border-gray-100 flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:text-blue-700 transition-colors">
           Manage <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
         </div>
         <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-gray-900/5 pointer-events-none" />
@@ -197,7 +198,7 @@ function SendInviteModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
 
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm">
               <Mail className="h-5 w-5 text-white" />
@@ -216,7 +217,7 @@ function SendInviteModal({
         </div>
 
         {success ? (
-          <div className="px-6 py-12 flex flex-col items-center gap-3">
+          <div className="px-4 sm:px-6 py-12 flex flex-col items-center gap-3">
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-sm">
               <CheckCircle2 className="h-7 w-7 text-white" />
             </div>
@@ -226,7 +227,7 @@ function SendInviteModal({
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-5 space-y-4">
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">
                 Email Address <span className="text-red-500">*</span>
@@ -240,7 +241,7 @@ function SendInviteModal({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">First Name</label>
                 <input
@@ -263,7 +264,7 @@ function SendInviteModal({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Company Name Hint</label>
                 <input
@@ -276,16 +277,16 @@ function SendInviteModal({
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Role</label>
-                <select
+                <CustomSelect
                   value={form.role}
-                  onChange={e => set('role', e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-white"
-                >
-                  <option value="supplier">Supplier</option>
-                  <option value="accountant">Accountant</option>
-                  <option value="viewer">Viewer</option>
-                  <option value="admin">Admin</option>
-                </select>
+                  onChange={(val) => set('role', val)}
+                  options={[
+                    { value: 'supplier', label: 'Supplier' },
+                    { value: 'accountant', label: 'Accountant' },
+                    { value: 'viewer', label: 'Viewer' },
+                    { value: 'admin', label: 'Admin' },
+                  ]}
+                />
               </div>
             </div>
 
@@ -306,18 +307,18 @@ function SendInviteModal({
               </p>
             )}
 
-            <div className="flex items-center justify-end gap-3 pt-1">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-1">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors"
+                className="px-4 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors text-center"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 disabled:opacity-60 transition-all duration-200 shadow-sm"
+                className="flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 disabled:opacity-60 transition-all duration-200 shadow-sm"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 {loading ? 'Sending\u2026' : 'Send Invitation'}
@@ -382,17 +383,17 @@ export default function ManagementPage() {
                   Platform management &mdash; users, invoices, ASP verification and FTA reporting
                 </p>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 w-full sm:w-auto">
                 <button
                   onClick={() => setModalOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-white text-blue-700 hover:bg-blue-50 transition-all duration-200 shadow-sm"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-white text-blue-700 hover:bg-blue-50 transition-all duration-200 shadow-sm"
                 >
                   <UserPlus className="h-4 w-4" />
                   Send Invitation
                 </button>
                 <button
                   onClick={() => mutate()}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-white/15 text-white hover:bg-white/25 backdrop-blur-sm transition-all duration-200"
+                  className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-white/15 text-white hover:bg-white/25 backdrop-blur-sm transition-all duration-200"
                 >
                   <RefreshCw className="h-3.5 w-3.5" /> Refresh
                 </button>
@@ -422,21 +423,21 @@ export default function ManagementPage() {
 
             {/* ── Invitations & Onboarding ─────────────────────────────── */}
             <section>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 gap-2">
                 <SectionHeading label="Invitations &amp; Onboarding" />
-                <Link href="/management/invitations" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                <Link href="/management/invitations" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 shrink-0">
                   View all <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* Pending Invitations */}
                 <Link href="/management/invitations">
-                  <div className="group relative bg-white rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-gray-100"
+                  <div className="group relative bg-white rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-gray-100"
                     style={{ boxShadow: '0 4px 20px -4px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)' }}
                   >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform duration-300">
-                        <Mail className="h-5 w-5 text-white" />
+                    <div className="flex items-start justify-between mb-3 sm:mb-4">
+                      <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform duration-300">
+                        <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                       </div>
                       {pendingInvites > 0 && (
                         <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
@@ -446,7 +447,7 @@ export default function ManagementPage() {
                     </div>
                     <p className="font-semibold text-gray-900 text-sm">Pending Invitations</p>
                     <p className="text-xs text-gray-500 mt-1 leading-relaxed">Awaiting company registration via email</p>
-                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:text-blue-700 transition-colors">
+                    <div className="mt-3 sm:mt-4 pt-3 border-t border-gray-100 flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:text-blue-700 transition-colors">
                       View all <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                     <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-gray-900/5 pointer-events-none" />
@@ -455,12 +456,12 @@ export default function ManagementPage() {
 
                 {/* Companies Under Review */}
                 <Link href="/management/invitations">
-                  <div className="group relative bg-white rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-gray-100"
+                  <div className="group relative bg-white rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-gray-100"
                     style={{ boxShadow: '0 4px 20px -4px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)' }}
                   >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg shadow-amber-500/25 group-hover:scale-105 transition-transform duration-300">
-                        <ClipboardList className="h-5 w-5 text-white" />
+                    <div className="flex items-start justify-between mb-3 sm:mb-4">
+                      <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg shadow-amber-500/25 group-hover:scale-105 transition-transform duration-300">
+                        <ClipboardList className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                       </div>
                       {reviewCount > 0 && (
                         <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-100">
@@ -470,7 +471,7 @@ export default function ManagementPage() {
                     </div>
                     <p className="font-semibold text-gray-900 text-sm">Companies Under Review</p>
                     <p className="text-xs text-gray-500 mt-1 leading-relaxed">Submitted or under review registrations</p>
-                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:text-blue-700 transition-colors">
+                    <div className="mt-3 sm:mt-4 pt-3 border-t border-gray-100 flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:text-blue-700 transition-colors">
                       View all <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                     <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-gray-900/5 pointer-events-none" />
@@ -480,19 +481,19 @@ export default function ManagementPage() {
                 {/* Send Invitation CTA */}
                 <div
                   onClick={() => setModalOpen(true)}
-                  className="group relative bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 cursor-pointer hover:from-blue-700 hover:to-indigo-800 transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+                  className="group relative bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-4 sm:p-5 cursor-pointer hover:from-blue-700 hover:to-indigo-800 transition-all duration-300 hover:-translate-y-1 overflow-hidden"
                   style={{ boxShadow: '0 4px 20px -4px rgba(37,99,235,0.3), 0 1px 3px rgba(37,99,235,0.15)' }}
                 >
                   <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wOCI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyek0zNiAxNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-40" />
                   <div className="relative">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="p-2.5 rounded-xl bg-white/20 group-hover:scale-105 transition-transform duration-300">
-                        <UserPlus className="h-5 w-5 text-white" />
+                    <div className="flex items-start justify-between mb-3 sm:mb-4">
+                      <div className="p-2 sm:p-2.5 rounded-xl bg-white/20 group-hover:scale-105 transition-transform duration-300">
+                        <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                       </div>
                     </div>
                     <p className="font-semibold text-white text-sm">Send Invitation</p>
                     <p className="text-xs text-blue-200/80 mt-1 leading-relaxed">Invite a company to register on the platform</p>
-                    <div className="mt-4 pt-3 border-t border-white/15 flex items-center gap-1 text-xs font-semibold text-white/90 group-hover:text-white transition-colors">
+                    <div className="mt-3 sm:mt-4 pt-3 border-t border-white/15 flex items-center gap-1 text-xs font-semibold text-white/90 group-hover:text-white transition-colors">
                       Open form <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                   </div>
@@ -549,11 +550,11 @@ export default function ManagementPage() {
                   { key: 'rejected',  label: 'Rejected',    color: 'red',       icon: XCircle },
                   { key: 'cancelled', label: 'Cancelled',   color: 'gray',      icon: XCircle },
                 ].map(({ key, label, color, icon: Icon }) => (
-                  <div key={key} className="bg-white rounded-xl shadow-sm border border-gray-100/80 p-4 text-center">
-                    <div className={`inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br ${iconColors[color]} shadow-sm text-white mb-2`}>
-                      <Icon className="h-4 w-4" />
+                  <div key={key} className="bg-white rounded-xl shadow-sm border border-gray-100/80 p-3 sm:p-4 text-center">
+                    <div className={`inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br ${iconColors[color]} shadow-sm text-white mb-1.5 sm:mb-2`}>
+                      <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </div>
-                    <p className="text-lg font-bold text-gray-900">{inv?.by_status?.[key] ?? 0}</p>
+                    <p className="text-base sm:text-lg font-bold text-gray-900">{inv?.by_status?.[key] ?? 0}</p>
                     <p className="text-[10px] text-gray-500">{label}</p>
                   </div>
                 ))}
@@ -639,12 +640,12 @@ export default function ManagementPage() {
                   { role: 'viewer',           label: 'Viewers',     color: 'gray' },
                 ].map(({ role, label, color }) => (
                   <Link key={role} href={`/management/users?role=${role}`}>
-                    <div className="group bg-white rounded-xl shadow-sm border border-gray-100/80 p-4 flex items-center gap-3 transition-all duration-200 hover:shadow-md hover:border-gray-200/80 hover:-translate-y-0.5 cursor-pointer">
-                      <div className={`p-2 rounded-lg bg-gradient-to-br ${iconColors[color]} shadow-sm`}>
-                        <Users className="h-4 w-4 text-white" />
+                    <div className="group bg-white rounded-xl shadow-sm border border-gray-100/80 p-3 sm:p-4 flex items-center gap-2 sm:gap-3 transition-all duration-200 hover:shadow-md hover:border-gray-200/80 hover:-translate-y-0.5 cursor-pointer">
+                      <div className={`p-1.5 sm:p-2 rounded-lg bg-gradient-to-br ${iconColors[color]} shadow-sm`}>
+                        <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xl font-bold text-gray-900">{usr?.by_role?.[role] ?? 0}</p>
+                        <p className="text-lg sm:text-xl font-bold text-gray-900">{usr?.by_role?.[role] ?? 0}</p>
                         <p className="text-xs text-gray-500">{label}</p>
                       </div>
                       <ArrowRight className="h-4 w-4 text-gray-300 group-hover:text-blue-500 transition-colors shrink-0" />

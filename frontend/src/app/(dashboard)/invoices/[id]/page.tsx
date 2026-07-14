@@ -57,60 +57,60 @@ const sectionCard = 'bg-white rounded-xl border-2 border-gray-200 shadow-lg shad
 function LineItemsTable({ invoice }: { invoice: Invoice }) {
   return (
     <div className="bg-white rounded-xl border-2 border-gray-200 shadow-lg shadow-gray-200/50 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
+      <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
         <Receipt className="h-4 w-4 text-blue-500" />
-        <h2 className="text-sm font-semibold text-gray-800">Line Items</h2>
+        <h2 className="text-xs sm:text-sm font-semibold text-gray-800">Line Items</h2>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs sm:text-sm">
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Description</th>
-              <th className="px-6 py-3.5 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Qty</th>
-              <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Unit</th>
-              <th className="px-6 py-3.5 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Unit Price</th>
-              <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">VAT</th>
-              <th className="px-6 py-3.5 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">VAT Amt</th>
-              <th className="px-6 py-3.5 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Total</th>
+              <th className="px-3 py-2.5 sm:px-6 sm:py-3.5 text-left text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider">Description</th>
+              <th className="px-3 py-2.5 sm:px-6 sm:py-3.5 text-right text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider">Qty</th>
+              <th className="px-3 py-2.5 sm:px-6 sm:py-3.5 text-left text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider">Unit</th>
+              <th className="px-3 py-2.5 sm:px-6 sm:py-3.5 text-right text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider">Unit Price</th>
+              <th className="px-3 py-2.5 sm:px-6 sm:py-3.5 text-left text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider">VAT</th>
+              <th className="px-3 py-2.5 sm:px-6 sm:py-3.5 text-right text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider">VAT Amt</th>
+              <th className="px-3 py-2.5 sm:px-6 sm:py-3.5 text-right text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider">Total</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {invoice.items.map((item) => (
               <tr key={item.id} className="transition-colors hover:bg-gray-50">
-                <td className="px-6 py-3.5 text-gray-800 font-medium">{item.description}</td>
-                <td className="px-6 py-3.5 text-right text-gray-600">{item.quantity}</td>
-                <td className="px-6 py-3.5 text-gray-500">{item.unit || '—'}</td>
-                <td className="px-6 py-3.5 text-right font-medium text-gray-700">{Number(item.unit_price).toLocaleString('en-AE', { minimumFractionDigits: 2 })}</td>
-                <td className="px-6 py-3.5">
+                <td className="px-3 py-2.5 sm:px-6 sm:py-3.5 text-gray-800 font-medium max-w-[120px] sm:max-w-none truncate sm:whitespace-normal">{item.description}</td>
+                <td className="px-3 py-2.5 sm:px-6 sm:py-3.5 text-right text-gray-600">{item.quantity}</td>
+                <td className="px-3 py-2.5 sm:px-6 sm:py-3.5 text-gray-500">{item.unit || '—'}</td>
+                <td className="px-3 py-2.5 sm:px-6 sm:py-3.5 text-right font-medium text-gray-700">{Number(item.unit_price).toLocaleString('en-AE', { minimumFractionDigits: 2 })}</td>
+                <td className="px-3 py-2.5 sm:px-6 sm:py-3.5">
                   <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">{item.vat_rate_type_display}</span>
                 </td>
-                <td className="px-6 py-3.5 text-right text-gray-600">{Number(item.vat_amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}</td>
-                <td className="px-6 py-3.5 text-right font-bold text-gray-900">{Number(item.total_amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}</td>
+                <td className="px-3 py-2.5 sm:px-6 sm:py-3.5 text-right text-gray-600">{Number(item.vat_amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}</td>
+                <td className="px-3 py-2.5 sm:px-6 sm:py-3.5 text-right font-bold text-gray-900">{Number(item.total_amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}</td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr className="border-t border-gray-200 bg-gray-50">
-              <td colSpan={6} className="px-6 py-3 text-right text-sm font-medium text-gray-600">Subtotal</td>
-              <td className="px-6 py-3 text-right font-semibold text-gray-800">{Number(invoice.subtotal).toLocaleString('en-AE', { minimumFractionDigits: 2 })}</td>
+              <td colSpan={6} className="px-3 py-2.5 sm:px-6 sm:py-3 text-right text-xs sm:text-sm font-medium text-gray-600">Subtotal</td>
+              <td className="px-3 py-2.5 sm:px-6 sm:py-3 text-right font-semibold text-gray-800">{Number(invoice.subtotal).toLocaleString('en-AE', { minimumFractionDigits: 2 })}</td>
             </tr>
             {parseFloat(invoice.discount_amount) > 0 && (
               <tr className="bg-red-50">
-                <td colSpan={6} className="px-6 py-3 text-right text-sm font-medium text-gray-600">Discount</td>
-                <td className="px-6 py-3 text-right text-red-600 font-semibold">
+                <td colSpan={6} className="px-3 py-2.5 sm:px-6 sm:py-3 text-right text-xs sm:text-sm font-medium text-gray-600">Discount</td>
+                <td className="px-3 py-2.5 sm:px-6 sm:py-3 text-right text-red-600 font-semibold">
                   −{Number(invoice.discount_amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}
                 </td>
               </tr>
             )}
             <tr className="bg-gray-50">
-              <td colSpan={6} className="px-6 py-3 text-right text-sm font-medium text-gray-600">VAT (5%)</td>
-              <td className="px-6 py-3 text-right font-semibold text-gray-800">{Number(invoice.total_vat).toLocaleString('en-AE', { minimumFractionDigits: 2 })}</td>
+              <td colSpan={6} className="px-3 py-2.5 sm:px-6 sm:py-3 text-right text-xs sm:text-sm font-medium text-gray-600">VAT (5%)</td>
+              <td className="px-3 py-2.5 sm:px-6 sm:py-3 text-right font-semibold text-gray-800">{Number(invoice.total_vat).toLocaleString('en-AE', { minimumFractionDigits: 2 })}</td>
             </tr>
             <tr className="bg-gradient-to-r from-blue-950 to-indigo-950">
-              <td colSpan={6} className="px-6 py-4 text-right font-bold text-blue-300 text-base">
+              <td colSpan={6} className="px-3 py-3 sm:px-6 sm:py-4 text-right font-bold text-blue-300 text-sm sm:text-base">
                 Total ({invoice.currency})
               </td>
-              <td className="px-6 py-4 text-right font-bold text-white text-base">
+              <td className="px-3 py-3 sm:px-6 sm:py-4 text-right font-bold text-white text-sm sm:text-base">
                 {Number(invoice.total_amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}
               </td>
             </tr>
@@ -123,13 +123,13 @@ function LineItemsTable({ invoice }: { invoice: Invoice }) {
 
 function StatChip({ label, value, icon, color }: { label: string; value: string; icon: React.ReactNode; color: string }) {
   return (
-    <div className="bg-white rounded-xl border-2 border-gray-200 px-4 py-3 shadow-md shadow-gray-200/50 flex items-center gap-3">
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
+    <div className="bg-white rounded-xl border-2 border-gray-200 px-3 py-2.5 sm:px-4 sm:py-3 shadow-md shadow-gray-200/50 flex items-center gap-2 sm:gap-3">
+      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
         {icon}
       </div>
-      <div>
-        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{label}</p>
-        <p className="text-sm font-bold text-gray-900">{value}</p>
+      <div className="min-w-0">
+        <p className="text-[9px] sm:text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{label}</p>
+        <p className="text-xs sm:text-sm font-bold text-gray-900 truncate">{value}</p>
       </div>
     </div>
   );
@@ -301,11 +301,11 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
   ].filter(Boolean).join(', ');
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
 
       {/* ── Page header card ── */}
       <AnimatedSection>
-        <div className="bg-gradient-to-br from-blue-950 to-indigo-950 rounded-2xl border border-white/10 shadow-2xl shadow-blue-950/30 p-7 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-blue-950 to-indigo-950 rounded-2xl border border-white/10 shadow-2xl shadow-blue-950/30 p-4 sm:p-7 relative overflow-hidden">
           <div className="absolute inset-0 bg-grid opacity-[0.04] pointer-events-none" />
           <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="relative">
@@ -315,10 +315,10 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
             >
               <ArrowLeft className="h-4 w-4" /> Back to invoices
             </button>
-            <div className="flex items-start justify-between gap-6 flex-wrap">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-3 flex-wrap">
-                  <h1 className="text-2xl font-bold text-white">{invoice.invoice_number}</h1>
+                  <h1 className="text-xl sm:text-2xl font-bold text-white">{invoice.invoice_number}</h1>
                   <InvoiceStatusBadge status={invoice.status} />
                 </div>
                 <div className="flex items-center gap-3 text-sm text-blue-200/80 flex-wrap">
@@ -344,7 +344,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                   )}
                 </div>
               </div>
-              <div className="flex gap-2 flex-wrap shrink-0">
+              <div className="flex gap-2 flex-wrap shrink-0 justify-start sm:justify-end">
                 <PDFDownloadButton invoice={invoice} company={activeCompany} />
                 <Button
                   variant="secondary"
@@ -404,7 +404,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
 
       {/* ── Stat chips row ── */}
       <AnimatedSection delay={80}>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5">
           <StatChip label="Subtotal" value={`${invoice.currency} ${Number(invoice.subtotal).toLocaleString('en-AE', { minimumFractionDigits: 2 })}`} icon={<Receipt className="h-5 w-5 text-white" />} color="bg-gradient-to-br from-blue-600 to-blue-700" />
           <StatChip label="VAT (5%)" value={`${invoice.currency} ${Number(invoice.total_vat).toLocaleString('en-AE', { minimumFractionDigits: 2 })}`} icon={<Activity className="h-5 w-5 text-white" />} color="bg-gradient-to-br from-blue-500 to-indigo-600" />
           <StatChip label="Total Due" value={`${invoice.currency} ${Number(invoice.total_amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}`} icon={<Wallet className="h-5 w-5 text-white" />} color="bg-gradient-to-br from-blue-950 to-indigo-950" />
@@ -415,7 +415,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
       {/* ── Deactivated banner ── */}
       {invoice.status === 'deactivated' && (
         <AnimatedSection delay={100}>
-          <div className="rounded-xl bg-amber-50 border-2 border-amber-200 px-6 py-4 text-sm text-amber-800 shadow-lg shadow-amber-100/30">
+          <div className="rounded-xl bg-amber-50 border-2 border-amber-200 px-4 py-3 sm:px-6 sm:py-4 text-xs sm:text-sm text-amber-800 shadow-lg shadow-amber-100/30">
             <p className="font-semibold flex items-center gap-1.5"><Ban className="h-4 w-4" /> This invoice has been deactivated.</p>
             {invoice.deactivation_reason && (
               <p className="mt-1"><span className="font-medium">Reason:</span> {invoice.deactivation_reason}</p>
@@ -427,7 +427,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
       {/* ── Submitting overlay ── */}
       {submitting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl px-8 py-7 max-w-sm w-full mx-4 text-center animate-scale-in">
+          <div className="bg-white rounded-2xl shadow-2xl px-5 py-6 sm:px-8 sm:py-7 max-w-sm w-full mx-4 text-center animate-scale-in">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
               <RefreshCw className="h-7 w-7 text-blue-600 animate-spin" />
             </div>
@@ -602,10 +602,10 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
       )}
 
       {/* ── Main 3-col: Supplier | Buyer | Notes (equal height) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Supplier */}
         <AnimatedSection delay={150} direction="up">
-          <div className={`${sectionCard} p-6 h-full`}>
+          <div className={`${sectionCard} p-4 sm:p-6 h-full`}>
             <div className="flex flex-col h-full">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shrink-0">
@@ -613,13 +613,13 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                 </div>
                 <h2 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Supplier</h2>
               </div>
-              <div className="flex items-start gap-4 flex-1">
+              <div className="flex items-start gap-3 sm:gap-4 flex-1">
                 {co?.logo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={co.logo_url} alt={`${invoice.company_name} logo`}
-                    className="w-14 h-14 rounded-xl object-contain border-2 border-gray-200 bg-white shrink-0 shadow-sm" />
+                    className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl object-contain border-2 border-gray-200 bg-white shrink-0 shadow-sm" />
                 ) : (
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-700 to-blue-800 text-white flex items-center justify-center font-bold text-lg shrink-0 shadow-md shadow-blue-200/50">
+                  <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-blue-700 to-blue-800 text-white flex items-center justify-center font-bold text-sm sm:text-lg shrink-0 shadow-md shadow-blue-200/50">
                     {(invoice.company_name || '?').slice(0, 2).toUpperCase()}
                   </div>
                 )}
@@ -649,7 +649,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
 
         {/* Buyer */}
         <AnimatedSection delay={250} direction="up">
-          <div className={`${sectionCard} p-6 h-full`}>
+          <div className={`${sectionCard} p-4 sm:p-6 h-full`}>
             <div className="flex flex-col h-full">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-indigo-700 flex items-center justify-center shrink-0">
@@ -657,13 +657,13 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                 </div>
                 <h2 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Buyer</h2>
               </div>
-              <div className="flex items-start gap-4 flex-1">
+              <div className="flex items-start gap-3 sm:gap-4 flex-1">
                 {invoice.customer_logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={invoice.customer_logo.startsWith('/') ? `${BACKEND_URL}${invoice.customer_logo}` : invoice.customer_logo} alt={`${invoice.customer_name} logo`}
-                    className="w-14 h-14 rounded-xl object-contain border-2 border-gray-200 bg-white shrink-0 shadow-sm" />
+                    className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl object-contain border-2 border-gray-200 bg-white shrink-0 shadow-sm" />
                 ) : (
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 text-white flex items-center justify-center font-bold text-lg shrink-0 shadow-md shadow-indigo-200/50">
+                  <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 text-white flex items-center justify-center font-bold text-sm sm:text-lg shrink-0 shadow-md shadow-indigo-200/50">
                     {(invoice.customer_name || '?').slice(0, 2).toUpperCase()}
                   </div>
                 )}
@@ -692,11 +692,11 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
 
         {/* Notes */}
         <AnimatedSection delay={350} direction="up">
-          <div className={`${sectionCard} p-6 h-full`}>
+          <div className={`${sectionCard} p-4 sm:p-6 h-full`}>
             <div className="flex flex-col h-full">
               <div className="flex items-center gap-3 pb-4 mb-4 border-b border-gray-100">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shrink-0 shadow-sm shadow-amber-200/30">
-                  <FileText className="h-[18px] w-[18px] text-white" />
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shrink-0 shadow-sm shadow-amber-200/30">
+                  <FileText className="h-4 w-4 text-white" />
                 </div>
                 <div>
                   <h2 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Notes</h2>
@@ -722,39 +722,39 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
       </div>
 
       {/* ── Secondary row: Dates + ASP/FTA ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
           <AnimatedSection delay={200} direction="up">
-            <div className={`${sectionCard} p-6`}>
+            <div className={`${sectionCard} p-4 sm:p-6`}>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
                   <Calendar className="h-4 w-4 text-white" />
                 </div>
                 <h2 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Invoice Dates</h2>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
                 <div>
                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Issue Date</p>
-                  <p className="text-sm font-semibold text-gray-900">{invoice.issue_date}</p>
+                  <p className="text-xs sm:text-sm font-semibold text-gray-900">{invoice.issue_date}</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Due Date</p>
-                  <p className="text-sm font-semibold text-gray-900">{invoice.due_date ?? '—'}</p>
+                  <p className="text-xs sm:text-sm font-semibold text-gray-900">{invoice.due_date ?? '—'}</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Supply Date</p>
-                  <p className="text-sm font-semibold text-gray-900">{invoice.supply_date ?? '—'}</p>
+                  <p className="text-xs sm:text-sm font-semibold text-gray-900">{invoice.supply_date ?? '—'}</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Currency</p>
-                  <p className="text-sm font-semibold text-gray-900">{invoice.currency}</p>
+                  <p className="text-xs sm:text-sm font-semibold text-gray-900">{invoice.currency}</p>
                 </div>
               </div>
               {invoice.invoice_type === 'continuous_supply' && (invoice.supply_date_end || invoice.contract_reference) && (
-                <div className="border-t border-gray-200 pt-4 mt-4 grid grid-cols-2 sm:grid-cols-4 gap-6">
+                <div className="border-t border-gray-200 pt-4 mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
                   <div>
                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Period End</p>
-                    <p className="text-sm font-semibold text-gray-900">{invoice.supply_date_end ?? '—'}</p>
+                    <p className="text-xs sm:text-sm font-semibold text-gray-900">{invoice.supply_date_end ?? '—'}</p>
                   </div>
                   {invoice.contract_reference && (
                     <div className="col-span-3">
@@ -768,10 +768,10 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
           </AnimatedSection>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {(invoice.asp_submission_id || invoice.asp_submitted_at) && (
             <AnimatedSection delay={350} direction="up">
-              <div className={`${sectionCard} p-6`}>
+              <div className={`${sectionCard} p-4 sm:p-6`}>
                 <h2 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3 flex items-center gap-2">
                   <Activity className="h-3.5 w-3.5 text-blue-500" />
                   ASP Submission (Corner 2)
@@ -779,7 +779,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                 <div className="space-y-2.5">
                   <div>
                     <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Submission ID</p>
-                    <p className="text-xs font-mono font-semibold text-gray-700 break-all">{invoice.asp_submission_id}</p>
+                    <p className="text-[11px] sm:text-xs font-mono font-semibold text-gray-700 break-all">{invoice.asp_submission_id}</p>
                   </div>
                   {invoice.asp_submitted_at && (
                     <div>
@@ -797,7 +797,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
             const ftaRef = ftaEvent?.data?.fta_reference as string | undefined;
             return ftaRef ? (
               <AnimatedSection delay={450} direction="up">
-                <div className="bg-white rounded-xl border-2 border-gray-200 p-6 shadow-lg shadow-gray-200/50 transition-all duration-300">
+                <div className="bg-white rounded-xl border-2 border-gray-200 p-4 sm:p-6 shadow-lg shadow-gray-200/50 transition-all duration-300">
                   <h2 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3 flex items-center gap-2">
                     <Activity className="h-3.5 w-3.5 text-emerald-500" />
                     FTA Reporting (Corner 5)
@@ -829,13 +829,13 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
       {/* ── Activity Log ── */}
       {timeline && (
         <AnimatedSection delay={500} direction="up">
-          <div className="bg-white rounded-xl border-2 border-gray-200 p-6 shadow-lg shadow-gray-200/50">
+          <div className="bg-white rounded-xl border-2 border-gray-200 p-4 sm:p-6 shadow-lg shadow-gray-200/50">
             <div className="flex items-center gap-2 mb-5">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
                 <Activity className="h-4 w-4 text-white" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-gray-900">Activity Log</h2>
+                <h2 className="text-xs sm:text-sm font-bold text-gray-900">Activity Log</h2>
                 <p className="text-[10px] text-gray-500">Event history and status changes</p>
               </div>
             </div>

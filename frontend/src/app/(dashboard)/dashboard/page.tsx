@@ -43,41 +43,41 @@ const CARD_CONFIG = [
     label: 'Total Invoices',
     icon: FileText,
     color: 'text-blue-600',
-    dot: 'bg-blue-500',
-    from: 'from-blue-700',
-    to: 'to-blue-800',
-    light: 'bg-blue-50',
-    ring: 'ring-blue-700/20',
+    from: 'from-blue-600',
+    to: 'to-blue-700',
+    bg: 'bg-gradient-to-br from-blue-50 via-blue-50/50 to-white',
+    border: 'border-blue-200/80',
+    iconBg: 'bg-gradient-to-br from-blue-500 to-blue-600',
   },
   {
     label: 'Total Revenue',
     icon: Wallet,
     color: 'text-emerald-600',
-    dot: 'bg-emerald-500',
-    from: 'from-blue-700',
-    to: 'to-blue-800',
-    light: 'bg-blue-50',
-    ring: 'ring-blue-700/20',
+    from: 'from-emerald-500',
+    to: 'to-emerald-600',
+    bg: 'bg-gradient-to-br from-emerald-50 via-emerald-50/50 to-white',
+    border: 'border-emerald-200/80',
+    iconBg: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
   },
   {
     label: 'VAT Collected',
     icon: Percent,
     color: 'text-amber-600',
-    dot: 'bg-amber-500',
-    from: 'from-blue-700',
-    to: 'to-blue-800',
-    light: 'bg-blue-50',
-    ring: 'ring-blue-700/20',
+    from: 'from-amber-500',
+    to: 'to-amber-600',
+    bg: 'bg-gradient-to-br from-amber-50 via-amber-50/50 to-white',
+    border: 'border-amber-200/80',
+    iconBg: 'bg-gradient-to-br from-amber-500 to-amber-600',
   },
   {
     label: 'Validated by ASP',
     icon: ShieldCheck,
     color: 'text-violet-600',
-    dot: 'bg-violet-500',
-    from: 'from-blue-700',
-    to: 'to-blue-800',
-    light: 'bg-blue-50',
-    ring: 'ring-blue-700/20',
+    from: 'from-violet-500',
+    to: 'to-violet-600',
+    bg: 'bg-gradient-to-br from-violet-50 via-violet-50/50 to-white',
+    border: 'border-violet-200/80',
+    iconBg: 'bg-gradient-to-br from-violet-500 to-violet-600',
   },
 ];
 
@@ -272,7 +272,7 @@ export default function DashboardPage() {
         </AnimatedSection>
 
         {/* ── Stats ────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 lg:gap-5">
           {CARD_CONFIG.map((cfg, i) => {
             const getVal = () => {
               if (i === 0) return stats?.total_invoices ?? '\u2014';
@@ -288,20 +288,33 @@ export default function DashboardPage() {
             return (
               <div
                 key={cfg.label}
-                className="relative group bg-gradient-to-b from-blue-50 to-white rounded-xl border border-blue-200/80 p-3.5 sm:p-5 shadow-[0_2px_8px_-2px_rgba(59,130,246,0.12),0_4px_12px_-2px_rgba(59,130,246,0.06)] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgba(59,130,246,0.2),0_4px_12px_-2px_rgba(59,130,246,0.1)] hover:-translate-y-1.5 animate-slide-up overflow-hidden"
+                className={clsx(
+                  'relative group rounded-xl border p-3.5 sm:p-5 lg:p-6 transition-all duration-300 overflow-hidden',
+                  'bg-gradient-to-b from-blue-50 to-white border-blue-200/80',
+                  'shadow-[0_2px_8px_-2px_rgba(59,130,246,0.12),0_4px_12px_-2px_rgba(59,130,246,0.06)]',
+                  'hover:shadow-[0_8px_24px_-4px_rgba(59,130,246,0.2),0_4px_12px_-2px_rgba(59,130,246,0.1)]',
+                  'hover:-translate-y-1 lg:hover:-translate-y-1.5',
+                  // large screen overrides: distinct color per card
+                  'lg:bg-white lg:border-gray-200/70 lg:shadow-[0_1px_3px_0_rgba(0,0,0,0.03),0_4px_24px_-8px_rgba(0,0,0,0.07)]',
+                  'lg:hover:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)]',
+                )}
                 style={{ animationDelay: `${i * 100}ms` }}
               >
-                <div className={clsx('absolute top-0 left-5 right-5 h-0.5 rounded-full bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-300', cfg.from, cfg.to)} />
+                {/* top accent bar on large screens */}
                 <div className={clsx(
-                  'absolute top-3 right-3 sm:static sm:shrink-0 w-8 h-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-gradient-to-br flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:shadow-md transition-all duration-300',
-                  cfg.from,
-                  cfg.to,
+                  'absolute inset-x-0 top-0 h-[2px] rounded-t-xl bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-300',
+                  'hidden lg:block',
+                  cfg.from, cfg.to,
+                )} />
+                <div className={clsx(
+                  'absolute top-3 right-3 sm:static sm:shrink-0 w-8 h-8 sm:h-11 sm:w-11 lg:h-12 lg:w-12 rounded-lg sm:rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:shadow-md transition-all duration-300',
+                  cfg.iconBg,
                 )}>
                   <cfg.icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
-                <div className="relative space-y-0.5 sm:space-y-1 pr-10 sm:pr-0">
-                  <p className="text-[10px] sm:text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{cfg.label}</p>
-                  <p className={clsx('text-base sm:text-2xl lg:text-3xl font-bold tracking-tight whitespace-nowrap leading-tight', cfg.color)}>
+                <div className="relative space-y-0.5 sm:space-y-1 pr-10 sm:pr-0 lg:mt-4">
+                  <p className="text-[10px] sm:text-[11px] lg:text-xs font-semibold text-gray-400 uppercase tracking-wider">{cfg.label}</p>
+                  <p className={clsx('text-base sm:text-2xl lg:text-[1.75rem] font-bold tracking-tight whitespace-nowrap leading-tight', cfg.color)}>
                     {getVal()}
                   </p>
                   {sub && (

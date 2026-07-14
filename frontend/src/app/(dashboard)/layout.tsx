@@ -7,6 +7,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/context/AuthContext';
 import { SidebarProvider, useSidebar } from '@/context/SidebarContext';
+import { CompanyProvider } from '@/hooks/useCompany';
 import { ChatWidget } from '@/components/chat/ChatWidget';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 
@@ -60,9 +61,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!isAuthenticated || (user && !user.email_verified)) return null;
 
   return (
-    <SidebarProvider>
-      <DashboardShell>{children}</DashboardShell>
-      <OnboardingModal />
-    </SidebarProvider>
+    <CompanyProvider>
+      <SidebarProvider>
+        <DashboardShell>{children}</DashboardShell>
+        <OnboardingModal />
+      </SidebarProvider>
+    </CompanyProvider>
   );
 }

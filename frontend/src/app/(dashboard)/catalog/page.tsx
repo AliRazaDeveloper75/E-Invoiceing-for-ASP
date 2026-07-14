@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useCompany } from '@/hooks/useCompany';
 import { useAuth } from '@/context/AuthContext';
 import { Input, Select } from '@/components/ui/Input';
@@ -125,7 +125,7 @@ function ProductFormPanel({
   onSaved: () => void;
 }) {
   const [serverError, setServerError] = useState('');
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ProductForm>({
+  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<ProductForm>({
     defaultValues: {
       name: initial?.name ?? '',
       description: initial?.description ?? '',
@@ -203,9 +203,18 @@ function ProductFormPanel({
                 validate: (v) => parseFloat(v) >= 0 || 'Cannot be negative',
               })}
             />
-            <Select label="VAT Rate" {...register('vat_rate_type')}>
-              {VAT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </Select>
+            <Controller
+              name="vat_rate_type"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  label="VAT Rate"
+                  value={field.value ?? 'standard'}
+                  onChange={field.onChange}
+                  options={VAT_OPTIONS}
+                />
+              )}
+            />
             <Input label="Unit" placeholder="pcs / hr / kg" maxLength={12} {...register('unit')} />
           </div>
 

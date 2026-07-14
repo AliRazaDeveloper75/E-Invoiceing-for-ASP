@@ -9,6 +9,7 @@ import {
   Search, Building2, UserCheck, RotateCcw, ChevronDown,
   Plus, Trash2, Send, CreditCard, Package, Users, Calculator,
 } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 import { PINT_FIELDS } from '@/data/pint-invoice-fields';
 import type { PintField, MandatoryType } from '@/data/pint-invoice-fields';
 import { useCompany } from '@/hooks/useCompany';
@@ -226,12 +227,10 @@ function FieldRenderer({ field, value, onChange, error, isActive, onFocus, onBlu
       </div>
 
       {field.inputType === 'select' ? (
-        <select value={value} onChange={(e) => onChange(field.id, e.target.value)}
-          onFocus={() => onFocus(field.id)} onBlur={onBlur}
-          className={inputCls + ' cursor-pointer'}>
-          <option value="">Select {field.businessTerm}…</option>
-          {field.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        <CustomSelect value={value}
+          onChange={(val) => { onChange(field.id, val); onFocus(field.id); onBlur(); }}
+          placeholder={`Select ${field.businessTerm}…`}
+          options={[{ value: '', label: `Select ${field.businessTerm}…` }, ...(field.options ?? [])]} />
       ) : field.inputType === 'textarea' ? (
         <textarea value={value} onChange={(e) => onChange(field.id, e.target.value)}
           onFocus={() => onFocus(field.id)} onBlur={onBlur}
@@ -471,7 +470,7 @@ function LineItemsEditor({ items, currency, onChange }: {
             {/* Fields */}
             <div className="p-4 space-y-3">
               {/* Name + Description */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">
                     Item Name <span className="text-red-500">*</span>
@@ -493,7 +492,7 @@ function LineItemsEditor({ items, currency, onChange }: {
               </div>
 
               {/* Qty, Unit, Price, Discount */}
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">
                     Qty <span className="text-red-500">*</span>
@@ -505,11 +504,9 @@ function LineItemsEditor({ items, currency, onChange }: {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Unit</label>
-                  <select value={item.unit} onChange={(e) => updateItem(item.id, 'unit', e.target.value)}
-                    className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm
-                               focus:outline-none focus:border-blue-500 cursor-pointer">
-                    {UNIT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.value}</option>)}
-                  </select>
+                  <CustomSelect value={item.unit}
+                    onChange={(val) => updateItem(item.id, 'unit', val)}
+                    options={UNIT_OPTIONS} />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">
@@ -532,16 +529,14 @@ function LineItemsEditor({ items, currency, onChange }: {
               </div>
 
               {/* VAT */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">
                     VAT Category <span className="text-red-500">*</span>
                   </label>
-                  <select value={item.vatCategory} onChange={(e) => updateItem(item.id, 'vatCategory', e.target.value)}
-                    className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm
-                               focus:outline-none focus:border-blue-500 cursor-pointer">
-                    {VAT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
+                  <CustomSelect value={item.vatCategory}
+                    onChange={(val) => updateItem(item.id, 'vatCategory', val)}
+                    options={VAT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))} />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">VAT Rate (%)</label>
@@ -743,7 +738,7 @@ function ReviewStep({ values, lineItems, hasBuyer, onSubmit, isSubmitting, submi
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
           {[['Standard', 'UAE PINT'], ['Network', 'E-Invoice'], ['Format', 'UBL 2.1']].map(([label, val]) => (
             <div key={label} className="bg-white/10 rounded-xl px-3 py-2.5 text-center">
               <p className="text-[10px] text-blue-400 uppercase tracking-wider">{label}</p>
@@ -803,7 +798,7 @@ function InvoicePreview({ values, lineItems, activeFieldId }: {
   const hasAny = Object.values(values).some((x) => x?.trim()) || lineItems.length > 0;
 
   return (
-    <div className="sticky top-[156px]">
+    <div className="lg:sticky lg:top-[156px]">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
           <Sparkles className="h-3.5 w-3.5 text-blue-500" /> Live Preview
@@ -1309,7 +1304,7 @@ export default function PintCreatePage() {
       {/* ── Resume unsaved draft banner ──────────────────────────────────── */}
       {restorable && (
         <div className="bg-amber-50 border-b border-amber-200">
-          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between gap-4 flex-wrap">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4 flex-wrap">
             <p className="text-sm text-amber-800">
               You have an unsaved invoice from{' '}
               <span className="font-semibold">
@@ -1343,10 +1338,10 @@ export default function PintCreatePage() {
 
       {/* ── Top bar ──────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
 
           {/* Row 1 */}
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
             <div className="flex items-center gap-2 text-sm">
               <button onClick={() => router.push('/invoices')}
                 className="flex items-center gap-1 text-gray-500 hover:text-gray-900 transition-colors">
@@ -1387,7 +1382,7 @@ export default function PintCreatePage() {
                   onClick={() => { if (done) { setCurrentStep(idx); scrollTop(); } }}
                   disabled={idx > currentStep}
                   className={[
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all',
+                    'flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all',
                     current  ? 'bg-blue-50 text-blue-700 border border-blue-100 shadow-sm' : '',
                     done     ? 'text-emerald-700 hover:bg-emerald-50 cursor-pointer' : '',
                     !current && !done ? 'text-gray-400 cursor-not-allowed' : '',
@@ -1405,7 +1400,7 @@ export default function PintCreatePage() {
 
       {/* Autofill banner */}
       {activeCompany && !autofillDone && (
-        <div className="max-w-7xl mx-auto px-6 pt-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
           <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3">
             <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
               <Zap className="h-4 w-4 text-emerald-600" />
@@ -1427,14 +1422,14 @@ export default function PintCreatePage() {
       )}
 
       {/* ── Body ─────────────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
 
           {/* ── Left: Form ──────────────────────────────────────────────── */}
           <div className="space-y-3">
 
             {/* Step header */}
-            <div className="bg-white rounded-2xl border border-gray-200 px-6 py-4">
+            <div className="bg-white rounded-2xl border border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
@@ -1530,7 +1525,7 @@ export default function PintCreatePage() {
 
             {/* Navigation */}
             {step.id !== 'submit' && (
-              <div className="bg-white rounded-2xl border border-gray-200 px-5 py-4 flex items-center justify-between">
+              <div className="bg-white rounded-2xl border border-gray-200 px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between gap-3 flex-wrap">
                 <button onClick={handleBack} disabled={currentStep === 0}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium
                              text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">

@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { useAutosaveDraft, type DraftEnvelope } from '@/hooks/useAutosaveDraft';
 import useSWR from 'swr';
 import QRCode from 'qrcode';
 import { api } from '@/lib/api';
 import { useCompany } from '@/hooks/useCompany';
 import { Button } from '@/components/ui/Button';
+import CustomSelect from '@/components/ui/CustomSelect';
 import { AnimatedSection } from '@/app/(landing)/AnimatedSection';
 import {
   Trash2, Plus, FileText, RotateCcw, RefreshCw,
@@ -418,8 +419,6 @@ function flattenServerErrors(details: unknown, prefix = ''): string[] {
   return out;
 }
 
-const selectCls = 'w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400';
-
 // ─── Excel columns (order matters — matches sample template) ──────────────────
 
 const EXCEL_COLS = [
@@ -624,11 +623,35 @@ function ExcelUploadButton({
   );
 }
 
+// ─── Catalog picker (one-shot trigger) ────────────────────────────────────────
+
+function CatalogPicker({ products, onSelect }: { products: CatalogProduct[]; onSelect: (id: string) => void }) {
+  const [selected, setSelected] = useState('');
+  return (
+    <div>
+      <label className="text-xs font-medium text-gray-500">Pick from catalog (optional)</label>
+      <CustomSelect
+        value={selected}
+        onChange={(val) => { if (val) { onSelect(val); setSelected(''); } }}
+        placeholder="— Select a saved product to auto-fill —"
+        options={[
+          { value: '', label: '— Select a saved product to auto-fill —' },
+          ...products.map((p) => ({
+            value: p.id,
+            label: `${p.name}${p.unit_price ? ` — ${p.unit_price}` : ''}${p.scope === 'global' ? ' (global)' : ''}`,
+          })),
+        ]}
+      />
+    </div>
+  );
+}
+
 // ─── Line item row ────────────────────────────────────────────────────────────
 
-function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, products, setValue }: {
+function ItemRow({ idx, register, control, errors, vatLocked, onRemove, canRemove, products, setValue }: {
   idx: number;
   register: ReturnType<typeof useForm<InvoiceForm>>['register'];
+  control: ReturnType<typeof useForm<InvoiceForm>>['control'];
   errors: ReturnType<typeof useForm<InvoiceForm>>['formState']['errors'];
   vatLocked: boolean; onRemove: () => void; canRemove: boolean;
   products: CatalogProduct[];
@@ -657,24 +680,10 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, produc
 
       {/* Pick from saved catalog — auto-fills the fields below */}
       {products.length > 0 && (
-        <div>
-          <label className="text-xs font-medium text-gray-500">Pick from catalog (optional)</label>
-          <select
-            defaultValue=""
-            onChange={(e) => { applyProduct(e.target.value); e.target.value = ''; }}
-            className={selectCls + ' mt-1 border-gray-200'}
-          >
-            <option value="">— Select a saved product to auto-fill —</option>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}{p.unit_price ? ` — ${p.unit_price}` : ''}{p.scope === 'global' ? ' (global)' : ''}
-              </option>
-            ))}
-          </select>
-        </div>
+        <CatalogPicker products={products} onSelect={applyProduct} />
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Item / Service Name" faf required
           error={errors.items?.[idx]?.item_name?.message}
           tooltip="Short name for this product or service. Max 5 words, 120 characters.">
@@ -712,7 +721,7 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, produc
         />
       </Field>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Field label="Quantity" required
           tooltip="Number of units supplied. Must be greater than 0."
           error={errors.items?.[idx]?.quantity?.message}>
@@ -723,27 +732,22 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, produc
             })} />
         </Field>
         <Field label="Unit" required tooltip="Unit of measure.">
-          <select className={selectCls} {...register(`items.${idx}.unit`, { required: 'Required' })}>
-            <option value="">— Select —</option>
-            <option value="pcs">pcs</option>
-            <option value="hr">hr</option>
-            <option value="kg">kg</option>
-            <option value="g">g</option>
-            <option value="m">m</option>
-            <option value="m²">m²</option>
-            <option value="m³">m³</option>
-            <option value="L">L</option>
-            <option value="ml">ml</option>
-            <option value="box">box</option>
-            <option value="set">set</option>
-            <option value="pair">pair</option>
-            <option value="doz">doz</option>
-            <option value="day">day</option>
-            <option value="month">month</option>
-            <option value="year">year</option>
-            <option value="service">service</option>
-            <option value="unit">unit</option>
-          </select>
+          <Controller control={control} name={`items.${idx}.unit`} rules={{ required: 'Required' }}
+            render={({ field }) => (
+              <CustomSelect value={field.value} onChange={field.onChange}
+                options={[
+                  { value: '', label: '— Select —' },
+                  { value: 'pcs', label: 'pcs' }, { value: 'hr', label: 'hr' },
+                  { value: 'kg', label: 'kg' }, { value: 'g', label: 'g' },
+                  { value: 'm', label: 'm' }, { value: 'm²', label: 'm²' },
+                  { value: 'm³', label: 'm³' }, { value: 'L', label: 'L' },
+                  { value: 'ml', label: 'ml' }, { value: 'box', label: 'box' },
+                  { value: 'set', label: 'set' }, { value: 'pair', label: 'pair' },
+                  { value: 'doz', label: 'doz' }, { value: 'day', label: 'day' },
+                  { value: 'month', label: 'month' }, { value: 'year', label: 'year' },
+                  { value: 'service', label: 'service' }, { value: 'unit', label: 'unit' },
+                ]} />
+            )} />
         </Field>
         <Field label="Unit Price (excl. VAT)" required
           tooltip="Price per unit excluding VAT. Cannot be negative."
@@ -756,17 +760,21 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, produc
             })} />
         </Field>
         <Field label="Tax Code" faf hint="S=5%, Z=0%, E=Exempt, O=OOS">
-          <select className={selectCls} {...register(`items.${idx}.tax_code`)}>
-            <option value="">— Select —</option>
-            <option value="S">S — Standard 5%</option>
-            <option value="Z">Z — Zero Rate 0%</option>
-            <option value="E">E — Exempt</option>
-            <option value="O">O — Out of Scope</option>
-          </select>
+          <Controller control={control} name={`items.${idx}.tax_code`}
+            render={({ field }) => (
+              <CustomSelect value={field.value} onChange={field.onChange}
+                options={[
+                  { value: '', label: '— Select —' },
+                  { value: 'S', label: 'S — Standard 5%' },
+                  { value: 'Z', label: 'Z — Zero Rate 0%' },
+                  { value: 'E', label: 'E — Exempt' },
+                  { value: 'O', label: 'O — Out of Scope' },
+                ]} />
+            )} />
         </Field>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Field label="VAT Rate"
           tooltip="The VAT treatment for this line: Standard 5%, Zero-rated 0%, Exempt, or Out of Scope.">
           {vatLocked ? (
@@ -777,12 +785,16 @@ function ItemRow({ idx, register, errors, vatLocked, onRemove, canRemove, produc
               </div>
             </>
           ) : (
-            <select className={selectCls} {...register(`items.${idx}.vat_rate_type`)}>
-              <option value="standard">Standard 5% (S)</option>
-              <option value="zero">Zero Rate 0% (Z)</option>
-              <option value="exempt">Exempt (E)</option>
-              <option value="out_of_scope">Out of Scope (O)</option>
-            </select>
+            <Controller control={control} name={`items.${idx}.vat_rate_type`}
+              render={({ field }) => (
+                <CustomSelect value={field.value} onChange={field.onChange}
+                  options={[
+                    { value: 'standard', label: 'Standard 5% (S)' },
+                    { value: 'zero', label: 'Zero Rate 0% (Z)' },
+                    { value: 'exempt', label: 'Exempt (E)' },
+                    { value: 'out_of_scope', label: 'Out of Scope (O)' },
+                  ]} />
+              )} />
           )}
         </Field>
         <Field label="Debit Amount (AED)" faf required
@@ -822,7 +834,7 @@ function FormStepper({ steps, current }: { steps: StepDef[]; current?: number })
   const allDone   = activeIdx === -1;
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg shadow-gray-200/50 px-5 py-4 mb-5">
+    <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg shadow-gray-200/50 px-3 sm:px-5 py-3 sm:py-4 mb-5">
       {/* Progress bar track */}
       <div className="relative mb-4">
         {/* Background track */}
@@ -1075,7 +1087,7 @@ function InvoicePreview({ card, companyName, customerName, issueDate, dueDate, c
         ) : (
           <div className="rounded-xl overflow-hidden border border-gray-100">
             {/* Table header */}
-            <div className="grid grid-cols-[1fr_32px_52px_24px_56px] gap-x-1 px-3 py-2 text-[9px] font-black text-gray-400 uppercase tracking-wide bg-gray-50">
+            <div className="hidden sm:grid grid-cols-[1fr_32px_52px_24px_56px] gap-x-1 px-3 py-2 text-[9px] font-black text-gray-400 uppercase tracking-wide bg-gray-50">
               <span>Item</span>
               <span className="text-right">Qty</span>
               <span className="text-right">Price</span>
@@ -1088,19 +1100,31 @@ function InvoicePreview({ card, companyName, customerName, issueDate, dueDate, c
               if (!name && !parseFloat(it.unit_price || '0')) return null;
               const { net, vat, rate } = lineCalcs[i];
               return (
-                <div key={i}
-                  className={`grid grid-cols-[1fr_32px_52px_24px_56px] gap-x-1 px-3 py-2 items-center
+                <Fragment key={i}>
+                  {/* Mobile row */}
+                  <div className={`sm:hidden flex items-center justify-between gap-2 px-3 py-2
                     ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}
                     border-t border-gray-100 first:border-t-0`}>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-gray-800 truncate leading-tight">{name || '—'}</p>
-                    {it.unit && <p className="text-gray-400 text-[9px]">{it.unit}</p>}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-gray-800 truncate leading-tight">{name || '—'}</p>
+                      <p className="text-gray-400 text-[9px]">{parseFloat(it.quantity) || 0} × {fmt(parseFloat(it.unit_price) || 0)}</p>
+                    </div>
+                    <p className="text-right font-semibold text-gray-800 tabular-nums text-xs shrink-0">{fmt(net + vat)}</p>
                   </div>
-                  <p className="text-right text-gray-600 tabular-nums">{parseFloat(it.quantity) || 0}</p>
-                  <p className="text-right text-gray-600 tabular-nums">{fmt(parseFloat(it.unit_price) || 0)}</p>
-                  <p className="text-right text-gray-400 tabular-nums">{rate}%</p>
-                  <p className="text-right font-semibold text-gray-800 tabular-nums">{fmt(net + vat)}</p>
-                </div>
+                  {/* Desktop row */}
+                  <div className={`hidden sm:grid grid-cols-[1fr_32px_52px_24px_56px] gap-x-1 px-3 py-2 items-center
+                    ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}
+                    border-t border-gray-100 first:border-t-0`}>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-800 truncate leading-tight">{name || '—'}</p>
+                      {it.unit && <p className="text-gray-400 text-[9px]">{it.unit}</p>}
+                    </div>
+                    <p className="text-right text-gray-600 tabular-nums">{parseFloat(it.quantity) || 0}</p>
+                    <p className="text-right text-gray-600 tabular-nums">{fmt(parseFloat(it.unit_price) || 0)}</p>
+                    <p className="text-right text-gray-400 tabular-nums">{rate}%</p>
+                    <p className="text-right font-semibold text-gray-800 tabular-nums">{fmt(net + vat)}</p>
+                  </div>
+                </Fragment>
               );
             })}
           </div>
@@ -1550,7 +1574,7 @@ export default function NewInvoicePage() {
         <AnimatedSection delay={100}>
           <GroupHeading icon={<FileText className="h-4 w-4" />} title="Document Types"
             subtitle="UAE FTA Req 12 & 13 — Tax invoices, credit notes and debit notes" />
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {DOCUMENT_TYPES.map((t) => <TypeCard key={t.value} card={t} selected={false} onSelect={() => pickCard(t)} />)}
           </div>
         </AnimatedSection>
@@ -1558,7 +1582,7 @@ export default function NewInvoicePage() {
         <AnimatedSection delay={200}>
           <GroupHeading icon={<TrendingUp className="h-4 w-4" />} title="Sales / Output Supplies"
             subtitle="UAE FTA Req 1.1–1.9 — Supply categories for VAT return output tax (Boxes 1–6)" />
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {SALES_TYPES.map((t) => <TypeCard key={t.value} card={t} selected={false} onSelect={() => pickCard(t)} />)}
           </div>
         </AnimatedSection>
@@ -1566,7 +1590,7 @@ export default function NewInvoicePage() {
         <AnimatedSection delay={300}>
           <GroupHeading icon={<TrendingDown className="h-4 w-4" />} title="Purchases / Input Tax"
             subtitle="UAE FTA Req 1.10–1.14 — Purchase categories for VAT return input tax recovery (Boxes 10–14)" />
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {PURCHASE_TYPES.map((t) => <TypeCard key={t.value} card={t} selected={false} onSelect={() => pickCard(t)} />)}
           </div>
         </AnimatedSection>
@@ -1612,7 +1636,7 @@ export default function NewInvoicePage() {
 
       {/* Two-column layout: form + preview. On the Review step we go full-width
           and show the invoice as one professional document instead. */}
-      <div className={step === 5 ? '' : 'grid grid-cols-[1fr_420px] gap-6 items-start'}>
+      <div className={step === 5 ? '' : 'grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 items-start'}>
 
         {/* ── LEFT: Form ── */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 min-w-0" noValidate>
@@ -1630,7 +1654,7 @@ export default function NewInvoicePage() {
                   <p className="text-xs text-gray-500">TRN: {activeCompany?.trn || '—'}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Supplier Location" required
                   tooltip="Location of the supplier (your company). E.g. Dubai, UAE"
                   error={errors.supplier_location?.message}>
@@ -1643,30 +1667,42 @@ export default function NewInvoicePage() {
                 </Field>
                 <Field label="Accounts Receivable / Payable" required
                   error={errors.accounts_type?.message}>
-                  <select className={selectCls} {...register('accounts_type', { required: 'Required for audit file' })}>
-                    <option value="">— Select —</option>
-                    <option value="receivable">Accounts Receivable (AR)</option>
-                    <option value="payable">Accounts Payable (AP)</option>
-                  </select>
+                  <Controller control={control} name="accounts_type" rules={{ required: 'Required for audit file' }}
+                    render={({ field }) => (
+                      <CustomSelect value={field.value} onChange={field.onChange}
+                        options={[
+                          { value: '', label: '— Select —' },
+                          { value: 'receivable', label: 'Accounts Receivable (AR)' },
+                          { value: 'payable', label: 'Accounts Payable (AP)' },
+                        ]} />
+                    )} />
                 </Field>
                 <Field label="Transaction Type">
-                  <select className={selectCls} {...register('transaction_type')}>
-                    <option value="b2b">B2B — Business to Business</option>
-                    <option value="b2g">B2G — Business to Government</option>
-                  </select>
+                  <Controller control={control} name="transaction_type"
+                    render={({ field }) => (
+                      <CustomSelect value={field.value} onChange={field.onChange}
+                        options={[
+                          { value: 'b2b', label: 'B2B — Business to Business' },
+                          { value: 'b2g', label: 'B2G — Business to Government' },
+                        ]} />
+                    )} />
                 </Field>
                 <Field label="Payment Method" required
                   hint="UN/ECE UNCL 4461 — mandatory for UBL PaymentMeans element"
                   error={errors.payment_means_code?.message}>
-                  <select className={selectCls} {...register('payment_means_code', { required: 'Payment method is required' })}>
-                    <option value="30">30 — Credit Transfer</option>
-                    <option value="10">10 — Cash</option>
-                    <option value="20">20 — Cheque</option>
-                    <option value="48">48 — Bank Card</option>
-                    <option value="49">49 — Direct Debit</option>
-                    <option value="57">57 — Standing Order</option>
-                    <option value="58">58 — SEPA Credit Transfer</option>
-                  </select>
+                  <Controller control={control} name="payment_means_code" rules={{ required: 'Payment method is required' }}
+                    render={({ field }) => (
+                      <CustomSelect value={field.value} onChange={field.onChange}
+                        options={[
+                          { value: '30', label: '30 — Credit Transfer' },
+                          { value: '10', label: '10 — Cash' },
+                          { value: '20', label: '20 — Cheque' },
+                          { value: '48', label: '48 — Bank Card' },
+                          { value: '49', label: '49 — Direct Debit' },
+                          { value: '57', label: '57 — Standing Order' },
+                          { value: '58', label: '58 — SEPA Credit Transfer' },
+                        ]} />
+                    )} />
                 </Field>
               </div>
             </Section>
@@ -1680,25 +1716,25 @@ export default function NewInvoicePage() {
               <Field label="Customer (Buyer)" required
                 tooltip="The business or person being invoiced. For B2B/B2G the customer must have a valid 15-digit TRN. Pick '+ Add new customer' to create one."
                 error={errors.customer_id?.message}>
-                <select
-                  className={inputCls(errors.customer_id?.message)}
-                  {...register('customer_id', { required: 'Customer is required' })}
-                  onChange={(e) => {
-                    if (e.target.value === '__add_customer__') {
-                      router.push('/customers/new');
-                    } else {
-                      setValue('customer_id', e.target.value, { shouldValidate: true });
-                    }
-                  }}
-                >
-                  <option value="">Select a customer…</option>
-                  {customers.map((cu) => (
-                    <option key={cu.id} value={cu.id}>
-                      {cu.name}{cu.trn ? ` — TRN: ${cu.trn}` : ''}{cu.city ? ` (${cu.city})` : ''}
-                    </option>
-                  ))}
-                  <option value="__add_customer__">+ Add new customer</option>
-                </select>
+                <Controller control={control} name="customer_id" rules={{ required: 'Customer is required' }}
+                  render={({ field }) => (
+                    <CustomSelect value={field.value}
+                      onChange={(val) => {
+                        if (val === '__add_customer__') {
+                          router.push('/customers/new');
+                        } else {
+                          field.onChange(val);
+                        }
+                      }}
+                      options={[
+                        { value: '', label: 'Select a customer…' },
+                        ...customers.map((cu) => ({
+                          value: cu.id,
+                          label: `${cu.name}${cu.trn ? ` — TRN: ${cu.trn}` : ''}${cu.city ? ` (${cu.city})` : ''}`,
+                        })),
+                        { value: '__add_customer__', label: '+ Add new customer' },
+                      ]} />
+                  )} />
               </Field>
               <Field label="Customer Location" required
                 tooltip="Location of the customer. E.g. Riyadh, Saudi Arabia"
@@ -1729,9 +1765,11 @@ export default function NewInvoicePage() {
             </div>
             {isImport && (
               <Field label="Import Type" hint="FAF Req 1.11 / 1.12 — required for import transactions">
-                <select className={selectCls} {...register('import_subtype')}>
-                  {IMPORT_SUBTYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
+                <Controller control={control} name="import_subtype"
+                  render={({ field }) => (
+                    <CustomSelect value={field.value} onChange={field.onChange}
+                      options={IMPORT_SUBTYPES.map((t) => ({ value: t.value, label: t.label }))} />
+                  )} />
               </Field>
             )}
             <label className="flex items-start gap-3 rounded-xl border-2 border-gray-200 bg-white p-3 cursor-pointer hover:border-gray-300 transition-colors">
@@ -1751,7 +1789,7 @@ export default function NewInvoicePage() {
           <AnimatedSection delay={300}>
           {/* Invoice Dates */}
           <Section title="Invoice Dates" icon={<FileText className="h-4 w-4" />} subtitle="Invoice dates, transaction dates, tax payment dates">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Issue Date" faf required
                 tooltip="The date this invoice is issued. Required by the FTA and must not be in the future."
                 error={errors.issue_date?.message}>
@@ -1793,7 +1831,7 @@ export default function NewInvoicePage() {
                 </Field>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Invoice Number" hint="System-generated reference">
                 <input disabled value={invoiceNo} readOnly
                   className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-700 font-mono cursor-not-allowed" />
@@ -1841,18 +1879,22 @@ export default function NewInvoicePage() {
 
           {/* Currency & Financials */}
           <Section title="Currency & Financials" icon={<CreditCard className="h-4 w-4" />} subtitle="VAT amounts in actual currency and AED">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Field label="Currency" required
                 tooltip="The currency this invoice is issued in. Non-AED invoices require an exchange rate to AED for FTA reporting."
                 error={errors.currency?.message}>
-                <select className={selectCls} {...register('currency', { required: 'Currency is required' })}>
-                  <option value="AED">AED — UAE Dirham</option>
-                  <option value="USD">USD — US Dollar</option>
-                  <option value="EUR">EUR — Euro</option>
-                  <option value="GBP">GBP — British Pound</option>
-                  <option value="SAR">SAR — Saudi Riyal</option>
-                  <option value="QAR">QAR — Qatari Riyal</option>
-                </select>
+                <Controller control={control} name="currency" rules={{ required: 'Currency is required' }}
+                  render={({ field }) => (
+                    <CustomSelect value={field.value} onChange={field.onChange}
+                      options={[
+                        { value: 'AED', label: 'AED — UAE Dirham' },
+                        { value: 'USD', label: 'USD — US Dollar' },
+                        { value: 'EUR', label: 'EUR — Euro' },
+                        { value: 'GBP', label: 'GBP — British Pound' },
+                        { value: 'SAR', label: 'SAR — Saudi Riyal' },
+                        { value: 'QAR', label: 'QAR — Qatari Riyal' },
+                      ]} />
+                  )} />
               </Field>
               <Field label="Exchange Rate to AED" faf
                 tooltip={isAED ? 'Always 1.0 for AED invoices.' : 'Rate used to convert all VAT amounts to AED for FTA reporting. Must be greater than 0.'}
@@ -1898,7 +1940,7 @@ export default function NewInvoicePage() {
           <Section title="Line Items" icon={<Package className="h-4 w-4" />} subtitle="Description, product/service references, tax codes, debit/credit amounts, VAT amounts">
 
             {/* Excel toolbar */}
-            <div className="flex items-center justify-between gap-3 pb-2 border-b border-gray-100">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-gray-100">
               <div className="flex items-center gap-1.5 text-xs text-gray-400">
                 <FileSpreadsheet className="h-3.5 w-3.5" />
                 {fields.length} item{fields.length !== 1 ? 's' : ''}
@@ -1920,7 +1962,7 @@ export default function NewInvoicePage() {
 
             <div className="space-y-3">
               {fields.map((f, idx) => (
-                <ItemRow key={f.id} idx={idx} register={register} errors={errors}
+                <ItemRow key={f.id} idx={idx} register={register} control={control} errors={errors}
                   vatLocked={vatLocked} onRemove={() => remove(idx)} canRemove={fields.length > 1}
                   products={products} setValue={setValue} />
               ))}
@@ -1956,7 +1998,7 @@ export default function NewInvoicePage() {
               <h2 className="text-sm font-bold text-gray-900 tracking-tight">Review your invoice</h2>
               <span className="text-xs text-gray-400">— confirm everything is correct, then submit</span>
             </div>
-            <div className="rounded-2xl border-2 border-gray-200 bg-gradient-to-b from-gray-50 via-white to-white p-5 sm:p-8 lg:p-12 flex justify-center shadow-lg shadow-gray-200/50">
+            <div className="rounded-2xl border-2 border-gray-200 bg-gradient-to-b from-gray-50 via-white to-white p-3 sm:p-5 lg:p-8 xl:p-12 flex justify-center shadow-lg shadow-gray-200/50">
               <div className="w-full max-w-lg">
                 <InvoicePreview
                   card={selected}
@@ -2041,9 +2083,9 @@ export default function NewInvoicePage() {
           )}
 
           {/* Wizard navigation */}
-          <div className="flex items-center justify-between pt-2">
-            <button type="button" onClick={step === 0 ? () => router.back() : goBack}
-              className="px-4 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <button type="button" onClick={step === 0 ? () => router.back() : goBack}
+              className="px-3 sm:px-4 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200">
               {step === 0 ? 'Cancel' : step === 5 ? '← Edit' : '← Back'}
             </button>
             {step < 5 ? (
@@ -2065,7 +2107,7 @@ export default function NewInvoicePage() {
 
         {/* ── RIGHT: Live preview — hidden on the Review step (shown full-width there). ── */}
         {step !== 5 && (
-        <div className="sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto rounded-2xl border border-white/10 bg-gradient-to-br from-blue-950 to-indigo-950 p-4 shadow-xl shadow-blue-950/30 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="hidden lg:block sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto rounded-2xl border border-white/10 bg-gradient-to-br from-blue-950 to-indigo-950 p-4 shadow-xl shadow-blue-950/30 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <div className="absolute inset-0 bg-grid opacity-[0.03] pointer-events-none rounded-2xl" />
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-3">

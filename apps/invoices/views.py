@@ -100,7 +100,7 @@ class InvoiceListCreateView(APIView):
 
         # Suppliers/accountants/viewers see only their own invoices;
         # admins see all invoices for the company.
-        creator_filter = None if request.user.role == 'admin' else request.user
+        creator_filter = None if (not membership or membership.role == 'admin') else request.user
 
         invoices = InvoiceService.get_company_invoices(
             company=company,
@@ -535,12 +535,12 @@ class InvoiceDashboardView(APIView):
             return error_response('company_id query parameter is required.',
                                   status_code=status.HTTP_400_BAD_REQUEST)
 
-        company, _ = get_company_and_membership(request.user, company_id)
+        company, membership = get_company_and_membership(request.user, company_id)
         if not company:
             return error_response('Company not found or you are not a member.',
                                   status_code=status.HTTP_404_NOT_FOUND)
 
-        creator_filter = None if request.user.role == 'admin' else request.user
+        creator_filter = None if (not membership or membership.role == 'admin') else request.user
         stats = InvoiceService.get_dashboard_stats(company, created_by=creator_filter)
         return success_response(data={
             'company_id':        str(company.id),
@@ -683,11 +683,11 @@ class InvoiceExportView(APIView):
         if not company_id:
             return error_response('company_id is required.', status_code=400)
 
-        company, _ = get_company_and_membership(request.user, company_id)
+        company, membership = get_company_and_membership(request.user, company_id)
         if not company:
             return error_response('Company not found or access denied.', status_code=404)
 
-        creator_filter = None if request.user.role == 'admin' else request.user
+        creator_filter = None if (not membership or membership.role == 'admin') else request.user
         invoices = InvoiceService.get_company_invoices(
             company=company,
             status=request.query_params.get('status'),

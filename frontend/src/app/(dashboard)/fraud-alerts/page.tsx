@@ -77,21 +77,21 @@ function ResolveModal({ alert, onClose, onResolved }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-blue-100/60">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-blue-100/60">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
-              <CheckCircle className="w-5 h-5 text-white" />
+            <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Resolve Fraud Alert</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Invoice {alert.invoice_number}</p>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">Resolve Fraud Alert</h2>
+              <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Invoice {alert.invoice_number}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-blue-50 transition-colors">
             <X className="w-4 h-4 text-gray-400" />
           </button>
         </div>
-        <div className="p-6 space-y-4">
+        <div className="px-4 sm:px-6 py-4 sm:py-6 space-y-4">
           <p className="text-sm text-gray-500">
             Add a resolution note explaining your decision (optional).
           </p>
@@ -108,7 +108,7 @@ function ResolveModal({ alert, onClose, onResolved }: {
             </div>
           )}
         </div>
-        <div className="px-6 pb-5 flex gap-3 justify-end">
+        <div className="px-4 sm:px-6 pb-4 sm:pb-5 flex flex-col-reverse sm:flex-row gap-3 justify-end">
           <button
             onClick={onClose}
             className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
@@ -141,24 +141,24 @@ function AlertCard({ alert, onResolve, onViewInvoice }: {
   const scorePct = Math.round(alert.risk_score * 100);
 
   return (
-    <div className={`group relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border ${cfg.border} shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] p-5 space-y-4 hover:shadow-[0_12px_40px_-8px_rgba(59,130,246,0.2),0_2px_6px_-2px_rgba(0,0,0,0.06)] hover:-translate-y-[3px] transition-all duration-300 before:absolute before:inset-x-3 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/90 before:to-transparent`}>
+    <div className={`group relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border ${cfg.border} shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] p-4 sm:p-5 space-y-3 sm:space-y-4 hover:shadow-[0_12px_40px_-8px_rgba(59,130,246,0.2),0_2px_6px_-2px_rgba(0,0,0,0.06)] hover:-translate-y-[3px] transition-all duration-300 before:absolute before:inset-x-3 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/90 before:to-transparent`}>
       {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cfg.color}`}>
-            <RiskIcon className="w-5 h-5" />
+      <div className="flex items-start justify-between gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center ${cfg.color}`}>
+            <RiskIcon className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div>
-            <p className="font-semibold text-gray-900">{alert.invoice_number}</p>
-            <p className="text-xs text-gray-400">{new Date(alert.created_at).toLocaleDateString()}</p>
+            <p className="font-semibold text-gray-900 text-sm sm:text-base">{alert.invoice_number}</p>
+            <p className="text-[10px] sm:text-xs text-gray-400">{new Date(alert.created_at).toLocaleDateString()}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${cfg.color}`}>
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 flex-wrap justify-end">
+          <span className={`text-[10px] sm:text-xs font-medium px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full ${cfg.color}`}>
             {cfg.label}
           </span>
           {alert.is_resolved && (
-            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">
+            <span className="text-[10px] sm:text-xs font-medium px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-gray-100 text-gray-500">
               Resolved
             </span>
           )}
@@ -276,7 +276,7 @@ export default function FraudAlertsPage() {
       </div>
 
       {/* ── Stats ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {[
           { label: 'Total Alerts',   value: stats.total,  icon: ShieldAlert, gradient: 'from-blue-500 to-blue-600',   shadow: 'shadow-blue-500/25', textColor: 'text-gray-900' },
           { label: 'High Risk',      value: stats.high,   icon: ShieldX,    gradient: 'from-red-500 to-red-600',     shadow: 'shadow-red-500/25',  textColor: 'text-red-600' },
@@ -287,28 +287,28 @@ export default function FraudAlertsPage() {
           return (
             <div
               key={s.label}
-              className="group relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_-8px_rgba(59,130,246,0.2),0_2px_6px_-2px_rgba(0,0,0,0.06)] hover:-translate-y-[3px] transition-all duration-300 before:absolute before:inset-x-3 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/90 before:to-transparent"
+              className="group relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-3 sm:p-5 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_-8px_rgba(59,130,246,0.2),0_2px_6px_-2px_rgba(0,0,0,0.06)] hover:-translate-y-[3px] transition-all duration-300 before:absolute before:inset-x-3 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/90 before:to-transparent"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`h-11 w-11 rounded-xl bg-gradient-to-br ${s.gradient} flex items-center justify-center shadow-lg ${s.shadow}`}>
-                  <Icon className="w-5 h-5 text-white" />
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                <div className={`h-9 w-9 sm:h-11 sm:w-11 rounded-xl bg-gradient-to-br ${s.gradient} flex items-center justify-center shadow-lg ${s.shadow}`}>
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <p className="text-sm text-gray-500 font-medium">{s.label}</p>
+                <p className="text-xs sm:text-sm text-gray-500 font-medium">{s.label}</p>
               </div>
-              <p className={`text-2xl font-bold tracking-tight ${s.textColor}`}>{s.value}</p>
+              <p className={`text-xl sm:text-2xl font-bold tracking-tight ${s.textColor}`}>{s.value}</p>
             </div>
           );
         })}
       </div>
 
       {/* ── Filters ──────────────────────────────────────────── */}
-      <div className="flex items-center gap-3">
-        <div className="flex bg-blue-50/60 rounded-xl p-1 gap-1">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex bg-blue-50/60 rounded-xl p-1 gap-1 overflow-x-auto">
           {(['all', 'high', 'medium', 'low'] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all capitalize ${
+              className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all capitalize whitespace-nowrap ${
                 filter === f ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-blue-600'
               }`}
             >

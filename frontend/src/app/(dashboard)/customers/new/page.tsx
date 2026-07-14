@@ -201,17 +201,26 @@ export default function NewCustomerPage() {
             />
           </div>
 
-          <Select
-            label="Customer Type"
-            required
-            tooltip="B2B — business buyer with a TRN. B2G — government entity. B2C — individual consumer (no TRN required)."
-            error={errors.customer_type?.message}
-            {...register('customer_type', { required: 'Customer type is required' })}
-          >
-            <option value="b2b">B2B — Business to Business</option>
-            <option value="b2g">B2G — Business to Government</option>
-            <option value="b2c">B2C — Business to Consumer</option>
-          </Select>
+          <Controller
+            name="customer_type"
+            control={control}
+            rules={{ required: 'Customer type is required' }}
+            render={({ field, fieldState }) => (
+              <Select
+                label="Customer Type"
+                required
+                tooltip="B2B — business buyer with a TRN. B2G — government entity. B2C — individual consumer (no TRN required)."
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                error={fieldState.error?.message}
+                options={[
+                  { value: 'b2b', label: 'B2B — Business to Business' },
+                  { value: 'b2g', label: 'B2G — Business to Government' },
+                  { value: 'b2c', label: 'B2C — Business to Consumer' },
+                ]}
+              />
+            )}
+          />
         </div>
 
         {/* Tax */}
@@ -364,25 +373,43 @@ export default function NewCustomerPage() {
           <h2 className="font-semibold text-gray-800">Address & Contact</h2>
 
           <div className="grid grid-cols-2 gap-4">
-            <CountrySelect
-              label="Country"
-              required
-              tooltip="Select the country where this customer is registered or based."
-              error={errors.country?.message || serverError.country}
-              {...register('country', { required: 'Country is required' })}
-              onChange={(e) => {
-                setValue('country', e.target.value, { shouldValidate: true });
-                setValue('city', '');
-                countryForm.handleCountryChange(e.target.value);
-              }}
+            <Controller
+              name="country"
+              control={control}
+              rules={{ required: 'Country is required' }}
+              render={({ field, fieldState }) => (
+                <CountrySelect
+                  label="Country"
+                  required
+                  tooltip="Select the country where this customer is registered or based."
+                  value={field.value ?? ''}
+                  onChange={(val) => {
+                    field.onChange(val);
+                    setValue('country', val, { shouldValidate: true });
+                    setValue('city', '');
+                    countryForm.handleCountryChange(val);
+                  }}
+                  error={fieldState.error?.message || serverError.country}
+                />
+              )}
             />
-            <CitySelect
-              label="City"
-              required
-              tooltip="Select the customer's city. Options update based on the selected country."
-              countryCode={watchedCountry}
-              error={errors.city?.message || serverError.city}
-              {...register('city', { required: 'City is required' })}
+            <Controller
+              name="city"
+              control={control}
+              rules={{ required: 'City is required' }}
+              render={({ field, fieldState }) => (
+                <CitySelect
+                  label="City"
+                  required
+                  tooltip="Select the customer's city. Options update based on the selected country."
+                  countryCode={watchedCountry}
+                  value={field.value ?? ''}
+                  onChange={(val) => {
+                    field.onChange(val);
+                  }}
+                  error={fieldState.error?.message || serverError.city}
+                />
+              )}
             />
           </div>
 

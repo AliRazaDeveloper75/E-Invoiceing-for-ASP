@@ -9,6 +9,7 @@ import {
   Send, CheckCircle2, XCircle, Clock, Building2, User, Eye,
   Landmark,
 } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 function fetcher(url: string) {
   return api.get(url).then((r) => r.data.data);
@@ -184,8 +185,8 @@ export default function AdminInvoicesPage() {
 
       {/* Filters — 3D card */}
       <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-4 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
-        <form onSubmit={handleSearch} className="flex items-center gap-3 flex-wrap">
-          <div className="relative flex-1 min-w-[220px]">
+        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             <input
               value={search}
@@ -196,17 +197,16 @@ export default function AdminInvoicesPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-400" />
-            <select
+            <Filter className="h-4 w-4 text-gray-400 shrink-0" />
+            <CustomSelect
               value={statusFilter}
-              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="text-sm border border-gray-200/80 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 shadow-sm"
-            >
-              <option value="">All Statuses</option>
-              {Object.entries(STATUS_CONFIG).map(([val, { label }]) => (
-                <option key={val} value={val}>{label}</option>
-              ))}
-            </select>
+              onChange={(val) => { setStatusFilter(val); setPage(1); }}
+              options={[
+                { value: '', label: 'All Statuses' },
+                ...Object.entries(STATUS_CONFIG).map(([val, { label }]) => ({ value: val, label })),
+              ]}
+              className="flex-1 sm:flex-none"
+            />
           </div>
 
           <button
@@ -233,7 +233,49 @@ export default function AdminInvoicesPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Mobile card layout */}
+            <div className="sm:hidden divide-y divide-blue-100/40">
+              {invoices.map((inv) => (
+                <div key={inv.id} className="p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900">{inv.invoice_number}</p>
+                      <p className="text-xs text-gray-400">{inv.type_display}</p>
+                    </div>
+                    <StatusBadge status={inv.status} />
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <Building2 className="h-3 w-3 text-gray-400 shrink-0" />
+                    <span className="truncate">{inv.company_name}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <User className="h-3 w-3 text-gray-400 shrink-0" />
+                    <span className="truncate">{inv.customer_name || '\u2014'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-gray-900 text-sm">
+                      {inv.currency} {parseFloat(inv.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                    <span className="text-xs text-gray-400">
+                      {inv.issue_date ? new Date(inv.issue_date).toLocaleDateString('en-AE') : '\u2014'}
+                    </span>
+                  </div>
+                  {inv.fta_status === 'reported' && (
+                    <span className="text-[10px] text-teal-600 font-medium">FTA reported</span>
+                  )}
+                  <div className="flex items-center gap-2 pt-1">
+                    <Link href={`/management/invoices/${inv.id}`}
+                      className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-sm transition-all">
+                      <Eye className="h-3 w-3" /> View
+                    </Link>
+                    <ActionCell invoice={inv} onRefresh={() => mutate()} />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table layout */}
+            <div className="overflow-x-auto hidden sm:block">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gradient-to-r from-gray-50/80 to-blue-50/40 border-b border-blue-100/60">

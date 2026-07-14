@@ -4,6 +4,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { MessageSquare, Mail, Phone, Building2, RefreshCw, CheckCircle2, Eye, Reply, Trash2, Search } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 async function fetcher(url: string) {
   const r = await api.get(url);
@@ -81,10 +82,10 @@ export default function ContactMessagesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Contact Messages</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Messages submitted via the contact form</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Contact Messages</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Messages submitted via the contact form</p>
         </div>
         <button
           onClick={() => mutate()}
@@ -95,7 +96,7 @@ export default function ContactMessagesPage() {
       </div>
 
       {/* Count cards */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {[
           { label: 'New', key: 'new', color: 'bg-red-100 text-red-600' },
           { label: 'Read', key: 'read', color: 'bg-blue-100 text-blue-600' },
@@ -104,18 +105,18 @@ export default function ContactMessagesPage() {
           <button
             key={key}
             onClick={() => setStatusFilter(statusFilter === key ? '' : key)}
-            className={`bg-white rounded-xl border-2 p-4 text-left transition-all hover:shadow-md ${statusFilter === key ? 'border-blue-400' : 'border-gray-200'}`}
+            className={`bg-white rounded-xl border-2 p-3 sm:p-4 text-left transition-all hover:shadow-md ${statusFilter === key ? 'border-blue-400' : 'border-gray-200'}`}
           >
-            <p className="text-2xl font-bold text-gray-900">{counts[key as keyof typeof counts]}</p>
+            <p className="text-xl sm:text-2xl font-bold text-gray-900">{counts[key as keyof typeof counts]}</p>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${color}`}>{label}</span>
+              <span className={`text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full ${color}`}>{label}</span>
             </div>
           </button>
         ))}
       </div>
 
       {/* Search + filter */}
-      <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
           <input
@@ -124,15 +125,16 @@ export default function ContactMessagesPage() {
             className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <select
-          value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">All statuses</option>
-          <option value="new">New</option>
-          <option value="read">Read</option>
-          <option value="replied">Replied</option>
-        </select>
+        <CustomSelect
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={[
+            { value: '', label: 'All statuses' },
+            { value: 'new', label: 'New' },
+            { value: 'read', label: 'Read' },
+            { value: 'replied', label: 'Replied' },
+          ]}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
