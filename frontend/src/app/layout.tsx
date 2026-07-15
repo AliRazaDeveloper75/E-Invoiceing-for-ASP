@@ -124,34 +124,6 @@ const JSON_LD_WEBSITE = {
   },
 };
 
-const JSON_LD_SOFTWARE = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: 'E-Numerak',
-  url: SITE_URL,
-  applicationCategory: 'BusinessApplication',
-  operatingSystem: 'Web',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'AED',
-    description: 'Free plan available. Contact for enterprise pricing.',
-  },
-  description:
-    'E-Numerak is a UAE FTA-compliant SaaS platform for generating, validating, and submitting e-invoices via the BIS 3.0 network.',
-  screenshot: `${SITE_URL}/opengraph-image.png`,
-  featureList: [
-    'FTA-compliant tax invoice generation',
-    'BIS 3.0 / UBL 2.1 format',
-    'ASP validation and digital signing',
-    'Automatic FTA reporting (Corner 5)',
-    'Multi-company support',
-    'Role-based access control',
-    'Buyer portal with payment tracking',
-  ],
-  publisher: { '@id': `${SITE_URL}/#organization` },
-};
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -163,10 +135,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD_WEBSITE) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD_SOFTWARE) }}
         />
       </head>
       <body>
