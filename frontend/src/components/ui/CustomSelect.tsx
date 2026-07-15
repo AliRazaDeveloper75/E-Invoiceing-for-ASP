@@ -45,6 +45,25 @@ export default function CustomSelect({
   }, [close]);
 
   useEffect(() => {
+    if (!open) return;
+    const overflowStack: { el: HTMLElement; val: string }[] = [];
+    let el = ref.current?.parentElement;
+    while (el && el !== document.body) {
+      const cs = window.getComputedStyle(el);
+      if (cs.overflow === 'hidden' || cs.overflow === 'clip' ||
+          cs.overflowX === 'hidden' || cs.overflowX === 'clip' ||
+          cs.overflowY === 'hidden' || cs.overflowY === 'clip') {
+        overflowStack.push({ el, val: el.style.overflow });
+        el.style.overflow = 'visible';
+      }
+      el = el.parentElement;
+    }
+    return () => {
+      overflowStack.forEach(({ el, val }) => { el.style.overflow = val; });
+    };
+  }, [open]);
+
+  useEffect(() => {
     if (open) {
       const idx = options.findIndex((o) => o.value === value);
       setHighlightedIndex(idx >= 0 ? idx : 0);

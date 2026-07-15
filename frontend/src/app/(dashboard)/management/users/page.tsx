@@ -261,7 +261,7 @@ function EditUserModal({ user, onClose, onSaved }: { user: AdminUser; onClose: (
             <label className="block text-xs font-semibold text-gray-600 mb-1">Role</label>
             <CustomSelect
               value={form.role}
-              onChange={(val) => set('role', val)}
+              onChange={(val) => setForm((f) => ({ ...f, role: val }))}
               options={ALL_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] ?? r }))}
             />
           </div>
@@ -436,7 +436,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
             <label className="block text-xs font-semibold text-gray-600 mb-1">Role</label>
             <CustomSelect
               value={form.role}
-              onChange={(val) => set('role', val)}
+              onChange={(val) => setForm((f) => ({ ...f, role: val }))}
               options={ALL_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] ?? r }))}
             />
           </div>

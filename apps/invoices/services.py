@@ -808,24 +808,47 @@ def _send_buyer_invoice_email(invoice: 'Invoice') -> None:
     buyer_email = getattr(invoice.customer, 'email', None)
     if not buyer_email:
         logger.info(
-            'Invoice %s validated — buyer has no email, skipping PDF email.',
+            '[PDF-EMAIL] Invoice %s — buyer has no email, skipping.',
             invoice.invoice_number,
         )
         return
 
+    pdf_bytes = None
+    pdf_engine = 'unknown'
     try:
-        # Use the @react-pdf renderer (same engine as frontend downloads)
-        from apps.invoices.pdf_generator import generate_invoice_pdf_fallback
-        pdf_bytes = generate_invoice_pdf_fallback(invoice)
+        from apps.invoices.pdf_generator import generate_invoice_pdf, generate_invoice_pdf_fallback
+
+        # Try @react-pdf renderer first (Node.js)
+        try:
+            pdf_bytes = generate_invoice_pdf(invoice)
+            pdf_engine = '@react-pdf (Node.js)'
+            logger.info(
+                '[PDF-EMAIL] Invoice %s — PDF generated via @react-pdf renderer (%d bytes).',
+                invoice.invoice_number, len(pdf_bytes),
+            )
+        except (FileNotFoundError, RuntimeError) as node_err:
+            logger.warning(
+                '[PDF-EMAIL] Invoice %s — Node.js PDF failed (%s), falling back to xhtml2pdf.',
+                invoice.invoice_number, node_err,
+            )
+            pdf_bytes = generate_invoice_pdf_fallback(invoice)
+            pdf_engine = 'xhtml2pdf (fallback)'
+            logger.info(
+                '[PDF-EMAIL] Invoice %s — PDF generated via xhtml2pdf fallback (%d bytes).',
+                invoice.invoice_number, len(pdf_bytes) if pdf_bytes else 0,
+            )
     except Exception:
         logger.exception(
-            'PDF generation failed for invoice %s — skipping buyer PDF email.',
+            '[PDF-EMAIL] Invoice %s — PDF generation FAILED completely.',
             invoice.invoice_number,
         )
         return
 
     if not pdf_bytes:
-        logger.warning('PDF generation returned empty for invoice %s', invoice.invoice_number)
+        logger.warning(
+            '[PDF-EMAIL] Invoice %s — PDF generation returned empty. Cannot send email.',
+            invoice.invoice_number,
+        )
         return
 
     try:
@@ -865,12 +888,16 @@ def _send_buyer_invoice_email(invoice: 'Invoice') -> None:
         )
 
         logger.info(
-            'Invoice PDF emailed to buyer %s for invoice %s',
-            buyer_email, invoice.invoice_number,
+            '[PDF-EMAIL] Invoice PDF emailed to buyer %s for invoice %s (engine: %s, %d bytes).',
+            buyer_email, invoice.invoice_number, pdf_engine, len(pdf_bytes),
         )
 
     except Exception:
         logger.exception(
-            'Failed to send invoice PDF email to buyer for invoice %s (non-fatal)',
-            invoice.invoice_number,
+            '[PDF-EMAIL] FAILED to send invoice PDF email to buyer %s for invoice %s (non-fatal). '
+            'Check SMTP settings: EMAIL_HOST=%s, EMAIL_PORT=%s, EMAIL_HOST_USER=%s',
+            buyer_email, invoice.invoice_number,
+            getattr(settings, 'EMAIL_HOST', 'NOT SET'),
+            getattr(settings, 'EMAIL_PORT', 'NOT SET'),
+            getattr(settings, 'EMAIL_HOST_USER', 'NOT SET'),
         )
