@@ -14,12 +14,12 @@ export const metadata: Metadata = {
     'E-Invoice BIS billing 3.0',
     'e-invoice FTA submission',
   ],
-  alternates: { canonical: '/peppol' },
+  alternates: { canonical: '/e-invoice' },
   openGraph: {
     title: '5-Corner E-Invoicing UAE | E-Numerak',
     description:
       'Full 5-corner model for UAE e-invoicing — from your ERP (Corner 1) through the ASP to the FTA network (Corner 5).',
-    url: '/peppol',
+    url: '/e-invoice',
   },
 };
 

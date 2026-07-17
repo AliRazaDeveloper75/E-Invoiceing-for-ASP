@@ -12,7 +12,7 @@ export default function robots(): MetadataRoute.Robots {
           '/',
           '/about',
           '/services',
-          '/peppol',
+          '/e-invoice',
           '/contact',
           '/login',
           '/register',

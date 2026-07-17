@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Exact-match public paths (landing pages — no auth required)
 const PUBLIC_EXACT = new Set([
-  '/', '/about', '/peppol', '/services', '/contact',
+  '/', '/about', '/e-invoice', '/services', '/contact',
   '/privacy-policy', '/terms', '/fta-compliance',
   '/bot-admin',  // ← add this
 ]);
