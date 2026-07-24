@@ -222,8 +222,12 @@ function UAEPhoneInput({ value, onChange, hasError, onKeyDown }: PhoneInputProps
 
 // ─── Environment Setup ────────────────────────────────────────────────────────
 
-const AI_AGENT_URL = 'https://tax-data-assistant-backend-production.up.railway.app';
+const AI_AGENT_URL = 'http://127.0.0.1:8000';
 const AI_AGENT_BASE = AI_AGENT_URL.replace(/\/chat\/?$/, '');
+
+// Key used to persist the logged-in user in the browser so they don't have
+// to fill the registration form again on their next visit.
+const STORAGE_KEY = 'enumerak_chat_user';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -527,6 +531,31 @@ function AgentTab({ onClose }: AgentTabProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // On mount, check localStorage for a previously registered user. If found,
+  // skip the registration form entirely and drop the user straight into chat.
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed.userId === 'number' && parsed.userName) {
+          setUserId(parsed.userId);
+          setUserName(parsed.userName);
+          setMessages([
+            {
+              role: 'assistant',
+              content: `Welcome back, ${parsed.userName}. How can I help with your UAE tax or invoicing questions today?`,
+            },
+          ]);
+          setView('chat');
+        }
+      }
+    } catch {
+      // localStorage unavailable (e.g. private browsing) — fall back to register view
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
@@ -543,6 +572,15 @@ function AgentTab({ onClose }: AgentTabProps) {
     setTouched({ name: false, email: false, phone: false });
   }, [view]);
 
+  // Persist the logged-in user so the register form is skipped next time.
+  function persistUser(id: number, name: string) {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ userId: id, userName: name }));
+    } catch {
+      // ignore storage errors (private browsing, storage full, etc.)
+    }
+  }
+
   // Logs an existing user in by email. Returns true on success, false otherwise.
   // Used as a silent fallback during registration when the email already exists.
   async function loginWithEmail(email: string): Promise<boolean> {
@@ -557,6 +595,7 @@ function AgentTab({ onClose }: AgentTabProps) {
       if (res.ok && data.success) {
         setUserId(data.user_id);
         setUserName(data.name);
+        persistUser(data.user_id, data.name);
         setMessages([
           {
             role: 'assistant',
@@ -595,6 +634,7 @@ function AgentTab({ onClose }: AgentTabProps) {
       if (res.ok && data.success) {
         setUserId(data.user_id);
         setUserName(data.name);
+        persistUser(data.user_id, data.name);
         setMessages([
           {
             role: 'assistant',
