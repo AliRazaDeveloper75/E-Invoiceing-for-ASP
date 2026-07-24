@@ -182,10 +182,14 @@ class Customer(BaseModel):
         return f'{self.name} ({identifier})'
 
     # Fields that must be present before this customer can be put on an invoice.
-    REQUIRED_FOR_INVOICE = [
-        'name', 'trn', 'street_address', 'city', 'country',
-        'email', 'trn_document', 'logo',
-    ]
+    # B2C consumers don't have TRN / TRN document / logo — those are only required for B2B/B2G.
+    _INVOICE_FIELDS_BASE = ['name', 'street_address', 'city', 'country', 'email']
+    REQUIRED_FOR_INVOICE_B2B = _INVOICE_FIELDS_BASE + ['trn', 'trn_document', 'logo']
+    REQUIRED_FOR_INVOICE_B2C = _INVOICE_FIELDS_BASE
+    # Backwards-compatible: exposes the union so code that references
+    # REQUIRED_FOR_INVOICE still works (e.g. admin display).
+    REQUIRED_FOR_INVOICE = REQUIRED_FOR_INVOICE_B2B
+
     _REQUIRED_LABELS = {
         'name': 'Name', 'trn': 'TRN', 'street_address': 'Street address',
         'city': 'City', 'country': 'Country', 'email': 'Email',
@@ -193,10 +197,17 @@ class Customer(BaseModel):
     }
 
     @property
+    def _required_fields(self):
+        """Return the correct required-fields list for this customer's type."""
+        if self.customer_type == 'b2c':
+            return self.REQUIRED_FOR_INVOICE_B2C
+        return self.REQUIRED_FOR_INVOICE_B2B
+
+    @property
     def missing_fields(self):
         """Human-readable labels of required fields still missing (for invoicing)."""
         missing = []
-        for f in self.REQUIRED_FOR_INVOICE:
+        for f in self._required_fields:
             val = getattr(self, f, None)
             # FileField/ImageField evaluate falsy when no file is attached.
             if not val or (isinstance(val, str) and not val.strip()):
@@ -211,7 +222,7 @@ class Customer(BaseModel):
     @property
     def completion_percent(self):
         """Profile completeness 0–100 (share of required invoice fields filled)."""
-        total = len(self.REQUIRED_FOR_INVOICE)
+        total = len(self._required_fields)
         if not total:
             return 100
         done = total - len(self.missing_fields)

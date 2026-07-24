@@ -5,7 +5,7 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { useCompany } from '@/hooks/useCompany';
-import { useAuth } from '@/context/AuthContext';
+import { RoleGuard } from '@/components/guards/RoleGuard';
 import {
   Inbox, CheckCircle2, XCircle, AlertTriangle, Clock,
   ChevronRight, ChevronDown, Search, RefreshCw, UserPlus, X, Copy, Eye, EyeOff,
@@ -132,17 +132,37 @@ function AddSupplierModal({ companyId, onClose, onCreated }: AddSupplierModalPro
     name: '', trn: '', email: '', phone: '', address: '', notes: '',
   });
   const [error, setError]       = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading]   = useState(false);
   const [apiKey, setApiKey]     = useState('');
   const [showKey, setShowKey]   = useState(false);
   const [copied, setCopied]     = useState(false);
 
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((f) => ({ ...f, [k]: e.target.value }));
+    if (fieldErrors[k]) setFieldErrors((f) => { const n = { ...f }; delete n[k]; return n; });
+  };
+
+  const inputCls = (field: string) =>
+    `w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:ring-2 transition-all ${
+      fieldErrors[field] ? 'border-red-300 focus:ring-red-500/20 focus:border-red-400' : 'border-gray-200 focus:ring-blue-500/20 focus:border-blue-400'
+    }`;
+
+  const validate = (): boolean => {
+    const e: Record<string, string> = {};
+    if (!form.name.trim() || form.name.trim().length < 2) e.name = 'Supplier name must be at least 2 characters.';
+    if (!form.trn || form.trn.length !== 15)             e.trn = 'TRN must be exactly 15 digits.';
+    if (form.phone && form.phone.replace(/\D/g, '').length < 7) e.phone = 'Phone must be at least 7 digits.';
+    if (!form.email.trim())                               e.email = 'Email is required.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Enter a valid email address.';
+    setFieldErrors(e);
+    return Object.keys(e).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!validate()) return;
     setLoading(true);
     try {
       const res = await api.post('/inbound/suppliers/', {
@@ -235,38 +255,45 @@ function AddSupplierModal({ companyId, onClose, onCreated }: AddSupplierModalPro
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Supplier Name *</label>
-                  <input required value={form.name} onChange={set('name')}
-                    placeholder="Al Mansouri Trading LLC"
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all" />
+                  <input value={form.name} onChange={set('name')}
+                    placeholder="Al Mansouri Trading LLC" maxLength={255}
+                    className={inputCls('name')} />
+                  {fieldErrors.name && <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">TRN (15 digits) *</label>
-                  <input required value={form.trn} onChange={set('trn')}
-                    placeholder="100000000000001" maxLength={15}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all" />
+                  <input value={form.trn} onChange={(e) => set('trn')({ ...e, target: { ...e.target, value: e.target.value.replace(/\D/g, '') } })}
+                    placeholder="100000000000001" maxLength={15} inputMode="numeric"
+                    className={inputCls('trn')} />
+                  {fieldErrors.trn && <p className="text-xs text-red-500 mt-1">{fieldErrors.trn}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Phone</label>
-                  <input value={form.phone} onChange={set('phone')}
-                    placeholder="+971 50 000 0000"
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all" />
+                  <input value={form.phone} onChange={(e) => {
+                    const v = e.target.value.replace(/[^0-9+]/g, '').replace(/(?!^)\+/g, '');
+                    set('phone')({ ...e, target: { ...e.target, value: v } });
+                  }}
+                    placeholder="+971 50 000 0000" inputMode="numeric" maxLength={15}
+                    className={inputCls('phone')} />
+                  {fieldErrors.phone && <p className="text-xs text-red-500 mt-1">{fieldErrors.phone}</p>}
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Email *</label>
-                  <input required type="email" value={form.email} onChange={set('email')}
-                    placeholder="invoices@supplier.ae"
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all" />
+                  <input type="email" value={form.email} onChange={set('email')}
+                    placeholder="invoices@supplier.ae" maxLength={254}
+                    className={inputCls('email')} />
+                  {fieldErrors.email && <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>}
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Address</label>
                   <textarea value={form.address} onChange={set('address')}
-                    placeholder="Street, City, UAE" rows={2}
+                    placeholder="Street, City, UAE" rows={2} maxLength={500}
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all resize-none" />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Notes</label>
                   <textarea value={form.notes} onChange={set('notes')}
-                    rows={2}
+                    rows={2} maxLength={1000}
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all resize-none" />
                 </div>
               </div>
@@ -388,8 +415,6 @@ const STATUS_OPTIONS = [
 
 export default function InboundPage() {
   const { activeId, activeCompany } = useCompany();
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
 
   const [statusFilter, setStatusFilter]   = useState('');
   const [search, setSearch]               = useState('');
@@ -428,6 +453,7 @@ export default function InboundPage() {
   const statValues = [stats.total, stats.pending_review, stats.validation_failed, stats.approved, stats.rejected, stats.fta_accepted];
 
   return (
+    <RoleGuard allowedRoles={['admin', 'accountant']}>
     <div className="space-y-6 animate-fade-in">
 
       {showAddSupplier && activeId && (
@@ -757,5 +783,6 @@ export default function InboundPage() {
         )}
       </div>
     </div>
+    </RoleGuard>
   );
 }

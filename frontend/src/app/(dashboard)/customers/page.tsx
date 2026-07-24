@@ -294,14 +294,12 @@ export default function CustomersPage() {
                   {isAdmin ? ' across all companies' : ''}
                 </p>
               </div>
-              {!isAdmin && (
-                <Link
-                  href="/customers/new"
-                  className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2.5 text-sm font-semibold shadow-sm transition-all shrink-0 self-start sm:self-auto"
-                >
-                  <UserPlus className="h-4 w-4" /> New Customer
-                </Link>
-              )}
+              <Link
+                href="/customers/new"
+                className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2.5 text-sm font-semibold shadow-sm transition-all shrink-0 self-start sm:self-auto"
+              >
+                <UserPlus className="h-4 w-4" /> New Customer
+              </Link>
             </div>
 
             {/* Stat chips */}
@@ -377,7 +375,7 @@ export default function CustomersPage() {
                     ? 'No customers exist on the platform yet.'
                     : 'Add your first customer to start issuing invoices.'}
               </p>
-              {!isAdmin && !hasSearch && (
+              {!hasSearch && (
                 <Link
                   href="/customers/new"
                   className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all"
@@ -439,7 +437,6 @@ export default function CustomersPage() {
                           </div>
                         )}
                       </div>
-                      {!isAdmin && (
                         <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
                           <button
                             onClick={() => setViewTarget(c)}
@@ -454,7 +451,6 @@ export default function CustomersPage() {
                             <Mail className="h-3.5 w-3.5" /> Invite
                           </button>
                         </div>
-                      )}
                     </div>
                   </AnimatedSection>
                 ))}
@@ -473,9 +469,7 @@ export default function CustomersPage() {
                       <th className="px-5 py-4 text-left text-[11px] font-semibold text-blue-200 uppercase tracking-wider">Type</th>
                       <th className="px-5 py-4 text-left text-[11px] font-semibold text-blue-200 uppercase tracking-wider">Country</th>
                       <th className="px-5 py-4 text-left text-[11px] font-semibold text-blue-200 uppercase tracking-wider">Email</th>
-                      {!isAdmin && (
-                        <th className="px-5 py-4 text-right text-[11px] font-semibold text-blue-200 uppercase tracking-wider">Actions</th>
-                      )}
+                      <th className="px-5 py-4 text-right text-[11px] font-semibold text-blue-200 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -523,31 +517,29 @@ export default function CustomersPage() {
                           </div>
                         </td>
                         <td className="px-5 py-4 text-gray-500">{c.email || '\u2014'}</td>
-                        {!isAdmin && (
-                          <td className="px-5 py-4">
-                            <div className="flex items-center justify-end gap-1">
-                              {c.is_complete === false && (
-                                <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200/60 px-1.5 py-1 rounded-md">
-                                  Incomplete
-                                </span>
-                              )}
-                              <button
-                                onClick={() => setViewTarget(c)}
-                                className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
-                                title="View customer details"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => setInviteTarget(c)}
-                                className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
-                                title="Invite buyer to portal"
-                              >
-                                <Mail className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        )}
+                        <td className="px-5 py-4">
+                          <div className="flex items-center justify-end gap-1">
+                            {c.is_complete === false && (
+                              <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200/60 px-1.5 py-1 rounded-md">
+                                Incomplete
+                              </span>
+                            )}
+                            <button
+                              onClick={() => setViewTarget(c)}
+                              className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                              title="View customer details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setInviteTarget(c)}
+                              className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                              title="Invite buyer to portal"
+                            >
+                              <Mail className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

@@ -168,13 +168,13 @@ PAYMENT_MEANS_STANDING_ORDER  = '57'
 PAYMENT_MEANS_SEPA_TRANSFER   = '58'
 
 PAYMENT_MEANS_CHOICES = [
-    (PAYMENT_MEANS_CASH,            'Cash (10)'),
-    (PAYMENT_MEANS_CHEQUE,          'Cheque (20)'),
-    (PAYMENT_MEANS_CREDIT_TRANSFER, 'Credit Transfer (30)'),
-    (PAYMENT_MEANS_BANK_CARD,       'Bank Card (48)'),
-    (PAYMENT_MEANS_DIRECT_DEBIT,    'Direct Debit (49)'),
-    (PAYMENT_MEANS_STANDING_ORDER,  'Standing Order (57)'),
-    (PAYMENT_MEANS_SEPA_TRANSFER,   'SEPA Credit Transfer (58)'),
+    (PAYMENT_MEANS_CASH,            'Cash'),
+    (PAYMENT_MEANS_CHEQUE,          'Cheque'),
+    (PAYMENT_MEANS_CREDIT_TRANSFER, 'Credit Transfer'),
+    (PAYMENT_MEANS_BANK_CARD,       'Bank Card'),
+    (PAYMENT_MEANS_DIRECT_DEBIT,    'Direct Debit'),
+    (PAYMENT_MEANS_STANDING_ORDER,  'Standing Order'),
+    (PAYMENT_MEANS_SEPA_TRANSFER,   'SEPA Credit Transfer'),
 ]
 
 # ─── Legal Registration Type (UAE — trade license / Emirates ID / etc.) ───────

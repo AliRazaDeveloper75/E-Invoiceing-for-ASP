@@ -37,7 +37,7 @@ class SupplierCreateSerializer(serializers.Serializer):
     address           = serializers.CharField(required=False, default='')
     receiving_company = serializers.UUIDField()
     whitelisted_email = serializers.EmailField(required=False, allow_blank=True, default='')
-    notes             = serializers.CharField(required=False, default='')
+    notes             = serializers.CharField(required=False, allow_blank=True, default='')
 
     def validate_trn(self, value):
         if not value.isdigit() or len(value) != 15:

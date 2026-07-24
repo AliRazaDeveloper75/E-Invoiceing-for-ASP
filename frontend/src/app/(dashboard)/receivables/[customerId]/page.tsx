@@ -117,7 +117,7 @@ export default function CustomerStatementPage() {
                   <tr>
                     <td colSpan={8} className="px-5 py-12 text-center text-gray-400">
                       <div className="flex items-center justify-center gap-2">
-                        <Clock className="h-4 w-4 animate-spin" /> Loading\u2026
+                        <Clock className="h-4 w-4 animate-spin" /> Loading…
                       </div>
                     </td>
                   </tr>

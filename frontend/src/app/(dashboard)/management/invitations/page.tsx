@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { AxiosError } from 'axios';
 import {
@@ -12,6 +10,7 @@ import {
   MousePointerClick, AlertTriangle, Timer, X, UserPlus,
 } from 'lucide-react';
 import CustomSelect from '@/components/ui/CustomSelect';
+import { RoleGuard } from '@/components/guards/RoleGuard';
 
 interface EmailLog {
   id: string;
@@ -387,9 +386,6 @@ function ReviewModal({ company, onClose, onReviewed }: {
 type Tab = 'invitations' | 'onboarding';
 
 export default function InvitationsPage() {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-
   const [tab, setTab]                   = useState<Tab>('invitations');
   const [invitations, setInvitations]   = useState<Invitation[]>([]);
   const [companies, setCompanies]       = useState<OnboardingCompany[]>([]);
@@ -401,12 +397,6 @@ export default function InvitationsPage() {
   const [copied, setCopied]             = useState<string | null>(null);
   const [resending, setResending]       = useState<string | null>(null);
   const [expandedLogs, setExpandedLogs] = useState<string | null>(null);
-
-  const isAdmin = user?.role === 'admin';
-
-  useEffect(() => {
-    if (!isLoading && !isAdmin) router.replace('/dashboard');
-  }, [isLoading, isAdmin, router]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -423,7 +413,7 @@ export default function InvitationsPage() {
     finally { setLoading(false); }
   }, [tab, statusFilter]);
 
-  useEffect(() => { if (isAdmin) load(); }, [load, isAdmin]);
+  useEffect(() => { load(); }, [load]);
 
   const revoke = async (id: string) => {
     if (!confirm('Revoke this invitation?')) return;
@@ -457,11 +447,8 @@ export default function InvitationsPage() {
         !search || c.name.toLowerCase().includes(search.toLowerCase()) ||
         c.trn.includes(search));
 
-  if (isLoading || !isAdmin) {
-    return <div className="flex items-center justify-center h-64"><Loader2 className="h-6 w-6 animate-spin text-blue-600" /></div>;
-  }
-
   return (
+    <RoleGuard allowedRoles={['admin']}>
     <div className="space-y-6">
 
       {/* ── Header ───────────────────────────────────────────────────── */}
@@ -941,5 +928,6 @@ export default function InvitationsPage() {
         />
       )}
     </div>
+    </RoleGuard>
   );
 }

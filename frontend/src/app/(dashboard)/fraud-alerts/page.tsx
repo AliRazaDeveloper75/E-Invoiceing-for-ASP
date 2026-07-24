@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { RoleGuard } from '@/components/guards/RoleGuard';
 import { ShieldAlert, ShieldCheck, ShieldX, CheckCircle, RefreshCw, Eye, X } from 'lucide-react';
 import useSWR, { mutate } from 'swr';
 import { api } from '@/lib/api';
@@ -251,6 +252,7 @@ export default function FraudAlertsPage() {
   }
 
   return (
+    <RoleGuard allowedRoles={['admin']}>
     <div className="space-y-6 animate-fade-in">
 
       {/* ── Header ───────────────────────────────────────────── */}
@@ -367,5 +369,6 @@ export default function FraudAlertsPage() {
         />
       )}
     </div>
+    </RoleGuard>
   );
 }

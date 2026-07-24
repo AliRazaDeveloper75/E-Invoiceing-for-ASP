@@ -32,6 +32,17 @@ class IsAdmin(BasePermission):
         )
 
 
+class IsAdminOrAccountant(BasePermission):
+    """Allow access to 'admin' or 'accountant' roles."""
+    message = 'Admin or Accountant role required.'
+
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated
+            and request.user.role in ('admin', 'accountant')
+        )
+
+
 class IsSupplier(BasePermission):
     """
     Allow access to 'admin', 'supplier', or 'accountant' roles.

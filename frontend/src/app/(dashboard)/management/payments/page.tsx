@@ -4,10 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
+import { RoleGuard } from '@/components/guards/RoleGuard';
 import {
-  CreditCard, Search, RefreshCw, Trash2, FileText,
+  CreditCard, Search, Trash2, FileText,
   CheckCircle2, AlertTriangle, ArrowLeft, DollarSign,
   Receipt, X, AlertCircle, ChevronLeft, ChevronRight,
+  Loader2,
 } from 'lucide-react';
 import CustomSelect from '@/components/ui/CustomSelect';
 
@@ -91,58 +93,76 @@ function VoidDialog({
   loading: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent w-full max-w-sm p-6 space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shrink-0 shadow-lg shadow-red-500/20">
-            <AlertTriangle className="w-5 h-5 text-white" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-red-500 to-red-600 shadow-sm">
+              <AlertTriangle className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Void Payment</h2>
+              <p className="text-xs text-gray-400">This action cannot be undone</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-base font-bold text-gray-800">Void Payment</h2>
-            <p className="text-xs text-gray-500 mt-0.5">This cannot be undone</p>
-          </div>
-          <button onClick={onCancel} className="ml-auto p-1.5 rounded-lg hover:bg-gray-100">
-            <X className="w-4 h-4 text-gray-400" />
+          <button onClick={onCancel} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="bg-gradient-to-br from-gray-50 to-blue-50/20 rounded-xl p-4 space-y-1.5 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-500">Invoice</span>
-            <span className="font-semibold text-gray-800">{payment.invoice_number}</span>
+        <div className="px-4 sm:px-6 py-5 space-y-4">
+          {/* Payment details */}
+          <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Invoice</span>
+              <span className="font-semibold text-gray-800">{payment.invoice_number}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Amount</span>
+              <span className="font-bold text-red-600">AED {parseFloat(payment.amount).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Method</span>
+              <span className="text-gray-700">{payment.method_display}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Date</span>
+              <span className="text-gray-700">{payment.payment_date}</span>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">Amount</span>
-            <span className="font-bold text-red-600">AED {parseFloat(payment.amount).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">Method</span>
-            <span className="text-gray-700">{payment.method_display}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">Date</span>
-            <span className="text-gray-700">{payment.payment_date}</span>
+
+          {/* Warning */}
+          <div className="rounded-xl bg-red-50 border border-red-200 p-4">
+            <div className="flex items-start gap-3">
+              <div className="p-1 rounded-lg bg-red-100 shrink-0 mt-0.5">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-red-800">Voiding is permanent</p>
+                <p className="text-xs text-red-600 mt-1 leading-relaxed">
+                  Voiding this payment will recalculate the invoice status. If no other payments remain, the invoice will revert to <strong>Validated</strong>.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <p className="text-sm text-gray-600">
-          Voiding this payment will recalculate the invoice status. If no other payments remain, the invoice will revert to <strong>Validated</strong>.
-        </p>
-
-        <div className="flex gap-3">
+        {/* Footer */}
+        <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-t border-gray-100">
           <button
             onClick={onCancel}
-            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
-            className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 disabled:opacity-60 shadow-sm transition-all"
           >
-            {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-            {loading ? 'Voiding\u2026' : 'Void Payment'}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            {loading ? 'Voiding…' : 'Void Payment'}
           </button>
         </div>
       </div>
@@ -153,17 +173,17 @@ function VoidDialog({
 // ─── Summary card ─────────────────────────────────────────────────────────────
 
 function SummaryCard({
-  icon: Icon, label, value, gradient,
+  icon: Icon, label, value, color,
 }: {
-  icon: React.ElementType; label: string; value: string | number; gradient: string;
+  icon: React.ElementType; label: string; value: string | number; color: string;
 }) {
   return (
-    <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.18),0_2px_6px_-2px_rgba(0,0,0,0.06)] transition-all duration-300 p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3">
-      <div className={`p-2 sm:p-2.5 rounded-xl ${gradient}`}>
-        <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+    <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
+      <div className={`p-2.5 rounded-xl ${color}`}>
+        <Icon className="h-5 w-5 text-white" />
       </div>
       <div className="min-w-0">
-        <p className="text-lg sm:text-xl font-bold text-gray-900 truncate">{value}</p>
+        <p className="text-xl font-bold text-gray-900 truncate">{value}</p>
         <p className="text-xs text-gray-500">{label}</p>
       </div>
     </div>
@@ -221,13 +241,14 @@ export default function AdminPaymentsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <RoleGuard allowedRoles={['admin']}>
+    <div className="space-y-5">
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg text-sm font-medium
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg text-sm font-medium
           ${toast.type === 'success'
-            ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-emerald-500/10'
-            : 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-red-500/10'}`}>
+            ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+            : 'bg-red-600 text-white shadow-red-500/20'}`}>
           {toast.type === 'success'
             ? <CheckCircle2 className="w-4 h-4 shrink-0" />
             : <AlertCircle className="w-4 h-4 shrink-0" />}
@@ -239,14 +260,12 @@ export default function AdminPaymentsPage() {
       )}
 
       {/* Header */}
-      <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.18),0_2px_6px_-2px_rgba(0,0,0,0.06)] transition-all duration-300">
+      <div className="bg-white rounded-xl border border-gray-200">
         <div className="px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link href="/management" className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
               <ArrowLeft className="h-4 w-4 text-gray-500" />
             </Link>
-            <div className="w-1 h-10 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full hidden sm:block" />
-            <div className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-blue-100 hidden sm:block" />
             <div>
               <h1 className="text-lg font-bold text-gray-900 uppercase tracking-wider">Payment Management</h1>
               <p className="text-sm text-gray-500 mt-0.5">View and manage all buyer payments across the platform</p>
@@ -254,100 +273,100 @@ export default function AdminPaymentsPage() {
           </div>
           <button
             onClick={() => mutate()}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors w-full sm:w-auto"
+            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors w-full sm:w-auto"
           >
-            <RefreshCw className="h-3.5 w-3.5" /> Refresh
+            Refresh
           </button>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <SummaryCard
           icon={Receipt}
           label="Total Payments"
           value={summary?.total_count ?? 0}
-          gradient="bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/20"
+          color="bg-gradient-to-br from-blue-500 to-blue-600 shadow-md shadow-blue-500/20"
         />
         <SummaryCard
           icon={DollarSign}
           label="Total Collected"
           value={`AED ${parseFloat(summary?.total_amount ?? '0').toLocaleString('en-AE', { minimumFractionDigits: 2 })}`}
-          gradient="bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/20"
+          color="bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-md shadow-emerald-500/20"
         />
         <SummaryCard
           icon={CheckCircle2}
           label="Showing on Page"
           value={payments.length}
-          gradient="bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-500/20"
+          color="bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-md shadow-indigo-500/20"
         />
         <SummaryCard
           icon={CreditCard}
           label="Filtered Results"
           value={pagination?.count ?? 0}
-          gradient="bg-gradient-to-br from-violet-500 to-violet-600 shadow-lg shadow-violet-500/20"
+          color="bg-gradient-to-br from-violet-500 to-violet-600 shadow-md shadow-violet-500/20"
         />
       </div>
 
       {/* Filters */}
-      <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.18),0_2px_6px_-2px_rgba(0,0,0,0.06)] transition-all duration-300">
-        <div className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <div className="relative sm:col-span-2">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search invoice, company, customer, reference…"
-                value={search}
-                onChange={e => { setSearch(e.target.value); setPage(1); }}
-                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              />
-            </div>
+      <div className="bg-white rounded-xl border border-gray-200">
+        <div className="p-4 space-y-3">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search invoice, company, customer, reference…"
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
+            />
+          </div>
+          {/* Filters row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <CustomSelect
               value={method}
               onChange={(val) => { setMethod(val); setPage(1); }}
               options={METHOD_OPTIONS}
             />
-            <div className="flex gap-2">
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={e => { setDateFrom(e.target.value); setPage(1); }}
-                className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                title="From date"
-              />
-              <input
-                type="date"
-                value={dateTo}
-                onChange={e => { setDateTo(e.target.value); setPage(1); }}
-                className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                title="To date"
-              />
-            </div>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={e => { setDateFrom(e.target.value); setPage(1); }}
+              className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
+              title="From date"
+            />
+            <input
+              type="date"
+              value={dateTo}
+              onChange={e => { setDateTo(e.target.value); setPage(1); }}
+              className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
+              title="To date"
+            />
           </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.18),0_2px_6px_-2px_rgba(0,0,0,0.06)] transition-all duration-300">
+      <div className="bg-white rounded-xl border border-gray-200">
         {isLoading ? (
           <div className="py-20 flex items-center justify-center text-gray-400">
-            <RefreshCw className="h-5 w-5 animate-spin mr-2" /> Loading payments\u2026
+            <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading payments…
           </div>
         ) : payments.length === 0 ? (
           <div className="py-20 text-center text-gray-400">
-            <div className="p-4 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 inline-flex mb-3">
-              <Receipt className="h-10 w-10 text-blue-300" />
+            <div className="p-4 rounded-full bg-gray-100 inline-flex mb-3">
+              <Receipt className="h-10 w-10 text-gray-300" />
             </div>
-            <p className="font-medium">No payments found</p>
-            <p className="text-sm mt-1">Try adjusting your filters</p>
+            <p className="font-medium text-gray-500">No payments found</p>
+            <p className="text-sm mt-1 text-gray-400">Try adjusting your filters</p>
           </div>
         ) : (
           <>
             {/* Mobile card layout */}
             <div className="sm:hidden divide-y divide-gray-100">
               {payments.map((p) => (
-                <div key={p.id} className="p-4 space-y-2">
+                <div key={p.id} className="p-4 space-y-2.5">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <Link href={`/management/invoices/${p.invoice_id}`}
@@ -355,22 +374,22 @@ export default function AdminPaymentsPage() {
                         {p.invoice_number}
                       </Link>
                       {p.reference && (
-                        <p className="text-[10px] text-gray-400 font-mono">{p.reference}</p>
+                        <p className="text-[10px] text-gray-400 font-mono mt-0.5">{p.reference}</p>
                       )}
                     </div>
                     <span className="font-bold text-gray-900 text-sm shrink-0">
                       AED {parseFloat(p.amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
+                  <p className="text-xs text-gray-500">{p.company_name} — {p.customer_name}</p>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${METHOD_COLORS[p.method] ?? 'bg-gray-100 text-gray-700'}`}>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${METHOD_COLORS[p.method] ?? 'bg-gray-100 text-gray-700'}`}>
                       {p.method_display}
                     </span>
-                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full capitalize ${INV_STATUS_COLORS[p.invoice_status] ?? 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${INV_STATUS_COLORS[p.invoice_status] ?? 'bg-gray-100 text-gray-600'}`}>
                       {p.invoice_status.replace('_', ' ')}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500">{p.company_name} — {p.customer_name}</p>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-400">{p.payment_date}</span>
                     <button onClick={() => setVoidTarget(p)}
@@ -383,70 +402,72 @@ export default function AdminPaymentsPage() {
             </div>
 
             {/* Desktop table layout */}
-            <table className="w-full text-sm hidden sm:table">
-            <thead>
-              <tr className="bg-gradient-to-r from-gray-50/80 to-blue-50/40 border-b border-gray-200">
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Invoice</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Company / Customer</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Method</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Recorded By</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Invoice Status</th>
-                <th className="px-5 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {payments.map((p, idx) => (
-                <tr key={p.id} className={`${idx % 2 === 0 ? 'bg-blue-50/10' : ''} hover:bg-blue-50/30 transition-colors`}>
-                  <td className="px-5 py-3.5">
-                    <Link
-                      href={`/management/invoices/${p.invoice_id}`}
-                      className="font-semibold text-blue-600 hover:underline text-sm"
-                    >
-                      {p.invoice_number}
-                    </Link>
-                    {p.reference && (
-                      <p className="text-xs text-gray-400 mt-0.5 font-mono">{p.reference}</p>
-                    )}
-                    {p.notes && (
-                      <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[140px]">{p.notes}</p>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <p className="text-sm font-medium text-gray-800">{p.company_name}</p>
-                    <p className="text-xs text-gray-500">{p.customer_name}</p>
-                  </td>
-                  <td className="px-5 py-3.5 text-right">
-                    <span className="font-bold text-gray-900">
-                      AED {parseFloat(p.amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-xl ${METHOD_COLORS[p.method] ?? 'bg-gray-100 text-gray-700'}`}>
-                      {p.method_display}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 text-gray-600 text-sm whitespace-nowrap">{p.payment_date}</td>
-                  <td className="px-5 py-3.5 text-gray-500 text-sm">{p.recorded_by}</td>
-                  <td className="px-5 py-3.5">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-xl capitalize ${INV_STATUS_COLORS[p.invoice_status] ?? 'bg-gray-100 text-gray-600'}`}>
-                      {p.invoice_status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 text-right">
-                    <button
-                      onClick={() => setVoidTarget(p)}
-                      title="Void payment"
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-gradient-to-br hover:from-red-50 hover:to-red-100 transition-all"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm hidden sm:table">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50/60">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Invoice</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Company / Customer</th>
+                    <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Method</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Recorded By</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-5 py-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {payments.map((p, idx) => (
+                    <tr key={p.id} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'} hover:bg-blue-50/30 transition-colors`}>
+                      <td className="px-5 py-3.5">
+                        <Link
+                          href={`/management/invoices/${p.invoice_id}`}
+                          className="font-semibold text-blue-600 hover:underline text-sm"
+                        >
+                          {p.invoice_number}
+                        </Link>
+                        {p.reference && (
+                          <p className="text-xs text-gray-400 mt-0.5 font-mono">{p.reference}</p>
+                        )}
+                        {p.notes && (
+                          <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[140px]">{p.notes}</p>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <p className="text-sm font-medium text-gray-800">{p.company_name}</p>
+                        <p className="text-xs text-gray-500">{p.customer_name}</p>
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <span className="font-bold text-gray-900">
+                          AED {parseFloat(p.amount).toLocaleString('en-AE', { minimumFractionDigits: 2 })}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${METHOD_COLORS[p.method] ?? 'bg-gray-100 text-gray-700'}`}>
+                          {p.method_display}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-gray-600 text-sm whitespace-nowrap">{p.payment_date}</td>
+                      <td className="px-5 py-3.5 text-gray-500 text-sm">{p.recorded_by}</td>
+                      <td className="px-5 py-3.5">
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg capitalize ${INV_STATUS_COLORS[p.invoice_status] ?? 'bg-gray-100 text-gray-600'}`}>
+                          {p.invoice_status.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <button
+                          onClick={() => setVoidTarget(p)}
+                          title="Void payment"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
 
@@ -464,12 +485,12 @@ export default function AdminPaymentsPage() {
               </button>
               {getPageNumbers(page, totalPages).map((p, i) =>
                 p === 'ellipsis' ? (
-                  <span key={`e-${i}`} className="px-2 text-gray-400">\u2026</span>
+                  <span key={`e-${i}`} className="px-2 text-gray-400">…</span>
                 ) : (
                   <button key={p} onClick={() => setPage(p)}
                     className={`min-w-[32px] h-8 rounded-lg text-sm font-medium transition-all ${
                       p === page
-                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/20'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
                         : 'text-gray-600 hover:bg-gray-100 border border-gray-200'
                     }`}>
                     {p}
@@ -498,5 +519,6 @@ export default function AdminPaymentsPage() {
         />
       )}
     </div>
+    </RoleGuard>
   );
 }

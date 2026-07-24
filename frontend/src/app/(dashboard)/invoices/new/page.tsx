@@ -181,16 +181,12 @@ interface LineItem {
   unit: string;
   unit_price: string;
   vat_rate_type: string;
-  tax_code: string;
-  debit_amount: string;
-  credit_amount: string;
 }
 
 interface InvoiceForm {
   customer_id: string;
   transaction_type: string;
   payment_means_code: string;
-  accounts_type: string;
   supplier_location: string;
   customer_location: string;
   issue_date: string;
@@ -429,13 +425,12 @@ const EXCEL_COLS = [
   { key: 'unit',               header: 'Unit (pcs/hr/kg)'       },
   { key: 'unit_price',         header: 'Unit Price (excl. VAT) *' },
   { key: 'vat_rate_type',      header: 'VAT Rate (standard/zero/exempt/out_of_scope)' },
-  { key: 'tax_code',           header: 'Tax Code (S/Z/E/O)'     },
 ];
 
 const EXCEL_SAMPLE_ROWS = [
-  ['IT Consulting Services', 'Monthly IT support and consulting', 'SVC-001', '1', 'hr',  '1000.00', 'standard', 'S'],
-  ['Office Chair',           'Ergonomic high-back office chair',  'SKU-002', '5', 'pcs', '500.00',  'standard', 'S'],
-  ['Software License',       'Annual SaaS subscription fee',      'LIC-003', '1', 'yr',  '2500.00', 'standard', 'S'],
+  ['IT Consulting Services', 'Monthly IT support and consulting', 'SVC-001', '1', 'hr',  '1000.00', 'standard'],
+  ['Office Chair',           'Ergonomic high-back office chair',  'SKU-002', '5', 'pcs', '500.00',  'standard'],
+  ['Software License',       'Annual SaaS subscription fee',      'LIC-003', '1', 'yr',  '2500.00', 'standard'],
 ];
 
 function downloadSampleExcel() {
@@ -458,8 +453,7 @@ function downloadSampleExcel() {
 type ItemField = {
   item_name: string; description: string; product_reference: string;
   quantity: string; unit: string; unit_price: string;
-  vat_rate_type: string; tax_code: string;
-  debit_amount: string; credit_amount: string;
+  vat_rate_type: string;
 };
 
 function parseExcelToItems(file: File): Promise<{ items: ItemField[]; errors: string[] }> {
@@ -514,11 +508,8 @@ function parseExcelToItems(file: File): Promise<{ items: ItemField[]; errors: st
             product_reference: get('product_reference'),
             quantity:          get('quantity') || '1',
             unit:              get('unit'),
-            unit_price:        parseFloat(price).toFixed(2),
+            unit_price:        stripZeros(price),
             vat_rate_type:     validVat.includes(vat) ? vat : 'standard',
-            tax_code:          get('tax_code'),
-            debit_amount:      '',
-            credit_amount:     '',
           });
         });
 
@@ -648,11 +639,18 @@ function CatalogPicker({ products, onSelect }: { products: CatalogProduct[]; onS
 
 // ─── Line item row ────────────────────────────────────────────────────────────
 
-function ItemRow({ idx, register, control, errors, vatLocked, onRemove, canRemove, products, setValue }: {
+/** Strip trailing zeros from a numeric string: "238.0000" → "238", "5.50" → "5.5" */
+function stripZeros(v: string): string {
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? String(n) : v;
+}
+
+function ItemRow({ idx, register, control, errors, trigger, vatLocked, onRemove, canRemove, products, setValue }: {
   idx: number;
   register: ReturnType<typeof useForm<InvoiceForm>>['register'];
   control: ReturnType<typeof useForm<InvoiceForm>>['control'];
   errors: ReturnType<typeof useForm<InvoiceForm>>['formState']['errors'];
+  trigger: ReturnType<typeof useForm<InvoiceForm>>['trigger'];
   vatLocked: boolean; onRemove: () => void; canRemove: boolean;
   products: CatalogProduct[];
   setValue: ReturnType<typeof useForm<InvoiceForm>>['setValue'];
@@ -662,7 +660,7 @@ function ItemRow({ idx, register, control, errors, vatLocked, onRemove, canRemov
     if (!p) return;
     setValue(`items.${idx}.item_name`, p.name, { shouldValidate: true });
     setValue(`items.${idx}.description`, p.description || p.name, { shouldValidate: true });
-    setValue(`items.${idx}.unit_price`, p.unit_price, { shouldValidate: true });
+    setValue(`items.${idx}.unit_price`, stripZeros(p.unit_price), { shouldValidate: true });
     setValue(`items.${idx}.unit`, p.unit || '', { shouldValidate: true });
     if (!vatLocked) setValue(`items.${idx}.vat_rate_type`, p.vat_rate_type || 'standard', { shouldValidate: true });
   }
@@ -693,6 +691,7 @@ function ItemRow({ idx, register, control, errors, vatLocked, onRemove, canRemov
               required: 'Required',
               maxLength: { value: 120, message: 'Max 120 characters' },
               ...wordLimit('Item name', 5),
+              onChange: () => { setTimeout(() => trigger(`items.${idx}.item_name`), 0); },
             })} />
         </Field>
         <Field label="Product / Service Reference" faf required
@@ -703,6 +702,7 @@ function ItemRow({ idx, register, control, errors, vatLocked, onRemove, canRemov
             {...register(`items.${idx}.product_reference`, {
               required: 'Required',
               ...wordLimit('Reference', 5),
+              onChange: () => { setTimeout(() => trigger(`items.${idx}.product_reference`), 0); },
             })} />
         </Field>
       </div>
@@ -717,15 +717,16 @@ function ItemRow({ idx, register, control, errors, vatLocked, onRemove, canRemov
             required: 'Description is required',
             maxLength: { value: 300, message: 'Description must be 300 characters or fewer' },
             ...wordLimit('Description', 50),
+            onChange: () => { setTimeout(() => trigger(`items.${idx}.description`), 0); },
           })}
         />
       </Field>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <Field label="Quantity" required
           tooltip="Number of units supplied. Must be greater than 0."
           error={errors.items?.[idx]?.quantity?.message}>
-          <input type="number" step="0.0001" min="0.0001" className={inputCls(errors.items?.[idx]?.quantity?.message)}
+          <input type="number" step="0.01" min="0.01" className={inputCls(errors.items?.[idx]?.quantity?.message)}
             {...register(`items.${idx}.quantity`, {
               required: 'Required',
               validate: (v) => (parseFloat(v) > 0) || 'Must be greater than 0',
@@ -749,32 +750,18 @@ function ItemRow({ idx, register, control, errors, vatLocked, onRemove, canRemov
                 ]} />
             )} />
         </Field>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
         <Field label="Unit Price (excl. VAT)" required
           tooltip="Price per unit excluding VAT. Cannot be negative."
           error={errors.items?.[idx]?.unit_price?.message}>
-          <input type="number" step="0.0001" min="0" placeholder="0.00"
+          <input type="number" step="0.01" min="0" placeholder="0.00"
             className={inputCls(errors.items?.[idx]?.unit_price?.message)}
             {...register(`items.${idx}.unit_price`, {
               required: 'Required',
               validate: (v) => (parseFloat(v) >= 0) || 'Cannot be negative',
             })} />
         </Field>
-        <Field label="Tax Code" faf hint="S=5%, Z=0%, E=Exempt, O=OOS">
-          <Controller control={control} name={`items.${idx}.tax_code`}
-            render={({ field }) => (
-              <CustomSelect value={field.value} onChange={field.onChange}
-                options={[
-                  { value: '', label: '— Select —' },
-                  { value: 'S', label: 'S — Standard 5%' },
-                  { value: 'Z', label: 'Z — Zero Rate 0%' },
-                  { value: 'E', label: 'E — Exempt' },
-                  { value: 'O', label: 'O — Out of Scope' },
-                ]} />
-            )} />
-        </Field>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Field label="VAT Rate"
           tooltip="The VAT treatment for this line: Standard 5%, Zero-rated 0%, Exempt, or Out of Scope.">
           {vatLocked ? (
@@ -796,24 +783,6 @@ function ItemRow({ idx, register, control, errors, vatLocked, onRemove, canRemov
                   ]} />
               )} />
           )}
-        </Field>
-        <Field label="Debit Amount (AED)" faf required
-          tooltip="FAF ledger debit amount in AED for this line.">
-          <input type="number" step="0.01" min="0" placeholder="0.00"
-            className={inputCls(errors.items?.[idx]?.debit_amount?.message)}
-            {...register(`items.${idx}.debit_amount`, {
-              required: 'Required',
-              min: { value: 0, message: 'Cannot be negative' },
-            })} />
-        </Field>
-        <Field label="Credit Amount (AED)" faf required
-          tooltip="FAF ledger credit amount in AED for this line.">
-          <input type="number" step="0.01" min="0" placeholder="0.00"
-            className={inputCls(errors.items?.[idx]?.credit_amount?.message)}
-            {...register(`items.${idx}.credit_amount`, {
-              required: 'Required',
-              min: { value: 0, message: 'Cannot be negative' },
-            })} />
         </Field>
       </div>
     </div>
@@ -977,7 +946,7 @@ function InvoicePreview({ card, companyName, customerName, issueDate, dueDate, c
     purple:  { header: 'from-[#3b0764] to-[#7e22ce]',  accent: '#a855f7', badge: 'bg-purple-400/20 text-purple-200', dot: 'bg-purple-400' },
     slate:   { header: 'from-[#1e293b] to-[#334155]',  accent: '#94a3b8', badge: 'bg-slate-400/20 text-slate-200', dot: 'bg-slate-400'   },
   };
-  const theme = THEME[card.color] ?? THEME.blue;
+  const theme = THEME.blue;
 
   return (
     <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200/60 text-[11px] bg-white"
@@ -1208,15 +1177,15 @@ export default function NewInvoicePage() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const { register, control, handleSubmit, reset, watch, setValue, trigger,
+  const { register, control, handleSubmit, reset, watch, setValue, trigger, getValues,
     formState: { errors, isSubmitting } } = useForm<InvoiceForm>({
     defaultValues: {
       transaction_type: 'b2b', payment_means_code: '30', issue_date: today,
       currency: 'AED', exchange_rate: '1.000000', discount_amount: '0.00',
-      is_reverse_charge: false, accounts_type: '', import_subtype: '',
+      is_reverse_charge: false, import_subtype: '',
       items: [{ item_name: '', description: '', product_reference: '', quantity: '1', unit: '',
-                unit_price: '', vat_rate_type: 'standard', tax_code: '',
-                debit_amount: '', credit_amount: '' }],
+                unit_price: '', vat_rate_type: 'standard',
+              }],
     },
   });
 
@@ -1334,11 +1303,12 @@ export default function NewInvoicePage() {
 
   const selectedCustomer = customers.find((c) => c.id === watchedCustomerId);
 
-  // Auto-fill customer location when a customer is selected
+  // Auto-fill customer location and transaction type when a customer is selected
   useEffect(() => {
     if (!selectedCustomer) return;
     const loc = [selectedCustomer.city, selectedCustomer.country].filter(Boolean).join(', ');
     if (loc) setValue('customer_location', loc);
+    if (selectedCustomer.customer_type) setValue('transaction_type', selectedCustomer.customer_type);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCustomer?.id]);
 
@@ -1381,7 +1351,7 @@ export default function NewInvoicePage() {
 
   const stepFields = (s: number): (keyof InvoiceForm)[] => {
     switch (s) {
-      case 0: return ['supplier_location', 'accounts_type'];   // Your Info
+      case 0: return ['supplier_location'];                     // Your Info
       case 1: return ['customer_id', 'customer_location'];     // Buyer
       case 2: return ['items'];                                 // Product Catalog — validate all line-item fields
       case 3: return [                                          // Payment & Sign
@@ -1397,6 +1367,11 @@ export default function NewInvoicePage() {
     const ok = await trigger(stepFields(step), { shouldFocus: true });
     if (!ok) {
       setServerError('Please complete the required (*) fields in this step before continuing.');
+      return;
+    }
+    if (step === 1 && selectedCustomer?.customer_type &&
+        getValues('transaction_type') !== selectedCustomer.customer_type) {
+      setServerError('Transaction type does not match the selected customer type. Please correct this before continuing.');
       return;
     }
     if (step === 2 && !hasItems) {
@@ -1457,11 +1432,11 @@ export default function NewInvoicePage() {
     reset({
       transaction_type: 'b2b', payment_means_code: '30', issue_date: today,
       currency: 'AED', exchange_rate: '1.000000', discount_amount: '0.00',
-      is_reverse_charge: !!card.isReverseCharge, accounts_type: '', import_subtype: '',
+      is_reverse_charge: !!card.isReverseCharge, import_subtype: '',
       supplier_location: supplierLoc,   // keep auto-filled from company profile
       items: [{ item_name: '', description: '', product_reference: '', quantity: '1', unit: '',
-                unit_price: '', vat_rate_type: card.vatRate, tax_code: '',
-                debit_amount: '', credit_amount: '' }],
+                unit_price: '', vat_rate_type: card.vatRate,
+              }],
     });
   }
 
@@ -1476,7 +1451,6 @@ export default function NewInvoicePage() {
         data.permit_number     ? `Permit: ${data.permit_number}`             : '',
         data.transaction_id    ? `Txn ID: ${data.transaction_id}`            : '',
         data.is_reverse_charge ? 'Reverse Charge: YES'                       : '',
-        data.accounts_type     ? `Ledger: ${data.accounts_type}`             : '',
         data.supplier_location ? `Supplier: ${data.supplier_location}`       : '',
         data.customer_location ? `Customer: ${data.customer_location}`       : '',
         data.tax_payment_date  ? `Tax Payment Date: ${data.tax_payment_date}`: '',
@@ -1663,29 +1637,8 @@ export default function NewInvoicePage() {
                     {...register('supplier_location', {
                       required: 'Supplier location is required',
                       validate: (v) => limitWords(v, 'Supplier location'),
+                      onChange: () => { setTimeout(() => trigger('supplier_location'), 0); },
                     })} />
-                </Field>
-                <Field label="Accounts Receivable / Payable" required
-                  error={errors.accounts_type?.message}>
-                  <Controller control={control} name="accounts_type" rules={{ required: 'Required for audit file' }}
-                    render={({ field }) => (
-                      <CustomSelect value={field.value} onChange={field.onChange}
-                        options={[
-                          { value: '', label: '— Select —' },
-                          { value: 'receivable', label: 'Accounts Receivable (AR)' },
-                          { value: 'payable', label: 'Accounts Payable (AP)' },
-                        ]} />
-                    )} />
-                </Field>
-                <Field label="Transaction Type">
-                  <Controller control={control} name="transaction_type"
-                    render={({ field }) => (
-                      <CustomSelect value={field.value} onChange={field.onChange}
-                        options={[
-                          { value: 'b2b', label: 'B2B — Business to Business' },
-                          { value: 'b2g', label: 'B2G — Business to Government' },
-                        ]} />
-                    )} />
                 </Field>
                 <Field label="Payment Method" required
                   hint="UN/ECE UNCL 4461 — mandatory for UBL PaymentMeans element"
@@ -1694,13 +1647,13 @@ export default function NewInvoicePage() {
                     render={({ field }) => (
                       <CustomSelect value={field.value} onChange={field.onChange}
                         options={[
-                          { value: '30', label: '30 — Credit Transfer' },
-                          { value: '10', label: '10 — Cash' },
-                          { value: '20', label: '20 — Cheque' },
-                          { value: '48', label: '48 — Bank Card' },
-                          { value: '49', label: '49 — Direct Debit' },
-                          { value: '57', label: '57 — Standing Order' },
-                          { value: '58', label: '58 — SEPA Credit Transfer' },
+                          { value: '30', label: 'Credit Transfer' },
+                          { value: '10', label: 'Cash' },
+                          { value: '20', label: 'Cheque' },
+                          { value: '48', label: 'Bank Card' },
+                          { value: '49', label: 'Direct Debit' },
+                          { value: '57', label: 'Standing Order' },
+                          { value: '58', label: 'SEPA Credit Transfer' },
                         ]} />
                     )} />
                 </Field>
@@ -1744,8 +1697,28 @@ export default function NewInvoicePage() {
                   {...register('customer_location', {
                     required: 'Customer location is required',
                     validate: (v) => limitWords(v, 'Customer location'),
+                    onChange: () => { setTimeout(() => trigger('customer_location'), 0); },
                   })} />
               </Field>
+              <Field label="Transaction Type"
+                tooltip="Auto-detected from the selected customer type. You can override if needed.">
+                <Controller control={control} name="transaction_type"
+                  render={({ field }) => (
+                    <CustomSelect value={field.value} onChange={field.onChange}
+                      options={[
+                        { value: 'b2b', label: 'B2B — Business to Business' },
+                        { value: 'b2g', label: 'B2G — Business to Government' },
+                        { value: 'b2c', label: 'B2C — Business to Consumer' },
+                      ]} />
+                  )} />
+              </Field>
+              {selectedCustomer?.customer_type &&
+               watch('transaction_type') &&
+               watch('transaction_type') !== selectedCustomer.customer_type && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800 text-xs">
+                  Transaction type <strong>{watch('transaction_type')?.toUpperCase()}</strong> does not match this customer&apos;s type <strong>{selectedCustomer.customer_type.toUpperCase()}</strong>. You must select the matching type to continue.
+                </div>
+              )}
             </Section>
             </AnimatedSection>
           )}
@@ -1838,20 +1811,22 @@ export default function NewInvoicePage() {
               </Field>
               <Field label="Permit Number" faf required error={errors.permit_number?.message}
                 tooltip="Regulatory permit number — required for FTA Audit File (FAF).">
-                <input placeholder="e.g. UAE-PERMIT-2024-XXXX" maxLength={40}
+                <input placeholder="e.g. UAE-PERMIT-2024-XXXX" maxLength={20}
                   className={inputCls(errors.permit_number?.message)}
                   {...register('permit_number', {
                     required: 'Permit number is required for FAF',
                     pattern: { value: /^[A-Za-z0-9\-/ ]*$/, message: 'Letters, numbers, - or / only' },
+                    onChange: () => { setTimeout(() => trigger('permit_number'), 0); },
                   })} />
               </Field>
               <Field label="Transaction ID" faf required error={errors.transaction_id?.message}
                 tooltip="Unique transaction reference — required for FTA Audit File (FAF).">
-                <input placeholder="e.g. TXN-2024-000001" maxLength={40}
+                <input placeholder="e.g. TXN-2024-000001" maxLength={30}
                   className={inputCls(errors.transaction_id?.message)}
                   {...register('transaction_id', {
                     required: 'Transaction ID is required for FAF',
                     pattern: { value: /^[A-Za-z0-9\-/ ]*$/, message: 'Letters, numbers, - or / only' },
+                    onChange: () => { setTimeout(() => trigger('transaction_id'), 0); },
                   })} />
               </Field>
               <Field label="Purchase Order Number" required error={errors.purchase_order_number?.message}
@@ -1861,16 +1836,18 @@ export default function NewInvoicePage() {
                   {...register('purchase_order_number', {
                     required: 'Purchase order number is required',
                     pattern: { value: /^[A-Za-z0-9\-/ ]*$/, message: 'Letters, numbers, - or / only' },
+                    onChange: () => { setTimeout(() => trigger('purchase_order_number'), 0); },
                   })} />
               </Field>
               <div className="col-span-2">
                 <Field label="GL / Account ID" faf required error={errors.gl_account_id?.message}
                   tooltip="General Ledger account ID — required for FTA Audit File (FAF).">
-                  <input placeholder="e.g. GL-4100 or AR-001" maxLength={40}
+                  <input placeholder="e.g. GL-4100 or AR-001" maxLength={10}
                     className={inputCls(errors.gl_account_id?.message)}
                     {...register('gl_account_id', {
                       required: 'GL / Account ID is required for FAF',
                       pattern: { value: /^[A-Za-z0-9\-/ ]*$/, message: 'Letters, numbers, - or / only' },
+                      onChange: () => { setTimeout(() => trigger('gl_account_id'), 0); },
                     })} />
                 </Field>
               </div>
@@ -1963,14 +1940,14 @@ export default function NewInvoicePage() {
             <div className="space-y-3">
               {fields.map((f, idx) => (
                 <ItemRow key={f.id} idx={idx} register={register} control={control} errors={errors}
-                  vatLocked={vatLocked} onRemove={() => remove(idx)} canRemove={fields.length > 1}
+                  trigger={trigger} vatLocked={vatLocked} onRemove={() => remove(idx)} canRemove={fields.length > 1}
                   products={products} setValue={setValue} />
               ))}
             </div>
             <button type="button"
               onClick={() => append({ item_name: '', description: '', product_reference: '', quantity: '1', unit: '',
                 unit_price: '', vat_rate_type: vatLocked ? 'out_of_scope' : (selected.vatRate ?? 'standard'),
-                tax_code: '', debit_amount: '', credit_amount: '' })}
+              })}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-gray-300
                          text-sm font-medium text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50/50 w-full justify-center transition-all duration-200">
               <Plus className="h-4 w-4" /> Add Line Item

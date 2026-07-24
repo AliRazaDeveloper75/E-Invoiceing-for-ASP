@@ -174,7 +174,7 @@ class PINTAEValidator:
             total = Decimal('0')
 
         buyer_trn = getattr(customer, 'trn', '') or getattr(customer, 'vat_number', '') or ''
-        is_b2b = getattr(customer, 'is_business', True)
+        is_b2b = getattr(invoice, 'transaction_type', 'b2b') in ('b2b', 'b2g')
 
         if is_b2b and total >= self.BUYER_TRN_THRESHOLD and not buyer_trn:
             result.add_error(

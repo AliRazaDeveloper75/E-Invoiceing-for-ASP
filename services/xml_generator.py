@@ -321,6 +321,14 @@ class UAEInvoiceXMLGenerator:
         if buyer_endpoint:
             ep = etree.SubElement(party, _cbc('EndpointID'), schemeID='0235')
             ep.text = buyer_endpoint
+        elif getattr(customer, 'customer_type', '') == 'b2c':
+            # B2C consumers have no TRN — generate a placeholder endpoint so
+            # PEPPOL rule ibr-080 is satisfied.  Use scheme 9955 ("Others")
+            # and a deterministic ID derived from the customer name.
+            import hashlib
+            name_hash = hashlib.md5((customer.name or '').encode()).hexdigest()[:16].upper()
+            ep = etree.SubElement(party, _cbc('EndpointID'), schemeID='9955')
+            ep.text = f'B2C-{name_hash}'
 
         # Party name
         party_name = etree.SubElement(party, _cac('PartyName'))

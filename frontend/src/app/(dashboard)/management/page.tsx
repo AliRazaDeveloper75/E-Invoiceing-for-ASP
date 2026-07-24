@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
+import { RoleGuard } from '@/components/guards/RoleGuard';
 import { AxiosError } from 'axios';
 import {
   Users, FileText, Building2, CheckCircle2,
@@ -359,6 +360,7 @@ export default function ManagementPage() {
   const usr = stats?.users;
 
   return (
+    <RoleGuard allowedRoles={['admin']}>
     <>
       <SendInviteModal
         open={modalOpen}
@@ -658,5 +660,6 @@ export default function ManagementPage() {
         )}
       </div>
     </>
+    </RoleGuard>
   );
 }

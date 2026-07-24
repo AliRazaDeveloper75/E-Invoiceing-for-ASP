@@ -26,7 +26,7 @@ class CustomerService:
         Only Admin and Accountant roles can create customers.
         Validates that UAE B2B/B2G customers have a TRN.
         """
-        if membership.role not in ('admin', 'accountant'):
+        if membership is not None and membership.role not in ('admin', 'accountant'):
             raise PermissionDenied('Admin or Accountant role required to create customers.')
 
         trn = data.get('trn', '').strip()
@@ -35,6 +35,12 @@ class CustomerService:
         if trn and Customer.objects.filter(company=company, trn=trn).exists():
             raise ValidationError({
                 'trn': f'A customer with TRN {trn} already exists in this company.'
+            })
+
+        email = data.get('email', '').strip()
+        if email and Customer.objects.filter(company=company, email=email).exists():
+            raise ValidationError({
+                'email': f'A customer with email "{email}" already exists in this company.'
             })
 
         customer = Customer(
@@ -79,7 +85,7 @@ class CustomerService:
         Update a customer record.
         Only Admin and Accountant can update; Viewer is read-only.
         """
-        if membership.role not in ('admin', 'accountant'):
+        if membership is not None and membership.role not in ('admin', 'accountant'):
             raise PermissionDenied('Admin or Accountant role required to update customers.')
 
         updatable_fields = [
@@ -95,6 +101,14 @@ class CustomerService:
             if Customer.objects.filter(company=customer.company, trn=new_trn).exists():
                 raise ValidationError({
                     'trn': f'A customer with TRN {new_trn} already exists in this company.'
+                })
+
+        # Guard: new email must not conflict with another customer in same company
+        new_email = data.get('email', '').strip() if isinstance(data.get('email', ''), str) else ''
+        if new_email and new_email != customer.email:
+            if Customer.objects.filter(company=customer.company, email=new_email).exclude(id=customer.id).exists():
+                raise ValidationError({
+                    'email': f'A customer with email "{new_email}" already exists in this company.'
                 })
 
         changed = []

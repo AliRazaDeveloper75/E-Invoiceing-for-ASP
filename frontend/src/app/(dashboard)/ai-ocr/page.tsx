@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import { RoleGuard } from '@/components/guards/RoleGuard';
 import {
   Upload, FileText, CheckCircle, XCircle, Clock, RefreshCw, Eye, AlertTriangle,
   ScanLine, Loader2, ChevronRight, ArrowUpRight, Zap,
@@ -389,6 +390,7 @@ export default function AIocrPage() {
   const statValues = [stats.total, stats.completed, stats.processing, stats.failed];
 
   return (
+    <RoleGuard allowedRoles={['admin', 'accountant']}>
     <div className="space-y-6 animate-fade-in">
 
       {/* ── Header ───────────────────────────────────────────── */}
@@ -514,5 +516,6 @@ export default function AIocrPage() {
         <OCRResultModal doc={viewDoc} onClose={() => setViewDoc(null)} />
       )}
     </div>
+    </RoleGuard>
   );
 }
