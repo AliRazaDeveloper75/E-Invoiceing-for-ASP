@@ -221,7 +221,7 @@ function CustomerDetailModal({ customer, onClose }: { customer: Customer; onClos
           {/* Document links */}
           <div className="flex items-center gap-4 pt-1">
             {customer.trn_document && (
-              <a href={customer.trn_document} target="_blank" rel="noreferrer"
+              <a href={absUrl(customer.trn_document)} target="_blank" rel="noreferrer"
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
                 <Shield className="h-4 w-4" /> View TRN document <ArrowUpRight className="h-3 w-3" />
               </a>
@@ -280,9 +280,9 @@ export default function CustomersPage() {
 
       {/* ── Header card with stats ── */}
       <AnimatedSection>
-        <div className="bg-gradient-to-br from-blue-950 to-indigo-950 rounded-2xl border border-white/10 shadow-2xl shadow-blue-950/30 p-7 relative overflow-hidden">
-          <div className="absolute inset-0 bg-grid opacity-[0.04] pointer-events-none" />
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 rounded-2xl border border-white/10 shadow-2xl shadow-blue-950/30 p-7 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.15),transparent_50%)] pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(99,102,241,0.1),transparent_50%)] pointer-events-none" />
           <div className="relative">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>

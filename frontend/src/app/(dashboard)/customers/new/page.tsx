@@ -358,13 +358,7 @@ export default function NewCustomerPage() {
                 type="date"
                 tooltip="Date the TRN was issued by the FTA"
                 error={errors.trn_issue_date?.message}
-                {...register('trn_issue_date', {
-                  validate: (v) => {
-                    const expiry = watch('trn_expiry_date');
-                    if (v && expiry && expiry < v) return 'TRN expiry date must be after the issue date';
-                    return true;
-                  },
-                })}
+                {...register('trn_issue_date', {})}
               />
               <Input
                 label="TRN Expiry Date"

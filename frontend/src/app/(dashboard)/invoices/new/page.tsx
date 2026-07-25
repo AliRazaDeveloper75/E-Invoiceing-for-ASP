@@ -1976,7 +1976,7 @@ export default function NewInvoicePage() {
                   className={inputCls(errors.supplier_location?.message)}
                   {...register('supplier_location', {
                     required: 'Supplier location is required',
-                    validate: (v) => limitWords(v, 'Supplier location'),
+                    validate: (v) => limitWords(v, 'Supplier location', 50),
                     onChange: () => { setTimeout(() => trigger('supplier_location'), 0); },
                   })} />
               </Field>

@@ -82,12 +82,14 @@ export function Sidebar() {
   return (
     <aside
       className={clsx(
-        'group/sidebar flex flex-col h-screen bg-gradient-to-b from-blue-950 to-indigo-950',
+        'group/sidebar flex flex-col h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950',
         'text-white fixed left-0 top-0 z-50 transition-all duration-300 ease-in-out',
         'border-r border-white/[0.06] shadow-2xl',
         collapsed ? 'w-0 sm:w-[68px] opacity-0 sm:opacity-100 pointer-events-none sm:pointer-events-auto' : 'w-full sm:w-64',
       )}
     >
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.15),transparent_50%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(99,102,241,0.1),transparent_50%)] pointer-events-none" />
       {/* ── Logo + toggle ─────────────────────────────────────── */}
       <div className={clsx(
         'flex items-center border-b border-white/[0.08] shrink-0',
@@ -156,7 +158,7 @@ export function Sidebar() {
             {open && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-                <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-xl border border-white/[0.12] bg-gradient-to-b from-slate-800 to-slate-900 shadow-2xl shadow-black/50 overflow-hidden">
+                <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-xl border border-white/[0.12] bg-gradient-to-b from-slate-800 to-slate-900 shadow-2xl shadow-black/50 overflow-hidden max-h-64 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   {companies.map((c) => {
                     const isActive = c.id === activeCompany?.id;
                     return (
