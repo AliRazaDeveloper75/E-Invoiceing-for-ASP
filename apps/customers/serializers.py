@@ -148,6 +148,13 @@ class CustomerCreateSerializer(serializers.Serializer):
                 )
             })
 
+        issue  = attrs.get('trn_issue_date')
+        expiry = attrs.get('trn_expiry_date')
+        if issue and expiry and expiry < issue:
+            raise serializers.ValidationError({
+                'trn_expiry_date': 'TRN expiry date must be after the issue date.'
+            })
+
         return attrs
 
 
@@ -189,6 +196,12 @@ class CustomerUpdateSerializer(serializers.Serializer):
     def validate(self, attrs):
         if not attrs:
             raise serializers.ValidationError('At least one field must be provided.')
+        issue  = attrs.get('trn_issue_date') or getattr(self.instance, 'trn_issue_date', None)
+        expiry = attrs.get('trn_expiry_date') or getattr(self.instance, 'trn_expiry_date', None)
+        if issue and expiry and expiry < issue:
+            raise serializers.ValidationError({
+                'trn_expiry_date': 'TRN expiry date must be after the issue date.'
+            })
         return attrs
 
 

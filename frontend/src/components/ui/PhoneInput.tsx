@@ -7,6 +7,7 @@ interface PhoneInputProps {
   error?: string;
   hint?: string;
   tooltip?: string;
+  required?: boolean;
   /** Country dial code prefix e.g. "+971". Displayed as a read-only badge. */
   dialCode?: string;
   /** Country flag emoji e.g. "🇦🇪". Displayed alongside the dial code. */
@@ -41,6 +42,7 @@ export function PhoneInput({
   error,
   hint,
   tooltip,
+  required,
   dialCode = '',
   flag = '',
   value = '',
@@ -81,7 +83,10 @@ export function PhoneInput({
     <div className="flex flex-col gap-1">
       {label && (
         <label htmlFor={inputId} className="flex items-center text-sm font-medium text-gray-700">
-          <span>{label}</span>
+          <span>
+            {label}
+            {required && <span className="text-red-500 ml-0.5">*</span>}
+          </span>
           {tooltip && <FieldTooltip content={tooltip} />}
         </label>
       )}

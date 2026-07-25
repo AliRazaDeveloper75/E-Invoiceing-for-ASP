@@ -14,7 +14,7 @@ import { PhoneInput } from '@/components/ui/PhoneInput';
 import { useCountryForm } from '@/hooks/useCountryForm';
 import { useAuth } from '@/context/AuthContext';
 import {
-  Building2, Plus, X, Eye, Pencil, Trash2,
+  Building2, Plus, X, Eye, Pencil, Trash2, Upload,
   Phone, Mail, MapPin, Users, Hash, Globe, AlertTriangle,
   CheckSquare, Square, Layers, Loader2, ArrowUpRight,
 } from 'lucide-react';
@@ -242,6 +242,7 @@ function CompanyFormPanel({
     control,
     formState: { errors, isSubmitting },
   } = useForm<CompanyForm>({
+    mode: 'onBlur',
     defaultValues: {
       name:           initial?.name           ?? '',
       legal_name:     initial?.legal_name     ?? '',
@@ -307,19 +308,21 @@ function CompanyFormPanel({
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="flex items-center gap-4">
           {logoPreview ? (
-            <img src={logoPreview} alt="Company logo"
-                 className="h-16 w-16 rounded-xl object-cover border border-gray-200" />
+            <div className="relative group">
+              <img src={logoPreview} alt="Company logo"
+                   className="h-16 w-16 rounded-xl object-cover border-2 border-gray-200 shadow-md shadow-gray-200/50" />
+              <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/10 transition-colors" />
+            </div>
           ) : (
-            <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200/60
-                            flex items-center justify-center text-[10px] text-blue-400 text-center font-medium">
-              No logo
+            <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-200
+                            flex items-center justify-center text-gray-300">
+              <Upload className="h-6 w-6" />
             </div>
           )}
           <div>
-            <label className="inline-block cursor-pointer">
-              <span className="px-3 py-1.5 rounded-xl border border-gray-200/80 bg-white text-sm font-medium text-gray-600 hover:text-blue-600 hover:border-blue-200/60 hover:bg-blue-50/40 shadow-sm transition-all">
-                {logoPreview ? 'Change logo' : 'Upload logo'}
-              </span>
+            <label className="inline-flex items-center gap-2 cursor-pointer px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50/40 shadow-sm hover:shadow transition-all duration-200">
+              <Upload className="h-3.5 w-3.5" />
+              {logoPreview ? 'Change Logo' : 'Upload Logo'}
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/jpg,image/webp"
@@ -330,7 +333,7 @@ function CompanyFormPanel({
                 }}
               />
             </label>
-            <p className="mt-1 text-xs text-gray-400">PNG or JPG · appears on your invoices.</p>
+            <p className="mt-1.5 text-xs text-gray-400">PNG or JPG, max 5 MB — appears on your invoices.</p>
           </div>
         </div>
 
@@ -375,17 +378,28 @@ function CompanyFormPanel({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="TRN Issue Date"
+            required
             type="date"
             tooltip="Date your Tax Registration (TRN) was issued by the FTA."
             error={errors.trn_issue_date?.message}
-            {...register('trn_issue_date')}
+            {...register('trn_issue_date', {
+              required: 'TRN issue date is required',
+            })}
           />
           <Input
             label="TRN Expiry Date"
+            required
             type="date"
-            tooltip="TRN expiry / validity end date, if applicable."
+            tooltip="TRN expiry / validity end date."
             error={errors.trn_expiry_date?.message}
-            {...register('trn_expiry_date')}
+            {...register('trn_expiry_date', {
+              required: 'TRN expiry date is required',
+              validate: (v) => {
+                const issue = watch('trn_issue_date');
+                if (v && issue && v < issue) return 'TRN expiry date must be after the issue date';
+                return true;
+              },
+            })}
           />
         </div>
 
@@ -447,14 +461,13 @@ function CompanyFormPanel({
             name="phone"
             control={control}
             rules={{
-              validate: (v) => {
-                if (!v?.trim()) return true;
-                return validatePhoneNumber(v, countryForm.dialCode, countryForm.phoneLength);
-              },
+              required: 'Phone number is required',
+              validate: (v) => validatePhoneNumber(v, countryForm.dialCode, countryForm.phoneLength),
             }}
             render={({ field, fieldState }) => (
               <PhoneInput
                 label="Phone"
+                required
                 tooltip={`Company contact phone number — exactly ${countryForm.phoneLength} digits for the selected country. Enter local number only; the dial code is added automatically.`}
                 dialCode={countryForm.dialCode}
                 flag={countryForm.flag}
@@ -469,13 +482,15 @@ function CompanyFormPanel({
           />
           <Input
             label="Email"
+            required
             type="email"
             tooltip="Company contact or billing email address. E.g. info@company.ae"
             placeholder="info@company.ae"
             error={errors.email?.message}
             {...register('email', {
+              required: 'Email is required',
               validate: (v) => {
-                if (!v?.trim()) return true;
+                if (!v?.trim()) return 'Email is required';
                 return emailValidators.validate.format(v) === true
                   ? emailValidators.validate.noDisposable(v)
                   : emailValidators.validate.format(v);

@@ -13,13 +13,16 @@ import CustomSelect from '@/components/ui/CustomSelect';
 import { AnimatedSection } from '@/app/(landing)/AnimatedSection';
 import {
   Trash2, Plus, FileText, RotateCcw, RefreshCw,
-  CheckCircle2, ArrowLeft, AlertTriangle,
+  CheckCircle2, ArrowLeft, AlertTriangle, Search,
   TrendingUp, TrendingDown, Globe, ShieldCheck,
   PackageOpen, BarChart2, FileCheck, FileX,
   ArrowUpRight, ArrowDownRight, ShoppingBag, Minus,
-  Building2, Package, CreditCard,
+  Building2, Package, CreditCard, Users, UserCheck,
   Upload, Download, FileSpreadsheet, X,
-  QrCode, PenLine,
+  QrCode, PenLine, ExternalLink, Landmark, Phone, Mail,
+  MapPin, CalendarClock, Copy, Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
+  Wallet, Banknote, CircleDollarSign,
+  Share2, Maximize2,
 } from 'lucide-react';
 import { AxiosError } from 'axios';
 import type { Customer } from '@/types';
@@ -255,6 +258,27 @@ function limitWords(value: string, label: string, maxWords = 15, maxWordLen = 15
   return true;
 }
 
+// Avatar helpers for customer cards
+const AVATAR_COLORS = [
+  'bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-emerald-500',
+  'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-teal-500',
+];
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+function getInitials(name: string): string {
+  return name.split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+}
+
+const TYPE_BADGE: Record<string, string> = {
+  b2b: 'bg-blue-100 text-blue-700',
+  b2g: 'bg-purple-100 text-purple-700',
+  b2c: 'bg-amber-100 text-amber-700',
+};
+const TYPE_LABEL: Record<string, string> = { b2b: 'B2B', b2g: 'B2G', b2c: 'B2C' };
+
 // Preview invoice number shown in the form/preview. The final number is assigned
 // by the backend sequence on save; this is a human-friendly draft reference.
 function generateInvoiceNumber(): string {
@@ -334,11 +358,14 @@ function Field({ label, hint, tooltip, required, error, children }: {
   required?: boolean; error?: string; children: React.ReactNode;
 }) {
   const info = tooltip ?? hint;
+  const optionalMatch = label.match(/^(.*?)\s*\(optional\)$/i);
   return (
     <div>
       <div className="flex items-center gap-1.5 mb-1">
         <label className="text-sm font-medium text-gray-700">
-          {label}
+          {optionalMatch ? (
+            <>{optionalMatch[1]} <span className="text-gray-400 font-normal">(optional)</span></>
+          ) : label}
           {required && <span className="text-red-500 ml-0.5">*</span>}
         </label>
         {info && <FieldTooltip content={info} />}
@@ -356,20 +383,21 @@ function Section({ title, subtitle, icon, children }: {
 }) {
   return (
     <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-200 overflow-hidden">
-      <div className="px-5 py-3.5 border-b border-gray-100 bg-gradient-to-r from-blue-950 to-indigo-950 flex items-start gap-3 relative overflow-hidden">
+      <div className="px-4 sm:px-5 py-3 border-b border-gray-100 bg-gradient-to-r from-gray-900 via-blue-950 to-indigo-900 flex items-start gap-2.5 sm:gap-3 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid opacity-[0.04] pointer-events-none" />
-        <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-48 h-48 bg-blue-400/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-400/10 rounded-full blur-2xl pointer-events-none" />
         {icon && (
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/30 shrink-0 relative z-10">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-md shadow-blue-500/30 shrink-0 relative z-10">
             {icon}
           </div>
         )}
         <div className="min-w-0 relative z-10">
           <p className="font-bold text-white text-sm tracking-tight">{title}</p>
-          {subtitle && <p className="text-xs text-blue-200/60 mt-0.5">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-blue-200/80 mt-0.5">{subtitle}</p>}
         </div>
       </div>
-      <div className="p-5 sm:p-6 space-y-4">{children}</div>
+      <div className="p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4">{children}</div>
     </div>
   );
 }
@@ -573,7 +601,7 @@ function ExcelUploadButton({
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
       >
         <Download className="h-3.5 w-3.5" />
-        Download Template
+        Template
       </button>
 
       {/* Upload */}
@@ -798,90 +826,344 @@ interface StepDef {
   done: boolean;
 }
 
-function FormStepper({ steps, current }: { steps: StepDef[]; current?: number }) {
+function FormStepper({ steps, current, onStepClick, onPrev, onNext }: { steps: StepDef[]; current?: number; onStepClick?: (idx: number) => void; onPrev?: () => void; onNext?: () => void }) {
   const activeIdx = current != null ? current : steps.findIndex((s) => !s.done);
   const allDone   = activeIdx === -1;
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg shadow-gray-200/50 px-3 sm:px-5 py-3 sm:py-4 mb-5">
-      {/* Progress bar track */}
-      <div className="relative mb-4">
-        {/* Background track */}
-        <div className="absolute top-[18px] left-0 right-0 h-0.5 bg-gray-100 mx-6" />
-        {/* Filled track */}
-        <div
-          className="absolute top-[18px] left-0 h-0.5 bg-gradient-to-r from-blue-500 to-indigo-600 mx-6 transition-all duration-500"
-          style={{
-            width: allDone
-              ? 'calc(100% - 3rem)'
-              : activeIdx === 0
-              ? '0%'
-              : `calc(${((activeIdx) / (steps.length - 1)) * 100}% - ${(activeIdx / (steps.length - 1)) * 3}rem)`,
-          }}
-        />
-        {/* Step dots */}
-        <div className="relative flex justify-between">
-          {steps.map((step, i) => {
-            const isDone    = current != null ? i < current : step.done;
-            const isActive  = current != null ? i === current : (!allDone && i === activeIdx);
-            const isUpcoming = !isDone && !isActive;
-            return (
-              <div key={i} className="flex flex-col items-center gap-1.5 min-w-0">
-                {/* Circle */}
-                <div className={`
-                  w-9 h-9 rounded-full flex items-center justify-center z-10 transition-all duration-300 shrink-0
-                  ${isDone    ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-md shadow-emerald-200' : ''}
-                  ${isActive  ? 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md shadow-indigo-200 ring-4 ring-indigo-100' : ''}
-                  ${isUpcoming? 'bg-gray-100 border-2 border-gray-200' : ''}
-                `}>
-                  {isDone ? (
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    <span className={`text-xs font-black ${isActive ? 'text-white' : 'text-gray-400'}`}>
-                      {i + 1}
-                    </span>
-                  )}
-                </div>
-                {/* Label */}
-                <div className="text-center max-w-[72px]">
-                  <p className={`text-[10px] font-bold leading-tight truncate
-                    ${isDone ? 'text-emerald-600' : isActive ? 'text-indigo-600' : 'text-gray-400'}`}>
-                    {step.label}
-                  </p>
-                  <p className="text-[9px] text-gray-400 leading-tight mt-0.5 truncate hidden sm:block">
-                    {step.sub}
-                  </p>
-                </div>
+    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xl shadow-gray-200/40 p-1.5 mb-5">
+      <div className="flex items-stretch gap-1">
+        {steps.map((s, i) => {
+          const isDone    = current != null ? i < current : s.done;
+          const isActive  = current != null ? i === current : (!allDone && i === activeIdx);
+          const isLocked  = current != null ? i > current : !s.done && !isActive;
+          const canClick  = onStepClick && isDone;
+          return (
+            <button
+              key={i}
+              type="button"
+              disabled={!canClick}
+              onClick={() => canClick && onStepClick(i)}
+              className={`
+                flex-1 flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-all duration-300 min-w-0
+                ${isActive
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg shadow-indigo-200/50'
+                  : isDone
+                    ? 'bg-emerald-50/80 hover:bg-emerald-50'
+                    : isLocked
+                      ? 'bg-gray-50/60 opacity-40'
+                      : 'bg-gray-50 hover:bg-gray-100'
+                }
+                ${canClick ? 'cursor-pointer group/step' : 'cursor-default'}
+              `}
+            >
+              {/* Number / check */}
+              <div className={`
+                w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300
+                ${isActive
+                  ? 'bg-white/20 text-white'
+                  : isDone
+                    ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-200/50'
+                    : 'bg-gray-200/60 text-gray-400'
+                }
+                ${canClick && !isActive ? 'group-hover/step:bg-emerald-100 group-hover/step:text-emerald-600' : ''}
+              `}>
+                {isDone ? (
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <span className={`text-[11px] font-black ${isActive ? '' : ''}`}>{i + 1}</span>
+                )}
               </div>
-            );
-          })}
-        </div>
+              {/* Text */}
+              <div className="min-w-0 flex-1">
+                <p className={`text-[11px] font-bold leading-tight truncate transition-colors duration-200
+                  ${isActive ? 'text-white' : isDone ? 'text-emerald-700' : 'text-gray-500'}
+                  ${canClick && !isActive ? 'group-hover/step:text-emerald-600' : ''}
+                `}>{s.label}</p>
+                <p className={`text-[9px] leading-tight mt-0.5 truncate transition-colors duration-200
+                  ${isActive ? 'text-white/60' : isDone ? 'text-emerald-400' : 'text-gray-400'}
+                `}>{s.sub}</p>
+              </div>
+              {/* Connector arrow (between steps) */}
+              {i < steps.length - 1 && (
+                <svg className={`w-3 h-3 shrink-0 ${isActive ? 'text-white/30' : 'text-gray-200'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Current step message */}
-      <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs
+      {/* Current step message with nav icons */}
+      <div className={`flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs mt-1.5
         ${allDone
-          ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-          : 'bg-indigo-50 border border-indigo-100 text-indigo-700'}`}>
+          ? 'bg-emerald-50 border border-emerald-200/60 text-emerald-700'
+          : 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-indigo-100/60 text-indigo-700'}`}>
         {allDone ? (
-          <>
+          <span className="flex items-center gap-1.5 flex-1 min-w-0">
             <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
             <span className="font-semibold">All sections complete — ready to create invoice</span>
-          </>
+          </span>
         ) : (
-          <>
-            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shrink-0" />
-            <span>
-              <span className="font-semibold">Step {activeIdx + 1}:</span>{' '}
-              {steps[activeIdx]?.label} — {steps[activeIdx]?.sub}
-            </span>
-          </>
+          <span className="flex-1 min-w-0">
+            <span className="font-semibold">Step {activeIdx + 1}:</span>{' '}
+            {steps[activeIdx]?.label} — {steps[activeIdx]?.sub}
+          </span>
+        )}
+        {(onPrev || onNext) && (
+          <div className="flex items-center gap-1 shrink-0">
+            {onPrev && (
+              <button type="button" onClick={onPrev} disabled={activeIdx === 0 && !allDone}
+                className={`inline-flex items-center justify-center w-6 h-6 rounded-lg transition-all duration-150
+                  ${activeIdx === 0 && !allDone
+                    ? 'text-gray-300 cursor-not-allowed'
+                    : allDone ? 'text-emerald-500 hover:bg-emerald-100' : 'text-indigo-400 hover:bg-white/60'}`}>
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {onNext && !allDone && (
+              <button type="button" onClick={onNext}
+                className="inline-flex items-center justify-center w-6 h-6 rounded-lg text-indigo-400 hover:bg-white/60 transition-all duration-150">
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Company Profile Card ─────────────────────────────────────────────────────
+
+function CompanyProfileCard({ company }: { company: import('@/types').Company | null }) {
+  const [copied, setCopied] = useState(false);
+
+  if (!company) return null;
+
+  const trnExpiry = company.trn_expiry_date ? new Date(company.trn_expiry_date) : null;
+  const now = new Date();
+  const daysUntilExpiry = trnExpiry ? Math.ceil((trnExpiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+  const isExpired = daysUntilExpiry !== null && daysUntilExpiry <= 0;
+  const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry > 0 && daysUntilExpiry <= 30;
+
+  function copyTrn() {
+    if (!company?.trn) return;
+    navigator.clipboard.writeText(company.trn).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/80 via-white to-indigo-50/50 shadow-sm overflow-hidden">
+      {/* Header band */}
+      <div className="bg-white px-3 sm:px-5 py-3 space-y-2.5 sm:space-y-0 border-b border-blue-100/60">
+        {/* Row 1: avatar + name */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center font-bold text-xs sm:text-sm text-blue-600 shrink-0 overflow-hidden">
+            {company.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={company.logo_url} alt="" className="w-full h-full rounded-xl object-cover" />
+            ) : (
+              (company.name ?? 'CO').slice(0, 2).toUpperCase()
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <p className="font-bold text-gray-900 text-sm sm:text-base leading-tight break-words">{company.name}</p>
+              {company.is_vat_group && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 border border-purple-200 shrink-0">VAT Group</span>
+              )}
+            </div>
+            {company.legal_name && company.legal_name !== company.name && (
+              <p className="text-[11px] text-gray-400 mt-0.5 break-words">{company.legal_name}</p>
+            )}
+          </div>
+          {/* TRN right side on large screens */}
+          <button type="button" onClick={copyTrn}
+            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors duration-150 group shrink-0"
+            title="Click to copy TRN">
+            <span className="text-[10px] text-blue-400 uppercase tracking-wider font-medium">TRN</span>
+            <span className="text-xs font-mono font-semibold text-gray-500">{company.trn || '—'}</span>
+            {copied ? (
+              <Check className="h-3 w-3 text-emerald-500" />
+            ) : (
+              <Copy className="h-3 w-3 text-blue-300 group-hover:text-blue-500 transition-colors" />
+            )}
+          </button>
+        </div>
+        {/* Row 2: TRN on mobile (full width below) */}
+        <button type="button" onClick={copyTrn}
+          className="sm:hidden inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors duration-150 group"
+          title="Click to copy TRN">
+          <span className="text-[10px] text-blue-400 uppercase tracking-wider font-medium">TRN</span>
+          <span className="text-xs font-mono font-semibold text-gray-500">{company.trn || '—'}</span>
+          {copied ? (
+            <Check className="h-3 w-3 text-emerald-500" />
+          ) : (
+            <Copy className="h-3 w-3 text-blue-300 group-hover:text-blue-500 transition-colors" />
+          )}
+        </button>
+      </div>
+
+      <div className="p-3 sm:p-5 space-y-2.5 sm:space-y-3">
+        {/* Expiry badges */}
+        {(isExpired || isExpiringSoon || (trnExpiry && !isExpired && !isExpiringSoon)) && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {isExpired && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-red-100 text-red-600">TRN Expired</span>
+            )}
+            {isExpiringSoon && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-600">Expiring in {daysUntilExpiry}d</span>
+            )}
+            {trnExpiry && !isExpired && !isExpiringSoon && (
+              <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
+                <CalendarClock className="h-3 w-3" />{company.trn_expiry_date}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Info list */}
+        {(company.phone || company.email || company.website || company.formatted_address) && (
+          <div className="rounded-xl bg-white/70 border border-blue-100/60 divide-y divide-blue-50">
+            {company.phone && (
+              <div className="flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-1.5 sm:py-2">
+                <Phone className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                <span className="text-xs sm:text-sm text-gray-700 break-all">{company.phone}</span>
+              </div>
+            )}
+            {company.email && (
+              <div className="flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-1.5 sm:py-2">
+                <Mail className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                <span className="text-xs sm:text-sm text-gray-700 break-all">{company.email}</span>
+              </div>
+            )}
+            {company.website && (
+              <div className="flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-1.5 sm:py-2">
+                <Globe className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                <a href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+                   target="_blank" rel="noopener noreferrer"
+                   className="text-xs sm:text-sm text-blue-600 hover:text-blue-700 hover:underline break-all">
+                  {company.website.replace(/^https?:\/\//, '')}
+                </a>
+              </div>
+            )}
+            {company.formatted_address && (
+              <div className="flex items-start gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-1.5 sm:py-2">
+                <MapPin className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
+                <span className="text-xs sm:text-sm text-gray-700 break-words">{company.formatted_address}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Collapsible Bank Details ─────────────────────────────────────────────────
+
+function CollapsibleBankDetails({ company }: { company: import('@/types').Company | null }) {
+  const [open, setOpen] = useState(false);
+  if (!company?.bank_name && !company?.iban) return null;
+
+  const fields = [
+    company.bank_name && { label: 'Bank', value: company.bank_name },
+    company.iban && { label: 'IBAN', value: company.iban, mono: true },
+    company.bank_account_number && {
+      label: 'Account',
+      value: company.bank_account_number.length > 4 ? '•••• ' + company.bank_account_number.slice(-4) : company.bank_account_number,
+      mono: true,
+    },
+    company.swift_code && { label: 'SWIFT', value: company.swift_code, mono: true },
+  ].filter(Boolean) as { label: string; value: string; mono?: boolean }[];
+
+  const filled = fields.length;
+  const total = 4;
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+      <button type="button" onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-gray-50/50 active:bg-gray-100 transition-colors">
+        <div className="flex items-center gap-2.5">
+          <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+            filled === total ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+          }`}>
+            <Landmark className="h-4 w-4" />
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-medium text-gray-800">Bank Details</p>
+            <p className="text-[11px] text-gray-400">{filled} of {total} fields set</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {filled === total && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+          {open ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+        </div>
+      </button>
+      <div className={`grid transition-all duration-300 ease-in-out ${
+        open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+      }`}>
+        <div className="overflow-hidden">
+          <div className="px-3 sm:px-4 pb-3 sm:pb-4 pt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-2.5 sm:gap-y-3 border-t border-gray-100">
+            {fields.map((f) => (
+              <div key={f.label} className="min-w-0">
+                <p className="text-[11px] text-gray-400 uppercase tracking-wider font-medium">{f.label}</p>
+                <p className={`font-medium text-gray-800 text-sm mt-0.5 ${f.mono ? 'font-mono break-all' : 'break-words'}`}>{f.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Payment Method Cards ─────────────────────────────────────────────────────
+
+const PAYMENT_METHODS = [
+  { code: '30', label: 'Credit Transfer', icon: <Banknote className="h-6 w-6" />,       color: 'from-blue-500 to-blue-600', bg: 'bg-blue-50', text: 'text-blue-600', ring: 'ring-blue-200' },
+  { code: '10', label: 'Cash',            icon: <CircleDollarSign className="h-6 w-6" />, color: 'from-emerald-500 to-emerald-600', bg: 'bg-emerald-50', text: 'text-emerald-600', ring: 'ring-emerald-200' },
+  { code: '20', label: 'Cheque',          icon: <FileText className="h-6 w-6" />,         color: 'from-amber-500 to-amber-600', bg: 'bg-amber-50', text: 'text-amber-600', ring: 'ring-amber-200' },
+  { code: '48', label: 'Bank Card',       icon: <CreditCard className="h-6 w-6" />,       color: 'from-violet-500 to-violet-600', bg: 'bg-violet-50', text: 'text-violet-600', ring: 'ring-violet-200' },
+  { code: '49', label: 'Direct Debit',    icon: <Wallet className="h-6 w-6" />,           color: 'from-rose-500 to-rose-600', bg: 'bg-rose-50', text: 'text-rose-600', ring: 'ring-rose-200' },
+  { code: '57', label: 'Standing Order',  icon: <RefreshCw className="h-6 w-6" />,        color: 'from-cyan-500 to-cyan-600', bg: 'bg-cyan-50', text: 'text-cyan-600', ring: 'ring-cyan-200' },
+  { code: '58', label: 'SEPA Transfer',   icon: <Globe className="h-6 w-6" />,            color: 'from-teal-500 to-teal-600', bg: 'bg-teal-50', text: 'text-teal-600', ring: 'ring-teal-200' },
+];
+
+function PaymentMethodCards({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+      {PAYMENT_METHODS.map((pm) => {
+        const active = value === pm.code;
+        return (
+          <button key={pm.code} type="button" onClick={() => onChange(pm.code)}
+            className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 text-center transition-all duration-150 ${
+              active
+                ? `border-indigo-400 ${pm.bg} ring-2 ${pm.ring}`
+                : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm active:bg-gray-50'
+            }`}>
+            {active && (
+              <span className="absolute top-1.5 right-1.5 text-indigo-500">
+                <Check className="h-3 w-3" />
+              </span>
+            )}
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${pm.text}`}>
+              {pm.icon}
+            </div>
+            <span className={`text-xs font-semibold leading-tight ${active ? 'text-indigo-700' : 'text-gray-700'}`}>
+              {pm.label}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -933,165 +1215,157 @@ function InvoicePreview({ card, companyName, customerName, issueDate, dueDate, c
 
   const today = fmtDate(new Date().toISOString().slice(0, 10));
 
-  /* colour theme per invoice type */
-  const THEME: Record<string, { header: string; accent: string; badge: string; dot: string }> = {
-    blue:    { header: 'from-[#1e3a5f] to-[#1e4d8c]', accent: '#3b82f6', badge: 'bg-blue-500/20 text-blue-200',   dot: 'bg-blue-400'    },
-    amber:   { header: 'from-[#78350f] to-[#b45309]',  accent: '#f59e0b', badge: 'bg-amber-400/20 text-amber-200', dot: 'bg-amber-400'   },
-    orange:  { header: 'from-[#7c2d12] to-[#c2410c]',  accent: '#f97316', badge: 'bg-orange-400/20 text-orange-200', dot: 'bg-orange-400' },
-    emerald: { header: 'from-[#064e3b] to-[#065f46]',  accent: '#10b981', badge: 'bg-emerald-400/20 text-emerald-200', dot: 'bg-emerald-400' },
-    rose:    { header: 'from-[#881337] to-[#be123c]',  accent: '#f43f5e', badge: 'bg-rose-400/20 text-rose-200',   dot: 'bg-rose-400'    },
-    violet:  { header: 'from-[#3b0764] to-[#6d28d9]',  accent: '#8b5cf6', badge: 'bg-violet-400/20 text-violet-200', dot: 'bg-violet-400' },
-    teal:    { header: 'from-[#134e4a] to-[#0f766e]',  accent: '#14b8a6', badge: 'bg-teal-400/20 text-teal-200',   dot: 'bg-teal-400'    },
-    indigo:  { header: 'from-[#1e1b4b] to-[#3730a3]',  accent: '#6366f1', badge: 'bg-indigo-400/20 text-indigo-200', dot: 'bg-indigo-400' },
-    purple:  { header: 'from-[#3b0764] to-[#7e22ce]',  accent: '#a855f7', badge: 'bg-purple-400/20 text-purple-200', dot: 'bg-purple-400' },
-    slate:   { header: 'from-[#1e293b] to-[#334155]',  accent: '#94a3b8', badge: 'bg-slate-400/20 text-slate-200', dot: 'bg-slate-400'   },
+  const THEME: Record<string, { header: string; accent: string; badge: string; ring: string }> = {
+    blue:    { header: 'from-[#1e3a5f] to-[#1e4d8c]', accent: '#3b82f6', badge: 'bg-blue-500/20 text-blue-100',   ring: 'ring-blue-400/30' },
+    amber:   { header: 'from-[#78350f] to-[#b45309]',  accent: '#f59e0b', badge: 'bg-amber-400/20 text-amber-100',  ring: 'ring-amber-400/30' },
+    orange:  { header: 'from-[#7c2d12] to-[#c2410c]',  accent: '#f97316', badge: 'bg-orange-400/20 text-orange-100', ring: 'ring-orange-400/30' },
+    emerald: { header: 'from-[#064e3b] to-[#065f46]',  accent: '#10b981', badge: 'bg-emerald-400/20 text-emerald-100', ring: 'ring-emerald-400/30' },
+    rose:    { header: 'from-[#881337] to-[#be123c]',  accent: '#f43f5e', badge: 'bg-rose-400/20 text-rose-100',   ring: 'ring-rose-400/30' },
+    violet:  { header: 'from-[#3b0764] to-[#6d28d9]',  accent: '#8b5cf6', badge: 'bg-violet-400/20 text-violet-100', ring: 'ring-violet-400/30' },
+    teal:    { header: 'from-[#134e4a] to-[#0f766e]',  accent: '#14b8a6', badge: 'bg-teal-400/20 text-teal-100',   ring: 'ring-teal-400/30' },
+    indigo:  { header: 'from-[#1e1b4b] to-[#3730a3]',  accent: '#6366f1', badge: 'bg-indigo-400/20 text-indigo-100', ring: 'ring-indigo-400/30' },
+    purple:  { header: 'from-[#3b0764] to-[#7e22ce]',  accent: '#a855f7', badge: 'bg-purple-400/20 text-purple-100', ring: 'ring-purple-400/30' },
+    slate:   { header: 'from-[#1e293b] to-[#334155]',  accent: '#94a3b8', badge: 'bg-slate-400/20 text-slate-100', ring: 'ring-slate-400/30' },
   };
   const theme = THEME.blue;
 
   return (
-    <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200/60 text-[11px] bg-white"
-         style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="rounded-xl overflow-hidden shadow-2xl shadow-gray-200/40 border border-gray-200/80 text-[11px] bg-white"
+         style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
 
-      {/* ── Dark gradient header ─────────────────────────────────────────────── */}
-      <div className={`bg-gradient-to-br ${theme.header} px-5 pt-5 pb-4 relative overflow-hidden`}>
-        {/* Decorative circles */}
-        <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-10 bg-white" />
-        <div className="absolute top-2 -right-2 w-12 h-12 rounded-full opacity-10 bg-white" />
+      {/* ── Header ────────────────────────────────────────────────────────────── */}
+      <div className={`bg-gradient-to-br ${theme.header} px-4 sm:px-5 pt-4 sm:pt-5 pb-4 relative overflow-hidden`}>
+        {/* Decorative */}
+        <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full opacity-[0.07] bg-white" />
+        <div className="absolute top-3 -right-1 w-14 h-14 rounded-full opacity-[0.05] bg-white" />
+        <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full opacity-[0.04] bg-white" />
 
-        {/* Top row: logo + doc type */}
+        {/* Top row */}
         <div className="flex items-start justify-between gap-3 relative z-10">
-          {/* Company avatar + name */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black text-white shrink-0"
-                 style={{ background: theme.accent + '33', border: `2px solid ${theme.accent}66` }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-xs sm:text-sm font-black text-white shrink-0 ring-2 ring-white/10"
+                 style={{ background: theme.accent + '33' }}>
               {initials}
             </div>
-            <div>
-              <p className="font-bold text-white text-sm leading-tight">
+            <div className="min-w-0">
+              <p className="font-bold text-white text-xs sm:text-sm leading-tight truncate max-w-[140px] sm:max-w-none">
                 {companyName || 'Your Company'}
               </p>
-              <p className="text-white/50 text-[10px] mt-0.5">UAE E-Invoicing Platform</p>
+              <p className="text-white/40 text-[9px] sm:text-[10px] mt-0.5">UAE E-Invoicing</p>
             </div>
           </div>
-
-          {/* Invoice type badge */}
-          <div className="text-right shrink-0">
-            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${theme.badge}`}>
-              {card.title}
-            </span>
-          </div>
+          <span className={`inline-flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-black uppercase tracking-widest shrink-0 ${theme.badge}`}>
+            {card.title}
+          </span>
         </div>
 
-        {/* Invoice number row */}
-        <div className="mt-4 relative z-10 flex items-end justify-between">
+        {/* Invoice number + refs */}
+        <div className="mt-3 relative z-10 flex items-end justify-between">
           <div>
-            <p className="text-white/40 text-[9px] uppercase tracking-widest">Invoice Number</p>
-            <p className="text-white/90 font-mono font-semibold text-xs mt-0.5">
-              {invoiceNo}
-            </p>
+            <p className="text-white/30 text-[8px] sm:text-[9px] uppercase tracking-[0.15em]">Invoice No.</p>
+            <p className="text-white/90 font-mono font-semibold text-[11px] sm:text-xs mt-0.5">{invoiceNo}</p>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-white/10 text-white/70 border border-white/20">
-              {card.boxRef}
-            </span>
-            <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-white/10 text-white/70 border border-white/20">
-              {card.reqRef}
-            </span>
+          <div className="flex items-center gap-1">
+            <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-white/60 border border-white/15">{card.boxRef}</span>
+            <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-white/60 border border-white/15">{card.reqRef}</span>
           </div>
         </div>
       </div>
 
-      {/* ── Seller / Buyer ───────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 px-5 py-4 border-b border-gray-100 gap-3">
-        <div className="space-y-0.5">
-          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">From — Seller</p>
-          <div className="flex items-center gap-2">
-            <Building2 className="h-3 w-3 text-gray-400 shrink-0" />
-            <p className="font-semibold text-gray-800 leading-tight">{companyName || '—'}</p>
-          </div>
-          <p className="text-gray-400 pl-5">UAE · TRN on file</p>
-        </div>
-        <div className="space-y-0.5 pl-3 border-l border-gray-100">
-          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">To — Buyer</p>
-          {customerName ? (
-            <>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full shrink-0 flex items-center justify-center"
-                     style={{ background: theme.accent + '22', border: `1px solid ${theme.accent}55` }}>
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: theme.accent }} />
-                </div>
-                <p className="font-semibold text-gray-800 leading-tight">{customerName}</p>
-              </div>
-              <p className="text-gray-400 pl-5">TRN on file</p>
-            </>
-          ) : (
-            <div className="flex items-center gap-2 mt-1">
-              <div className="w-3 h-3 rounded-full bg-gray-100 shrink-0" />
-              <p className="text-gray-300 italic">Select customer…</p>
+      {/* ── Seller / Buyer ────────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100">
+        <div className="grid grid-cols-2 gap-3">
+          {/* Seller */}
+          <div className="space-y-1">
+            <p className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-[0.15em]">From</p>
+            <div className="flex items-center gap-1.5">
+              <Building2 className="h-3 w-3 text-gray-400 shrink-0" />
+              <p className="font-semibold text-gray-800 text-[11px] leading-tight truncate">{companyName || '—'}</p>
             </div>
-          )}
+            <p className="text-gray-400 text-[9px] pl-[18px]">UAE · TRN on file</p>
+          </div>
+          {/* Buyer */}
+          <div className="space-y-1 pl-3 border-l border-gray-100">
+            <p className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-[0.15em]">To</p>
+            {customerName ? (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full shrink-0 flex items-center justify-center"
+                       style={{ background: theme.accent + '15', border: `1.5px solid ${theme.accent}44` }}>
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: theme.accent }} />
+                  </div>
+                  <p className="font-semibold text-gray-800 text-[11px] leading-tight truncate">{customerName}</p>
+                </div>
+                <p className="text-gray-400 text-[9px] pl-[18px]">TRN on file</p>
+              </>
+            ) : (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <div className="w-3 h-3 rounded-full bg-gray-100 border border-gray-200 shrink-0" />
+                <p className="text-gray-300 text-[10px] italic">Select customer…</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* ── Dates ───────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 px-5 py-3 border-b border-gray-100 bg-gray-50/60 gap-3">
-        <div>
-          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Issue Date</p>
-          <p className="font-semibold text-gray-700 mt-1">{fmtDate(issueDate) ?? today}</p>
-        </div>
-        <div>
-          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Due Date</p>
-          <p className="font-semibold text-gray-700 mt-1">{fmtDate(dueDate) ?? <span className="text-gray-300">—</span>}</p>
+      {/* ── Dates ─────────────────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b border-gray-100 bg-gray-50/50">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <p className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-[0.15em]">Issue Date</p>
+            <p className="font-semibold text-gray-700 text-[11px] mt-0.5">{fmtDate(issueDate) ?? today}</p>
+          </div>
+          <div>
+            <p className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-[0.15em]">Due Date</p>
+            <p className="font-semibold text-gray-700 text-[11px] mt-0.5">{fmtDate(dueDate) ?? <span className="text-gray-300 font-normal">—</span>}</p>
+          </div>
         </div>
       </div>
 
-      {/* ── Line items table ─────────────────────────────────────────────────── */}
-      <div className="px-5 pt-4 pb-2">
-        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">Line Items</p>
+      {/* ── Line items ────────────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-5 pt-3 sm:pt-4 pb-2">
+        <p className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-2">Line Items</p>
 
         {!hasItems ? (
-          <div className="rounded-xl border-2 border-dashed border-gray-100 py-6 text-center">
-            <p className="text-gray-300 text-[11px]">Items will appear here as you fill them in</p>
+          <div className="rounded-lg border border-dashed border-gray-200 py-5 sm:py-6 text-center">
+            <PackageOpen className="h-6 w-6 text-gray-200 mx-auto mb-1.5" />
+            <p className="text-gray-300 text-[10px]">Items will appear as you add them</p>
           </div>
         ) : (
-          <div className="rounded-xl overflow-hidden border border-gray-100">
-            {/* Table header */}
-            <div className="hidden sm:grid grid-cols-[1fr_32px_52px_24px_56px] gap-x-1 px-3 py-2 text-[9px] font-black text-gray-400 uppercase tracking-wide bg-gray-50">
+          <div className="rounded-lg overflow-hidden border border-gray-150">
+            {/* Table header — desktop only */}
+            <div className="hidden sm:grid grid-cols-[1fr_40px_52px_28px_60px] gap-x-1 px-3 py-1.5 text-[8px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 border-b border-gray-100">
               <span>Item</span>
               <span className="text-right">Qty</span>
               <span className="text-right">Price</span>
-              <span className="text-right">%</span>
-              <span className="text-right">Total</span>
+              <span className="text-right">VAT</span>
+              <span className="text-right">Amount</span>
             </div>
             {/* Rows */}
             {items.map((it, i) => {
               const name = it.item_name || it.description;
               if (!name && !parseFloat(it.unit_price || '0')) return null;
-              const { net, vat, rate } = lineCalcs[i];
+              const { net, rate } = lineCalcs[i];
               return (
                 <Fragment key={i}>
-                  {/* Mobile row */}
-                  <div className={`sm:hidden flex items-center justify-between gap-2 px-3 py-2
-                    ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}
-                    border-t border-gray-100 first:border-t-0`}>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-gray-800 truncate leading-tight">{name || '—'}</p>
-                      <p className="text-gray-400 text-[9px]">{parseFloat(it.quantity) || 0} × {fmt(parseFloat(it.unit_price) || 0)}</p>
+                  {/* Mobile */}
+                  <div className={`sm:hidden px-3 py-2 border-t border-gray-100 first:border-t-0 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-semibold text-gray-800 text-[11px] leading-tight truncate flex-1">{name || '—'}</p>
+                      <p className="text-right font-bold text-gray-800 tabular-nums text-[11px] shrink-0">{cur} {fmt(net)}</p>
                     </div>
-                    <p className="text-right font-semibold text-gray-800 tabular-nums text-xs shrink-0">{fmt(net + vat)}</p>
+                    <p className="text-gray-400 text-[9px] mt-0.5">{parseFloat(it.quantity) || 0} × {fmt(parseFloat(it.unit_price) || 0)} · {rate}% VAT</p>
                   </div>
-                  {/* Desktop row */}
-                  <div className={`hidden sm:grid grid-cols-[1fr_32px_52px_24px_56px] gap-x-1 px-3 py-2 items-center
-                    ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}
-                    border-t border-gray-100 first:border-t-0`}>
+                  {/* Desktop */}
+                  <div className={`hidden sm:grid grid-cols-[1fr_40px_52px_28px_60px] gap-x-1 px-3 py-1.5 items-center border-t border-gray-100 first:border-t-0 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-800 truncate leading-tight">{name || '—'}</p>
+                      <p className="font-semibold text-gray-800 text-[11px] leading-tight truncate">{name || '—'}</p>
                       {it.unit && <p className="text-gray-400 text-[9px]">{it.unit}</p>}
                     </div>
-                    <p className="text-right text-gray-600 tabular-nums">{parseFloat(it.quantity) || 0}</p>
-                    <p className="text-right text-gray-600 tabular-nums">{fmt(parseFloat(it.unit_price) || 0)}</p>
-                    <p className="text-right text-gray-400 tabular-nums">{rate}%</p>
-                    <p className="text-right font-semibold text-gray-800 tabular-nums">{fmt(net + vat)}</p>
+                    <p className="text-right text-gray-500 tabular-nums text-[11px]">{parseFloat(it.quantity) || 0}</p>
+                    <p className="text-right text-gray-500 tabular-nums text-[11px]">{fmt(parseFloat(it.unit_price) || 0)}</p>
+                    <p className="text-right text-gray-400 tabular-nums text-[10px]">{rate}%</p>
+                    <p className="text-right font-semibold text-gray-800 tabular-nums text-[11px]">{fmt(net)}</p>
                   </div>
                 </Fragment>
               );
@@ -1100,53 +1374,53 @@ function InvoicePreview({ card, companyName, customerName, issueDate, dueDate, c
         )}
       </div>
 
-      {/* ── Totals ──────────────────────────────────────────────────────────── */}
-      <div className="px-5 pt-3 pb-4">
-        <div className="rounded-xl border border-gray-100 overflow-hidden">
+      {/* ── Totals ─────────────────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-5 pt-2 pb-3 sm:pb-4">
+        <div className="rounded-lg border border-gray-150 overflow-hidden">
           <div className="divide-y divide-gray-100">
-            <div className="flex justify-between items-center px-4 py-2 bg-gray-50/60">
-              <span className="text-gray-500">Subtotal</span>
-              <span className="tabular-nums font-mono text-gray-700">{cur} {fmt(subtotal)}</span>
+            <div className="flex justify-between items-center px-3 py-1.5">
+              <span className="text-gray-400 text-[11px]">Subtotal</span>
+              <span className="tabular-nums font-mono text-gray-600 text-[11px]">{cur} {fmt(subtotal)}</span>
             </div>
             {disc > 0 && (
-              <div className="flex justify-between items-center px-4 py-2 bg-amber-50">
-                <span className="text-amber-700">Discount</span>
-                <span className="tabular-nums font-mono text-amber-700">− {cur} {fmt(disc)}</span>
-              </div>
+              <>
+                <div className="flex justify-between items-center px-3 py-1.5 bg-amber-50/60">
+                  <span className="text-amber-600 text-[11px]">Discount</span>
+                  <span className="tabular-nums font-mono text-amber-600 text-[11px]">− {cur} {fmt(disc)}</span>
+                </div>
+                <div className="flex justify-between items-center px-3 py-1.5">
+                  <span className="text-gray-400 text-[11px]">Taxable</span>
+                  <span className="tabular-nums font-mono text-gray-600 text-[11px]">{cur} {fmt(taxable)}</span>
+                </div>
+              </>
             )}
-            {disc > 0 && (
-              <div className="flex justify-between items-center px-4 py-2 bg-gray-50/60">
-                <span className="text-gray-500">Taxable Amount</span>
-                <span className="tabular-nums font-mono text-gray-700">{cur} {fmt(taxable)}</span>
-              </div>
-            )}
-            <div className="flex justify-between items-center px-4 py-2 bg-gray-50/60">
-              <span className="text-gray-500">VAT</span>
-              <span className="tabular-nums font-mono text-gray-700">{cur} {fmt(totalVat)}</span>
+            <div className="flex justify-between items-center px-3 py-1.5">
+              <span className="text-gray-400 text-[11px]">VAT</span>
+              <span className="tabular-nums font-mono text-gray-600 text-[11px]">{cur} {fmt(totalVat)}</span>
             </div>
           </div>
-          {/* Grand total highlight */}
-          <div className={`flex justify-between items-center px-4 py-3 bg-gradient-to-r ${theme.header}`}>
-            <span className="font-bold text-white text-xs tracking-wide">TOTAL DUE</span>
-            <span className="tabular-nums font-black text-white text-sm">{cur} {fmt(grandTotal)}</span>
+          {/* Grand total */}
+          <div className={`flex justify-between items-center px-3 py-2.5 bg-gradient-to-r ${theme.header}`}>
+            <span className="font-bold text-white text-[11px] tracking-wide">Total Due</span>
+            <span className="tabular-nums font-black text-white text-xs">{cur} {fmt(grandTotal)}</span>
           </div>
         </div>
       </div>
 
-      {/* ── Footer ──────────────────────────────────────────────────────────── */}
-      <div className="px-5 py-3 bg-gray-50 border-t border-gray-100">
+      {/* ── Footer ─────────────────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-5 py-2.5 bg-gray-50/80 border-t border-gray-100">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <div className="flex items-center gap-1">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span className="text-[9px] font-bold text-gray-500">FTA Certified</span>
+              <span className="text-[8px] sm:text-[9px] font-bold text-gray-500">FTA</span>
             </div>
-            <span className="text-gray-300">·</span>
-            <span className="text-[9px] text-gray-400">BIS 3.0</span>
-            <span className="text-gray-300">·</span>
-            <span className="text-[9px] text-gray-400">UBL 2.1</span>
+            <span className="text-gray-200">·</span>
+            <span className="text-[8px] sm:text-[9px] text-gray-400">BIS 3.0</span>
+            <span className="text-gray-200">·</span>
+            <span className="text-[8px] sm:text-[9px] text-gray-400">UBL 2.1</span>
           </div>
-          <span className="text-[9px] text-gray-300 italic">Live Preview</span>
+          <span className="text-[8px] sm:text-[9px] text-gray-300 italic">Live</span>
         </div>
       </div>
 
@@ -1164,6 +1438,8 @@ export default function NewInvoicePage() {
   const [serverDet, setServerDet]     = useState<Record<string, string[]>>({});
   const [submitted, setSubmitted]     = useState(false);
   const [invoiceNo]                   = useState(generateInvoiceNumber);
+  const [buyerSearch, setBuyerSearch] = useState('');
+  const [buyerTypeFilter, setBuyerTypeFilter] = useState('all');
 
   const { data: customers = [] } = useSWR<Customer[]>(
     activeId ? `/customers/?company_id=${activeId}&page_size=200` : null,
@@ -1303,6 +1579,17 @@ export default function NewInvoicePage() {
 
   const selectedCustomer = customers.find((c) => c.id === watchedCustomerId);
 
+  const filteredCustomers = useMemo(() => {
+    const q = buyerSearch.toLowerCase();
+    return customers.filter((c) => {
+      const matchesSearch = !q || c.name?.toLowerCase().includes(q) || c.legal_name?.toLowerCase().includes(q)
+        || c.trn?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)
+        || c.city?.toLowerCase().includes(q);
+      const matchesType = buyerTypeFilter === 'all' || c.customer_type === buyerTypeFilter;
+      return matchesSearch && matchesType;
+    });
+  }, [customers, buyerSearch, buyerTypeFilter]);
+
   // Auto-fill customer location and transaction type when a customer is selected
   useEffect(() => {
     if (!selectedCustomer) return;
@@ -1329,11 +1616,47 @@ export default function NewInvoicePage() {
     `DATE:${issueDate || ''}`,
   ].join('|');
   const [qrUrl, setQrUrl] = useState('');
+  const [invNoCopied, setInvNoCopied] = useState(false);
+  const [showQrZoom, setShowQrZoom] = useState(false);
   useEffect(() => {
     QRCode.toDataURL(qrText, { margin: 1, width: 220, errorCorrectionLevel: 'M' })
       .then(setQrUrl)
       .catch(() => setQrUrl(''));
   }, [qrText]);
+
+  // ── QR action handlers ────────────────────────────────────────────────────
+  const handleDownloadQr = useCallback(() => {
+    if (!qrUrl) return;
+    const a = document.createElement('a');
+    a.href = qrUrl;
+    a.download = `${invoiceNo || 'invoice'}-qr.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }, [qrUrl, invoiceNo]);
+
+  const handleCopyInvoiceNo = useCallback(() => {
+    navigator.clipboard.writeText(invoiceNo).then(() => {
+      setInvNoCopied(true);
+      setTimeout(() => setInvNoCopied(false), 2000);
+    });
+  }, [invoiceNo]);
+
+  const handleShareQr = useCallback(async () => {
+    if (!qrUrl) return;
+    try {
+      const res = await fetch(qrUrl);
+      const blob = await res.blob();
+      const file = new File([blob], `${invoiceNo || 'invoice'}-qr.png`, { type: 'image/png' });
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `QR Code — ${invoiceNo}` });
+      } else {
+        handleDownloadQr();
+      }
+    } catch {
+      handleDownloadQr();
+    }
+  }, [qrUrl, invoiceNo, handleDownloadQr]);
 
   // ── Stepper completion logic ──────────────────────────────────────────────
   const hasCustomer   = !!watchedCustomerId;
@@ -1585,20 +1908,43 @@ export default function NewInvoicePage() {
           <div className="absolute top-0 right-0 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="relative z-10">
             <button type="button" onClick={() => setSelected(null)}
-              className="flex items-center gap-1.5 text-sm text-blue-200/70 hover:text-white mb-3 transition-colors">
-              <ArrowLeft className="h-4 w-4" /> Back to invoice types
+              className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] font-medium text-blue-200/70 hover:text-white
+                         bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.12]
+                         shadow-sm hover:shadow-md transition-all duration-200 mb-4">
+              <ArrowLeft className="h-3.5 w-3.5 -ml-0.5 group-hover:-translate-x-0.5 transition-transform duration-200" />
+              Back to invoice types
             </button>
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 shrink-0">
-                {selected.icon}
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl font-bold text-white tracking-tight">{selected.title}</h1>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${accent.badge}`}>{selected.boxRef}</span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-200 border border-indigo-500/30">{selected.reqRef}</span>
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 shrink-0">
+                  {selected.icon}
                 </div>
-                <p className="text-sm text-blue-200/60 mt-0.5">{selected.subtitle}</p>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-xl font-bold text-white tracking-tight">{selected.title}</h1>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${accent.badge}`}>{selected.boxRef}</span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-200 border border-indigo-500/30">{selected.reqRef}</span>
+                  </div>
+                  <p className="text-sm text-blue-200/60 mt-0.5">{selected.subtitle}</p>
+                </div>
+              </div>
+              {/* Invoice quick-info card */}
+              <div className="hidden sm:flex items-center gap-3 bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-2.5 shrink-0">
+                <div className="text-right">
+                  <p className="text-[9px] text-blue-200/40 uppercase tracking-widest font-medium">Invoice No.</p>
+                  <p className="text-[13px] font-mono font-semibold text-white/90 mt-0.5">{invoiceNo}</p>
+                </div>
+                <div className="w-px h-8 bg-white/10" />
+                <div className="text-right">
+                  <p className="text-[9px] text-blue-200/40 uppercase tracking-widest font-medium">Step</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-[13px] font-semibold text-white/90">{step + 1}<span className="text-blue-200/40 font-normal">/6</span></p>
+                    <span className="flex h-1.5 w-1.5 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1606,58 +1952,43 @@ export default function NewInvoicePage() {
       </AnimatedSection>
 
       {/* Progress stepper */}
-      <FormStepper steps={STEPS} current={step} />
+      <FormStepper steps={STEPS} current={step} onStepClick={setStep} onPrev={step === 0 ? () => router.back() : goBack} onNext={goNext} />
 
       {/* Two-column layout: form + preview. On the Review step we go full-width
           and show the invoice as one professional document instead. */}
       <div className={step === 5 ? '' : 'grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 items-start'}>
 
         {/* ── LEFT: Form ── */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 min-w-0" noValidate>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4 min-w-0" noValidate>
 
           {/* STEP 0 — Your Info (seller) */}
           {step === 0 && (
             <AnimatedSection>
             <Section title="Your Info" icon={<Building2 className="h-4 w-4" />} subtitle="Your company (seller) details">
-              <div className="flex items-center gap-3 rounded-xl border-2 border-gray-200 bg-white p-3 shadow-sm">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-blue-500/20 shrink-0">
-                  {(activeCompany?.name ?? 'CO').slice(0, 2).toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-gray-900 text-sm truncate">{activeCompany?.name ?? '—'}</p>
-                  <p className="text-xs text-gray-500">TRN: {activeCompany?.trn || '—'}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Supplier Location" required
-                  tooltip="Location of the supplier (your company). E.g. Dubai, UAE"
-                  error={errors.supplier_location?.message}>
-                  <input placeholder="e.g. Dubai, UAE" maxLength={120}
-                    className={inputCls(errors.supplier_location?.message)}
-                    {...register('supplier_location', {
-                      required: 'Supplier location is required',
-                      validate: (v) => limitWords(v, 'Supplier location'),
-                      onChange: () => { setTimeout(() => trigger('supplier_location'), 0); },
-                    })} />
-                </Field>
-                <Field label="Payment Method" required
-                  hint="UN/ECE UNCL 4461 — mandatory for UBL PaymentMeans element"
-                  error={errors.payment_means_code?.message}>
-                  <Controller control={control} name="payment_means_code" rules={{ required: 'Payment method is required' }}
-                    render={({ field }) => (
-                      <CustomSelect value={field.value} onChange={field.onChange}
-                        options={[
-                          { value: '30', label: 'Credit Transfer' },
-                          { value: '10', label: 'Cash' },
-                          { value: '20', label: 'Cheque' },
-                          { value: '48', label: 'Bank Card' },
-                          { value: '49', label: 'Direct Debit' },
-                          { value: '57', label: 'Standing Order' },
-                          { value: '58', label: 'SEPA Credit Transfer' },
-                        ]} />
-                    )} />
-                </Field>
-              </div>
+
+              <CompanyProfileCard company={activeCompany} />
+              <CollapsibleBankDetails company={activeCompany} />
+
+              <Field label="Supplier Location" required
+                tooltip="Location of the supplier (your company). E.g. Dubai, UAE"
+                error={errors.supplier_location?.message}>
+                <input placeholder="e.g. Dubai, UAE" maxLength={120}
+                  className={inputCls(errors.supplier_location?.message)}
+                  {...register('supplier_location', {
+                    required: 'Supplier location is required',
+                    validate: (v) => limitWords(v, 'Supplier location'),
+                    onChange: () => { setTimeout(() => trigger('supplier_location'), 0); },
+                  })} />
+              </Field>
+
+              <Field label="Payment Method" required
+                hint="UN/ECE UNCL 4461 — mandatory for UBL PaymentMeans element"
+                error={errors.payment_means_code?.message}>
+                <Controller control={control} name="payment_means_code" rules={{ required: 'Payment method is required' }}
+                  render={({ field }) => (
+                    <PaymentMethodCards value={field.value} onChange={field.onChange} />
+                  )} />
+              </Field>
             </Section>
             </AnimatedSection>
           )}
@@ -1666,29 +1997,211 @@ export default function NewInvoicePage() {
           {step === 1 && (
             <AnimatedSection delay={100}>
             <Section title="Buyer" icon={<Building2 className="h-4 w-4" />} subtitle="Select the customer being invoiced">
-              <Field label="Customer (Buyer)" required
-                tooltip="The business or person being invoiced. For B2B/B2G the customer must have a valid 15-digit TRN. Pick '+ Add new customer' to create one."
-                error={errors.customer_id?.message}>
-                <Controller control={control} name="customer_id" rules={{ required: 'Customer is required' }}
-                  render={({ field }) => (
-                    <CustomSelect value={field.value}
-                      onChange={(val) => {
-                        if (val === '__add_customer__') {
-                          router.push('/customers/new');
-                        } else {
-                          field.onChange(val);
-                        }
-                      }}
-                      options={[
-                        { value: '', label: 'Select a customer…' },
-                        ...customers.map((cu) => ({
-                          value: cu.id,
-                          label: `${cu.name}${cu.trn ? ` — TRN: ${cu.trn}` : ''}${cu.city ? ` (${cu.city})` : ''}`,
-                        })),
-                        { value: '__add_customer__', label: '+ Add new customer' },
-                      ]} />
-                  )} />
-              </Field>
+              <Controller control={control} name="customer_id" rules={{ required: 'Customer is required' }}
+                render={({ field }) => {
+                  if (selectedCustomer) {
+                    return (
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 animate-fade-in-scale">
+                        <div className="flex items-start gap-4">
+                          <div className={`h-11 w-11 rounded-xl ${getAvatarColor(selectedCustomer.name)} flex items-center justify-center shrink-0 shadow-sm`}>
+                            <span className="text-white text-sm font-bold">{getInitials(selectedCustomer.name)}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                              <UserCheck className="h-3 w-3" /> Buyer Selected
+                            </p>
+                            <p className="text-sm font-bold text-emerald-900 truncate">{selectedCustomer.legal_name || selectedCustomer.name}</p>
+                            {selectedCustomer.legal_name && selectedCustomer.name !== selectedCustomer.legal_name && (
+                              <p className="text-xs text-emerald-600 truncate">{selectedCustomer.name}</p>
+                            )}
+                          </div>
+                          <button type="button" onClick={() => { field.onChange(''); setBuyerSearch(''); }}
+                            className="p-2 rounded-xl text-emerald-500 hover:bg-emerald-100 hover:text-emerald-700 transition-all shrink-0"
+                            title="Change customer">
+                            <RefreshCw className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 mt-4 pt-3 border-t border-emerald-200/60">
+                          {selectedCustomer.trn && (
+                            <div>
+                              <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">TRN</p>
+                              <p className="text-xs font-mono font-semibold text-emerald-800">{selectedCustomer.trn}</p>
+                            </div>
+                          )}
+                          {selectedCustomer.customer_type && (
+                            <div>
+                              <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">Type</p>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase inline-block mt-0.5 ${TYPE_BADGE[selectedCustomer.customer_type] || 'bg-gray-100 text-gray-600'}`}>
+                                {TYPE_LABEL[selectedCustomer.customer_type] || selectedCustomer.customer_type}
+                              </span>
+                            </div>
+                          )}
+                          {selectedCustomer.city && (
+                            <div>
+                              <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">Location</p>
+                              <p className="text-xs text-emerald-800 flex items-center gap-1"><MapPin className="h-3 w-3 shrink-0" />{selectedCustomer.city}{selectedCustomer.country ? `, ${selectedCustomer.country}` : ''}</p>
+                            </div>
+                          )}
+                          {selectedCustomer.phone && (
+                            <div>
+                              <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">Phone</p>
+                              <p className="text-xs text-emerald-800 flex items-center gap-1"><Phone className="h-3 w-3 shrink-0" />{selectedCustomer.phone}</p>
+                            </div>
+                          )}
+                          {selectedCustomer.email && (
+                            <div className="col-span-2 sm:col-span-4">
+                              <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">Email</p>
+                              <p className="text-xs text-emerald-800 truncate flex items-center gap-1"><Mail className="h-3 w-3 shrink-0" />{selectedCustomer.email}</p>
+                            </div>
+                          )}
+                          {selectedCustomer.formatted_address && (
+                            <div className="col-span-2 sm:col-span-4">
+                              <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">Address</p>
+                              <p className="text-xs text-emerald-800">{selectedCustomer.formatted_address}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+                        <div className="relative flex-1">
+                          <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
+                          <input type="text" value={buyerSearch}
+                            onChange={(e) => setBuyerSearch(e.target.value)}
+                            placeholder="Search by name, TRN, email, or city..."
+                            className="w-full rounded-xl border border-gray-200 bg-gray-50/50 pl-10 pr-10 py-2.5 text-sm
+                                       focus:outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-gray-400" />
+                          {buyerSearch && (
+                            <button type="button" onClick={() => setBuyerSearch('')}
+                              className="absolute right-3 top-2.5 p-1 rounded-lg text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 shrink-0 self-start">
+                          {[{ value: 'all', label: 'All' }, { value: 'b2b', label: 'B2B' }, { value: 'b2g', label: 'B2G' }, { value: 'b2c', label: 'B2C' }].map((tf) => (
+                            <button key={tf.value} type="button" onClick={() => setBuyerTypeFilter(tf.value)}
+                              className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all
+                                ${buyerTypeFilter === tf.value
+                                  ? 'bg-white text-blue-600 shadow-sm'
+                                  : 'text-gray-500 hover:text-gray-700'}`}>
+                              {tf.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {(buyerSearch || buyerTypeFilter !== 'all') && filteredCustomers.length > 0 && (
+                        <p className="text-[11px] text-gray-400 font-medium">
+                          {filteredCustomers.length} customer{filteredCustomers.length !== 1 ? 's' : ''} found
+                        </p>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[164px] overflow-y-auto pr-1">
+                        {filteredCustomers.map((cu) => {
+                          const isActive = field.value === cu.id;
+                          return (
+                            <button key={cu.id} type="button"
+                              onClick={() => { field.onChange(cu.id); setBuyerSearch(''); setBuyerTypeFilter('all'); }}
+                              className={`text-left rounded-xl border transition-all duration-200 group overflow-hidden
+                                ${isActive
+                                  ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200 shadow-sm'
+                                  : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm'}`}>
+                              <div className="p-3">
+                                <div className="flex items-center gap-2.5">
+                                  <div className={`h-8 w-8 rounded-lg ${getAvatarColor(cu.name)} flex items-center justify-center shrink-0 transition-transform group-hover:scale-105`}>
+                                    <span className="text-white text-[11px] font-bold">{getInitials(cu.name)}</span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`text-[13px] font-semibold truncate leading-tight ${isActive ? 'text-emerald-900' : 'text-gray-900'}`}>
+                                      {cu.legal_name || cu.name}
+                                    </p>
+                                    {cu.legal_name && cu.name !== cu.legal_name && (
+                                      <p className="text-[10px] text-gray-400 truncate leading-tight mt-0.5">{cu.name}</p>
+                                    )}
+                                  </div>
+                                  {isActive && <Check className="h-4 w-4 text-emerald-500 shrink-0" />}
+                                </div>
+                              </div>
+                              <div className={`px-3 py-2 border-t flex flex-wrap items-center gap-x-2 gap-y-0.5 ${isActive ? 'border-emerald-200/60 bg-emerald-50/50' : 'border-gray-100 bg-gray-50/50'}`}>
+                                {cu.trn && (
+                                  <span className="text-[10px] font-mono text-gray-500">TRN: {cu.trn}</span>
+                                )}
+                                {cu.customer_type && (
+                                  <span className={`text-[9px] font-bold px-1.5 py-px rounded-full uppercase ${TYPE_BADGE[cu.customer_type] || 'bg-gray-100 text-gray-600'}`}>
+                                    {TYPE_LABEL[cu.customer_type] || cu.customer_type}
+                                  </span>
+                                )}
+                                {cu.city && (
+                                  <span className="text-[10px] text-gray-400 ml-auto flex items-center gap-0.5">
+                                    <MapPin className="h-2.5 w-2.5 shrink-0" />{cu.city}
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+
+                        <button type="button" onClick={() => router.push('/customers/new')}
+                          className="rounded-xl border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all flex flex-col items-center justify-center gap-1 min-h-[110px] group">
+                          <div className="h-8 w-8 rounded-lg bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
+                            <Plus className="h-4 w-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                          </div>
+                          <span className="text-[11px] font-medium text-gray-400 group-hover:text-blue-600 transition-colors">Add Customer</span>
+                        </button>
+                      </div>
+
+                      {customers.length > 0 && filteredCustomers.length === 0 && (
+                        <div className="text-center py-10 bg-gray-50 rounded-xl">
+                          <Search className="h-8 w-8 mx-auto text-gray-300 mb-2" />
+                          <p className="text-sm font-medium text-gray-500">No customers match</p>
+                          <p className="text-xs text-gray-400 mt-1">Try a different search or filter.</p>
+                          <div className="flex items-center justify-center gap-3 mt-3">
+                            {buyerSearch && (
+                              <button type="button" onClick={() => setBuyerSearch('')}
+                                className="text-xs font-semibold text-gray-500 hover:text-gray-700">
+                                Clear search
+                              </button>
+                            )}
+                            {buyerTypeFilter !== 'all' && (
+                              <button type="button" onClick={() => setBuyerTypeFilter('all')}
+                                className="text-xs font-semibold text-gray-500 hover:text-gray-700">
+                                Show all types
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {customers.length === 0 && (
+                        <div className="text-center py-10 bg-gray-50 rounded-xl">
+                          <Users className="h-8 w-8 mx-auto text-gray-300 mb-2" />
+                          <p className="text-sm font-medium text-gray-500">No customers yet</p>
+                          <p className="text-xs text-gray-400 mt-1">Create your first customer to get started.</p>
+                          <button type="button" onClick={() => router.push('/customers/new')}
+                            className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors shadow-sm">
+                            <Plus className="h-3.5 w-3.5" /> Add New Customer
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }} />
+              {errors.customer_id && (
+                <p className="flex items-center gap-1 text-xs text-red-500">⚠ {errors.customer_id.message}</p>
+              )}
+
+              {/* Divider */}
+              {selectedCustomer && (
+                <div className="relative my-1">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
+                  <div className="relative flex justify-center"><span className="bg-white px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Details</span></div>
+                </div>
+              )}
+
               <Field label="Customer Location" required
                 tooltip="Location of the customer. E.g. Riyadh, Saudi Arabia"
                 error={errors.customer_location?.message}>
@@ -1700,23 +2213,47 @@ export default function NewInvoicePage() {
                     onChange: () => { setTimeout(() => trigger('customer_location'), 0); },
                   })} />
               </Field>
+
               <Field label="Transaction Type"
                 tooltip="Auto-detected from the selected customer type. You can override if needed.">
                 <Controller control={control} name="transaction_type"
-                  render={({ field }) => (
-                    <CustomSelect value={field.value} onChange={field.onChange}
-                      options={[
-                        { value: 'b2b', label: 'B2B — Business to Business' },
-                        { value: 'b2g', label: 'B2G — Business to Government' },
-                        { value: 'b2c', label: 'B2C — Business to Consumer' },
-                      ]} />
-                  )} />
+                  render={({ field: txField }) => {
+                    const txOptions = [
+                      { value: 'b2b', label: 'B2B', fullLabel: 'Business to Business', icon: Building2, desc: 'Invoice another registered business' },
+                      { value: 'b2g', label: 'B2G', fullLabel: 'Business to Government', icon: Landmark, desc: 'Invoice a government entity' },
+                      { value: 'b2c', label: 'B2C', fullLabel: 'Business to Consumer', icon: Users, desc: 'Invoice an individual consumer' },
+                    ] as const;
+                    return (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {txOptions.map((opt) => {
+                          const isActive = txField.value === opt.value;
+                          const Icon = opt.icon;
+                          return (
+                            <button key={opt.value} type="button"
+                              onClick={() => txField.onChange(opt.value)}
+                              className={`p-3 rounded-xl border-2 text-center transition-all duration-200
+                                ${isActive
+                                  ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200'
+                                  : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                              <div className={`h-8 w-8 rounded-lg mx-auto flex items-center justify-center mb-2 ${isActive ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-400'} transition-colors`}>
+                                <Icon className="h-4 w-4" />
+                              </div>
+                              <p className={`text-xs font-bold ${isActive ? 'text-blue-700' : 'text-gray-600'}`}>{opt.label}</p>
+                              <p className="text-[10px] text-gray-400 mt-0.5 leading-tight hidden sm:block">{opt.desc}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  }} />
               </Field>
+
               {selectedCustomer?.customer_type &&
                watch('transaction_type') &&
                watch('transaction_type') !== selectedCustomer.customer_type && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800 text-xs">
-                  Transaction type <strong>{watch('transaction_type')?.toUpperCase()}</strong> does not match this customer&apos;s type <strong>{selectedCustomer.customer_type.toUpperCase()}</strong>. You must select the matching type to continue.
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-xs flex items-start gap-2.5">
+                  <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                  <span>Transaction type <strong>{watch('transaction_type')?.toUpperCase()}</strong> does not match this customer&apos;s type <strong>{selectedCustomer.customer_type.toUpperCase()}</strong>. Select the matching type to continue.</span>
                 </div>
               )}
             </Section>
@@ -1745,14 +2282,23 @@ export default function NewInvoicePage() {
                   )} />
               </Field>
             )}
-            <label className="flex items-start gap-3 rounded-xl border-2 border-gray-200 bg-white p-3 cursor-pointer hover:border-gray-300 transition-colors">
-              <input type="checkbox" className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500/30" {...register('is_reverse_charge')} />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">Reverse Charge Mechanism applies</p>
-                <p className="text-xs text-gray-500 mt-0.5">VAT liability transfers to the buyer — required for imports subject to reverse charge (Box 1c).</p>
-              </div>
-              {isReverse && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 shrink-0">RC Active</span>}
-            </label>
+            <Controller control={control} name="is_reverse_charge"
+              render={({ field: rcField }) => (
+                <button type="button" onClick={() => rcField.onChange(!rcField.value)}
+                  className={`flex items-start gap-3 rounded-xl border-2 p-3 w-full text-left transition-all duration-200
+                    ${rcField.value
+                      ? 'border-amber-300 bg-amber-50'
+                      : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                  <div className={`relative w-10 h-5 rounded-full shrink-0 mt-0.5 transition-colors duration-200 ${rcField.value ? 'bg-amber-500' : 'bg-gray-300'}`}>
+                    <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${rcField.value ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">Reverse Charge Mechanism applies</p>
+                    <p className="text-xs text-gray-500 mt-0.5">VAT liability transfers to the buyer — required for imports subject to reverse charge (Box 1c).</p>
+                  </div>
+                  {rcField.value && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 shrink-0">RC Active</span>}
+                </button>
+              )} />
           </Section>
           </AnimatedSection>
           )}
@@ -1944,13 +2490,49 @@ export default function NewInvoicePage() {
                   products={products} setValue={setValue} />
               ))}
             </div>
+
+            {/* Line Items Totals */}
+            {watchedItems && watchedItems.length > 0 && (() => {
+              const subtotal = watchedItems.reduce((sum, it) => {
+                const net = (parseFloat(it.quantity) || 0) * (parseFloat(it.unit_price) || 0);
+                return sum + net;
+              }, 0);
+              const totalVat = watchedItems.reduce((sum, it) => {
+                const net = (parseFloat(it.quantity) || 0) * (parseFloat(it.unit_price) || 0);
+                const rate = VAT_RATE_MAP[it.vat_rate_type] ?? 0;
+                return sum + (net * rate / 100);
+              }, 0);
+              const total = subtotal + totalVat;
+              const hasAnyValue = subtotal > 0;
+              return hasAnyValue ? (
+                <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-4 space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Subtotal (excl. VAT)</span>
+                    <span className="font-medium text-gray-900">{currency} {subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">VAT Amount</span>
+                    <span className="font-medium text-gray-900">{currency} {totalVat.toFixed(2)}</span>
+                  </div>
+                  <div className="border-t border-gray-200 pt-2 flex items-center justify-between">
+                    <span className="text-sm font-bold text-gray-900">Total</span>
+                    <span className="text-base font-bold text-indigo-600">{currency} {total.toFixed(2)}</span>
+                  </div>
+                </div>
+              ) : null;
+            })()}
             <button type="button"
               onClick={() => append({ item_name: '', description: '', product_reference: '', quantity: '1', unit: '',
                 unit_price: '', vat_rate_type: vatLocked ? 'out_of_scope' : (selected.vatRate ?? 'standard'),
               })}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-gray-300
-                         text-sm font-medium text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50/50 w-full justify-center transition-all duration-200">
-              <Plus className="h-4 w-4" /> Add Line Item
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl
+                         bg-indigo-600 text-white text-sm font-semibold
+                         shadow-md shadow-indigo-200
+                         hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-300
+                         active:bg-indigo-800 active:shadow-sm
+                         transition-all duration-150">
+              <Plus className="h-4 w-4" />
+              Add Line Item
             </button>
           </Section>
           </AnimatedSection>
@@ -1968,14 +2550,16 @@ export default function NewInvoicePage() {
 
           {/* Full-width professional invoice document */}
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/20">
                 <FileCheck className="h-4 w-4" />
               </span>
-              <h2 className="text-sm font-bold text-gray-900 tracking-tight">Review your invoice</h2>
-              <span className="text-xs text-gray-400">— confirm everything is correct, then submit</span>
+              <div>
+                <h2 className="text-sm font-bold text-gray-900 tracking-tight">Review your invoice</h2>
+                <p className="text-xs text-gray-400">Confirm everything is correct, then submit</p>
+              </div>
             </div>
-            <div className="rounded-2xl border-2 border-gray-200 bg-gradient-to-b from-gray-50 via-white to-white p-3 sm:p-5 lg:p-8 xl:p-12 flex justify-center shadow-lg shadow-gray-200/50">
+            <div className="rounded-2xl border border-gray-200 bg-gradient-to-b from-gray-50 via-white to-white p-4 sm:p-6 lg:p-10 flex justify-center shadow-xl shadow-gray-200/40">
               <div className="w-full max-w-lg">
                 <InvoicePreview
                   card={selected}
@@ -2001,33 +2585,113 @@ export default function NewInvoicePage() {
           {step === 4 && (
           <AnimatedSection delay={500}>
           <Section title="Print Code" icon={<QrCode className="h-4 w-4" />} subtitle="Scan-to-verify QR code — printed on the final invoice">
-            <div className="flex flex-col sm:flex-row items-center gap-5">
-              <div className="shrink-0 rounded-xl border-2 border-gray-200 bg-white p-3 shadow-lg shadow-gray-200/50">
-                {qrUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={qrUrl} alt="Invoice verification QR code" className="w-36 h-36" />
-                ) : (
-                  <div className="w-36 h-36 flex items-center justify-center text-gray-300">
-                    <QrCode className="h-10 w-10" />
+            {/* QR + Info card */}
+            <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 via-white to-emerald-50/30 p-5 sm:p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-200/15 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-200/10 rounded-full blur-2xl pointer-events-none" />
+
+              <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6">
+                {/* QR Code */}
+                <div className="shrink-0 group">
+                  <div className="rounded-2xl border-2 border-white bg-white p-4 shadow-lg shadow-gray-200/60 group-hover:shadow-xl group-hover:shadow-emerald-200/40 transition-all duration-300 relative">
+                    {qrUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={qrUrl} alt="Invoice verification QR code" className="w-40 h-40" />
+                    ) : (
+                      <div className="w-40 h-40 flex items-center justify-center text-gray-300">
+                        <QrCode className="h-12 w-12" />
+                      </div>
+                    )}
+                    {/* Corner accents */}
+                    <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-emerald-400 rounded-tl-2xl" />
+                    <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-emerald-400 rounded-tr-2xl" />
+                    <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-emerald-400 rounded-bl-2xl" />
+                    <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-emerald-400 rounded-br-2xl" />
                   </div>
-                )}
-              </div>
-              <div className="text-sm text-gray-600 space-y-1.5 min-w-0">
-                <p className="font-semibold text-gray-800 flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4 text-emerald-500" /> Verification code ready
-                </p>
-                <p className="text-xs leading-relaxed">
-                  This QR encodes the invoice number, seller &amp; buyer TRN, total amount and date.
-                  Anyone can scan it to verify the invoice is genuine.
-                </p>
-                <div className="text-xs text-gray-500 grid grid-cols-1 gap-0.5 pt-1">
-                  <span><span className="text-gray-400">Invoice:</span> <span className="font-medium text-gray-700">{invoiceNo}</span></span>
-                  <span><span className="text-gray-400">Total:</span> <span className="font-medium text-gray-700">{currency || 'AED'} {qrTotal.toFixed(2)}</span></span>
+                  <p className="text-center text-[11px] text-gray-400 mt-2.5 font-medium">Scan to verify</p>
+
+                  {/* Action buttons */}
+                  <div className="flex items-center justify-center gap-1.5 mt-3">
+                    <button type="button" onClick={handleDownloadQr} title="Download PNG"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 shadow-sm transition-all duration-150">
+                      <Download className="h-3.5 w-3.5" />
+                    </button>
+                    <button type="button" onClick={handleCopyInvoiceNo} title="Copy invoice number"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 hover:text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50 shadow-sm transition-all duration-150">
+                      {invNoCopied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                    <button type="button" onClick={handleShareQr} title="Share QR image"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 shadow-sm transition-all duration-150">
+                      <Share2 className="h-3.5 w-3.5" />
+                    </button>
+                    <button type="button" onClick={() => setShowQrZoom(true)} title="Zoom"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 hover:text-amber-600 hover:border-amber-300 hover:bg-amber-50 shadow-sm transition-all duration-150">
+                      <Maximize2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <p className="text-[11px] text-gray-400 pt-1">Review the code above, then continue.</p>
+
+                {/* Details */}
+                <div className="text-sm space-y-3 min-w-0 text-center sm:text-left">
+                  {/* Status */}
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/60">
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+                    <span className="text-xs font-semibold text-emerald-700">Verification code ready</span>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-xs text-gray-500 leading-relaxed max-w-sm">
+                    This QR encodes the invoice number, seller &amp; buyer TRN, total amount and date.
+                    Anyone can scan it to verify the invoice is genuine.
+                  </p>
+
+                  {/* Meta grid */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-xl bg-white border border-gray-100 px-3 py-2 shadow-sm">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Invoice</p>
+                      <p className="text-xs font-semibold text-gray-800 mt-0.5 truncate">{invoiceNo}</p>
+                    </div>
+                    <div className="rounded-xl bg-white border border-gray-100 px-3 py-2 shadow-sm">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Total</p>
+                      <p className="text-xs font-semibold text-gray-800 mt-0.5">{currency || 'AED'} {qrTotal.toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-gray-400">Review the code above, then continue.</p>
+                </div>
               </div>
             </div>
           </Section>
+
+          {/* Zoom modal */}
+          {showQrZoom && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowQrZoom(false)}>
+              <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full relative" onClick={(e) => e.stopPropagation()}>
+                <button type="button" onClick={() => setShowQrZoom(false)}
+                  className="absolute top-3 right-3 w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                  <X className="h-4 w-4 text-gray-500" />
+                </button>
+                <div className="flex flex-col items-center">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">{invoiceNo}</p>
+                  {qrUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={qrUrl} alt="QR code zoomed" className="w-64 h-64 rounded-xl border border-gray-200 shadow-lg" />
+                  )}
+                  <div className="flex items-center gap-2 mt-5">
+                    <button type="button" onClick={handleDownloadQr}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 shadow-sm transition-colors">
+                      <Download className="h-3.5 w-3.5" /> Download
+                    </button>
+                    <button type="button" onClick={handleShareQr}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
+                      <Share2 className="h-3.5 w-3.5" /> Share
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           </AnimatedSection>
           )}
 
@@ -2084,18 +2748,26 @@ export default function NewInvoicePage() {
 
         {/* ── RIGHT: Live preview — hidden on the Review step (shown full-width there). ── */}
         {step !== 5 && (
-        <div className="hidden lg:block sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto rounded-2xl border border-white/10 bg-gradient-to-br from-blue-950 to-indigo-950 p-4 shadow-xl shadow-blue-950/30 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="hidden lg:block sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 p-4 shadow-2xl shadow-blue-950/20 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] relative">
           <div className="absolute inset-0 bg-grid opacity-[0.03] pointer-events-none rounded-2xl" />
+          <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="relative z-10">
+            {/* Panel header */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <p className="text-[11px] font-bold text-blue-200/70 uppercase tracking-widest">Invoice Preview</p>
-                <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                </span>
+                <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-white/10 border border-white/10">
+                  <FileText className="h-3.5 w-3.5 text-blue-200/70" />
+                </div>
+                <p className="text-[10px] sm:text-[11px] font-bold text-blue-100/80 uppercase tracking-widest">Invoice Preview</p>
               </div>
-              <span className="text-[10px] text-blue-200/40 bg-white/10 border border-white/10 px-2 py-0.5 rounded-full">Updates live</span>
+              <div className="flex items-center gap-1.5">
+                <span className="flex h-1.5 w-1.5 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+                </span>
+                <span className="text-[9px] sm:text-[10px] text-blue-200/40 bg-white/[0.06] border border-white/10 px-2 py-0.5 rounded-full">Live</span>
+              </div>
             </div>
             <InvoicePreview
               card={selected}
