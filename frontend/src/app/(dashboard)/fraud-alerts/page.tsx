@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { RoleGuard } from '@/components/guards/RoleGuard';
 import { ShieldAlert, ShieldCheck, ShieldX, CheckCircle, RefreshCw, Eye, X } from 'lucide-react';
 import useSWR, { mutate } from 'swr';
 import { api } from '@/lib/api';
@@ -251,11 +252,14 @@ export default function FraudAlertsPage() {
   }
 
   return (
+    <RoleGuard allowedRoles={['admin']}>
     <div className="space-y-6 animate-fade-in">
 
       {/* ── Header ───────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-blue-950 to-indigo-950 rounded-2xl p-6 shadow-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 rounded-2xl p-6 shadow-lg relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.15),transparent_50%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(99,102,241,0.1),transparent_50%)] pointer-events-none" />
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
               <div className="h-2 w-2 rounded-full bg-blue-400" />
@@ -367,5 +371,6 @@ export default function FraudAlertsPage() {
         />
       )}
     </div>
+    </RoleGuard>
   );
 }

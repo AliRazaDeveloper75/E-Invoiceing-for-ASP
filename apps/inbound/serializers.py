@@ -33,11 +33,11 @@ class SupplierCreateSerializer(serializers.Serializer):
     name              = serializers.CharField(max_length=255)
     trn               = serializers.CharField(max_length=15)
     email             = serializers.EmailField()
-    phone             = serializers.CharField(max_length=30, required=False, default='')
-    address           = serializers.CharField(required=False, default='')
+    phone             = serializers.CharField(max_length=30, required=False, default='', allow_blank=True)
+    address           = serializers.CharField(required=False, default='', allow_blank=True)
     receiving_company = serializers.UUIDField()
     whitelisted_email = serializers.EmailField(required=False, allow_blank=True, default='')
-    notes             = serializers.CharField(required=False, default='')
+    notes             = serializers.CharField(required=False, allow_blank=True, default='')
 
     def validate_trn(self, value):
         if not value.isdigit() or len(value) != 15:

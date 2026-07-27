@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
+import { RoleGuard } from '@/components/guards/RoleGuard';
 import Link from 'next/link';
 import {
   FileText, Search, Filter, RefreshCw, ChevronLeft, ChevronRight,
@@ -160,6 +161,7 @@ export default function AdminInvoicesPage() {
   };
 
   return (
+    <RoleGuard allowedRoles={['admin']}>
     <div className="space-y-6">
       {/* Gradient card header */}
       <div className="bg-gradient-to-br from-white via-blue-50/30 to-white rounded-2xl p-6 shadow-[0_8px_30px_-8px_rgba(59,130,246,0.15)] border border-blue-100/70 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
@@ -372,5 +374,6 @@ export default function AdminInvoicesPage() {
         )}
       </div>
     </div>
+    </RoleGuard>
   );
 }

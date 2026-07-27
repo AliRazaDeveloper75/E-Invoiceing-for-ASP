@@ -21,6 +21,8 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
+from apps.accounts.permissions import IsAdminOrAccountant
+
 from apps.common.utils import success_response, error_response, StandardResultsPagination
 from .models import (
     Supplier, InboundInvoice,
@@ -325,7 +327,7 @@ class InboundSubmitView(APIView):
 # ─── Internal: List ───────────────────────────────────────────────────────────
 
 class InboundInvoiceListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrAccountant]
 
     def get(self, request):
         qs = (InboundInvoice.objects
@@ -341,7 +343,15 @@ class InboundInvoiceListView(APIView):
             except Supplier.DoesNotExist:
                 return success_response([])
 
-        # Filter by company (admin/internal use)
+        # Company scoping: platform admins see all; accountants only see their company
+        if request.user.role != 'admin':
+            from apps.companies.models import CompanyMember
+            company_ids = CompanyMember.objects.filter(
+                user=request.user, is_active=True
+            ).values_list('company_id', flat=True)
+            qs = qs.filter(receiving_company_id__in=company_ids)
+
+        # Filter by company (explicit override)
         company_id = request.query_params.get('company_id')
         if company_id:
             qs = qs.filter(receiving_company_id=company_id)
@@ -370,7 +380,7 @@ class InboundInvoiceListView(APIView):
 # ─── Internal: Detail ─────────────────────────────────────────────────────────
 
 class InboundInvoiceDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrAccountant]
 
     def _get_invoice(self, pk: str):
         try:
@@ -393,7 +403,7 @@ class InboundInvoiceDetailView(APIView):
 # ─── Internal: Approve ────────────────────────────────────────────────────────
 
 class InboundApproveView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrAccountant]
 
     def post(self, request, pk: str):
         try:
@@ -420,7 +430,7 @@ class InboundApproveView(APIView):
 # ─── Internal: Reject ─────────────────────────────────────────────────────────
 
 class InboundRejectView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrAccountant]
 
     def post(self, request, pk: str):
         try:
@@ -447,7 +457,7 @@ class InboundRejectView(APIView):
 # ─── Internal: Resend Observation ─────────────────────────────────────────────
 
 class InboundResendObservationView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrAccountant]
 
     def post(self, request, pk: str):
         try:
@@ -471,10 +481,18 @@ class InboundResendObservationView(APIView):
 # ─── Dashboard Stats ──────────────────────────────────────────────────────────
 
 class InboundStatsView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrAccountant]
 
     def get(self, request):
         qs = InboundInvoice.objects.all()
+
+        # Company scoping: platform admins see all; accountants only see their company
+        if request.user.role != 'admin':
+            from apps.companies.models import CompanyMember
+            company_ids = CompanyMember.objects.filter(
+                user=request.user, is_active=True
+            ).values_list('company_id', flat=True)
+            qs = qs.filter(receiving_company_id__in=company_ids)
 
         company_id = request.query_params.get('company_id')
         if company_id:
@@ -534,7 +552,7 @@ def _send_supplier_activation_email(supplier, activation_token: str):
 
 
 class SupplierListCreateView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrAccountant]
 
     def get(self, request):
         qs = Supplier.objects.select_related('receiving_company').filter(is_active=True)

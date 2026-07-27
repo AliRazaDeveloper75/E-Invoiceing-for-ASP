@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
+import { RoleGuard } from '@/components/guards/RoleGuard';
 import { MessageSquare, Mail, Phone, Building2, RefreshCw, CheckCircle2, Eye, Reply, Trash2, Search } from 'lucide-react';
 import CustomSelect from '@/components/ui/CustomSelect';
 
@@ -80,6 +81,7 @@ export default function ContactMessagesPage() {
   };
 
   return (
+    <RoleGuard allowedRoles={['admin']}>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -271,5 +273,6 @@ export default function ContactMessagesPage() {
         )}
       </div>
     </div>
+    </RoleGuard>
   );
 }

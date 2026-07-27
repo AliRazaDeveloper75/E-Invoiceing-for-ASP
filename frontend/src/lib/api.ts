@@ -33,8 +33,6 @@ const PUBLIC_AUTH_PATHS = [
   '/auth/mfa/enable-login/',
   '/auth/mfa/reset-request/',
   '/auth/mfa/reset-verify/',
-  '/chat/public/',
-  '/chat/lead/',
 ];
 
 // ── Request interceptor: attach access token ───────────────────────────────

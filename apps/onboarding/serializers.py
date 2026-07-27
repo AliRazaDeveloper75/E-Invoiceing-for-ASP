@@ -48,9 +48,9 @@ class CompanyInvitationSerializer(serializers.ModelSerializer):
 
 class CreateInvitationSerializer(serializers.Serializer):
     email             = serializers.EmailField()
-    first_name        = serializers.CharField(max_length=150, required=False, default='')
-    last_name         = serializers.CharField(max_length=150, required=False, default='')
-    company_name_hint = serializers.CharField(max_length=255, required=False, default='')
+    first_name        = serializers.CharField(max_length=150, required=False, default='', allow_blank=True)
+    last_name         = serializers.CharField(max_length=150, required=False, default='', allow_blank=True)
+    company_name_hint = serializers.CharField(max_length=255, required=False, default='', allow_blank=True)
     role              = serializers.ChoiceField(
         choices=['supplier', 'accountant', 'viewer'],
         default='supplier',

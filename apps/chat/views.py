@@ -4,8 +4,6 @@ AI Accounting Assistant API.
 POST /api/v1/chat/         — conversational AI with NLP intent detection
 POST /api/v1/chat/query/   — structured NLP-to-DB query (invoice search,
                              VAT totals, payment status)
-POST /api/v1/chat/public/  — unauthenticated marketing-site assistant
-                             (no DB access — general UAE VAT/e-invoicing Q&A only)
 GET  /api/v1/chat/history/ — conversation history (session-scoped)
 """
 import json
@@ -16,12 +14,10 @@ from decimal import Decimal
 from django.db.models import Q, Sum
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from apps.common.utils import success_response, error_response
-from .serializers import ChatLeadRegisterSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -46,26 +42,6 @@ Rules:
 - UAE VAT standard rate is 5%
 - Keep responses concise and actionable
 - For compliance questions, cite the relevant UAE Federal Decree-Law No. 16 of 2024 article when relevant"""
-
-# Public (unauthenticated, marketing-site) variant — no account/company data
-# access, since there is no logged-in user to scope a DB query to.
-PUBLIC_SYSTEM_PROMPT = """You are E-Numerak's AI assistant, answering questions from visitors
-on the public marketing website (before they have signed in or created an account).
-
-You can help visitors with:
-1. UAE VAT & tax compliance: rates (5% standard, zero-rated, exempt), TRNs, VAT registration
-2. UAE E-Invoice / PINT / PEPPOL BIS 3.0: what it is, who it applies to, compliance deadlines
-3. What E-Numerak offers: invoice creation, FTA validation, PEPPOL submission, credit notes,
-   multi-company support, buyer portal
-4. General guidance on getting started (registering a company, adding customers, creating invoices)
-
-Rules:
-- You have NO access to any user's account, invoices, or company data — never claim to look
-  anything up; if asked for account-specific data, tell the user to sign in to the dashboard
-- Stay focused on UAE e-invoicing, VAT compliance, and the E-Numerak platform
-- Keep responses concise (2-5 sentences) and friendly
-- For compliance questions, cite UAE Federal Decree-Law No. 16 of 2024 where relevant
-- If asked something unrelated to tax/invoicing/the platform, politely redirect"""
 
 
 # ─── Intent detection ─────────────────────────────────────────────────────────
@@ -367,93 +343,4 @@ class ChatQueryView(APIView):
             'intent':       intent,
             'summary':      summary,
             'data':         context_data,
-        })
-
-
-class PublicChatView(APIView):
-    """
-    POST /api/v1/chat/public/
-    Unauthenticated AI assistant for the public marketing site.
-
-    No database access, no intent detection, no per-user data — just a
-    general UAE VAT/e-invoicing/platform Q&A assistant. Rate-limited
-    (settings.REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']['chat_public'])
-    since each request costs a real OpenAI API call.
-    """
-    authentication_classes = []   # skip JWT auth — stale cookies must not cause 401
-    permission_classes = [AllowAny]
-    throttle_classes = [ScopedRateThrottle]
-    throttle_scope = 'chat_public'
-
-    MAX_MESSAGES = 20
-    MAX_MESSAGE_LENGTH = 2000
-
-    def post(self, request):
-        messages = request.data.get('messages', [])
-        if not messages or not isinstance(messages, list):
-            return error_response(
-                'messages must be a non-empty list of {role, content} objects.',
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if len(messages) > self.MAX_MESSAGES:
-            return error_response(
-                f'Conversation too long (max {self.MAX_MESSAGES} messages). Please start a new chat.',
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-
-        clean_messages = []
-        for msg in messages:
-            if not isinstance(msg, dict) or msg.get('role') not in ('user', 'assistant'):
-                return error_response(
-                    'Each message must have role ("user" or "assistant") and content.',
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
-            content = str(msg.get('content') or '')[:self.MAX_MESSAGE_LENGTH]
-            if not content:
-                return error_response('Message content cannot be empty.',
-                                      status_code=status.HTTP_400_BAD_REQUEST)
-            clean_messages.append({'role': msg['role'], 'content': content})
-
-        try:
-            from services.ai.registry import get_ai_provider
-            provider = get_ai_provider()
-            response = provider.chat(
-                messages=clean_messages,
-                system=PUBLIC_SYSTEM_PROMPT,
-                max_tokens=600,
-                temperature=0.3,
-            )
-            reply = response.content
-        except Exception:
-            logger.exception('AI provider call failed in PublicChatView')
-            return error_response(
-                'AI service is temporarily unavailable. Please try again.',
-                status_code=status.HTTP_502_BAD_GATEWAY,
-            )
-
-        return success_response(data={'reply': reply})
-
-
-class PublicChatRegisterView(APIView):
-    """
-    POST /api/v1/chat/lead/
-    Captures a public-site visitor's name/email/phone before they can use the
-    AI chat widget. No login/account is created — this is lead capture only.
-    """
-    authentication_classes = []
-    permission_classes = [AllowAny]
-    throttle_classes = [ScopedRateThrottle]
-    throttle_scope = 'chat_public'
-
-    def post(self, request):
-        serializer = ChatLeadRegisterSerializer(data=request.data)
-        if not serializer.is_valid():
-            return error_response('Registration failed.', details=serializer.errors,
-                                  status_code=status.HTTP_400_BAD_REQUEST)
-
-        lead = serializer.save()
-        return success_response(data={
-            'lead_id': str(lead.id),
-            'name':    lead.name,
         })

@@ -42,6 +42,27 @@ const VAT_OPTIONS = [
   { value: 'out_of_scope', label: 'Out of Scope (O)' },
 ];
 
+const UNIT_OPTIONS = [
+  { value: 'pcs',  label: 'Pieces (pcs)' },
+  { value: 'hr',   label: 'Hours (hr)' },
+  { value: 'day',  label: 'Days (day)' },
+  { value: 'kg',   label: 'Kilograms (kg)' },
+  { value: 'g',    label: 'Grams (g)' },
+  { value: 'm',    label: 'Metres (m)' },
+  { value: 'm2',   label: 'Square Metres (m²)' },
+  { value: 'm3',   label: 'Cubic Metres (m³)' },
+  { value: 'l',    label: 'Litres (l)' },
+  { value: 'ml',   label: 'Millilitres (ml)' },
+  { value: 'km',   label: 'Kilometres (km)' },
+  { value: 'box',  label: 'Boxes (box)' },
+  { value: 'set',  label: 'Sets (set)' },
+  { value: 'pkg',  label: 'Packages (pkg)' },
+  { value: 'roll', label: 'Rolls (roll)' },
+  { value: 'mo',   label: 'Months (mo)' },
+  { value: 'yr',   label: 'Years (yr)' },
+  { value: 'ea',   label: 'Each (ea)' },
+];
+
 const VAT_PILLS: Record<string, string> = {
   standard: 'bg-blue-50 text-blue-700 border-blue-200',
   zero: 'bg-indigo-50 text-indigo-700 border-indigo-200',
@@ -215,7 +236,19 @@ function ProductFormPanel({
                 />
               )}
             />
-            <Input label="Unit" placeholder="pcs / hr / kg" maxLength={12} {...register('unit')} />
+            <Controller
+              name="unit"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  label="Unit"
+                  placeholder="Select unit..."
+                  options={UNIT_OPTIONS}
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                />
+              )}
+            />
           </div>
 
           {isAdmin && mode === 'create' && (
@@ -310,9 +343,9 @@ export default function CatalogPage() {
 
       {/* ── Header card ── */}
       <AnimatedSection>
-        <div className="bg-gradient-to-br from-blue-950 to-indigo-950 rounded-2xl border border-white/10 shadow-2xl shadow-blue-950/30 p-5 sm:p-7 relative overflow-hidden">
-          <div className="absolute inset-0 bg-grid opacity-[0.04] pointer-events-none" />
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 rounded-2xl border border-white/10 shadow-2xl shadow-blue-950/30 p-5 sm:p-7 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.15),transparent_50%)] pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(99,102,241,0.1),transparent_50%)] pointer-events-none" />
           <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
               <div className="flex items-center gap-2.5 mb-1">
@@ -435,7 +468,7 @@ export default function CatalogPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-gray-900">{p.unit_price}</span>
+                          <span className="font-mono font-bold text-gray-900">{Number(p.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         {p.unit && <span className="text-xs text-gray-400">/ {p.unit}</span>}
                         <span className={clsx(
                           'inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded border ml-1',
@@ -491,7 +524,7 @@ export default function CatalogPage() {
                           {p.description && <p className="text-xs text-gray-400 truncate max-w-xs mt-0.5">{p.description}</p>}
                         </td>
                         <td className="px-5 py-4">
-                          <span className="font-mono font-bold text-gray-900">{p.unit_price}</span>
+                        <span className="font-mono font-bold text-gray-900">{Number(p.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           {p.unit && <span className="text-gray-400 text-xs"> / {p.unit}</span>}
                         </td>
                         <td className="px-5 py-4">

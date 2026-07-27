@@ -6,6 +6,7 @@ import { useState, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
+import { RoleGuard } from '@/components/guards/RoleGuard';
 import {
   ShieldCheck, Landmark, Send, RefreshCw, Search,
   CheckCircle2, ChevronLeft, ChevronRight, AlertTriangle,
@@ -384,6 +385,7 @@ function AspPageInner() {
   };
 
   return (
+    <RoleGuard allowedRoles={['admin']}>
     <div className="space-y-6">
       {/* Gradient card header */}
       <div className="bg-gradient-to-br from-white via-blue-50/30 to-white rounded-2xl p-6 shadow-[0_8px_30px_-8px_rgba(59,130,246,0.15)] border border-blue-100/70 relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
@@ -424,6 +426,7 @@ function AspPageInner() {
       {/* Active tab content */}
       <QueueTable tab={activeTab} />
     </div>
+    </RoleGuard>
   );
 }
 

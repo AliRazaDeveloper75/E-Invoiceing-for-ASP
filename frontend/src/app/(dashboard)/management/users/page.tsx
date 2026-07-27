@@ -6,10 +6,12 @@ import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
+import { RoleGuard } from '@/components/guards/RoleGuard';
 import {
   Users, Plus, Search, RefreshCw, Shield,
   CheckCircle2, XCircle, Edit2, UserCheck, UserX, Eye, Trash2, X,
   Mail, Calendar, Clock, Building2, BadgeCheck, ChevronLeft, ChevronRight,
+  Loader2, EyeOff,
 } from 'lucide-react';
 import { AxiosError } from 'axios';
 import CustomSelect from '@/components/ui/CustomSelect';
@@ -87,43 +89,55 @@ function getPageNumbers(current: number, total: number): (number | 'ellipsis')[]
 // ─── View Details Modal ───────────────────────────────────────────────────────
 
 function ViewUserModal({ user, onClose, onEdit }: { user: AdminUser; onClose: () => void; onEdit: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent w-full max-w-lg">
-        <div className="px-6 pt-6 pb-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Eye className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex-1">
-              <h2 className="font-bold text-gray-900 text-lg">User Details</h2>
-              <p className="text-sm text-gray-500">View complete user information</p>
-            </div>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
+  const infoRows: { icon: React.ElementType; label: string; value: string; accent?: boolean }[] = [
+    { icon: Mail,        label: 'Email',        value: user.email },
+    { icon: BadgeCheck,  label: 'Role',         value: ROLE_LABELS[user.role] ?? user.role },
+    { icon: Building2,   label: 'Companies',    value: `${user.company_count} linked` },
+    { icon: Shield,      label: 'Staff Access',  value: user.is_staff ? 'Yes (Django Admin)' : 'No' },
+    { icon: Calendar,    label: 'Joined',        value: fmtDateTime(user.date_joined) },
+    { icon: Clock,       label: 'Last Login',    value: fmtDateTime(user.last_login) },
+  ];
 
-        <div className="p-6 pt-0 space-y-5">
-          <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-blue-700 text-xl font-bold">
-              {user.first_name?.[0]?.toUpperCase()}{user.last_name?.[0]?.toUpperCase()}
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm">
+              <Eye className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-900">{user.full_name}</h3>
-              <p className="text-sm text-gray-500">{user.email}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${ROLE_BADGE[user.role] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+              <h2 className="text-base font-semibold text-gray-900">User Details</h2>
+              <p className="text-xs text-gray-400">View complete user information</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="px-4 sm:px-6 py-5 overflow-y-auto flex-1">
+          {/* Profile card */}
+          <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-blue-50/60 to-indigo-50/40 rounded-xl border border-blue-100/60">
+            <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-lg font-bold shrink-0 shadow-md shadow-blue-500/20">
+              {user.first_name?.[0]?.toUpperCase()}{user.last_name?.[0]?.toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-lg font-bold text-gray-900 truncate">{user.full_name}</h3>
+              <p className="text-sm text-gray-500 truncate">{user.email}</p>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${ROLE_BADGE[user.role] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
                   {user.is_staff && <Shield className="h-2.5 w-2.5 mr-1" />}
                   {ROLE_LABELS[user.role] ?? user.role}
                 </span>
                 {user.is_active ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                     <CheckCircle2 className="h-3 w-3" /> Active
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-200">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-500 bg-gray-50 px-2.5 py-0.5 rounded-full border border-gray-200">
                     <XCircle className="h-3 w-3" /> Inactive
                   </span>
                 )}
@@ -131,57 +145,28 @@ function ViewUserModal({ user, onClose, onEdit }: { user: AdminUser; onClose: ()
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
-            <div className="flex items-start gap-2.5">
-              <Mail className="h-4 w-4 text-blue-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Email</p>
-                <p className="text-sm text-gray-800 mt-0.5 break-all">{user.email}</p>
+          {/* Info grid */}
+          <div className="mt-5 space-y-0 divide-y divide-gray-100">
+            {infoRows.map(({ icon: Icon, label, value }) => (
+              <div key={label} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                <div className="p-1.5 rounded-lg bg-gray-100 shrink-0">
+                  <Icon className="h-3.5 w-3.5 text-gray-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-400 font-medium">{label}</p>
+                  <p className="text-sm text-gray-800 mt-0.5 truncate">{value}</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <BadgeCheck className="h-4 w-4 text-blue-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Role</p>
-                <p className="text-sm text-gray-800 mt-0.5">{ROLE_LABELS[user.role] ?? user.role}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <Building2 className="h-4 w-4 text-blue-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Companies</p>
-                <p className="text-sm text-gray-800 mt-0.5">{user.company_count} linked</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <Shield className="h-4 w-4 text-blue-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Staff Access</p>
-                <p className="text-sm text-gray-800 mt-0.5">{user.is_staff ? 'Yes (Django Admin)' : 'No'}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <Calendar className="h-4 w-4 text-blue-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Joined</p>
-                <p className="text-sm text-gray-800 mt-0.5">{fmtDateTime(user.date_joined)}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <Clock className="h-4 w-4 text-blue-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Last Login</p>
-                <p className="text-sm text-gray-800 mt-0.5">{fmtDateTime(user.last_login)}</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        <div className="flex gap-3 px-6 pb-6">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+        {/* Footer */}
+        <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-t border-gray-100 shrink-0">
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
             Close
           </button>
-          <button onClick={onEdit} className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/20 transition-all">
+          <button onClick={onEdit} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-sm transition-all">
             Edit User
           </button>
         </div>
@@ -221,44 +206,64 @@ function EditUserModal({ user, onClose, onSaved }: { user: AdminUser; onClose: (
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent w-full max-w-md">
-        <div className="px-6 pt-6 pb-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Edit2 className="w-6 h-6 text-white" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-sm">
+              <Edit2 className="h-5 w-5 text-white" />
             </div>
-            <div className="flex-1">
-              <h2 className="font-bold text-gray-900 text-lg">Edit User</h2>
-              <p className="text-sm text-gray-500">Update user details and permissions</p>
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Edit User</h2>
+              <p className="text-xs text-gray-400">Update user details and permissions</p>
             </div>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-              <X className="h-5 w-5" />
-            </button>
           </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
-        <form onSubmit={handleSave} className="p-6 pt-0 space-y-4">
+        <form onSubmit={handleSave} className="px-4 sm:px-6 py-5 space-y-5 overflow-y-auto flex-1">
+          {/* Read-only email */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Email (read-only)</label>
-            <div className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500">{user.email}</div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Email</label>
+            <div className="flex items-center gap-2 px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500">
+              <Mail className="h-4 w-4 text-gray-400 shrink-0" />
+              <span className="truncate">{user.email}</span>
+            </div>
+            <p className="text-[11px] text-gray-400 mt-1">Email cannot be changed</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Name fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">First Name *</label>
-              <input required value={form.first_name} onChange={set('first_name')}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                First Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                required
+                value={form.first_name}
+                onChange={set('first_name')}
+                className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
+              />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Last Name *</label>
-              <input required value={form.last_name} onChange={set('last_name')}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                Last Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                required
+                value={form.last_name}
+                onChange={set('last_name')}
+                className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
+              />
             </div>
           </div>
 
+          {/* Role */}
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Role</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Role</label>
             <CustomSelect
               value={form.role}
               onChange={(val) => setForm((f) => ({ ...f, role: val }))}
@@ -266,33 +271,57 @@ function EditUserModal({ user, onClose, onSaved }: { user: AdminUser; onClose: (
             />
           </div>
 
+          {/* Status toggle */}
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Account Status</label>
-            <CustomSelect
-              value={form.is_active ? 'true' : 'false'}
-              onChange={(val) => setForm((f) => ({ ...f, is_active: val === 'true' }))}
-              options={[
-                { value: 'true', label: 'Active' },
-                { value: 'false', label: 'Inactive' },
-              ]}
-            />
+            <label className="block text-xs font-semibold text-gray-600 mb-2">Account Status</label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, is_active: true }))}
+                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
+                  form.is_active
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                    : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                }`}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Active
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, is_active: false }))}
+                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
+                  !form.is_active
+                    ? 'border-red-500 bg-red-50 text-red-700'
+                    : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                }`}
+              >
+                <XCircle className="h-4 w-4" />
+                Inactive
+              </button>
+            </div>
           </div>
 
           {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
+            <div className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              <XCircle className="h-4 w-4 shrink-0" />
+              {error}
+            </div>
           )}
-
-          <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-              Cancel
-            </button>
-            <button type="submit" disabled={loading}
-              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 shadow-lg shadow-blue-500/20 transition-all">
-              {loading ? 'Saving\u2026' : 'Save Changes'}
-            </button>
-          </div>
         </form>
+
+        {/* Footer */}
+        <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-t border-gray-100 shrink-0">
+          <button type="button" onClick={onClose}
+            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" disabled={loading} onClick={handleSave}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 disabled:opacity-60 shadow-sm transition-all">
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            {loading ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -318,46 +347,70 @@ function DeleteUserModal({ user, onClose, onDeleted }: { user: AdminUser; onClos
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent w-full max-w-sm">
-        <div className="p-6 pb-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/20">
-              <Trash2 className="w-6 h-6 text-white" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-red-500 to-red-600 shadow-sm">
+              <Trash2 className="h-5 w-5 text-white" />
             </div>
-            <div className="flex-1">
-              <h2 className="font-bold text-gray-900 text-lg">Delete User</h2>
-              <p className="text-sm text-gray-500">This action cannot be undone</p>
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Delete User</h2>
+              <p className="text-xs text-gray-400">This action cannot be undone</p>
             </div>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-              <X className="h-5 w-5" />
-            </button>
           </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
-        <div className="px-6 pb-4 space-y-4">
+        <div className="px-4 sm:px-6 py-5 space-y-4">
+          {/* User being deleted */}
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center text-red-700 text-sm font-bold shrink-0">
+              {user.first_name?.[0]?.toUpperCase()}{user.last_name?.[0]?.toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900 truncate">{user.full_name}</p>
+              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+            </div>
+          </div>
+
+          {/* Warning */}
           <div className="rounded-xl bg-red-50 border border-red-200 p-4">
-            <p className="text-sm font-semibold text-red-800 mb-1">This action is permanent</p>
-            <p className="text-xs text-red-700">
-              Deleting <strong>{user.full_name}</strong> ({user.email}) cannot be undone.
-              All their data will be removed from the platform.
-            </p>
+            <div className="flex items-start gap-3">
+              <div className="p-1 rounded-lg bg-red-100 shrink-0 mt-0.5">
+                <XCircle className="h-4 w-4 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-red-800">Permanent deletion</p>
+                <p className="text-xs text-red-600 mt-1 leading-relaxed">
+                  All data associated with this user will be permanently removed from the platform. This action is irreversible.
+                </p>
+              </div>
+            </div>
           </div>
 
           {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
+            <div className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              <XCircle className="h-4 w-4 shrink-0" />
+              {error}
+            </div>
           )}
+        </div>
 
-          <div className="flex gap-3">
-            <button onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-              Cancel
-            </button>
-            <button onClick={handleDelete} disabled={loading}
-              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white text-sm font-semibold hover:from-red-700 hover:to-red-800 disabled:opacity-50 shadow-lg shadow-red-500/20 transition-all">
-              {loading ? 'Deleting\u2026' : 'Delete User'}
-            </button>
-          </div>
+        {/* Footer */}
+        <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-t border-gray-100">
+          <button onClick={onClose}
+            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
+            Cancel
+          </button>
+          <button onClick={handleDelete} disabled={loading}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 disabled:opacity-60 shadow-sm transition-all">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            {loading ? 'Deleting…' : 'Delete User'}
+          </button>
         </div>
       </div>
     </div>
@@ -370,6 +423,8 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
   const [form, setForm] = useState({ email: '', password: '', first_name: '', last_name: '', role: 'supplier' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -378,7 +433,12 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
     try {
       await api.post('/admin/users/', form);
       onCreated();
-      onClose();
+      setSuccess(true);
+      setTimeout(() => {
+        setSuccess(false);
+        setForm({ email: '', password: '', first_name: '', last_name: '', role: 'supplier' });
+        onClose();
+      }, 1800);
     } catch (err) {
       const e = err as AxiosError<{ error?: { message?: string } }>;
       setError(e.response?.data?.error?.message ?? 'Failed to create user.');
@@ -391,67 +451,141 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent w-full max-w-md">
-        <div className="px-6 pt-6 pb-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Plus className="w-6 h-6 text-white" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm">
+              <Plus className="h-5 w-5 text-white" />
             </div>
-            <div className="flex-1">
-              <h2 className="font-bold text-gray-900 text-lg">Create New User</h2>
-              <p className="text-sm text-gray-500">Add a new user to the platform</p>
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Create New User</h2>
+              <p className="text-xs text-gray-400">Add a new user to the platform</p>
             </div>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-              <X className="h-5 w-5" />
-            </button>
           </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 pt-0 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">First Name *</label>
-              <input required value={form.first_name} onChange={set('first_name')}
-                className="w-full text-sm border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+        {success ? (
+          <div className="px-4 sm:px-6 py-12 flex flex-col items-center gap-3">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-sm">
+              <CheckCircle2 className="w-7 h-7 text-white" />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Last Name *</label>
-              <input required value={form.last_name} onChange={set('last_name')}
-                className="w-full text-sm border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+            <p className="text-base font-semibold text-gray-900">User created!</p>
+            <p className="text-sm text-gray-500 text-center">
+              <strong>{form.first_name} {form.last_name}</strong> has been added to the platform.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-5 space-y-4">
+            {/* Name fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  First Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  required
+                  value={form.first_name}
+                  onChange={set('first_name')}
+                  placeholder="John"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  Last Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  required
+                  value={form.last_name}
+                  onChange={set('last_name')}
+                  placeholder="Doe"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+                />
+              </div>
             </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Email *</label>
-            <input required type="email" value={form.email} onChange={set('email')}
-              className="w-full text-sm border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Password *</label>
-            <input required type="password" minLength={8} value={form.password} onChange={set('password')}
-              placeholder="Min. 8 characters"
-              className="w-full text-sm border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Role</label>
-            <CustomSelect
-              value={form.role}
-              onChange={(val) => setForm((f) => ({ ...f, role: val }))}
-              options={ALL_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] ?? r }))}
-            />
-          </div>
 
-          {error && <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
+            {/* Email */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Email Address <span className="text-red-500">*</span>
+              </label>
+              <input
+                required
+                type="email"
+                value={form.email}
+                onChange={set('email')}
+                placeholder="john.doe@company.com"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+              />
+            </div>
 
-          <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
-            <button type="submit" disabled={loading}
-              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 shadow-lg shadow-blue-500/20 transition-all">
-              {loading ? 'Creating\u2026' : 'Create User'}
-            </button>
-          </div>
-        </form>
+            {/* Password */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Password <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  required
+                  type={showPassword ? 'text' : 'password'}
+                  minLength={8}
+                  value={form.password}
+                  onChange={set('password')}
+                  placeholder="Min. 8 characters"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Role */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Role</label>
+              <CustomSelect
+                value={form.role}
+                onChange={(val) => setForm((f) => ({ ...f, role: val }))}
+                options={ALL_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] ?? r }))}
+              />
+            </div>
+
+            {error && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {error}
+              </p>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-1">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors text-center"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 disabled:opacity-60 transition-all duration-200 shadow-sm"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                {loading ? 'Creating…' : 'Create User'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
@@ -500,6 +634,7 @@ export default function ManagementUsersPage() {
   }
 
   return (
+    <RoleGuard allowedRoles={['admin']}>
     <div className="space-y-6">
 
       {/* Modals */}
@@ -564,9 +699,6 @@ export default function ManagementUsersPage() {
               ]}
               className="flex-1 sm:flex-none"
             />
-            <button onClick={() => mutate()} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors shrink-0">
-              <RefreshCw className="h-3.5 w-3.5" />
-            </button>
           </div>
         </div>
       </div>
@@ -575,7 +707,7 @@ export default function ManagementUsersPage() {
       <div className="relative bg-gradient-to-br from-white via-blue-50/20 to-white rounded-xl shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.18),0_2px_6px_-2px_rgba(0,0,0,0.06)] transition-all duration-300">
         {isLoading ? (
           <div className="flex items-center justify-center py-16 text-gray-400">
-            <RefreshCw className="h-5 w-5 animate-spin mr-2" /> Loading\u2026
+            <RefreshCw className="h-5 w-5 animate-spin mr-2" /> Loading…
           </div>
         ) : users.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-gray-400">
@@ -733,7 +865,7 @@ export default function ManagementUsersPage() {
               </button>
               {getPageNumbers(page, totalPages).map((p, i) =>
                 p === 'ellipsis' ? (
-                  <span key={`e-${i}`} className="px-2 text-gray-400">\u2026</span>
+                  <span key={`e-${i}`} className="px-2 text-gray-400">…</span>
                 ) : (
                   <button key={p} onClick={() => setPage(p)}
                     className={`min-w-[32px] h-8 rounded-lg text-sm font-medium transition-all ${
@@ -754,5 +886,6 @@ export default function ManagementUsersPage() {
         )}
       </div>
     </div>
+    </RoleGuard>
   );
 }

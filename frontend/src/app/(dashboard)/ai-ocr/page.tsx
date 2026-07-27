@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import { RoleGuard } from '@/components/guards/RoleGuard';
 import {
   Upload, FileText, CheckCircle, XCircle, Clock, RefreshCw, Eye, AlertTriangle,
   ScanLine, Loader2, ChevronRight, ArrowUpRight, Zap,
@@ -389,11 +390,14 @@ export default function AIocrPage() {
   const statValues = [stats.total, stats.completed, stats.processing, stats.failed];
 
   return (
+    <RoleGuard allowedRoles={['admin', 'accountant']}>
     <div className="space-y-6 animate-fade-in">
 
       {/* ── Header ───────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-blue-950 to-indigo-950 rounded-2xl p-6 shadow-lg">
-        <div className="flex items-center gap-3">
+      <div className="bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 rounded-2xl p-6 shadow-lg relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.15),transparent_50%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(99,102,241,0.1),transparent_50%)] pointer-events-none" />
+        <div className="relative z-10 flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
             <ScanLine className="h-5 w-5 text-white" />
           </div>
@@ -514,5 +518,6 @@ export default function AIocrPage() {
         <OCRResultModal doc={viewDoc} onClose={() => setViewDoc(null)} />
       )}
     </div>
+    </RoleGuard>
   );
 }

@@ -165,7 +165,7 @@ function MFASection() {
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 w-full sm:w-auto"
         >
           {loading ? <Spinner /> : <ShieldCheck className="h-4 w-4" />}
-          {loading ? 'Loading\u2026' : 'Enable Two-Factor Authentication'}
+          {loading ? 'Loading…' : 'Enable Two-Factor Authentication'}
         </button>
       )}
 

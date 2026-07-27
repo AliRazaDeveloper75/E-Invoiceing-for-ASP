@@ -12,7 +12,7 @@ const NAV_LINKS = [
   { key: 'nav.home',     href: '/' },
   { key: 'nav.about',    href: '/about' },
   { key: 'nav.services', href: '/services' },
-  { key: 'nav.peppol',   href: '/peppol' },
+  { key: 'nav.peppol',   href: '/e-invoice' },
   { key: 'nav.contact',  href: '/contact' },
 ];
 

@@ -26,7 +26,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label htmlFor={inputId} className="flex items-center text-sm font-medium text-gray-700">
             <span>
-              {label}
+              {label.replace(/\s*\(optional\)/i, '')}
+              {/\(optional\)/i.test(label) && <span className="text-gray-400 font-normal ml-1">(optional)</span>}
               {required && <span className="text-red-500 ml-0.5">*</span>}
             </span>
             {tooltip && <FieldTooltip content={tooltip} />}

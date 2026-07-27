@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 
-const API_URL = "http://localhost:3000";
+const API_URL = 'http://127.0.0.1:8000'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatDate = (dateStr: string) => {

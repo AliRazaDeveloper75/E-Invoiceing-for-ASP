@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
+import { RoleGuard } from '@/components/guards/RoleGuard';
 import {
   CheckCircle2, XCircle, AlertTriangle, Info, ChevronLeft,
   Clock, FileText, User, RefreshCw,
@@ -176,27 +177,22 @@ export default function InboundDetailPage() {
     } finally { setSubmitting(null); }
   };
 
-  if (isLoading) {
-    return (
+  return (
+    <RoleGuard allowedRoles={['admin', 'accountant']}>
+    {isLoading ? (
       <div className="flex items-center justify-center py-32 text-gray-400">
         <RefreshCw className="h-5 w-5 animate-spin mr-2" /> Loading…
       </div>
-    );
-  }
-
-  if (!invoice) {
-    return (
+    ) : !invoice ? (
       <div className="flex flex-col items-center justify-center py-32 text-gray-400">
         <AlertTriangle className="h-8 w-8 mb-3" />
         <p>Invoice not found.</p>
       </div>
-    );
-  }
+    ) : (() => {
+      const criticalObs = invoice.observations.filter((o) => o.severity === 'critical');
+      const otherObs    = invoice.observations.filter((o) => o.severity !== 'critical');
 
-  const criticalObs = invoice.observations.filter((o) => o.severity === 'critical');
-  const otherObs    = invoice.observations.filter((o) => o.severity !== 'critical');
-
-  return (
+      return (
     <div className="space-y-6 max-w-6xl">
 
       {/* Top bar */}
@@ -533,5 +529,8 @@ export default function InboundDetailPage() {
         </div>
       </div>
     </div>
+      );
+    })()}
+    </RoleGuard>
   );
 }

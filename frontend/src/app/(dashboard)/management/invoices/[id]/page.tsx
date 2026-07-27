@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
+import { RoleGuard } from '@/components/guards/RoleGuard';
 import { FlowTracker } from '@/components/invoice/FlowTracker';
 import { PDFDownloadButton } from '@/components/invoice/PDFDownloadButton';
 import type { InvoiceTimeline } from '@/types';
@@ -209,6 +210,7 @@ export default function AdminInvoiceDetailPage() {
     : invoice?.status ?? 'draft';
 
   return (
+    <RoleGuard allowedRoles={['admin']}>
     <div className="space-y-4 sm:space-y-6">
 
       {/* ── Gradient Card Header ──────────────────────────────────────────── */}
@@ -474,5 +476,6 @@ export default function AdminInvoiceDetailPage() {
         </>
       )}
     </div>
+    </RoleGuard>
   );
 }

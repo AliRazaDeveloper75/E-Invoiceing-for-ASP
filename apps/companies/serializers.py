@@ -57,13 +57,16 @@ class CompanyCreateSerializer(serializers.Serializer):
     """Validates input for creating a new company."""
 
     name = serializers.CharField(max_length=255)
-    legal_name = serializers.CharField(max_length=255, required=False)
+    legal_name = serializers.CharField(max_length=255, required=False, allow_blank=True)
     trn = serializers.CharField(
         max_length=15,
         min_length=15,
         help_text='15-digit UAE Tax Registration Number.'
     )
     is_vat_group = serializers.BooleanField(default=False, required=False)
+
+    trn_issue_date  = serializers.DateField(required=True)
+    trn_expiry_date = serializers.DateField(required=True)
 
     # Address
     street_address = serializers.CharField(max_length=500)
@@ -76,9 +79,9 @@ class CompanyCreateSerializer(serializers.Serializer):
     country = serializers.CharField(max_length=2, default='AE', required=False)
 
     # Contact
-    phone = serializers.CharField(max_length=20, required=False, default='')
-    email = serializers.EmailField(required=False, default='')
-    website = serializers.URLField(required=False, default='')
+    phone = serializers.CharField(max_length=20, required=True)
+    email = serializers.EmailField(required=True)
+    website = serializers.URLField(required=False, allow_blank=True)
 
     # Legal registration
     legal_registration_id   = serializers.CharField(max_length=100, required=False, default='')
@@ -99,12 +102,21 @@ class CompanyCreateSerializer(serializers.Serializer):
     def validate_country(self, value: str) -> str:
         return value.upper()
 
+    def validate(self, attrs):
+        issue  = attrs.get('trn_issue_date')
+        expiry = attrs.get('trn_expiry_date')
+        if issue and expiry and expiry < issue:
+            raise serializers.ValidationError({
+                'trn_expiry_date': 'TRN expiry date must be after the issue date.'
+            })
+        return attrs
+
 
 class CompanyUpdateSerializer(serializers.Serializer):
     """Validates input for updating a company. TRN is excluded (immutable)."""
 
     name = serializers.CharField(max_length=255, required=False)
-    legal_name = serializers.CharField(max_length=255, required=False)
+    legal_name = serializers.CharField(max_length=255, required=False, allow_blank=True)
     is_vat_group = serializers.BooleanField(required=False)
     street_address = serializers.CharField(max_length=500, required=False)
     city = serializers.CharField(max_length=100, required=False)
@@ -124,13 +136,19 @@ class CompanyUpdateSerializer(serializers.Serializer):
         allow_blank=True,
     )
     peppol_endpoint = serializers.CharField(max_length=255, required=False)
-    trn_issue_date  = serializers.DateField(required=False, allow_null=True)
-    trn_expiry_date = serializers.DateField(required=False, allow_null=True)
+    trn_issue_date  = serializers.DateField(required=False)
+    trn_expiry_date = serializers.DateField(required=False)
     logo            = serializers.ImageField(required=False, allow_null=True)
 
     def validate(self, attrs):
         if not attrs:
             raise serializers.ValidationError('At least one field must be provided.')
+        issue  = attrs.get('trn_issue_date') or getattr(self.instance, 'trn_issue_date', None)
+        expiry = attrs.get('trn_expiry_date') or getattr(self.instance, 'trn_expiry_date', None)
+        if issue and expiry and expiry < issue:
+            raise serializers.ValidationError(
+                {'trn_expiry_date': 'TRN expiry date must be after the issue date.'}
+            )
         return attrs
 
 

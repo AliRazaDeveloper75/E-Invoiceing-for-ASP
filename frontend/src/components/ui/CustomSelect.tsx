@@ -25,6 +25,7 @@ export default function CustomSelect({
 }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [dropUp, setDropUp] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +36,15 @@ export default function CustomSelect({
     setOpen(false);
     setHighlightedIndex(-1);
   }, []);
+
+  function toggleOpen() {
+    if (!open && ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setDropUp(spaceBelow < 120);
+    }
+    setOpen((o) => !o);
+  }
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -81,7 +91,7 @@ export default function CustomSelect({
     if (!open) {
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
         e.preventDefault();
-        setOpen(true);
+        toggleOpen();
       }
       return;
     }
@@ -112,7 +122,7 @@ export default function CustomSelect({
     <div ref={ref} className={`relative ${className}`} onKeyDown={handleKeyDown}>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggleOpen}
         className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-sm text-left border rounded-xl bg-white transition-all duration-200
           ${open ? 'ring-2 ring-blue-500/30 border-blue-400' : 'border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400'}`}
       >
@@ -125,7 +135,13 @@ export default function CustomSelect({
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1.5 w-full min-w-[160px] bg-white border border-gray-200 rounded-xl shadow-lg shadow-gray-200/50 py-1.5 max-h-60 overflow-auto animate-in fade-in slide-in-from-top-1 duration-150">
+        <div
+          className={`absolute z-50 w-full min-w-[160px] bg-white border border-gray-200 rounded-xl shadow-lg shadow-gray-200/50 py-1.5 max-h-[150px] overflow-auto animate-in fade-in duration-150 ${
+            dropUp
+              ? 'bottom-full mb-1.5 slide-in-from-bottom-1'
+              : 'top-full mt-1.5 slide-in-from-top-1'
+          }`}
+        >
           <div ref={listRef}>
             {options.map((opt, i) => {
               const isSelected = opt.value === value;

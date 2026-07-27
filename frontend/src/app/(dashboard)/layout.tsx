@@ -18,15 +18,15 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 to-blue-50/40">
       <Sidebar />
       <div
-        className={`flex flex-col flex-1 min-h-screen overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? 'sm:ml-[68px]' : 'sm:ml-64'}`}
+        className={`flex flex-col flex-1 min-w-0 transition-all duration-300 ease-in-out ${collapsed ? 'sm:ml-[68px]' : 'sm:ml-64'}`}
       >
         <Header />
-        <main className="flex-1 overflow-y-auto pt-4">
+        <main className="flex-1 overflow-y-auto">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
             {children}
           </div>
+          <Footer />
         </main>
-        <Footer />
       </div>
       <ChatWidget />
     </div>

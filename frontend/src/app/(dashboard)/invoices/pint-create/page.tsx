@@ -8,6 +8,8 @@ import {
   Eye, EyeOff, AlertCircle, ArrowLeft, Sparkles, Zap, X,
   Search, Building2, UserCheck, RotateCcw, ChevronDown,
   Plus, Trash2, Send, CreditCard, Package, Users, Calculator,
+  ExternalLink, Landmark, Phone, Mail, Globe, MapPin, AlertTriangle,
+  CalendarClock, Copy, Check, ChevronUp,
 } from 'lucide-react';
 import CustomSelect from '@/components/ui/CustomSelect';
 import { PINT_FIELDS } from '@/data/pint-invoice-fields';
@@ -264,33 +266,195 @@ function FieldRenderer({ field, value, onChange, error, isActive, onFocus, onBlu
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// SellerCard
-// ─────────────────────────────────────────────────────────────────────────
-function SellerCard({ company, onRefill }: { company: Company; onRefill: () => void }) {
+function CompanyProfileCard({ company }: { company: Company }) {
+  const [copied, setCopied] = useState(false);
+
+  const trnExpiry = company.trn_expiry_date ? new Date(company.trn_expiry_date) : null;
+  const now = new Date();
+  const daysUntilExpiry = trnExpiry ? Math.ceil((trnExpiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+  const isExpired = daysUntilExpiry !== null && daysUntilExpiry <= 0;
+  const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry > 0 && daysUntilExpiry <= 30;
+
+  function copyTrn() {
+    if (!company.trn) return;
+    navigator.clipboard.writeText(company.trn).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
   return (
-    <div className="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 mb-1">
-      <div className="flex items-start gap-3">
-        <div className="h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center shrink-0">
-          <Building2 className="h-4 w-4 text-white" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-0.5">Pre-filled from active company</p>
-          <p className="text-sm font-semibold text-blue-900 truncate">{company.legal_name || company.name}</p>
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-            {company.trn && <span className="text-xs text-blue-600">TRN: {company.trn}</span>}
-            {company.email && <span className="text-xs text-blue-600 truncate">{company.email}</span>}
-            {company.city && <span className="text-xs text-blue-500">{company.city}, {company.country || 'AE'}</span>}
+    <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/80 via-white to-indigo-50/50 shadow-sm overflow-hidden">
+      {/* Header band */}
+      <div className="bg-white px-3 sm:px-5 py-3 space-y-2.5 sm:space-y-0 border-b border-blue-100/60">
+        {/* Row 1: avatar + name */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center font-bold text-xs sm:text-sm text-blue-600 shrink-0 overflow-hidden">
+            {company.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={company.logo_url} alt="" className="w-full h-full rounded-xl object-cover" />
+            ) : (
+              (company.name ?? 'CO').slice(0, 2).toUpperCase()
+            )}
           </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <p className="font-bold text-gray-900 text-sm sm:text-base leading-tight break-words">{company.name}</p>
+              {company.is_vat_group && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 border border-purple-200 shrink-0">VAT Group</span>
+              )}
+            </div>
+            {company.legal_name && company.legal_name !== company.name && (
+              <p className="text-[11px] text-gray-400 mt-0.5 break-words">{company.legal_name}</p>
+            )}
+          </div>
+          {/* TRN right side on large screens */}
+          <button type="button" onClick={copyTrn}
+            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors duration-150 group shrink-0"
+            title="Click to copy TRN">
+            <span className="text-[10px] text-blue-400 uppercase tracking-wider font-medium">TRN</span>
+            <span className="text-xs font-mono font-semibold text-gray-500">{company.trn || '—'}</span>
+            {copied ? (
+              <Check className="h-3 w-3 text-emerald-500" />
+            ) : (
+              <Copy className="h-3 w-3 text-blue-300 group-hover:text-blue-500 transition-colors" />
+            )}
+          </button>
         </div>
-        <button onClick={onRefill} title="Re-fill from company"
-          className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-100 transition-colors shrink-0">
-          <RotateCcw className="h-4 w-4" />
+        {/* Row 2: TRN on mobile (full width below) */}
+        <button type="button" onClick={copyTrn}
+          className="sm:hidden inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors duration-150 group"
+          title="Click to copy TRN">
+          <span className="text-[10px] text-blue-400 uppercase tracking-wider font-medium">TRN</span>
+          <span className="text-xs font-mono font-semibold text-gray-500">{company.trn || '—'}</span>
+          {copied ? (
+            <Check className="h-3 w-3 text-emerald-500" />
+          ) : (
+            <Copy className="h-3 w-3 text-blue-300 group-hover:text-blue-500 transition-colors" />
+          )}
         </button>
+      </div>
+      <div className="p-4 sm:p-5 space-y-3">
+        {(isExpired || isExpiringSoon) && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {isExpired && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-red-100 text-red-600">TRN Expired</span>
+            )}
+            {isExpiringSoon && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-600">Expiring in {daysUntilExpiry}d</span>
+            )}
+          </div>
+        )}
+        {(company.phone || company.email || company.website || company.formatted_address) && (
+          <div className="rounded-xl bg-white/70 border border-blue-100/60 divide-y divide-blue-50">
+            {company.phone && (
+              <div className="flex items-center gap-2.5 px-3 py-2">
+                <Phone className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                <span className="text-sm text-gray-700 break-all">{company.phone}</span>
+              </div>
+            )}
+            {company.email && (
+              <div className="flex items-center gap-2.5 px-3 py-2">
+                <Mail className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                <span className="text-sm text-gray-700 break-all">{company.email}</span>
+              </div>
+            )}
+            {company.website && (
+              <div className="flex items-center gap-2.5 px-3 py-2">
+                <Globe className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                <a href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+                   target="_blank" rel="noopener noreferrer"
+                   className="text-sm text-blue-600 hover:text-blue-700 hover:underline break-all">
+                  {company.website.replace(/^https?:\/\//, '')}
+                </a>
+              </div>
+            )}
+            {company.formatted_address && (
+              <div className="flex items-start gap-2.5 px-3 py-2">
+                <MapPin className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
+                <span className="text-sm text-gray-700 break-words">{company.formatted_address}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+function CollapsibleBankDetails({ company }: { company: Company }) {
+  const [open, setOpen] = useState(false);
+  if (!company.bank_name && !company.iban) return null;
+
+  const fields = [
+    company.bank_name && { label: 'Bank', value: company.bank_name },
+    company.iban && { label: 'IBAN', value: company.iban, mono: true },
+    company.bank_account_number && {
+      label: 'Account',
+      value: company.bank_account_number.length > 4 ? '•••• ' + company.bank_account_number.slice(-4) : company.bank_account_number,
+      mono: true,
+    },
+    company.swift_code && { label: 'SWIFT', value: company.swift_code, mono: true },
+  ].filter(Boolean) as { label: string; value: string; mono?: boolean }[];
+
+  const filled = fields.length;
+  const total = 4;
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+      <button type="button" onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50/50 active:bg-gray-100 transition-colors">
+        <div className="flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+            filled === total ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+          }`}>
+            <Landmark className="h-4 w-4" />
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-medium text-gray-800">Bank Details</p>
+            <p className="text-[11px] text-gray-400">{filled} of {total} fields set</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {filled === total && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+          {open ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+        </div>
+      </button>
+      <div className={`grid transition-all duration-300 ease-in-out ${
+        open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+      }`}>
+        <div className="overflow-hidden">
+          <div className="px-4 pb-4 pt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 border-t border-gray-100">
+            {fields.map((f) => (
+              <div key={f.label} className="min-w-0">
+                <p className="text-[11px] text-gray-400 uppercase tracking-wider font-medium">{f.label}</p>
+                <p className={`font-medium text-gray-800 text-sm mt-0.5 ${f.mono ? 'font-mono break-all' : 'break-words'}`}>{f.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Avatar helpers for customer cards
+const AVATAR_COLORS = [
+  'bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-emerald-500',
+  'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-teal-500',
+];
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+function getInitials(name: string): string {
+  return name.split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+}
+const TYPE_BADGE: Record<string, string> = {
+  b2b: 'bg-blue-100 text-blue-700', b2g: 'bg-purple-100 text-purple-700', b2c: 'bg-amber-100 text-amber-700',
+};
+const TYPE_LABEL: Record<string, string> = { b2b: 'B2B', b2g: 'B2G', b2c: 'B2C' };
 
 // ─────────────────────────────────────────────────────────────────────────
 // BuyerPicker
@@ -300,82 +464,228 @@ function BuyerPicker({ activeId, selectedCustomer, onSelect, onClear }: {
   onSelect: (c: Customer) => void; onClear: () => void;
 }) {
   const [query, setQuery] = useState('');
-  const [open, setOpen]   = useState(false);
+  const [typeFilter, setTypeFilter] = useState('all');
 
   const { data: customers = [] } = useSWR(
     activeId ? `/customers/?company_id=${activeId}&page_size=200` : null,
     fetchCustomers,
   );
 
-  const filtered = customers.filter((c) => {
+  const filtered = useMemo(() => {
     const q = query.toLowerCase();
-    return c.name?.toLowerCase().includes(q) || c.legal_name?.toLowerCase().includes(q)
-      || c.trn?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q);
-  });
+    return customers.filter((c) => {
+      const matchesSearch = !q || c.name?.toLowerCase().includes(q) || c.legal_name?.toLowerCase().includes(q)
+        || c.trn?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)
+        || c.city?.toLowerCase().includes(q);
+      const matchesType = typeFilter === 'all' || c.customer_type === typeFilter;
+      return matchesSearch && matchesType;
+    });
+  }, [customers, query, typeFilter]);
 
+  // ── Selected state ──────────────────────────────────────────────────────
   if (selectedCustomer) {
     return (
-      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 mb-1">
-        <div className="flex items-start gap-3">
-          <div className="h-9 w-9 rounded-xl bg-emerald-500 flex items-center justify-center shrink-0">
-            <UserCheck className="h-4 w-4 text-white" />
+      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 mb-1 animate-fade-in-scale">
+        <div className="flex items-start gap-4">
+          <div className={`h-11 w-11 rounded-xl ${getAvatarColor(selectedCustomer.name)} flex items-center justify-center shrink-0 shadow-sm`}>
+            <span className="text-white text-sm font-bold">{getInitials(selectedCustomer.name)}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-0.5">Buyer selected</p>
-            <p className="text-sm font-semibold text-emerald-900 truncate">{selectedCustomer.legal_name || selectedCustomer.name}</p>
-            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-              {selectedCustomer.trn && <span className="text-xs text-emerald-600">TRN: {selectedCustomer.trn}</span>}
-              {selectedCustomer.email && <span className="text-xs text-emerald-600">{selectedCustomer.email}</span>}
-            </div>
+            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+              <UserCheck className="h-3 w-3" /> Buyer Selected
+            </p>
+            <p className="text-sm font-bold text-emerald-900 truncate">{selectedCustomer.legal_name || selectedCustomer.name}</p>
+            {selectedCustomer.legal_name && selectedCustomer.name !== selectedCustomer.legal_name && (
+              <p className="text-xs text-emerald-600 truncate">{selectedCustomer.name}</p>
+            )}
           </div>
           <button onClick={onClear}
-            className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-100 transition-colors shrink-0">
-            <X className="h-4 w-4" />
+            className="p-2 rounded-xl text-emerald-500 hover:bg-emerald-100 hover:text-emerald-700 transition-all shrink-0"
+            title="Change customer">
+            <RotateCcw className="h-4 w-4" />
           </button>
         </div>
-        <p className="text-[11px] text-emerald-500 mt-2 ml-12">Fields pre-filled — edit below to override.</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 mt-4 pt-3 border-t border-emerald-200/60">
+          {selectedCustomer.trn && (
+            <div>
+              <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">TRN</p>
+              <p className="text-xs font-mono font-semibold text-emerald-800">{selectedCustomer.trn}</p>
+            </div>
+          )}
+          {selectedCustomer.customer_type && (
+            <div>
+              <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">Type</p>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase inline-block mt-0.5 ${TYPE_BADGE[selectedCustomer.customer_type] || 'bg-gray-100 text-gray-600'}`}>
+                {TYPE_LABEL[selectedCustomer.customer_type] || selectedCustomer.customer_type}
+              </span>
+            </div>
+          )}
+          {selectedCustomer.city && (
+            <div>
+              <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">Location</p>
+              <p className="text-xs text-emerald-800 flex items-center gap-1"><MapPin className="h-3 w-3 shrink-0" />{selectedCustomer.city}{selectedCustomer.country ? `, ${selectedCustomer.country}` : ''}</p>
+            </div>
+          )}
+          {selectedCustomer.phone && (
+            <div>
+              <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">Phone</p>
+              <p className="text-xs text-emerald-800 flex items-center gap-1"><Phone className="h-3 w-3 shrink-0" />{selectedCustomer.phone}</p>
+            </div>
+          )}
+          {selectedCustomer.email && (
+            <div className="col-span-2 sm:col-span-4">
+              <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">Email</p>
+              <p className="text-xs text-emerald-800 truncate flex items-center gap-1"><Mail className="h-3 w-3 shrink-0" />{selectedCustomer.email}</p>
+            </div>
+          )}
+          {selectedCustomer.formatted_address && (
+            <div className="col-span-2 sm:col-span-4">
+              <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">Address</p>
+              <p className="text-xs text-emerald-800">{selectedCustomer.formatted_address}</p>
+            </div>
+          )}
+        </div>
+        <p className="text-[11px] text-emerald-500 mt-3 flex items-center gap-1.5">
+          <Sparkles className="h-3 w-3" /> Fields pre-filled — edit below to override.
+        </p>
       </div>
     );
   }
 
+  // ── Unselected state ────────────────────────────────────────────────────
+  const typeFilters = [
+    { value: 'all', label: 'All' },
+    { value: 'b2b', label: 'B2B' },
+    { value: 'b2g', label: 'B2G' },
+    { value: 'b2c', label: 'B2C' },
+  ];
+
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-1">
-      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-        <Search className="h-3.5 w-3.5" /> Search existing customers
-      </p>
-      <div className="relative">
-        <input type="text" value={query}
-          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-          onFocus={() => setOpen(true)}
-          placeholder="Search by name, TRN, or email…"
-          className="w-full rounded-xl border-2 border-gray-200 px-3.5 py-2.5 text-sm
-                     focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 pr-10" />
-        <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
-        {open && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-            <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-gray-200
-                            rounded-xl shadow-xl max-h-52 overflow-y-auto">
-              {filtered.length === 0 ? (
-                <div className="px-4 py-6 text-center text-sm text-gray-400">
-                  {customers.length === 0 ? 'No customers found.' : 'No matches.'}
-                </div>
-              ) : filtered.map((c) => (
-                <button key={c.id}
-                  onClick={() => { onSelect(c); setOpen(false); setQuery(''); }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0">
-                  <p className="text-sm font-semibold text-gray-900">{c.legal_name || c.name}</p>
-                  <div className="flex gap-3 mt-0.5">
-                    {c.trn && <span className="text-xs text-gray-500">TRN: {c.trn}</span>}
-                    {c.city && <span className="text-xs text-gray-400">{c.city}</span>}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
+      {/* Search + Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 mb-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
+          <input type="text" value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name, TRN, email, or city..."
+            className="w-full rounded-xl border border-gray-200 bg-gray-50/50 pl-10 pr-9 py-2.5 text-sm
+                       focus:outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-gray-400" />
+          {query && (
+            <button onClick={() => setQuery('')}
+              className="absolute right-3 top-2.5 p-1 rounded-lg text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 shrink-0 self-start">
+          {typeFilters.map((tf) => (
+            <button key={tf.value} onClick={() => setTypeFilter(tf.value)}
+              className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all
+                ${typeFilter === tf.value
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'}`}>
+              {tf.label}
+            </button>
+          ))}
+        </div>
       </div>
-      <p className="text-[11px] text-gray-400 mt-2">Or skip search and fill buyer fields manually below.</p>
+
+      {/* Result count */}
+      {(query || typeFilter !== 'all') && filtered.length > 0 && (
+        <p className="text-[11px] text-gray-400 font-medium mb-2.5">
+          {filtered.length} customer{filtered.length !== 1 ? 's' : ''} found
+          {typeFilter !== 'all' && <span> in <strong className="text-gray-500">{typeFilter.toUpperCase()}</strong></span>}
+        </p>
+      )}
+
+      {/* Card grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-[360px] overflow-y-auto pr-1">
+        {filtered.map((c) => (
+          <button key={c.id}
+            onClick={() => { onSelect(c); setQuery(''); setTypeFilter('all'); }}
+            className="text-left rounded-xl border border-gray-200 bg-white
+                       hover:border-blue-300 hover:shadow-sm transition-all duration-200 group overflow-hidden">
+            <div className="p-3">
+              <div className="flex items-center gap-2.5">
+                <div className={`h-8 w-8 rounded-lg ${getAvatarColor(c.name)} flex items-center justify-center shrink-0 transition-transform group-hover:scale-105`}>
+                  <span className="text-white text-[11px] font-bold">{getInitials(c.name)}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold text-gray-900 truncate leading-tight">{c.legal_name || c.name}</p>
+                  {c.legal_name && c.name !== c.legal_name && (
+                    <p className="text-[10px] text-gray-400 truncate leading-tight mt-0.5">{c.name}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="px-3 py-2 border-t border-gray-100 bg-gray-50/50 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              {c.trn && (
+                <span className="text-[10px] font-mono text-gray-500">TRN: {c.trn}</span>
+              )}
+              {c.customer_type && (
+                <span className={`text-[9px] font-bold px-1.5 py-px rounded-full uppercase ${TYPE_BADGE[c.customer_type] || 'bg-gray-100 text-gray-600'}`}>
+                  {TYPE_LABEL[c.customer_type] || c.customer_type}
+                </span>
+              )}
+              {c.city && (
+                <span className="text-[10px] text-gray-400 ml-auto flex items-center gap-0.5">
+                  <MapPin className="h-2.5 w-2.5 shrink-0" />{c.city}
+                </span>
+              )}
+            </div>
+          </button>
+        ))}
+
+        <button onClick={() => window.open('/customers/new', '_blank')}
+          className="rounded-xl border-2 border-dashed border-gray-200
+                     hover:border-blue-300 hover:bg-blue-50/30 transition-all
+                     flex flex-col items-center justify-center gap-1 min-h-[110px] group">
+          <div className="h-8 w-8 rounded-lg bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
+            <Plus className="h-4 w-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+          </div>
+          <span className="text-[11px] font-medium text-gray-400 group-hover:text-blue-600 transition-colors">Add Customer</span>
+        </button>
+      </div>
+
+      {/* Empty states */}
+      {customers.length > 0 && filtered.length === 0 && (
+        <div className="text-center py-10 bg-gray-50 rounded-xl mt-3">
+          <Search className="h-8 w-8 mx-auto text-gray-300 mb-2" />
+          <p className="text-sm font-medium text-gray-500">No customers match</p>
+          <p className="text-xs text-gray-400 mt-1">Try a different search or filter.</p>
+          <div className="flex items-center justify-center gap-3 mt-3">
+            {query && (
+              <button onClick={() => setQuery('')}
+                className="text-xs font-semibold text-gray-500 hover:text-gray-700">
+                Clear search
+              </button>
+            )}
+            {typeFilter !== 'all' && (
+              <button onClick={() => setTypeFilter('all')}
+                className="text-xs font-semibold text-gray-500 hover:text-gray-700">
+                Show all types
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {customers.length === 0 && (
+        <div className="text-center py-10 bg-gray-50 rounded-xl mt-3">
+          <Users className="h-8 w-8 mx-auto text-gray-300 mb-2" />
+          <p className="text-sm font-medium text-gray-500">No customers yet</p>
+          <p className="text-xs text-gray-400 mt-1">Create your first customer to get started.</p>
+          <button onClick={() => window.open('/customers/new', '_blank')}
+            className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors shadow-sm">
+            <Plus className="h-3.5 w-3.5" /> Add New Customer
+          </button>
+        </div>
+      )}
+
+      <p className="text-[11px] text-gray-400 mt-3">
+        Or skip search and fill buyer fields manually below.
+      </p>
     </div>
   );
 }
@@ -1456,7 +1766,10 @@ export default function PintCreatePage() {
 
             {/* Step-specific content */}
             {step.id === 'supplier' && activeCompany && (
-              <SellerCard company={activeCompany} onRefill={handleSellerRefill} />
+              <>
+                <CompanyProfileCard company={activeCompany} />
+                <CollapsibleBankDetails company={activeCompany} />
+              </>
             )}
             {step.id === 'buyer' && activeId && (
               <BuyerPicker

@@ -3,7 +3,6 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { api } from '@/lib/api';
 import {
   X,
   Send,
@@ -221,9 +220,19 @@ function UAEPhoneInput({ value, onChange, hasError, onKeyDown }: PhoneInputProps
   );
 }
 
+// ─── Environment Setup ────────────────────────────────────────────────────────
+
+const AI_AGENT_URL = 'http://127.0.0.1:8000';
+const AI_AGENT_BASE = AI_AGENT_URL.replace(/\/chat\/?$/, '');
+
+// Key used to persist the logged-in user in the browser so they don't have
+// to fill the registration form again on their next visit.
+const STORAGE_KEY = 'enumerak_chat_user';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Tab = 'chatbot' | 'agent';
+type AuthView = 'login' | 'register' | 'chat';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -494,67 +503,26 @@ const SUGGESTED = [
 
 interface AgentTabProps {
   onClose: () => void;
-  publicMode?: boolean;
 }
 
-const LEAD_STORAGE_KEY = 'enumerak_chat_lead';
+function AgentTab({ onClose }: AgentTabProps) {
+  const [view, setView] = useState<AuthView>('register');
+  const [userId, setUserId] = useState<number | null>(null);
+  const [userName, setUserName] = useState('');
 
-function AgentTab({ onClose: _onClose, publicMode = false }: AgentTabProps) {
-  const chatEndpoint = publicMode ? '/chat/public/' : '/chat/';
-
-  // Public (marketing-site) visitors must register name/email/phone once
-  // before chatting — captured as a lead, no account/login is created.
-  // Dashboard/buyer-portal users are already authenticated, so they skip this.
-  const [registered, setRegistered] = useState(!publicMode);
-  const [leadName, setLeadName] = useState('');
-
+  // Register fields
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
-  const [regPhone, setRegPhone] = useState('');
+  const [regPhone, setRegPhone] = useState(''); // digits only after +971
   const [regError, setRegError] = useState<string | null>(null);
   const [regLoading, setRegLoading] = useState(false);
+
+  // Field-level touched state for inline validation
   const [touched, setTouched] = useState({ name: false, email: false, phone: false });
 
   const nameValidation = validateName(regName);
   const emailValidation = validateEmail(regEmail);
   const phoneValidation = validateUAEPhone(regPhone);
-  const allFieldsValid = nameValidation.valid && emailValidation.valid && phoneValidation.valid;
-
-  useEffect(() => {
-    if (!publicMode) return;
-    try {
-      const stored = JSON.parse(localStorage.getItem(LEAD_STORAGE_KEY) || 'null');
-      if (stored?.name) {
-        setLeadName(stored.name);
-        setRegistered(true);
-      }
-    } catch {
-      /* ignore malformed storage */
-    }
-  }, [publicMode]);
-
-  async function register() {
-    setTouched({ name: true, email: true, phone: true });
-    setRegError(null);
-    if (!allFieldsValid) return;
-
-    setRegLoading(true);
-    try {
-      const res = await api.post('/chat/lead/', {
-        name: regName.trim(),
-        email: regEmail.trim(),
-        phone: regPhone,
-      });
-      const name: string = res.data?.data?.name ?? regName.trim();
-      localStorage.setItem(LEAD_STORAGE_KEY, JSON.stringify({ name, email: regEmail.trim() }));
-      setLeadName(name);
-      setRegistered(true);
-    } catch {
-      setRegError('Could not register. Please check your details and try again.');
-    } finally {
-      setRegLoading(false);
-    }
-  }
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -562,6 +530,31 @@ function AgentTab({ onClose: _onClose, publicMode = false }: AgentTabProps) {
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // On mount, check localStorage for a previously registered user. If found,
+  // skip the registration form entirely and drop the user straight into chat.
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed.userId === 'number' && parsed.userName) {
+          setUserId(parsed.userId);
+          setUserName(parsed.userName);
+          setMessages([
+            {
+              role: 'assistant',
+              content: `Welcome back, ${parsed.userName}. How can I help with your UAE tax or invoicing questions today?`,
+            },
+          ]);
+          setView('chat');
+        }
+      }
+    } catch {
+      // localStorage unavailable (e.g. private browsing) — fall back to register view
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -574,22 +567,127 @@ function AgentTab({ onClose: _onClose, publicMode = false }: AgentTabProps) {
     el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
   }, [input]);
 
+  // Reset touched when switching views
+  useEffect(() => {
+    setTouched({ name: false, email: false, phone: false });
+  }, [view]);
+
+  // Persist the logged-in user so the register form is skipped next time.
+  function persistUser(id: number, name: string) {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ userId: id, userName: name }));
+    } catch {
+      // ignore storage errors (private browsing, storage full, etc.)
+    }
+  }
+
+  // Logs an existing user in by email. Returns true on success, false otherwise.
+  // Used as a silent fallback during registration when the email already exists.
+  async function loginWithEmail(email: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${AI_AGENT_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.success) {
+        setUserId(data.user_id);
+        setUserName(data.name);
+        persistUser(data.user_id, data.name);
+        setMessages([
+          {
+            role: 'assistant',
+            content: `Welcome back, ${data.name}. How can I help with your UAE tax or invoicing questions today?`,
+          },
+        ]);
+        setView('chat');
+        return true;
+      }
+    } catch {
+      /* fall through to false */
+    }
+    return false;
+  }
+
+  async function register() {
+    // Touch all fields to show errors
+    setTouched({ name: true, email: true, phone: true });
+    setRegError(null);
+
+    if (!nameValidation.valid || !emailValidation.valid || !phoneValidation.valid) {
+      return;
+    }
+
+    const fullPhone = `${UAE_DIAL_CODE}${regPhone}`;
+
+    setRegLoading(true);
+    try {
+      const res = await fetch(`${AI_AGENT_BASE}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: regName.trim(), email: regEmail.trim(), phone: fullPhone }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.success) {
+        setUserId(data.user_id);
+        setUserName(data.name);
+        persistUser(data.user_id, data.name);
+        setMessages([
+          {
+            role: 'assistant',
+            content: `Hello, ${data.name}! I'm your E-Numerak tax assistant — ask me anything about VAT, TRNs, or e-invoicing on the platform.`,
+          },
+        ]);
+        setView('chat');
+      } else if (res.status === 409 || /exist|already|registered/i.test(data.detail || '')) {
+        // User already exists — log them in silently instead of blocking.
+        const ok = await loginWithEmail(regEmail.trim());
+        if (!ok) setRegError('This email is already registered, but sign-in failed. Please try again.');
+      } else {
+        setRegError(data.detail || 'Registration failed. Please try again.');
+      }
+    } catch {
+      setRegError('Connection failed. Please check your internet.');
+    } finally {
+      setRegLoading(false);
+    }
+  }
+
   async function send(text?: string) {
     const msgText = (text ?? input).trim();
-    if (!msgText || loading) return;
+    if (!msgText || loading || userId === null) return;
 
-    const history = [...messages, { role: 'user' as const, content: msgText }];
-    setMessages(history);
+    setMessages((m) => [...m, { role: 'user', content: msgText }]);
     setInput('');
     setLoading(true);
     setError(null);
 
     try {
-      const res = await api.post(chatEndpoint, {
-        messages: history.map((m) => ({ role: m.role, content: m.content })),
+      const res = await fetch(`${AI_AGENT_BASE}/chat/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, message: msgText }),
       });
-      const reply: string = res.data?.data?.reply ?? '';
-      setMessages((m) => [...m, { role: 'assistant', content: reply }]);
+      if (!res.ok || !res.body) throw new Error('Request failed');
+
+      setMessages((m) => [...m, { role: 'assistant', content: '' }]);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let reply = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        reply += decoder.decode(value, { stream: true });
+        setMessages((m) => {
+          const updated = [...m];
+          updated[updated.length - 1] = { role: 'assistant', content: reply };
+          return updated;
+        });
+      }
     } catch {
       setError('Could not get a response. Please try again.');
     } finally {
@@ -597,9 +695,9 @@ function AgentTab({ onClose: _onClose, publicMode = false }: AgentTabProps) {
     }
   }
 
-  function sendFeedback(index: number, rating: 'like' | 'dislike') {
+  async function sendFeedback(index: number, rating: 'like' | 'dislike') {
     const target = messages[index];
-    if (!target || target.role !== 'assistant') return;
+    if (!target || target.role !== 'assistant' || userId === null) return;
 
     const nextRating = target.feedback === rating ? null : rating;
 
@@ -608,9 +706,35 @@ function AgentTab({ onClose: _onClose, publicMode = false }: AgentTabProps) {
       updated[index] = { ...updated[index], feedback: nextRating };
       return updated;
     });
+
+    if (!nextRating) return;
+
+    const userMessage = messages[index - 1]?.content ?? '';
+
+    try {
+      await fetch(`${AI_AGENT_BASE}/feedback/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          user_message: userMessage,
+          bot_response: target.content,
+          rating: nextRating === 'like' ? 'thumbs_up' : 'thumbs_down',
+        }),
+      });
+    } catch {
+      /* feedback is best-effort */
+    }
   }
 
-  function newChat() {
+  async function newChat() {
+    if (userId !== null) {
+      try {
+        await fetch(`${AI_AGENT_BASE}/chat/clear-memory/${userId}`, { method: 'POST' });
+      } catch {
+        /* ignore */
+      }
+    }
     setError(null);
     setMessages([
       { role: 'assistant', content: 'New conversation started. How can I help you?' },
@@ -624,45 +748,83 @@ function AgentTab({ onClose: _onClose, publicMode = false }: AgentTabProps) {
     }
   }
 
-  // ── Registration view (public marketing site only) ──
-  if (!registered) {
+  const allFieldsValid = nameValidation.valid && emailValidation.valid && phoneValidation.valid;
+
+  // ── Register view ──
+  if (view === 'register') {
     return (
       <div
         className="relative flex h-full flex-col justify-center overflow-y-auto px-6 py-6 [justify-content:safe_center]"
         style={{ background: 'linear-gradient(180deg, #FBF7F2 0%, #FFFFFF 60%)' }}
       >
-        <p className="mb-4 text-sm text-stone-500">
-          Tell us who&apos;s asking so we can follow up if needed — then start chatting instantly.
-        </p>
+        <button
+          onClick={onClose}
+          className="absolute right-3 top-3 rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+          title="Close"
+        >
+          <X className="h-4 w-4" />
+        </button>
         <div className="space-y-4">
-          <Field label="Full name" error={nameValidation.message} touched={touched.name}>
-            <StyledInput
-              icon={User}
-              hasError={touched.name && !nameValidation.valid}
-              type="text"
-              value={regName}
-              onChange={(e) => e.target.value.length <= 60 && setRegName(e.target.value)}
-              onBlur={() => setTouched((t) => ({ ...t, name: true }))}
-              onKeyDown={(e) => e.key === 'Enter' && register()}
-              placeholder="e.g. Ahmed Al Mansouri"
-              maxLength={60}
-            />
+          {/* Full Name */}
+          <Field
+            label="Full name"
+            error={nameValidation.message}
+            touched={touched.name}
+          >
+            <div className="relative">
+              <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+              <input
+                type="text"
+                value={regName}
+                onChange={(e) => {
+                  // Block numeric-only input; allow letters, spaces, hyphens, apostrophes
+                  const val = e.target.value;
+                  if (val.length <= 60) setRegName(val);
+                }}
+                onBlur={() => setTouched((t) => ({ ...t, name: true }))}
+                onKeyDown={(e) => e.key === 'Enter' && register()}
+                placeholder="e.g. Ahmed Al Mansouri"
+                maxLength={60}
+                className={`w-full rounded-xl border px-3.5 py-2.5 pl-9 text-sm text-stone-800 outline-none transition-all placeholder:text-stone-400 ${
+                  touched.name && !nameValidation.valid
+                    ? 'border-rose-300 bg-rose-50 ring-2 ring-rose-100'
+                    : 'border-stone-200 bg-white focus:border-orange-300 focus:ring-2 focus:ring-orange-100'
+                }`}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium tabular-nums text-stone-300 select-none">
+                {regName.length}/60
+              </span>
+            </div>
           </Field>
 
-          <Field label="Email address" error={emailValidation.message} touched={touched.email}>
-            <StyledInput
-              icon={Mail}
-              hasError={touched.email && !emailValidation.valid}
-              type="email"
-              value={regEmail}
-              onChange={(e) => e.target.value.length <= 100 && setRegEmail(e.target.value)}
-              onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-              onKeyDown={(e) => e.key === 'Enter' && register()}
-              placeholder="you@company.com"
-              maxLength={100}
-            />
+          {/* Email */}
+          <Field
+            label="Email address"
+            error={emailValidation.message}
+            touched={touched.email}
+          >
+            <div className="relative">
+              <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+              <input
+                type="email"
+                value={regEmail}
+                onChange={(e) => {
+                  if (e.target.value.length <= 100) setRegEmail(e.target.value);
+                }}
+                onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+                onKeyDown={(e) => e.key === 'Enter' && register()}
+                placeholder="you@company.com"
+                maxLength={100}
+                className={`w-full rounded-xl border px-3.5 py-2.5 pl-9 pr-16 text-sm text-stone-800 outline-none transition-all placeholder:text-stone-400 ${
+                  touched.email && !emailValidation.valid
+                    ? 'border-rose-300 bg-rose-50 ring-2 ring-rose-100'
+                    : 'border-stone-200 bg-white focus:border-orange-300 focus:ring-2 focus:ring-orange-100'
+                }`}
+              />
+            </div>
           </Field>
 
+          {/* UAE Phone */}
           <Field
             label="UAE phone number"
             error={phoneValidation.message}
@@ -673,30 +835,35 @@ function AgentTab({ onClose: _onClose, publicMode = false }: AgentTabProps) {
               value={regPhone}
               onChange={(digits) => {
                 setRegPhone(digits);
-                if (!touched.phone && digits.length > 0) setTouched((t) => ({ ...t, phone: true }));
+                if (!touched.phone && digits.length > 0) {
+                  setTouched((t) => ({ ...t, phone: true }));
+                }
               }}
               hasError={touched.phone && !phoneValidation.valid}
               onKeyDown={(e) => e.key === 'Enter' && register()}
             />
           </Field>
 
+          {/* Server-level error */}
           {regError && (
             <p className="flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600">
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
               {regError}
             </p>
           )}
-
           <button
             onClick={register}
             disabled={regLoading}
             className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:cursor-not-allowed disabled:opacity-50"
-            style={{ background: allFieldsValid && !regLoading ? '#1C1917' : '#78716c', transition: 'background 0.2s' }}
+            style={{
+              background: allFieldsValid && !regLoading ? '#1C1917' : '#78716c',
+              transition: 'background 0.2s',
+            }}
           >
             {regLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Registering…
+                Creating account…
               </>
             ) : (
               <>
@@ -714,11 +881,10 @@ function AgentTab({ onClose: _onClose, publicMode = false }: AgentTabProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-stone-100 px-3 py-2">
-        {leadName ? (
-          <span className="px-2 text-xs font-medium text-stone-400">
-            Hi, <span className="text-stone-600">{leadName}</span>
-          </span>
-        ) : <span />}
+        <span className="px-2 text-xs font-medium text-stone-400">
+          Signed in as <span className="text-stone-600">{userName}</span>
+        </span>
+
         <button
           onClick={newChat}
           title="New chat"
@@ -884,7 +1050,7 @@ function AgentTab({ onClose: _onClose, publicMode = false }: AgentTabProps) {
 
 // ─── ChatWidget ───────────────────────────────────────────────────────────────
 
-export function ChatWidget({ publicMode = false }: ChatWidgetProps = {}) {
+export function ChatWidget(_props: ChatWidgetProps = {}) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>('chatbot');
 
@@ -964,7 +1130,7 @@ export function ChatWidget({ publicMode = false }: ChatWidgetProps = {}) {
 
           {/* Content Views */}
           <div className="min-h-0 flex-1 bg-white">
-            {tab === 'chatbot' ? <ChatbotTab /> : <AgentTab onClose={() => setOpen(false)} publicMode={publicMode} />}
+            {tab === 'chatbot' ? <ChatbotTab /> : <AgentTab onClose={() => setOpen(false)} />}
           </div>
         </div>
       )}

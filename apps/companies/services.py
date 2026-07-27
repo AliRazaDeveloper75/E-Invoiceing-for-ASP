@@ -38,6 +38,8 @@ class CompanyService:
             legal_name=data.get('legal_name', data['name']).strip(),
             trn=trn,
             is_vat_group=data.get('is_vat_group', False),
+            trn_issue_date=data.get('trn_issue_date'),
+            trn_expiry_date=data.get('trn_expiry_date'),
             street_address=data.get('street_address', '').strip(),
             city=data.get('city', '').strip(),
             emirate=data.get('emirate', 'dubai'),

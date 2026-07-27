@@ -13,6 +13,16 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
+  async redirects() {
+    return [
+      {
+        source: '/peppol',
+        destination: '/e-invoice',
+        permanent: true,
+      },
+    ];
+  },
+
   async headers() {
     return [
       {
