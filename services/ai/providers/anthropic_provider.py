@@ -17,7 +17,7 @@ from typing import Any
 
 from django.conf import settings
 
-from ..base import AIProvider, AIMessage, AIChatResponse, AIVisionResponse, AIEmbedResponse
+from ..base import AIProvider, AIMessage, AIChatResponse, AIVisionResponse, AIEmbedResponse, normalize_messages
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ class AnthropicProvider(AIProvider):
 
         api_messages = [
             {'role': m.role, 'content': m.content}
-            for m in messages
+            for m in normalize_messages(messages)
             if m.role in ('user', 'assistant')
         ]
 

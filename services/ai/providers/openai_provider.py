@@ -18,7 +18,7 @@ from typing import Any
 
 from django.conf import settings
 
-from ..base import AIProvider, AIMessage, AIChatResponse, AIVisionResponse, AIEmbedResponse
+from ..base import AIProvider, AIMessage, AIChatResponse, AIVisionResponse, AIEmbedResponse, normalize_messages
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class OpenAIProvider(AIProvider):
         api_messages = []
         if system:
             api_messages.append({'role': 'system', 'content': system})
-        for m in messages:
+        for m in normalize_messages(messages):
             if m.role in ('user', 'assistant'):
                 api_messages.append({'role': m.role, 'content': m.content})
 

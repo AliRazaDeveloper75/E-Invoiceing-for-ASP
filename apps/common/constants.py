@@ -98,6 +98,42 @@ TRANSACTION_TYPE_CHOICES = [
     (TRANSACTION_B2C, 'B2C'),
 ]
 
+# ─── FTA Audit File — Accounts Classification ────────────────────────────────
+ACCOUNTS_RECEIVABLE = 'receivable'
+ACCOUNTS_PAYABLE = 'payable'
+
+ACCOUNTS_TYPE_CHOICES = [
+    (ACCOUNTS_RECEIVABLE, 'Accounts Receivable (AR)'),
+    (ACCOUNTS_PAYABLE, 'Accounts Payable (AP)'),
+]
+
+# ─── Invoice Line Item Type (BTAE-13 — UAE mandatory) ────────────────────────
+# Values are the literal UBL CommodityClassification/CommodityCode codes
+# (rules ibr-184/185/186-ae) — do not rename to 'Goods'/'Services'/'Both'.
+ITEM_TYPE_GOODS = 'G'
+ITEM_TYPE_SERVICES = 'S'
+ITEM_TYPE_BOTH = 'B'
+
+ITEM_TYPE_CHOICES = [
+    (ITEM_TYPE_GOODS, 'Goods'),
+    (ITEM_TYPE_SERVICES, 'Services'),
+    (ITEM_TYPE_BOTH, 'Both — Goods and Services'),
+]
+
+# ─── Credit Note Reason Code (BTAE-03 — UAE mandatory, rule ibr-001-ae) ──────
+# Codes per UAE VAT Executive Regulation, Federal Decree-Law No. 8 of 2017,
+# Article 61(1). These are the ONLY values the schematron accepts — do not
+# use arbitrary codes ('1'..'5' etc.) here.
+CREDIT_NOTE_REASON_CHOICES = [
+    ('DL8.61.1.A', 'Cancellation of the supply after the tax invoice was issued'),
+    ('DL8.61.1.B', 'Essential change or alteration in the nature of the supply'),
+    ('DL8.61.1.C', 'Change in the previously agreed consideration (e.g. discount)'),
+    ('DL8.61.1.D', 'Full or partial return of the goods or services'),
+    ('DL8.61.1.E', 'Taxable amount or VAT amount on the tax invoice was incorrect'),
+    ('VD', 'Void — the entire invoice is cancelled'),
+]
+CREDIT_NOTE_DEFAULT_REASON_CODE = 'DL8.61.1.A'
+
 # ─── ASP Transmission Status ─────────────────────────────────────────────────
 ASP_STATUS_PENDING = 'pending'
 ASP_STATUS_ACCEPTED = 'accepted'

@@ -33,6 +33,9 @@ interface CustomerForm {
   trn_issue_date: string;
   trn_expiry_date: string;
   vat_number: string;
+  legal_registration_id: string;
+  legal_registration_type: string;
+  legal_registration_authority: string;
   street_address: string;
   city: string;
   country: string;
@@ -122,6 +125,9 @@ export default function NewCustomerPage() {
         customer_type: c.customer_type ?? 'b2b',
         trn: c.trn ?? '', trn_issue_date: c.trn_issue_date ?? '',
         trn_expiry_date: c.trn_expiry_date ?? '', vat_number: c.vat_number ?? '',
+        legal_registration_id: c.legal_registration_id ?? '',
+        legal_registration_type: c.legal_registration_type ?? '',
+        legal_registration_authority: c.legal_registration_authority ?? '',
         street_address: c.street_address ?? '', city: c.city ?? '',
         country: c.country ?? 'AE', email: c.email ?? '', notes: c.notes ?? '',
       });
@@ -135,6 +141,9 @@ export default function NewCustomerPage() {
   const logoFile = watch('logo');
   const needsTRN = customerType === 'b2b' || customerType === 'b2g';
   const needsVAT = false;
+  const legalRegType = watch('legal_registration_type');
+  // Rule ibr-172-ae: issuing authority is required only when type is Trade License.
+  const needsRegAuthority = legalRegType === 'TL';
   const [vatSameAsTrn, setVatSameAsTrn] = useState(false);
 
   useEffect(() => {
@@ -157,6 +166,9 @@ export default function NewCustomerPage() {
       if (data.trn_issue_date)  fd.append('trn_issue_date', data.trn_issue_date);
       if (data.trn_expiry_date) fd.append('trn_expiry_date', data.trn_expiry_date);
       fd.append('vat_number', data.vat_number || '');
+      fd.append('legal_registration_id', data.legal_registration_id || '');
+      fd.append('legal_registration_type', data.legal_registration_type || '');
+      fd.append('legal_registration_authority', data.legal_registration_authority || '');
       fd.append('street_address', data.street_address || '');
       fd.append('city', data.city || '');
       fd.append('country', data.country);
@@ -310,6 +322,7 @@ export default function NewCustomerPage() {
             </div>
           </SectionCard>
 
+<<<<<<< HEAD
           {/* Tax Information */}
           <SectionCard
             icon={Receipt}
@@ -349,6 +362,149 @@ export default function NewCustomerPage() {
                     if (!v?.trim()) return needsVAT ? 'VAT number is required for international customers' : true;
                     if (!/^\d+$/.test(v)) return 'VAT number must contain digits only';
                     if (v.length !== 15) return `VAT number must be exactly 15 digits (you entered ${v.length})`;
+=======
+        {/* Tax */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm space-y-4">
+          <h2 className="font-semibold text-gray-800">Tax Information</h2>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label={needsTRN ? 'TRN' : 'TRN (optional)'}
+              required={needsTRN}
+              tooltip="UAE Tax Registration Number (TRN) issued by the Federal Tax Authority — exactly 15 numeric digits. Mandatory for all B2B and B2G customers; optional for B2C (individual consumers)."
+              placeholder="123456789012345"
+              hint={needsTRN ? 'Required for UAE B2B / B2G — 15 digits' : '15-digit UAE Tax Registration Number'}
+              error={errors.trn?.message || serverError.trn}
+              inputMode="numeric"
+              maxLength={15}
+              onKeyDown={numericOnlyKeyDown}
+              {...register('trn', {
+                validate: (v) => validateTRN(v, needsTRN),
+              })}
+            />
+            <Input
+              label={needsVAT ? 'VAT Number (international)' : 'VAT Number (international, optional)'}
+              required={needsVAT}
+              tooltip="Optional VAT / tax number for international (non-UAE) customers — 15 digits, same format as a TRN. Leave blank if not applicable, or tick 'Same as TRN'."
+              placeholder="123456789012345"
+              hint={needsVAT ? 'Required for non-UAE business customers — 15 digits' : '15-digit international VAT/tax number'}
+              error={errors.vat_number?.message || serverError.vat_number}
+              inputMode="numeric"
+              maxLength={15}
+              disabled={vatSameAsTrn}
+              onKeyDown={numericOnlyKeyDown}
+              {...register('vat_number', {
+                validate: (v) => {
+                  if (!v?.trim()) return needsVAT ? 'VAT number is required for international customers' : true;
+                  if (!/^\d+$/.test(v)) return 'VAT number must contain digits only — no letters or symbols';
+                  if (v.length !== 15) return `VAT number must be exactly 15 digits (you entered ${v.length})`;
+                  return true;
+                },
+              })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="TRN Issue Date"
+              type="date"
+              tooltip="Date the customer's Tax Registration (TRN) was issued by the FTA."
+              error={errors.trn_issue_date?.message}
+              {...register('trn_issue_date')}
+            />
+            <Input
+              label="TRN Expiry Date"
+              type="date"
+              tooltip="TRN expiry / validity end date, if applicable."
+              error={errors.trn_expiry_date?.message}
+              {...register('trn_expiry_date')}
+            />
+          </div>
+
+          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={vatSameAsTrn}
+              onChange={(e) => setVatSameAsTrn(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            VAT Number same as TRN
+          </label>
+
+          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+            <Input
+              label="Legal Registration Number (optional)"
+              tooltip="Trade license or CR number, if the customer is a registered legal entity. Leave blank if not applicable."
+              placeholder="e.g. CN-1234567"
+              error={errors.legal_registration_id?.message}
+              {...register('legal_registration_id')}
+            />
+            <Controller
+              name="legal_registration_type"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Select
+                  label="Registration Type (optional)"
+                  tooltip="Type of legal registration document."
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  error={fieldState.error?.message}
+                  options={[
+                    { value: '', label: '— None —' },
+                    { value: 'TL', label: 'Trade License (TL)' },
+                    { value: 'CRN', label: 'Commercial Registration Number (CRN)' },
+                    { value: 'EID', label: 'Emirates ID (EID)' },
+                    { value: 'PAS', label: 'Passport (PAS)' },
+                    { value: 'CD', label: 'Commercial Document (CD)' },
+                  ]}
+                />
+              )}
+            />
+          </div>
+          {legalRegType && (
+            <Input
+              label="Issuing Authority"
+              required={needsRegAuthority}
+              tooltip="The authority that issued the registration, e.g. 'Department of Economic Development'. Required for Trade License registrations."
+              placeholder="Department of Economic Development"
+              error={errors.legal_registration_authority?.message}
+              {...register('legal_registration_authority', {
+                validate: (v) => !needsRegAuthority || !!v?.trim() || 'Issuing authority is required for a Trade License registration',
+              })}
+            />
+          )}
+        </div>
+
+        {/* Documents */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm space-y-4">
+          <div>
+            <h2 className="font-semibold text-gray-800">Documents</h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Both documents are required to register a customer.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* TRN certificate */}
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">
+                TRN Certificate <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0
+                           file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-medium
+                           file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                {...register('trn_document', {
+                  required: isEdit ? false : 'TRN certificate is required',
+                  validate: (f) => {
+                    const file = f?.[0];
+                    if (!file) return isEdit ? true : 'TRN certificate is required';
+                    if (!/\.(pdf|jpg|jpeg|png)$/i.test(file.name))
+                      return 'Only PDF, JPG or PNG files are allowed';
+                    if (file.size > 5 * 1024 * 1024) return 'File must be 5MB or smaller';
+>>>>>>> 50694ad1a220ab195f5be1537d5593ca94b04182
                     return true;
                   },
                 })}

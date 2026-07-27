@@ -18,7 +18,7 @@ from django.core.exceptions import ValidationError
 from apps.common.models import BaseModel
 from apps.common.constants import (
     TRANSACTION_TYPE_CHOICES, TRANSACTION_B2B,
-    TRN_LENGTH, TIN_LENGTH,
+    TRN_LENGTH, TIN_LENGTH, LEGAL_REG_TYPE_CHOICES,
 )
 
 
@@ -118,6 +118,30 @@ class Customer(BaseModel):
         help_text='VAT registration number for international (non-UAE) customers.'
     )
 
+    # ── Legal Registration (BTAE-11/12/15 — buyer legal entity in UBL) ────────
+    legal_registration_id = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text='Buyer legal entity registration number (e.g. trade license, CR number). '
+                  'Used in UBL PartyLegalEntity/CompanyID (BTAE-11).',
+    )
+    legal_registration_type = models.CharField(
+        max_length=5,
+        choices=LEGAL_REG_TYPE_CHOICES,
+        blank=True,
+        default='',
+        help_text='Type of legal registration document (TL=Trade License, CRN=CR Number, etc.). '
+                  'Used as schemeAgencyID on PartyLegalEntity/CompanyID (BTAE-15).',
+    )
+    legal_registration_authority = models.CharField(
+        max_length=150,
+        blank=True,
+        default='',
+        help_text='Issuing authority of the legal registration (BTAE-12). Required when '
+                  'legal_registration_type is Trade License (rule ibr-172-ae).',
+    )
+
     # ── PEPPOL ────────────────────────────────────────────────────────────────
     peppol_endpoint = models.CharField(
         max_length=255,
@@ -181,6 +205,7 @@ class Customer(BaseModel):
         identifier = self.trn or self.vat_number or 'No Tax ID'
         return f'{self.name} ({identifier})'
 
+<<<<<<< HEAD
     # Fields that must be present before this customer can be put on an invoice.
     # B2C consumers don't have TRN / TRN document / logo — those are only required for B2B/B2G.
     _INVOICE_FIELDS_BASE = ['name', 'street_address', 'city', 'country', 'email']
@@ -190,6 +215,17 @@ class Customer(BaseModel):
     # REQUIRED_FOR_INVOICE still works (e.g. admin display).
     REQUIRED_FOR_INVOICE = REQUIRED_FOR_INVOICE_B2B
 
+=======
+    # Fields that must always be present before this customer can be put on an
+    # invoice, regardless of customer type. TRN is added conditionally — see
+    # required_for_invoice() — since it is only a legal requirement for UAE
+    # B2B/B2G customers (per clean()). Logo and TRN document are supporting
+    # KYC documents, not PEPPOL/UBL/FTA invoice requirements, so they are not
+    # invoice-blocking.
+    REQUIRED_FOR_INVOICE = [
+        'name', 'street_address', 'city', 'country', 'email',
+    ]
+>>>>>>> 50694ad1a220ab195f5be1537d5593ca94b04182
     _REQUIRED_LABELS = {
         'name': 'Name', 'trn': 'TRN', 'street_address': 'Street address',
         'city': 'City', 'country': 'Country', 'email': 'Email',
@@ -197,17 +233,31 @@ class Customer(BaseModel):
     }
 
     @property
+<<<<<<< HEAD
     def _required_fields(self):
         """Return the correct required-fields list for this customer's type."""
         if self.customer_type == 'b2c':
             return self.REQUIRED_FOR_INVOICE_B2C
         return self.REQUIRED_FOR_INVOICE_B2B
+=======
+    def required_for_invoice(self):
+        """Required field names for this specific customer (base + conditional TRN)."""
+        fields = list(self.REQUIRED_FOR_INVOICE)
+        is_uae_b2b_or_b2g = self.country == 'AE' and self.customer_type in ('b2b', 'b2g')
+        if is_uae_b2b_or_b2g:
+            fields.append('trn')
+        return fields
+>>>>>>> 50694ad1a220ab195f5be1537d5593ca94b04182
 
     @property
     def missing_fields(self):
         """Human-readable labels of required fields still missing (for invoicing)."""
         missing = []
+<<<<<<< HEAD
         for f in self._required_fields:
+=======
+        for f in self.required_for_invoice:
+>>>>>>> 50694ad1a220ab195f5be1537d5593ca94b04182
             val = getattr(self, f, None)
             # FileField/ImageField evaluate falsy when no file is attached.
             if not val or (isinstance(val, str) and not val.strip()):
@@ -222,7 +272,11 @@ class Customer(BaseModel):
     @property
     def completion_percent(self):
         """Profile completeness 0–100 (share of required invoice fields filled)."""
+<<<<<<< HEAD
         total = len(self._required_fields)
+=======
+        total = len(self.required_for_invoice)
+>>>>>>> 50694ad1a220ab195f5be1537d5593ca94b04182
         if not total:
             return 100
         done = total - len(self.missing_fields)

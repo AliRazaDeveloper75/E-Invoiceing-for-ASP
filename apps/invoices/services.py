@@ -235,6 +235,9 @@ class InvoiceItemService:
             quantity=Decimal(str(data['quantity'])),
             unit=data.get('unit', '').strip(),
             unit_price=Decimal(str(data['unit_price'])),
+            item_type=data.get('item_type', ''),
+            item_classification_code=data.get('item_classification_code', '').strip(),
+            service_accounting_code=data.get('service_accounting_code', '').strip(),
             vat_rate_type=data.get('vat_rate_type', 'standard'),
             sort_order=data.get('sort_order', max_order),
         )
@@ -265,7 +268,11 @@ class InvoiceItemService:
         if membership.role not in ('admin', 'accountant'):
             raise PermissionDenied('Admin or Accountant role required to update invoice items.')
 
-        updatable = ['item_name', 'description', 'quantity', 'unit', 'unit_price', 'vat_rate_type', 'sort_order']
+        updatable = [
+            'item_name', 'description', 'quantity', 'unit', 'unit_price',
+            'item_type', 'item_classification_code', 'service_accounting_code',
+            'vat_rate_type', 'sort_order',
+        ]
         for field in updatable:
             if field in data:
                 value = data[field]
@@ -377,7 +384,10 @@ class InvoiceService:
             discount_amount=Decimal(str(data.get('discount_amount', '0.00'))),
             payment_means_code=data.get('payment_means_code', '30'),
             reference_number=data.get('reference_number', ''),
+            credit_note_reason_code=data.get('credit_note_reason_code', ''),
             purchase_order_number=data.get('purchase_order_number', ''),
+            supplier_location=data.get('supplier_location', ''),
+            accounts_type=data.get('accounts_type', ''),
             notes=data.get('notes', ''),
         )
 
@@ -474,7 +484,8 @@ class InvoiceService:
             'invoice_type', 'transaction_type', 'issue_date', 'due_date',
             'supply_date', 'supply_date_end', 'contract_reference',
             'currency', 'discount_amount', 'payment_means_code',
-            'reference_number', 'purchase_order_number', 'notes',
+            'reference_number', 'credit_note_reason_code', 'purchase_order_number', 'notes',
+            'supplier_location', 'accounts_type',
         ]
         changed = []
         for field in updatable:

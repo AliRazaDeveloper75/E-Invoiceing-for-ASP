@@ -53,6 +53,9 @@ class CustomerService:
             trn_issue_date=data.get('trn_issue_date'),
             trn_expiry_date=data.get('trn_expiry_date'),
             peppol_endpoint=data.get('peppol_endpoint', '').strip(),
+            legal_registration_id=data.get('legal_registration_id', '').strip(),
+            legal_registration_type=data.get('legal_registration_type', '').strip(),
+            legal_registration_authority=data.get('legal_registration_authority', '').strip(),
             street_address=data.get('street_address', '').strip(),
             city=data.get('city', '').strip(),
             state_province=data.get('state_province', '').strip(),
@@ -91,6 +94,7 @@ class CustomerService:
         updatable_fields = [
             'name', 'legal_name', 'customer_type',
             'trn', 'vat_number', 'trn_issue_date', 'trn_expiry_date', 'peppol_endpoint',
+            'legal_registration_id', 'legal_registration_type', 'legal_registration_authority',
             'street_address', 'city', 'state_province', 'postal_code', 'country',
             'email', 'phone', 'notes',
         ]

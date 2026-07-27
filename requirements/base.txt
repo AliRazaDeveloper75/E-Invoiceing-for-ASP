@@ -46,6 +46,7 @@ httpx>=0.28.1
 cryptography==42.0.8
 pyOpenSSL==24.1.0
 
+<<<<<<< HEAD
 # â”€â”€â”€ AI / Chatbot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # âš ï¸ CONFLICT: first project pins openai==1.51.0, second project needs openai>=2.40.0
 # OpenAI SDK v1 and v2 have breaking API changes (client init, response objects, etc).
@@ -54,6 +55,13 @@ pyOpenSSL==24.1.0
 # openai>=2.40.0
 anthropic==0.34.2
 groq>=1.4.0
+=======
+# ─── AI / Chatbot ─────────────────────────────────────────────────────────────
+# Pinned to versions compatible with httpx>=0.28 (older openai/anthropic SDKs
+# pass a "proxies" kwarg to httpx.Client() that 0.28 removed, crashing every call).
+openai==2.48.0
+anthropic==0.120.0
+>>>>>>> 50694ad1a220ab195f5be1537d5593ca94b04182
 
 # â”€â”€â”€ AI OCR (PDFâ†’image fallback for OpenAI) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # pdf2image requires poppler â€” install via: apt-get install poppler-utils

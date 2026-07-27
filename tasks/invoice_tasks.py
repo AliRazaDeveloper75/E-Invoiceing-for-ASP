@@ -8,6 +8,8 @@ Pipeline triggered when an invoice is submitted (status → PENDING):
     ├── 2. Validate (InvoiceValidationService)
     ├── 3. Generate XML (UAEInvoiceXMLGenerator)
     ├── 4. PEPPOL schema validation (FullPEPPOLValidator — XSD + Schematron)
+    ├── 4b. PINT-AE schematron validation (real Saxon/XSLT rules — the ones
+    │       FTA/PEPPOL Testbed actually enforce)
     ├── 5. Sign XML (XAdESBESSigner — XAdES-BES, if PEPPOL_SIGNING_ENABLED)
     ├── 6. Save (signed) XML to media storage
     ├── 7. SMP endpoint discovery (SMPClient — non-fatal if unavailable)
@@ -191,6 +193,48 @@ def process_invoice(self, invoice_id: str) -> dict:
         logger.warning(
             'Invoice %s PEPPOL validation warnings: %s',
             invoice.invoice_number, peppol_result.warnings
+        )
+
+    # ── Step 4b: PINT-AE Schematron Validation (real rules — the ones FTA/PEPPOL
+    # Testbed actually enforce). FullPEPPOLValidator above has no schema/schematron
+    # artifacts wired in and always passes; this is the authoritative check. ─────
+    logger.info('Running PINT-AE schematron validation for: %s', invoice.invoice_number)
+
+    try:
+        from services.peppol.pint_ae.xslt_validator import validate_document
+        pint_result = validate_document(xml_bytes, profile='billing')
+    except Exception as exc:
+        logger.exception('PINT-AE schematron validator crashed for %s', invoice.invoice_number)
+        raise self.retry(exc=exc, countdown=_backoff(self.request.retries))
+
+    if pint_result.ran and not pint_result.is_valid:
+        logger.warning(
+            'Invoice %s failed PINT-AE schematron validation: %s',
+            invoice.invoice_number, pint_result.errors
+        )
+        InvoiceService.mark_rejected(invoice, {
+            'source':   'pint_ae_schematron',
+            'errors':   pint_result.errors,
+            'warnings': pint_result.warnings,
+        })
+        return {
+            'status':   'rejected',
+            'reason':   'PINT-AE schematron validation failed',
+            'errors':   pint_result.errors,
+        }
+
+    if not pint_result.ran:
+        # Saxon/artifacts unavailable — fail open but log loudly so it's noticed,
+        # since this is the one check that actually matches FTA/Testbed rules.
+        logger.error(
+            'PINT-AE schematron validation DID NOT RUN for %s (Saxon/artifacts '
+            'unavailable) — invoice is proceeding UNVALIDATED against real PINT-AE rules: %s',
+            invoice.invoice_number, pint_result.warnings
+        )
+    elif pint_result.warnings:
+        logger.warning(
+            'Invoice %s PINT-AE schematron warnings: %s',
+            invoice.invoice_number, pint_result.warnings
         )
 
     # ── Step 5: Sign XML (XAdES-BES) ─────────────────────────────────────────

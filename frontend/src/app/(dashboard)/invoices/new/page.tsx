@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo, useCallback, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray, Controller, useWatch } from 'react-hook-form';
 import { useAutosaveDraft, type DraftEnvelope } from '@/hooks/useAutosaveDraft';
 import useSWR from 'swr';
 import QRCode from 'qrcode';
@@ -183,6 +183,9 @@ interface LineItem {
   quantity: string;
   unit: string;
   unit_price: string;
+  item_type: string;
+  item_classification_code: string;
+  service_accounting_code: string;
   vat_rate_type: string;
 }
 
@@ -201,6 +204,7 @@ interface InvoiceForm {
   transaction_id: string;
   purchase_order_number: string;
   reference_number: string;
+  credit_note_reason_code: string;
   gl_account_id: string;
   currency: string;
   exchange_rate: string;
@@ -481,7 +485,13 @@ function downloadSampleExcel() {
 type ItemField = {
   item_name: string; description: string; product_reference: string;
   quantity: string; unit: string; unit_price: string;
+<<<<<<< HEAD
   vat_rate_type: string;
+=======
+  item_type: string; item_classification_code: string; service_accounting_code: string;
+  vat_rate_type: string; tax_code: string;
+  debit_amount: string; credit_amount: string;
+>>>>>>> 50694ad1a220ab195f5be1537d5593ca94b04182
 };
 
 function parseExcelToItems(file: File): Promise<{ items: ItemField[]; errors: string[] }> {
@@ -536,7 +546,14 @@ function parseExcelToItems(file: File): Promise<{ items: ItemField[]; errors: st
             product_reference: get('product_reference'),
             quantity:          get('quantity') || '1',
             unit:              get('unit'),
+<<<<<<< HEAD
             unit_price:        stripZeros(price),
+=======
+            unit_price:        parseFloat(price).toFixed(2),
+            item_type:                 '',
+            item_classification_code: '',
+            service_accounting_code:  '',
+>>>>>>> 50694ad1a220ab195f5be1537d5593ca94b04182
             vat_rate_type:     validVat.includes(vat) ? vat : 'standard',
           });
         });
@@ -683,6 +700,10 @@ function ItemRow({ idx, register, control, errors, trigger, vatLocked, onRemove,
   products: CatalogProduct[];
   setValue: ReturnType<typeof useForm<InvoiceForm>>['setValue'];
 }) {
+  const itemType = useWatch({ control, name: `items.${idx}.item_type` });
+  const needsHsCode = itemType === 'G' || itemType === 'B';
+  const needsSacCode = itemType === 'S' || itemType === 'B';
+
   function applyProduct(id: string) {
     const p = products.find((x) => x.id === id);
     if (!p) return;
@@ -750,7 +771,53 @@ function ItemRow({ idx, register, control, errors, trigger, vatLocked, onRemove,
         />
       </Field>
 
+<<<<<<< HEAD
       <div className="grid grid-cols-2 gap-3">
+=======
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Field label="Item Type" required
+          tooltip="Goods, Services, or Both — mandatory UAE field (BTAE-13)."
+          error={errors.items?.[idx]?.item_type?.message}>
+          <Controller
+            control={control}
+            name={`items.${idx}.item_type`}
+            rules={{ required: 'Required' }}
+            render={({ field }) => (
+              <CustomSelect value={field.value} onChange={field.onChange}
+                options={[
+                  { value: '', label: '— Select —' },
+                  { value: 'G', label: 'Goods' },
+                  { value: 'S', label: 'Services' },
+                  { value: 'B', label: 'Both — Goods and Services' },
+                ]} />
+            )} />
+        </Field>
+        {needsHsCode && (
+          <Field label="HS Classification Code" required
+            tooltip="Harmonized System (HS) classification code for this good."
+            error={errors.items?.[idx]?.item_classification_code?.message}>
+            <input placeholder="e.g. 22334455"
+              className={inputCls(errors.items?.[idx]?.item_classification_code?.message)}
+              {...register(`items.${idx}.item_classification_code`, {
+                required: 'Required when item type is Goods or Both',
+              })} />
+          </Field>
+        )}
+        {needsSacCode && (
+          <Field label="Service Accounting Code" required
+            tooltip="Service Accounting Code (SAC) for this service."
+            error={errors.items?.[idx]?.service_accounting_code?.message}>
+            <input placeholder="e.g. 998311"
+              className={inputCls(errors.items?.[idx]?.service_accounting_code?.message)}
+              {...register(`items.${idx}.service_accounting_code`, {
+                required: 'Required when item type is Services or Both',
+              })} />
+          </Field>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+>>>>>>> 50694ad1a220ab195f5be1537d5593ca94b04182
         <Field label="Quantity" required
           tooltip="Number of units supplied. Must be greater than 0."
           error={errors.items?.[idx]?.quantity?.message}>
@@ -1460,8 +1527,14 @@ export default function NewInvoicePage() {
       currency: 'AED', exchange_rate: '1.000000', discount_amount: '0.00',
       is_reverse_charge: false, import_subtype: '',
       items: [{ item_name: '', description: '', product_reference: '', quantity: '1', unit: '',
+<<<<<<< HEAD
                 unit_price: '', vat_rate_type: 'standard',
               }],
+=======
+                unit_price: '', item_type: '', item_classification_code: '', service_accounting_code: '',
+                vat_rate_type: 'standard', tax_code: '',
+                debit_amount: '', credit_amount: '' }],
+>>>>>>> 50694ad1a220ab195f5be1537d5593ca94b04182
     },
   });
 
@@ -1758,8 +1831,14 @@ export default function NewInvoicePage() {
       is_reverse_charge: !!card.isReverseCharge, import_subtype: '',
       supplier_location: supplierLoc,   // keep auto-filled from company profile
       items: [{ item_name: '', description: '', product_reference: '', quantity: '1', unit: '',
+<<<<<<< HEAD
                 unit_price: '', vat_rate_type: card.vatRate,
               }],
+=======
+                unit_price: '', item_type: '', item_classification_code: '', service_accounting_code: '',
+                vat_rate_type: card.vatRate, tax_code: '',
+                debit_amount: '', credit_amount: '' }],
+>>>>>>> 50694ad1a220ab195f5be1537d5593ca94b04182
     });
   }
 
@@ -1774,7 +1853,10 @@ export default function NewInvoicePage() {
         data.permit_number     ? `Permit: ${data.permit_number}`             : '',
         data.transaction_id    ? `Txn ID: ${data.transaction_id}`            : '',
         data.is_reverse_charge ? 'Reverse Charge: YES'                       : '',
+<<<<<<< HEAD
         data.supplier_location ? `Supplier: ${data.supplier_location}`       : '',
+=======
+>>>>>>> 50694ad1a220ab195f5be1537d5593ca94b04182
         data.customer_location ? `Customer: ${data.customer_location}`       : '',
         data.tax_payment_date  ? `Tax Payment Date: ${data.tax_payment_date}`: '',
       ].filter(Boolean).join(' | ');
@@ -1790,6 +1872,8 @@ export default function NewInvoicePage() {
         issue_date: data.issue_date,
         currency: data.currency,
         exchange_rate: data.exchange_rate || '1.000000',
+        supplier_location: data.supplier_location || '',
+        accounts_type: data.accounts_type || '',
         notes,
         items: data.items.map((it) => ({
           item_name: it.item_name || '',
@@ -1797,6 +1881,9 @@ export default function NewInvoicePage() {
           quantity: parseFloat(it.quantity),
           unit: it.unit || '',
           unit_price: parseFloat(it.unit_price),
+          item_type: it.item_type,
+          item_classification_code: it.item_classification_code || '',
+          service_accounting_code: it.service_accounting_code || '',
           vat_rate_type: it.vat_rate_type,
         })),
       };
@@ -1804,6 +1891,7 @@ export default function NewInvoicePage() {
       if (data.due_date)              payload.due_date              = data.due_date;
       if (data.supply_date)           payload.supply_date           = data.supply_date;
       if (data.reference_number)      payload.reference_number      = data.reference_number;
+      if (data.credit_note_reason_code) payload.credit_note_reason_code = data.credit_note_reason_code;
       if (data.purchase_order_number) payload.purchase_order_number = data.purchase_order_number;
       if (parseFloat(data.discount_amount || '0') > 0)
         payload.discount_amount = parseFloat(data.discount_amount);
@@ -2348,6 +2436,26 @@ export default function NewInvoicePage() {
                   <input placeholder="e.g. INV-202604-000001" className={inputCls(errors.reference_number?.message)}
                     {...register('reference_number', { required: 'Required for credit/debit notes' })} />
                 </Field>
+                {selected.docType === 'credit_note' && (
+                  <Field label="Credit Note Reason" required
+                    tooltip="Reason for issuing this credit note (BTAE-03), per UAE VAT Executive Regulation Article 61(1)."
+                    error={errors.credit_note_reason_code?.message}>
+                    <Controller control={control} name="credit_note_reason_code"
+                      rules={{ required: 'Credit note reason is required' }}
+                      render={({ field }) => (
+                        <CustomSelect value={field.value} onChange={field.onChange}
+                          options={[
+                            { value: '', label: '— Select —' },
+                            { value: 'DL8.61.1.A', label: 'Cancellation of the supply after the tax invoice was issued' },
+                            { value: 'DL8.61.1.B', label: 'Essential change or alteration in the nature of the supply' },
+                            { value: 'DL8.61.1.C', label: 'Change in the previously agreed consideration (e.g. discount)' },
+                            { value: 'DL8.61.1.D', label: 'Full or partial return of the goods or services' },
+                            { value: 'DL8.61.1.E', label: 'Taxable amount or VAT amount on the tax invoice was incorrect' },
+                            { value: 'VD', label: 'Void — the entire invoice is cancelled' },
+                          ]} />
+                      )} />
+                  </Field>
+                )}
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2523,6 +2631,7 @@ export default function NewInvoicePage() {
             })()}
             <button type="button"
               onClick={() => append({ item_name: '', description: '', product_reference: '', quantity: '1', unit: '',
+<<<<<<< HEAD
                 unit_price: '', vat_rate_type: vatLocked ? 'out_of_scope' : (selected.vatRate ?? 'standard'),
               })}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl
@@ -2533,6 +2642,14 @@ export default function NewInvoicePage() {
                          transition-all duration-150">
               <Plus className="h-4 w-4" />
               Add Line Item
+=======
+                unit_price: '', item_type: '', item_classification_code: '', service_accounting_code: '',
+                vat_rate_type: vatLocked ? 'out_of_scope' : (selected.vatRate ?? 'standard'),
+                tax_code: '', debit_amount: '', credit_amount: '' })}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-gray-300
+                         text-sm font-medium text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50/50 w-full justify-center transition-all duration-200">
+              <Plus className="h-4 w-4" /> Add Line Item
+>>>>>>> 50694ad1a220ab195f5be1537d5593ca94b04182
             </button>
           </Section>
           </AnimatedSection>

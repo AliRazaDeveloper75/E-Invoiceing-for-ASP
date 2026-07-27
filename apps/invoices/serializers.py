@@ -10,9 +10,30 @@ from apps.common.constants import (
     INVOICE_TYPE_CHOICES, TRANSACTION_TYPE_CHOICES,
     INVOICE_STATUS_CHOICES, CURRENCY_CHOICES, VAT_RATE_CHOICES,
     INVOICE_TYPE_CREDIT_NOTE, INVOICE_TYPE_CONTINUOUS,
-    PAYMENT_MEANS_CHOICES,
+    PAYMENT_MEANS_CHOICES, ACCOUNTS_TYPE_CHOICES,
+    ITEM_TYPE_CHOICES, ITEM_TYPE_GOODS, ITEM_TYPE_SERVICES, ITEM_TYPE_BOTH,
+    CREDIT_NOTE_REASON_CHOICES,
 )
 from .models import Invoice, InvoiceItem, Product, InvoiceDraft
+
+
+def _validate_item_type_codes(attrs: dict) -> None:
+    """
+    Rules ibr-184/185/186-ae: when item_type is Goods/Both, an HS classification
+    code is required; when Services/Both, a Service Accounting Code is required.
+    Only checked when item_type is present in attrs (partial updates may omit it).
+    """
+    item_type = attrs.get('item_type')
+    if not item_type:
+        return
+    if item_type in (ITEM_TYPE_GOODS, ITEM_TYPE_BOTH) and not attrs.get('item_classification_code'):
+        raise serializers.ValidationError({
+            'item_classification_code': 'HS classification code is required when item type is Goods or Both.'
+        })
+    if item_type in (ITEM_TYPE_SERVICES, ITEM_TYPE_BOTH) and not attrs.get('service_accounting_code'):
+        raise serializers.ValidationError({
+            'service_accounting_code': 'Service accounting code is required when item type is Services or Both.'
+        })
 
 
 class InvoiceDraftSerializer(serializers.Serializer):
@@ -64,6 +85,7 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
         model = InvoiceItem
         fields = [
             'id', 'item_name', 'description', 'quantity', 'unit', 'unit_price',
+            'item_type', 'item_classification_code', 'service_accounting_code',
             'vat_rate_type', 'vat_rate_type_display',
             'vat_rate', 'subtotal', 'vat_amount', 'total_amount',
             'sort_order', 'is_active',
@@ -86,11 +108,27 @@ class InvoiceItemCreateSerializer(serializers.Serializer):
         max_digits=15, decimal_places=4,
         min_value=Decimal('0.00')
     )
+    item_type = serializers.ChoiceField(
+        choices=[c[0] for c in ITEM_TYPE_CHOICES],
+        help_text='Goods (G), Services (S), or Both (B) — mandatory UAE field (BTAE-13).',
+    )
+    item_classification_code = serializers.CharField(
+        max_length=50, required=False, default='', allow_blank=True,
+        help_text='HS classification code. Required when item_type is Goods or Both.',
+    )
+    service_accounting_code = serializers.CharField(
+        max_length=50, required=False, default='', allow_blank=True,
+        help_text='Service accounting code (SAC). Required when item_type is Services or Both.',
+    )
     vat_rate_type = serializers.ChoiceField(
         choices=[c[0] for c in VAT_RATE_CHOICES],
         default='standard'
     )
     sort_order = serializers.IntegerField(required=False, default=0, min_value=0)
+
+    def validate(self, attrs):
+        _validate_item_type_codes(attrs)
+        return attrs
 
 
 class InvoiceItemUpdateSerializer(serializers.Serializer):
@@ -107,6 +145,11 @@ class InvoiceItemUpdateSerializer(serializers.Serializer):
         max_digits=15, decimal_places=4,
         min_value=Decimal('0.00'), required=False
     )
+    item_type = serializers.ChoiceField(
+        choices=[c[0] for c in ITEM_TYPE_CHOICES], required=False,
+    )
+    item_classification_code = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    service_accounting_code = serializers.CharField(max_length=50, required=False, allow_blank=True)
     vat_rate_type = serializers.ChoiceField(
         choices=[c[0] for c in VAT_RATE_CHOICES],
         required=False
@@ -116,6 +159,7 @@ class InvoiceItemUpdateSerializer(serializers.Serializer):
     def validate(self, attrs):
         if not attrs:
             raise serializers.ValidationError('At least one field must be provided.')
+        _validate_item_type_codes(attrs)
         return attrs
 
 
@@ -183,7 +227,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
             # Payment / Accounts Receivable
             'payment_means_code', 'amount_paid', 'balance_due', 'is_overdue', 'days_overdue',
             # References
-            'reference_number', 'purchase_order_number',
+            'reference_number', 'purchase_order_number', 'credit_note_reason_code',
+            # FTA Audit File (FAF) ledger classification
+            'supplier_location', 'accounts_type',
             # XML / ASP
             'xml_file', 'xml_generated_at',
             'asp_submission_id', 'asp_submitted_at',
@@ -278,7 +324,19 @@ class InvoiceCreateSerializer(serializers.Serializer):
         help_text='UN/ECE UNCL 4461 payment means code (30=Credit Transfer, 10=Cash, etc.).'
     )
     reference_number       = serializers.CharField(max_length=100, required=False, default='')
+    credit_note_reason_code = serializers.ChoiceField(
+        choices=[c[0] for c in CREDIT_NOTE_REASON_CHOICES],
+        required=False, default='', allow_blank=True,
+        help_text='BTAE-03 — required for credit notes.',
+    )
     purchase_order_number  = serializers.CharField(max_length=100, required=False, default='')
+    supplier_location      = serializers.CharField(max_length=255, required=False, default='')
+    accounts_type           = serializers.ChoiceField(
+        choices=[c[0] for c in ACCOUNTS_TYPE_CHOICES],
+        required=False,
+        default='',
+        allow_blank=True,
+    )
     notes                  = serializers.CharField(required=False, default='')
 
     # Optional: create items in the same request
@@ -295,6 +353,11 @@ class InvoiceCreateSerializer(serializers.Serializer):
         if invoice_type == INVOICE_TYPE_CREDIT_NOTE and not attrs.get('reference_number'):
             raise serializers.ValidationError({
                 'reference_number': 'Credit notes must include the original invoice number.'
+            })
+
+        if invoice_type == INVOICE_TYPE_CREDIT_NOTE and not attrs.get('credit_note_reason_code'):
+            raise serializers.ValidationError({
+                'credit_note_reason_code': 'Credit notes must include a reason code (BTAE-03).'
             })
 
         if invoice_type == INVOICE_TYPE_CONTINUOUS:
@@ -337,7 +400,14 @@ class InvoiceUpdateSerializer(serializers.Serializer):
         required=False
     )
     reference_number       = serializers.CharField(max_length=100, required=False)
+    credit_note_reason_code = serializers.ChoiceField(
+        choices=[c[0] for c in CREDIT_NOTE_REASON_CHOICES], required=False, allow_blank=True,
+    )
     purchase_order_number  = serializers.CharField(max_length=100, required=False)
+    supplier_location       = serializers.CharField(max_length=255, required=False)
+    accounts_type           = serializers.ChoiceField(
+        choices=[c[0] for c in ACCOUNTS_TYPE_CHOICES], required=False, allow_blank=True
+    )
     notes                  = serializers.CharField(required=False)
     form_payload           = serializers.JSONField(required=False, allow_null=True)
 
