@@ -46,8 +46,10 @@ cryptography==42.0.8
 pyOpenSSL==24.1.0
 
 # ─── AI / Chatbot ─────────────────────────────────────────────────────────────
-openai==1.51.0
-anthropic==0.34.2
+# Pinned to versions compatible with httpx>=0.28 (older openai/anthropic SDKs
+# pass a "proxies" kwarg to httpx.Client() that 0.28 removed, crashing every call).
+openai==2.48.0
+anthropic==0.120.0
 
 # ─── AI OCR (PDF→image fallback for OpenAI) ──────────────────────────────────
 # pdf2image requires poppler — install via: apt-get install poppler-utils

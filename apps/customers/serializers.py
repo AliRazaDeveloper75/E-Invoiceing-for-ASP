@@ -5,7 +5,7 @@ Input validation only. No business logic.
 """
 from django.core.validators import FileExtensionValidator
 from rest_framework import serializers
-from apps.common.constants import TRANSACTION_TYPE_CHOICES
+from apps.common.constants import TRANSACTION_TYPE_CHOICES, LEGAL_REG_TYPE_CHOICES
 from .models import Customer
 
 
@@ -35,6 +35,8 @@ class CustomerSerializer(serializers.ModelSerializer):
             'trn', 'tin', 'vat_number', 'trn_issue_date', 'trn_expiry_date',
             # PEPPOL
             'peppol_endpoint', 'is_peppol_connected',
+            # Legal registration (BTAE-11/12/15)
+            'legal_registration_id', 'legal_registration_type', 'legal_registration_authority',
             # Documents
             'trn_document', 'logo',
             # Address
@@ -85,6 +87,15 @@ class CustomerCreateSerializer(serializers.Serializer):
 
     # PEPPOL
     peppol_endpoint = serializers.CharField(max_length=255, required=False, default='', allow_blank=True)
+
+    # Legal registration (BTAE-11/12/15) — optional; if provided with type=TL,
+    # authority is required (rule ibr-172-ae), enforced in validate().
+    legal_registration_id = serializers.CharField(max_length=100, required=False, default='', allow_blank=True)
+    legal_registration_type = serializers.ChoiceField(
+        choices=[c[0] for c in LEGAL_REG_TYPE_CHOICES],
+        required=False, default='', allow_blank=True,
+    )
+    legal_registration_authority = serializers.CharField(max_length=150, required=False, default='', allow_blank=True)
 
     # Documents — mandatory on create
     trn_document = serializers.FileField(
@@ -148,6 +159,15 @@ class CustomerCreateSerializer(serializers.Serializer):
                 )
             })
 
+        # Rule ibr-172-ae: Trade License registrations must carry the issuing authority.
+        if attrs.get('legal_registration_type') == 'TL' and not attrs.get('legal_registration_authority'):
+            raise serializers.ValidationError({
+                'legal_registration_authority': (
+                    'Issuing authority is required when the legal registration type is '
+                    'Trade License (e.g. "Department of Economic Development").'
+                )
+            })
+
         return attrs
 
 
@@ -167,6 +187,11 @@ class CustomerUpdateSerializer(serializers.Serializer):
     trn_issue_date  = serializers.DateField(required=False, allow_null=True)
     trn_expiry_date = serializers.DateField(required=False, allow_null=True)
     peppol_endpoint = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    legal_registration_id = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    legal_registration_type = serializers.ChoiceField(
+        choices=[c[0] for c in LEGAL_REG_TYPE_CHOICES], required=False, allow_blank=True,
+    )
+    legal_registration_authority = serializers.CharField(max_length=150, required=False, allow_blank=True)
     street_address = serializers.CharField(max_length=500, required=False, allow_blank=True)
     city = serializers.CharField(max_length=100, required=False, allow_blank=True)
     state_province = serializers.CharField(max_length=100, required=False, allow_blank=True)

@@ -112,12 +112,15 @@ const TRANSACTION_TYPE_CODES: SelectOption[] = [
   { value: 'B2C', label: 'B2C — Business to Consumer' },
 ];
 
+// Codes per UAE VAT Executive Regulation, Federal Decree-Law No. 8 of 2017,
+// Article 61(1) — the only values the PINT-AE schematron (rule ibr-001-ae) accepts.
 const CREDIT_NOTE_REASONS: SelectOption[] = [
-  { value: '1', label: '1 — Cancellation of invoice' },
-  { value: '2', label: '2 — Partial cancellation' },
-  { value: '3', label: '3 — Goods returned' },
-  { value: '4', label: '4 — Price adjustment' },
-  { value: '5', label: '5 — Other' },
+  { value: 'DL8.61.1.A', label: 'Cancellation of the supply after the tax invoice was issued' },
+  { value: 'DL8.61.1.B', label: 'Essential change or alteration in the nature of the supply' },
+  { value: 'DL8.61.1.C', label: 'Change in the previously agreed consideration (e.g. discount)' },
+  { value: 'DL8.61.1.D', label: 'Full or partial return of the goods or services' },
+  { value: 'DL8.61.1.E', label: 'Taxable amount or VAT amount on the tax invoice was incorrect' },
+  { value: 'VD', label: 'Void — the entire invoice is cancelled' },
 ];
 
 const UNIT_CODES: SelectOption[] = [

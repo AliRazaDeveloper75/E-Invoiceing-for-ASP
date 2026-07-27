@@ -26,6 +26,10 @@ from apps.common.constants import (
     INVOICE_TYPE_CREDIT_NOTE,
     INVOICE_TYPE_COMMERCIAL,
     INVOICE_TYPE_CONTINUOUS,
+    ITEM_TYPE_GOODS,
+    ITEM_TYPE_SERVICES,
+    ITEM_TYPE_BOTH,
+    CREDIT_NOTE_DEFAULT_REASON_CODE,
 )
 
 logger = logging.getLogger(__name__)
@@ -45,16 +49,10 @@ NS_CREDITNOTE = {**NS, None: 'urn:oasis:names:specification:ubl:schema:xsd:Credi
 CAC = 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2'
 CBC = 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2'
 
-# Default credit-note reason code (BTAE-03 / DiscrepancyResponse/ResponseCode).
-# Required for credit notes (rule ibr-158-ae) and must come from the UAE
-# "Reasons for credit note" code list (rule ibr-001-ae): one of
-#   DL8.61.1.A / .B / .C / .D / .E  or  VD (void).
-# We default to DL8.61.1.A (most common — adjustment of the taxable amount).
-# 'VD' is avoided as it would forbid the preceding-invoice reference (ibr-055-ae).
-CREDIT_NOTE_VALID_REASON_CODES = (
-    'DL8.61.1.A', 'DL8.61.1.B', 'DL8.61.1.C', 'DL8.61.1.D', 'DL8.61.1.E', 'VD',
-)
-CREDIT_NOTE_DEFAULT_REASON_CODE = 'DL8.61.1.A'
+# Credit-note reason code (BTAE-03 / DiscrepancyResponse/ResponseCode) — the
+# valid code list and default now live in apps.common.constants
+# (CREDIT_NOTE_REASON_CHOICES / CREDIT_NOTE_DEFAULT_REASON_CODE) as the single
+# source of truth shared with the Invoice model/serializer/form.
 
 
 def _cac(tag: str) -> str:
@@ -252,7 +250,7 @@ class UAEInvoiceXMLGenerator:
             # Credit note reason code (BTAE-03) — mandatory (rule ibr-158-ae).
             disc = etree.SubElement(root, _cac('DiscrepancyResponse'))
             resp_code = etree.SubElement(disc, _cbc('ResponseCode'))
-            resp_code.text = getattr(invoice, 'credit_note_reason_code', '') or CREDIT_NOTE_DEFAULT_REASON_CODE
+            resp_code.text = invoice.credit_note_reason_code or CREDIT_NOTE_DEFAULT_REASON_CODE
             reason_text = (invoice.notes or '').strip()
             if reason_text:
                 desc = etree.SubElement(disc, _cbc('Description'))
@@ -342,7 +340,13 @@ class UAEInvoiceXMLGenerator:
         if tax_id:
             _add_party_tax_scheme(party, tax_id, customer.country)
 
-        _add_legal_entity(party, customer.legal_name or customer.name)
+        _add_legal_entity(
+            party,
+            customer.legal_name or customer.name,
+            registration_id=customer.legal_registration_id or '',
+            registration_scheme=customer.legal_registration_type or '',
+            registration_authority=getattr(customer, 'legal_registration_authority', '') or '',
+        )
 
     # ── Payment Means ─────────────────────────────────────────────────────────
 
@@ -476,6 +480,26 @@ class UAEInvoiceXMLGenerator:
             # Name: use dedicated item_name if set, else fall back to first 80 chars of description
             name_el = etree.SubElement(item_el, _cbc('Name'))
             name_el.text = (item.item_name.strip() or item.description[:80]) if item.item_name else item.description[:80]
+
+            # Item type (BTAE-13, UAE mandatory) — Goods/Services/Both, with the
+            # matching classification identifiers required by rules ibr-184/185/186-ae.
+            # Element order per UBL ItemType: AdditionalItemIdentification, then
+            # CommodityClassification, then ClassifiedTaxCategory.
+            item_type = getattr(item, 'item_type', '') or ''
+            if item_type in (ITEM_TYPE_SERVICES, ITEM_TYPE_BOTH) and item.service_accounting_code:
+                add_item_id = etree.SubElement(item_el, _cac('AdditionalItemIdentification'))
+                sac_id = etree.SubElement(add_item_id, _cbc('ID'), schemeID='SAC')
+                sac_id.text = item.service_accounting_code
+            if item_type:
+                commodity = etree.SubElement(item_el, _cac('CommodityClassification'))
+                commodity_code = etree.SubElement(commodity, _cbc('CommodityCode'))
+                commodity_code.text = item_type
+                if item_type in (ITEM_TYPE_GOODS, ITEM_TYPE_BOTH) and item.item_classification_code:
+                    class_code = etree.SubElement(
+                        commodity, _cbc('ItemClassificationCode'),
+                        listID='HS', listVersionID='1.0',
+                    )
+                    class_code.text = item.item_classification_code
 
             # VAT category for this line
             classified_tax = etree.SubElement(item_el, _cac('ClassifiedTaxCategory'))

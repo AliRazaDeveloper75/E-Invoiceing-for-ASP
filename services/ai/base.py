@@ -25,6 +25,24 @@ class AIMessage:
     content: str
 
 
+def normalize_messages(messages: list) -> list[AIMessage]:
+    """
+    Accept either AIMessage objects or plain {'role', 'content'} dicts —
+    several callers (apps/chat/views.py, analytics_service.py) build the
+    conversation as dicts rather than AIMessage instances. Providers should
+    call this at the top of chat() so both shapes work.
+    """
+    normalized = []
+    for m in messages:
+        if isinstance(m, AIMessage):
+            normalized.append(m)
+        elif isinstance(m, dict):
+            normalized.append(AIMessage(role=m['role'], content=m['content']))
+        else:
+            normalized.append(AIMessage(role=m.role, content=m.content))
+    return normalized
+
+
 @dataclass
 class AIChatResponse:
     content: str

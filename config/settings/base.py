@@ -162,6 +162,7 @@ REST_FRAMEWORK = {
         'otp_verify':     '5/5min',
         'password_reset': '3/hour',
         'register':       '5/hour',
+        'chat_public':    '20/hour',   # unauthenticated marketing-site AI chat — costs a real OpenAI call
     },
 }
 
