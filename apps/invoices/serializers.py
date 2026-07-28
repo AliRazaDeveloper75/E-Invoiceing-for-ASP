@@ -11,29 +11,9 @@ from apps.common.constants import (
     INVOICE_STATUS_CHOICES, CURRENCY_CHOICES, VAT_RATE_CHOICES,
     INVOICE_TYPE_CREDIT_NOTE, INVOICE_TYPE_CONTINUOUS,
     PAYMENT_MEANS_CHOICES, ACCOUNTS_TYPE_CHOICES,
-    ITEM_TYPE_CHOICES, ITEM_TYPE_GOODS, ITEM_TYPE_SERVICES, ITEM_TYPE_BOTH,
     CREDIT_NOTE_REASON_CHOICES,
 )
 from .models import Invoice, InvoiceItem, Product, InvoiceDraft
-
-
-def _validate_item_type_codes(attrs: dict) -> None:
-    """
-    Rules ibr-184/185/186-ae: when item_type is Goods/Both, an HS classification
-    code is required; when Services/Both, a Service Accounting Code is required.
-    Only checked when item_type is present in attrs (partial updates may omit it).
-    """
-    item_type = attrs.get('item_type')
-    if not item_type:
-        return
-    if item_type in (ITEM_TYPE_GOODS, ITEM_TYPE_BOTH) and not attrs.get('item_classification_code'):
-        raise serializers.ValidationError({
-            'item_classification_code': 'HS classification code is required when item type is Goods or Both.'
-        })
-    if item_type in (ITEM_TYPE_SERVICES, ITEM_TYPE_BOTH) and not attrs.get('service_accounting_code'):
-        raise serializers.ValidationError({
-            'service_accounting_code': 'Service accounting code is required when item type is Services or Both.'
-        })
 
 
 class InvoiceDraftSerializer(serializers.Serializer):
@@ -85,7 +65,6 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
         model = InvoiceItem
         fields = [
             'id', 'item_name', 'description', 'quantity', 'unit', 'unit_price',
-            'item_type', 'item_classification_code', 'service_accounting_code',
             'vat_rate_type', 'vat_rate_type_display',
             'vat_rate', 'subtotal', 'vat_amount', 'total_amount',
             'sort_order', 'is_active',
@@ -108,27 +87,11 @@ class InvoiceItemCreateSerializer(serializers.Serializer):
         max_digits=15, decimal_places=4,
         min_value=Decimal('0.00')
     )
-    item_type = serializers.ChoiceField(
-        choices=[c[0] for c in ITEM_TYPE_CHOICES],
-        help_text='Goods (G), Services (S), or Both (B) — mandatory UAE field (BTAE-13).',
-    )
-    item_classification_code = serializers.CharField(
-        max_length=50, required=False, default='', allow_blank=True,
-        help_text='HS classification code. Required when item_type is Goods or Both.',
-    )
-    service_accounting_code = serializers.CharField(
-        max_length=50, required=False, default='', allow_blank=True,
-        help_text='Service accounting code (SAC). Required when item_type is Services or Both.',
-    )
     vat_rate_type = serializers.ChoiceField(
         choices=[c[0] for c in VAT_RATE_CHOICES],
         default='standard'
     )
     sort_order = serializers.IntegerField(required=False, default=0, min_value=0)
-
-    def validate(self, attrs):
-        _validate_item_type_codes(attrs)
-        return attrs
 
 
 class InvoiceItemUpdateSerializer(serializers.Serializer):
@@ -145,11 +108,6 @@ class InvoiceItemUpdateSerializer(serializers.Serializer):
         max_digits=15, decimal_places=4,
         min_value=Decimal('0.00'), required=False
     )
-    item_type = serializers.ChoiceField(
-        choices=[c[0] for c in ITEM_TYPE_CHOICES], required=False,
-    )
-    item_classification_code = serializers.CharField(max_length=50, required=False, allow_blank=True)
-    service_accounting_code = serializers.CharField(max_length=50, required=False, allow_blank=True)
     vat_rate_type = serializers.ChoiceField(
         choices=[c[0] for c in VAT_RATE_CHOICES],
         required=False
@@ -159,7 +117,6 @@ class InvoiceItemUpdateSerializer(serializers.Serializer):
     def validate(self, attrs):
         if not attrs:
             raise serializers.ValidationError('At least one field must be provided.')
-        _validate_item_type_codes(attrs)
         return attrs
 
 

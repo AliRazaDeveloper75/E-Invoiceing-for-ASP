@@ -183,9 +183,6 @@ interface LineItem {
   quantity: string;
   unit: string;
   unit_price: string;
-  item_type: string;
-  item_classification_code: string;
-  service_accounting_code: string;
   vat_rate_type: string;
 }
 
@@ -486,7 +483,6 @@ function downloadSampleExcel() {
 type ItemField = {
   item_name: string; description: string; product_reference: string;
   quantity: string; unit: string; unit_price: string;
-  item_type: string; item_classification_code: string; service_accounting_code: string;
   vat_rate_type: string;
 };
 
@@ -543,9 +539,6 @@ function parseExcelToItems(file: File): Promise<{ items: ItemField[]; errors: st
             quantity:          get('quantity') || '1',
             unit:              get('unit'),
             unit_price:        stripZeros(price),
-            item_type:                 '',
-            item_classification_code: '',
-            service_accounting_code:  '',
             vat_rate_type:     validVat.includes(vat) ? vat : 'standard',
           });
         });
@@ -692,10 +685,6 @@ function ItemRow({ idx, register, control, errors, trigger, vatLocked, onRemove,
   products: CatalogProduct[];
   setValue: ReturnType<typeof useForm<InvoiceForm>>['setValue'];
 }) {
-  const itemType = useWatch({ control, name: `items.${idx}.item_type` });
-  const needsHsCode = itemType === 'G' || itemType === 'B';
-  const needsSacCode = itemType === 'S' || itemType === 'B';
-
   function applyProduct(id: string) {
     const p = products.find((x) => x.id === id);
     if (!p) return;
@@ -762,48 +751,6 @@ function ItemRow({ idx, register, control, errors, trigger, vatLocked, onRemove,
           })}
         />
       </Field>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Field label="Item Type" required
-          tooltip="Goods, Services, or Both — mandatory UAE field (BTAE-13)."
-          error={errors.items?.[idx]?.item_type?.message}>
-          <Controller
-            control={control}
-            name={`items.${idx}.item_type`}
-            rules={{ required: 'Required' }}
-            render={({ field }) => (
-              <CustomSelect value={field.value} onChange={field.onChange}
-                options={[
-                  { value: '', label: '— Select —' },
-                  { value: 'G', label: 'Goods' },
-                  { value: 'S', label: 'Services' },
-                  { value: 'B', label: 'Both — Goods and Services' },
-                ]} />
-            )} />
-        </Field>
-        {needsHsCode && (
-          <Field label="HS Classification Code" required
-            tooltip="Harmonized System (HS) classification code for this good."
-            error={errors.items?.[idx]?.item_classification_code?.message}>
-            <input placeholder="e.g. 22334455"
-              className={inputCls(errors.items?.[idx]?.item_classification_code?.message)}
-              {...register(`items.${idx}.item_classification_code`, {
-                required: 'Required when item type is Goods or Both',
-              })} />
-          </Field>
-        )}
-        {needsSacCode && (
-          <Field label="Service Accounting Code" required
-            tooltip="Service Accounting Code (SAC) for this service."
-            error={errors.items?.[idx]?.service_accounting_code?.message}>
-            <input placeholder="e.g. 998311"
-              className={inputCls(errors.items?.[idx]?.service_accounting_code?.message)}
-              {...register(`items.${idx}.service_accounting_code`, {
-                required: 'Required when item type is Services or Both',
-              })} />
-          </Field>
-        )}
-      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Quantity" required
@@ -1515,7 +1462,7 @@ export default function NewInvoicePage() {
       currency: 'AED', exchange_rate: '1.000000', discount_amount: '0.00',
       is_reverse_charge: false, import_subtype: '',
       items: [{ item_name: '', description: '', product_reference: '', quantity: '1', unit: '',
-                unit_price: '', item_type: '', item_classification_code: '', service_accounting_code: '',
+                unit_price: '',
                 vat_rate_type: 'standard',
               }],
     },
@@ -1814,7 +1761,7 @@ export default function NewInvoicePage() {
       is_reverse_charge: !!card.isReverseCharge, import_subtype: '',
       supplier_location: supplierLoc,   // keep auto-filled from company profile
       items: [{ item_name: '', description: '', product_reference: '', quantity: '1', unit: '',
-                unit_price: '', item_type: '', item_classification_code: '', service_accounting_code: '',
+                unit_price: '',
                 vat_rate_type: card.vatRate,
               }],
     });
@@ -1855,9 +1802,6 @@ export default function NewInvoicePage() {
           quantity: parseFloat(it.quantity),
           unit: it.unit || '',
           unit_price: parseFloat(it.unit_price),
-          item_type: it.item_type,
-          item_classification_code: it.item_classification_code || '',
-          service_accounting_code: it.service_accounting_code || '',
           vat_rate_type: it.vat_rate_type,
         })),
       };
@@ -2605,7 +2549,7 @@ export default function NewInvoicePage() {
             })()}
             <button type="button"
               onClick={() => append({ item_name: '', description: '', product_reference: '', quantity: '1', unit: '',
-                unit_price: '', item_type: '', item_classification_code: '', service_accounting_code: '',
+                unit_price: '',
                 vat_rate_type: vatLocked ? 'out_of_scope' : (selected.vatRate ?? 'standard'),
               })}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl

@@ -235,9 +235,6 @@ class InvoiceItemService:
             quantity=Decimal(str(data['quantity'])),
             unit=data.get('unit', '').strip(),
             unit_price=Decimal(str(data['unit_price'])),
-            item_type=data.get('item_type', ''),
-            item_classification_code=data.get('item_classification_code', '').strip(),
-            service_accounting_code=data.get('service_accounting_code', '').strip(),
             vat_rate_type=data.get('vat_rate_type', 'standard'),
             sort_order=data.get('sort_order', max_order),
         )
@@ -270,7 +267,6 @@ class InvoiceItemService:
 
         updatable = [
             'item_name', 'description', 'quantity', 'unit', 'unit_price',
-            'item_type', 'item_classification_code', 'service_accounting_code',
             'vat_rate_type', 'sort_order',
         ]
         for field in updatable:

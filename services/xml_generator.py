@@ -26,9 +26,6 @@ from apps.common.constants import (
     INVOICE_TYPE_CREDIT_NOTE,
     INVOICE_TYPE_COMMERCIAL,
     INVOICE_TYPE_CONTINUOUS,
-    ITEM_TYPE_GOODS,
-    ITEM_TYPE_SERVICES,
-    ITEM_TYPE_BOTH,
     CREDIT_NOTE_DEFAULT_REASON_CODE,
 )
 
@@ -351,8 +348,8 @@ class UAEInvoiceXMLGenerator:
         _add_legal_entity(
             party,
             customer.legal_name or customer.name,
-            registration_id=customer.legal_registration_id or '',
-            registration_scheme=customer.legal_registration_type or '',
+            registration_id=getattr(customer, 'legal_registration_id', '') or '',
+            registration_scheme=getattr(customer, 'legal_registration_type', '') or '',
             registration_authority=getattr(customer, 'legal_registration_authority', '') or '',
         )
 
@@ -488,26 +485,6 @@ class UAEInvoiceXMLGenerator:
             # Name: use dedicated item_name if set, else fall back to first 80 chars of description
             name_el = etree.SubElement(item_el, _cbc('Name'))
             name_el.text = (item.item_name.strip() or item.description[:80]) if item.item_name else item.description[:80]
-
-            # Item type (BTAE-13, UAE mandatory) — Goods/Services/Both, with the
-            # matching classification identifiers required by rules ibr-184/185/186-ae.
-            # Element order per UBL ItemType: AdditionalItemIdentification, then
-            # CommodityClassification, then ClassifiedTaxCategory.
-            item_type = getattr(item, 'item_type', '') or ''
-            if item_type in (ITEM_TYPE_SERVICES, ITEM_TYPE_BOTH) and item.service_accounting_code:
-                add_item_id = etree.SubElement(item_el, _cac('AdditionalItemIdentification'))
-                sac_id = etree.SubElement(add_item_id, _cbc('ID'), schemeID='SAC')
-                sac_id.text = item.service_accounting_code
-            if item_type:
-                commodity = etree.SubElement(item_el, _cac('CommodityClassification'))
-                commodity_code = etree.SubElement(commodity, _cbc('CommodityCode'))
-                commodity_code.text = item_type
-                if item_type in (ITEM_TYPE_GOODS, ITEM_TYPE_BOTH) and item.item_classification_code:
-                    class_code = etree.SubElement(
-                        commodity, _cbc('ItemClassificationCode'),
-                        listID='HS', listVersionID='1.0',
-                    )
-                    class_code.text = item.item_classification_code
 
             # VAT category for this line
             classified_tax = etree.SubElement(item_el, _cac('ClassifiedTaxCategory'))

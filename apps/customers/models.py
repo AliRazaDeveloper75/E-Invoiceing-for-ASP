@@ -18,7 +18,7 @@ from django.core.exceptions import ValidationError
 from apps.common.models import BaseModel
 from apps.common.constants import (
     TRANSACTION_TYPE_CHOICES, TRANSACTION_B2B,
-    TRN_LENGTH, TIN_LENGTH, LEGAL_REG_TYPE_CHOICES,
+    TRN_LENGTH, TIN_LENGTH,
 )
 
 
@@ -116,30 +116,6 @@ class Customer(BaseModel):
         default='',
         validators=[validate_vat_number],
         help_text='VAT registration number for international (non-UAE) customers.'
-    )
-
-    # ── Legal Registration (BTAE-11/12/15 — buyer legal entity in UBL) ────────
-    legal_registration_id = models.CharField(
-        max_length=100,
-        blank=True,
-        default='',
-        help_text='Buyer legal entity registration number (e.g. trade license, CR number). '
-                  'Used in UBL PartyLegalEntity/CompanyID (BTAE-11).',
-    )
-    legal_registration_type = models.CharField(
-        max_length=5,
-        choices=LEGAL_REG_TYPE_CHOICES,
-        blank=True,
-        default='',
-        help_text='Type of legal registration document (TL=Trade License, CRN=CR Number, etc.). '
-                  'Used as schemeAgencyID on PartyLegalEntity/CompanyID (BTAE-15).',
-    )
-    legal_registration_authority = models.CharField(
-        max_length=150,
-        blank=True,
-        default='',
-        help_text='Issuing authority of the legal registration (BTAE-12). Required when '
-                  'legal_registration_type is Trade License (rule ibr-172-ae).',
     )
 
     # ── PEPPOL ────────────────────────────────────────────────────────────────

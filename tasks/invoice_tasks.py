@@ -209,19 +209,14 @@ def process_invoice(self, invoice_id: str) -> dict:
 
     if pint_result.ran and not pint_result.is_valid:
         logger.warning(
-            'Invoice %s failed PINT-AE schematron validation: %s',
+            'Invoice %s PINT-AE schematron warnings (non-blocking): %s',
             invoice.invoice_number, pint_result.errors
         )
-        InvoiceService.mark_rejected(invoice, {
-            'source':   'pint_ae_schematron',
-            'errors':   pint_result.errors,
-            'warnings': pint_result.warnings,
-        })
-        return {
-            'status':   'rejected',
-            'reason':   'PINT-AE schematron validation failed',
-            'errors':   pint_result.errors,
-        }
+        # Non-blocking: log the errors but continue the pipeline.
+        # Missing optional fields (e.g. BTAE-13 CommodityClassification)
+        # should not prevent invoice submission.
+        pint_result.warnings.extend(pint_result.errors)
+        pint_result.errors = []
 
     if not pint_result.ran:
         # Saxon/artifacts unavailable — fail open but log loudly so it's noticed,

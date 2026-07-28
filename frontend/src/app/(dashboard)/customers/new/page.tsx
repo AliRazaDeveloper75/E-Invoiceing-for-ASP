@@ -33,9 +33,6 @@ interface CustomerForm {
   trn_issue_date: string;
   trn_expiry_date: string;
   vat_number: string;
-  legal_registration_id: string;
-  legal_registration_type: string;
-  legal_registration_authority: string;
   street_address: string;
   city: string;
   country: string;
@@ -125,9 +122,6 @@ export default function NewCustomerPage() {
         customer_type: c.customer_type ?? 'b2b',
         trn: c.trn ?? '', trn_issue_date: c.trn_issue_date ?? '',
         trn_expiry_date: c.trn_expiry_date ?? '', vat_number: c.vat_number ?? '',
-        legal_registration_id: c.legal_registration_id ?? '',
-        legal_registration_type: c.legal_registration_type ?? '',
-        legal_registration_authority: c.legal_registration_authority ?? '',
         street_address: c.street_address ?? '', city: c.city ?? '',
         country: c.country ?? 'AE', email: c.email ?? '', notes: c.notes ?? '',
       });
@@ -141,9 +135,6 @@ export default function NewCustomerPage() {
   const logoFile = watch('logo');
   const needsTRN = customerType === 'b2b' || customerType === 'b2g';
   const needsVAT = false;
-  const legalRegType = watch('legal_registration_type');
-  // Rule ibr-172-ae: issuing authority is required only when type is Trade License.
-  const needsRegAuthority = legalRegType === 'TL';
   const [vatSameAsTrn, setVatSameAsTrn] = useState(false);
 
   useEffect(() => {
@@ -166,9 +157,6 @@ export default function NewCustomerPage() {
       if (data.trn_issue_date)  fd.append('trn_issue_date', data.trn_issue_date);
       if (data.trn_expiry_date) fd.append('trn_expiry_date', data.trn_expiry_date);
       fd.append('vat_number', data.vat_number || '');
-      fd.append('legal_registration_id', data.legal_registration_id || '');
-      fd.append('legal_registration_type', data.legal_registration_type || '');
-      fd.append('legal_registration_authority', data.legal_registration_authority || '');
       fd.append('street_address', data.street_address || '');
       fd.append('city', data.city || '');
       fd.append('country', data.country);
@@ -400,48 +388,6 @@ export default function NewCustomerPage() {
               </div>
             </label>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
-              <Input
-                label="Legal Registration Number (optional)"
-                tooltip="Trade license or CR number, if the customer is a registered legal entity. Leave blank if not applicable."
-                placeholder="e.g. CN-1234567"
-                error={errors.legal_registration_id?.message}
-                {...register('legal_registration_id')}
-              />
-              <Controller
-                name="legal_registration_type"
-                control={control}
-                render={({ field, fieldState }) => (
-                  <Select
-                    label="Registration Type (optional)"
-                    tooltip="Type of legal registration document."
-                    value={field.value ?? ''}
-                    onChange={field.onChange}
-                    error={fieldState.error?.message}
-                    options={[
-                      { value: '', label: '— None —' },
-                      { value: 'TL', label: 'Trade License (TL)' },
-                      { value: 'CRN', label: 'Commercial Registration Number (CRN)' },
-                      { value: 'EID', label: 'Emirates ID (EID)' },
-                      { value: 'PAS', label: 'Passport (PAS)' },
-                      { value: 'CD', label: 'Commercial Document (CD)' },
-                    ]}
-                  />
-                )}
-              />
-            </div>
-            {legalRegType && (
-              <Input
-                label="Issuing Authority"
-                required={needsRegAuthority}
-                tooltip="The authority that issued the registration, e.g. 'Department of Economic Development'. Required for Trade License registrations."
-                placeholder="Department of Economic Development"
-                error={errors.legal_registration_authority?.message}
-                {...register('legal_registration_authority', {
-                  validate: (v) => !needsRegAuthority || !!v?.trim() || 'Issuing authority is required for a Trade License registration',
-                })}
-              />
-            )}
           </SectionCard>
 
           {/* Address & Contact */}

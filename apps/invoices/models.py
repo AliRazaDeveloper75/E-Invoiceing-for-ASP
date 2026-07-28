@@ -27,7 +27,7 @@ from apps.common.constants import (
     INVOICE_STATUS_DRAFT, INVOICE_TYPE_TAX, TRANSACTION_B2B, CURRENCY_AED,
     UAE_VAT_RATE, FTA_STATUS_CHOICES, PAYMENT_MEANS_CREDIT_TRANSFER,
     INVOICE_STATUS_CANCELLED, INVOICE_STATUS_DEACTIVATED,
-    ACCOUNTS_TYPE_CHOICES, ITEM_TYPE_CHOICES, CREDIT_NOTE_REASON_CHOICES,
+    ACCOUNTS_TYPE_CHOICES, CREDIT_NOTE_REASON_CHOICES,
 )
 
 
@@ -411,28 +411,6 @@ class InvoiceItem(BaseModel):
         decimal_places=4,
         validators=[MinValueValidator(Decimal('0.00'))],
         help_text='Price per unit (before VAT).'
-    )
-
-    # ── Item Type (BTAE-13 — UAE mandatory) ─────────────────────────────────────
-    item_type = models.CharField(
-        max_length=1,
-        choices=ITEM_TYPE_CHOICES,
-        blank=True,
-        default='',
-        help_text='Goods (G), Services (S), or Both (B) — UBL CommodityClassification/CommodityCode.',
-    )
-    item_classification_code = models.CharField(
-        max_length=50,
-        blank=True,
-        default='',
-        help_text='HS classification code. Required when item_type is Goods or Both (rule ibr-184/186-ae).',
-    )
-    service_accounting_code = models.CharField(
-        max_length=50,
-        blank=True,
-        default='',
-        help_text='Service accounting code (BTAE-17, scheme SAC). Required when item_type is '
-                  'Services or Both (rule ibr-185/186-ae).',
     )
 
     # ── VAT ───────────────────────────────────────────────────────────────────
