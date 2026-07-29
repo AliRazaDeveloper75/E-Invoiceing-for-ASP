@@ -222,7 +222,7 @@ function UAEPhoneInput({ value, onChange, hasError, onKeyDown }: PhoneInputProps
 
 // ─── Environment Setup ────────────────────────────────────────────────────────
 
-const AI_AGENT_URL = 'http://127.0.0.1:8000';
+const AI_AGENT_URL = 'http://127.0.0.1:8001';
 const AI_AGENT_BASE = AI_AGENT_URL.replace(/\/chat\/?$/, '');
 
 // Key used to persist the logged-in user in the browser so they don't have
