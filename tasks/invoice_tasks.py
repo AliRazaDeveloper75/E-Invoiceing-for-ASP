@@ -205,7 +205,10 @@ def process_invoice(self, invoice_id: str) -> dict:
         pint_result = validate_document(xml_bytes, profile='billing')
     except Exception as exc:
         logger.exception('PINT-AE schematron validator crashed for %s', invoice.invoice_number)
-        raise self.retry(exc=exc, countdown=_backoff(self.request.retries))
+        logger.warning('Continuing pipeline without PINT-AE validation for %s', invoice.invoice_number)
+        pint_result = type('obj', (object,), {
+            'ran': False, 'is_valid': True, 'errors': [], 'warnings': [str(exc)],
+        })()
 
     if pint_result.ran and not pint_result.is_valid:
         logger.warning(

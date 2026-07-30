@@ -364,13 +364,19 @@ class BuyerInvoiceApproveView(APIView):
             'status', 'updated_at',
         ])
 
-        # Trigger the ASP submission pipeline (async, sync fallback).
+        # Trigger the ASP submission pipeline (async, background-thread fallback).
         try:
             from tasks.invoice_tasks import process_invoice
             try:
                 process_invoice.apply_async(args=[str(invoice.id)], queue='invoice_processing')
             except Exception:
-                process_invoice.apply(args=[str(invoice.id)])
+                import threading
+                t = threading.Thread(
+                    target=process_invoice,
+                    args=[str(invoice.id)],
+                    daemon=True,
+                )
+                t.start()
         except Exception:
             logger.warning('Buyer approve: pipeline trigger failed for %s', invoice.invoice_number)
 
