@@ -301,8 +301,8 @@ def _resolve_receiver_id(invoice) -> str:
     customer = getattr(invoice, 'customer', None)
     if not customer:
         return ''
-    # Check for explicit peppol_id field
-    pid = getattr(customer, 'peppol_id', '') or ''
+    # Check for explicit peppol_endpoint field (e.g. '9922:OPTBCNTRLP1004')
+    pid = getattr(customer, 'peppol_endpoint', '') or ''
     if pid:
         return pid
     # Derive from TRN using UAE scheme 0235
