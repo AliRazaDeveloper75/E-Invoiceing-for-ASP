@@ -186,6 +186,25 @@ def transmit_invoice_via_as4(self, invoice_id: str, receiver_participant_id: str
             'AS4 transmission success: invoice=%s message_id=%s duration=%dms',
             invoice.invoice_number, result.message_id, result.duration_ms,
         )
+
+        # Sender-side Corner 5 reporting — UAE 5-corner model requires BOTH the
+        # sender and receiver of an invoice to independently report a TDD to the
+        # Tax Authority. Best-effort: a TDD failure must not fail/retry the
+        # invoice transmission itself (the invoice has already been delivered).
+        try:
+            from services.peppol.tdd import submit_tdd_for_sent
+            tdd_result = submit_tdd_for_sent(
+                invoice_xml, sender=sender_id, transport_header_id=result.message_id,
+            )
+            if tdd_result:
+                logger.info('Sender-side AE TDD submitted for invoice %s -> %s',
+                           invoice.invoice_number, tdd_result.receiver)
+            else:
+                logger.warning('Sender-side AE TDD submission incomplete for invoice %s: %s',
+                              invoice.invoice_number, tdd_result.errors)
+        except Exception:
+            logger.exception('Sender-side AE TDD submission crashed for invoice %s', invoice.invoice_number)
+
         return {
             'success':    True,
             'message_id': result.message_id,
