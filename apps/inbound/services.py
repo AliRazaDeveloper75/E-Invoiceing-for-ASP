@@ -5,6 +5,7 @@ import logging
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
+from django.db import IntegrityError
 
 logger = logging.getLogger(__name__)
 
@@ -137,12 +138,16 @@ class InboundInvoiceService:
         supplier_trn = supplier_trn or (sender_id.split(':')[-1] if ':' in sender_id else sender_id)
         supplier = Supplier.objects.filter(trn=supplier_trn, receiving_company=receiving_company).first()
         if supplier is None:
-            supplier = Supplier.objects.create(
-                name=supplier_name or f'PEPPOL Sender {supplier_trn}',
-                trn=supplier_trn or '000000000000000',
-                email=f'peppol+{(supplier_trn or message_id)[:30]}@inbound.e-numerak.com',
-                receiving_company=receiving_company,
-            )
+            try:
+                supplier = Supplier.objects.create(
+                    name=supplier_name or f'PEPPOL Sender {supplier_trn}',
+                    trn=supplier_trn or '000000000000000',
+                    email=f'peppol+{(supplier_trn or message_id)[:30]}@inbound.e-numerak.com',
+                    receiving_company=receiving_company,
+                )
+            except IntegrityError:
+                # Concurrent AS4 delivery created it between the check and here.
+                supplier = Supplier.objects.get(trn=supplier_trn, receiving_company=receiving_company)
 
         invoice = InboundInvoice.objects.create(
             supplier=supplier,
