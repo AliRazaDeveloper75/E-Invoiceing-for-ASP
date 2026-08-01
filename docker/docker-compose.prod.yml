@@ -85,7 +85,7 @@ services:
       target: runtime
     image: einvoicing-backend:prod
     restart: unless-stopped
-    command: celery -A config worker --loglevel=info --queues=invoice_processing,celery --concurrency=4 --max-tasks-per-child=100
+    command: celery -A config worker --loglevel=info --queues=invoice_processing,celery,peppol_transmission,ocr_processing,cert_monitoring,fraud_analysis --concurrency=4 --max-tasks-per-child=100
     env_file:
       - ../.env.prod
     environment:
