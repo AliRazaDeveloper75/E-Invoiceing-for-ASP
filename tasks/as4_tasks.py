@@ -161,8 +161,20 @@ def transmit_invoice_via_as4(self, invoice_id: str, receiver_participant_id: str
         logger.info('AS4 sandbox capture: invoice=%s', invoice.invoice_number)
         return {'success': True, 'sandbox': True, **result}
 
-    # Real AS4 transmission
-    transport = AS4Transport()
+    # Real AS4 transmission — resolve the receiver's AS4 endpoint via SMP first;
+    # AS4Transport is fixed to a single endpoint_url at construction time.
+    from services.smp_client import SMPClient, PEPPOL_INVOICE_DOCTYPE
+    endpoint = SMPClient().lookup(receiver_participant_id, PEPPOL_INVOICE_DOCTYPE)
+    if not endpoint:
+        logger.error(
+            'transmit_invoice_via_as4: SMP lookup failed for receiver %s (invoice %s)',
+            receiver_participant_id, invoice_id,
+        )
+        _update_peppol_message_failed(peppol_msg, 'SMP lookup failed — receiver endpoint not found.')
+        backoff = _backoff(self.request.retries)
+        raise self.retry(exc=RuntimeError('SMP lookup failed'), countdown=backoff)
+
+    transport = AS4Transport(sender_participant_id=sender_id, endpoint_url=endpoint.transport_url)
     try:
         result = transport.send(
             receiver_participant_id=receiver_participant_id,
