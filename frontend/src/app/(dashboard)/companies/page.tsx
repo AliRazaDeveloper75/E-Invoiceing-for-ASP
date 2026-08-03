@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
@@ -31,6 +32,13 @@ async function fetcher() {
   return r.data.data;
 }
 
+function ModalPortal({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  return createPortal(children, document.body);
+}
+
 interface CompanyForm {
   name: string;
   legal_name: string;
@@ -57,13 +65,22 @@ function ViewModal({ company, onClose }: { company: Company; onClose: () => void
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 sm:p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent">
+    <ModalPortal>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 sm:p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent">
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-blue-100/60">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
-              <Building2 className="h-5 w-5 text-white" />
-            </div>
+            {company.logo_url ? (
+              <img
+                src={company.logo_url}
+                alt={`${company.name} logo`}
+                className="h-10 w-10 rounded-xl object-cover border border-gray-100 shadow-md shadow-blue-500/10 shrink-0"
+              />
+            ) : (
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
+                <Building2 className="h-5 w-5 text-white" />
+              </div>
+            )}
             <div className="min-w-0">
               <h2 className="font-bold text-gray-900 truncate">{company.name}</h2>
               {company.legal_name && company.legal_name !== company.name && (
@@ -102,6 +119,7 @@ function ViewModal({ company, onClose }: { company: Company; onClose: () => void
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
 
@@ -145,7 +163,8 @@ function DeleteModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 sm:p-4">
+    <ModalPortal>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 sm:p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-red-200/60 before:to-transparent">
         <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-red-100/60">
           <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
@@ -214,6 +233,7 @@ function DeleteModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
 
@@ -540,6 +560,7 @@ function CompanyFormPanel({
 export default function CompaniesPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const canCreate = isAdmin || user?.role === 'supplier';
 
   const { data: companies = [], mutate, isLoading } = useSWR<Company[]>('/companies/', fetcher);
 
@@ -551,19 +572,24 @@ export default function CompaniesPage() {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  function openCreate() { setEditTarget(null); setPanelMode('create'); }
+  function openCreate() {
+    if (!canCreate) return;
+    setEditTarget(null); setPanelMode('create');
+  }
   function openEdit(c: Company) { setEditTarget(c); setPanelMode('edit'); }
   function closePanel() { setPanelMode(null); setEditTarget(null); }
 
   const searchParams = useSearchParams();
   const router = useRouter();
   useEffect(() => {
-    if (searchParams.get('new') === '1') {
+    if (searchParams.get('new') === '1' && canCreate) {
       setPanelMode('create');
       setEditTarget(null);
+    }
+    if (searchParams.get('new') === '1') {
       router.replace('/companies');
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, canCreate]);
 
   function toggleSelect(id: string) {
     setSelected(prev => {
@@ -613,7 +639,7 @@ export default function CompaniesPage() {
               {companies.length > 0 ? `${companies.length} total` : 'Manage your companies'}
             </p>
           </div>
-          {!panelMode && (
+          {!panelMode && canCreate && (
             <button
               onClick={openCreate}
               className="inline-flex items-center gap-2 rounded-xl bg-white text-blue-950 hover:bg-blue-50 px-5 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 shrink-0"
@@ -684,13 +710,19 @@ export default function CompaniesPage() {
             <Building2 className="h-7 w-7 text-blue-400" />
           </div>
           <p className="text-base font-semibold text-gray-900">No companies yet</p>
-          <p className="text-sm text-gray-500 mt-1">Create your first company to start issuing invoices.</p>
-          <button
-            onClick={openCreate}
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-          >
-            <Plus className="h-4 w-4" /> Add Company
-          </button>
+          <p className="text-sm text-gray-500 mt-1">
+            {canCreate
+              ? 'Create your first company to start issuing invoices.'
+              : 'You are not a member of any company yet.'}
+          </p>
+          {canCreate && (
+            <button
+              onClick={openCreate}
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+            >
+              <Plus className="h-4 w-4" /> Add Company
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid gap-4">
@@ -723,11 +755,19 @@ export default function CompaniesPage() {
                           }
                         </button>
                       )}
-                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
-                        <span className="text-white font-bold text-sm">
-                          {company.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
+                      {company.logo_url ? (
+                        <img
+                          src={company.logo_url}
+                          alt={`${company.name} logo`}
+                          className="h-10 w-10 rounded-xl object-cover border border-gray-100 shadow-md shadow-blue-500/10 shrink-0"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+                          <span className="text-white font-bold text-sm">
+                            {company.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <h3 className="font-semibold text-gray-900 truncate">{company.name}</h3>
                         {company.legal_name && company.legal_name !== company.name && (
@@ -794,11 +834,19 @@ export default function CompaniesPage() {
                         }
                       </button>
                     )}
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
-                      <span className="text-white font-bold text-sm">
-                        {company.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
+                    {company.logo_url ? (
+                      <img
+                        src={company.logo_url}
+                        alt={`${company.name} logo`}
+                        className="h-10 w-10 rounded-xl object-cover border border-gray-100 shadow-md shadow-blue-500/10 shrink-0"
+                      />
+                    ) : (
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+                        <span className="text-white font-bold text-sm">
+                          {company.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <h3 className="font-semibold text-gray-900 truncate">{company.name}</h3>
                       {company.legal_name && company.legal_name !== company.name && (

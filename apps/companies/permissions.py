@@ -100,3 +100,21 @@ class IsCompanyAdminOrReadOnly(BasePermission):
         if membership is None:
             return False
         return membership.is_admin
+
+
+class CanCreateCompany(BasePermission):
+    """
+    Allow platform admins and suppliers to create companies.
+
+    Reads (GET/HEAD/OPTIONS) are allowed for any authenticated user so that
+    members of any role can still list the companies they belong to. Only the
+    write path (POST) is restricted by platform role.
+    """
+    message = 'Only admin and supplier roles can create companies.'
+
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        if request.method in ('GET', 'HEAD', 'OPTIONS'):
+            return True
+        return request.user.role in ('admin', 'supplier')

@@ -19,6 +19,8 @@ from .views import (
     AdminInvoiceTimelineView,
     AdminPaymentListView,
     AdminPaymentVoidView,
+    AdminDemoRequestListView,
+    AdminDemoRequestDetailView,
     AdminContactMessageListView,
     AdminContactMessageDetailView,
 )
@@ -47,6 +49,10 @@ urlpatterns = [
     # ── Payment Management ────────────────────────────────────────────────────
     path('payments/',                               AdminPaymentListView.as_view(),      name='payment-list'),
     path('payments/<uuid:pk>/',                     AdminPaymentVoidView.as_view(),      name='payment-void'),
+
+    # ── Demo Requests ─────────────────────────────────────────────────────────
+    path('demo-requests/',                          AdminDemoRequestListView.as_view(),     name='demo-list'),
+    path('demo-requests/<uuid:pk>/',                AdminDemoRequestDetailView.as_view(),   name='demo-detail'),
 
     # ── Contact Messages ──────────────────────────────────────────────────────
     path('contact-messages/',                       AdminContactMessageListView.as_view(),   name='contact-list'),

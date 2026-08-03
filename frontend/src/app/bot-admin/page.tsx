@@ -368,7 +368,7 @@ export default function AdminDashboard() {
   const selectedMsgs = selectedUser ? (conversations[selectedUser.id] || []) : [];
 
   return (
-    <div style={S.root}>
+    <div dir="ltr" style={S.root}>
       {/* ── Header ── */}
       <header style={S.header}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>

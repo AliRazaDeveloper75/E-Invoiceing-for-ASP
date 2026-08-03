@@ -71,9 +71,12 @@ def _resolve_invoice(request, invoice_id: str):
     if not company:
         return None, None, error_response('Invoice not found.', status_code=status.HTTP_404_NOT_FOUND)
 
-    # Non-admin users can only access invoices they personally created
+    # Non-admin users can only access invoices they personally created.
+    # Buyer-created (self-billed) invoices are visible to company members too.
     if invoice.created_by_id != request.user.id:
-        return None, None, error_response('Invoice not found.', status_code=status.HTTP_404_NOT_FOUND)
+        from apps.common.constants import ROLE_BUYER
+        if getattr(invoice.created_by, 'role', None) != ROLE_BUYER:
+            return None, None, error_response('Invoice not found.', status_code=status.HTTP_404_NOT_FOUND)
 
     return invoice, membership, None
 

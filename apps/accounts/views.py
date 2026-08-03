@@ -20,7 +20,6 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 from apps.common.utils import success_response, error_response
 from .serializers import (
-    UserRegistrationSerializer,
     UserSerializer,
     UserUpdateSerializer,
     ChangePasswordSerializer,
@@ -110,51 +109,18 @@ class RegisterView(APIView):
     """
     POST /api/v1/auth/register/
 
-    Register a new user. Returns JWT tokens on success.
-    No authentication required.
+    Registration is closed. Users join the platform via invitation only
+    (admin onboarding invites / buyer invites / inbound supplier invites).
+    Returns 403 for any request.
     """
     authentication_classes = []   # skip JWT auth — stale cookies must not cause 401
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = UserRegistrationSerializer(data=request.data)
-        if not serializer.is_valid():
-            return error_response(
-                message='Registration failed.',
-                details=serializer.errors,
-                status_code=status.HTTP_400_BAD_REQUEST
-            )
-
-        data = serializer.validated_data
-        try:
-            user = AuthService.register_user(
-                email=data['email'],
-                password=data['password'],
-                first_name=data['first_name'],
-                last_name=data['last_name'],
-                role=data.get('role', 'supplier'),
-            )
-        except DRFValidationError as exc:
-            details = exc.detail if isinstance(exc.detail, dict) else {'error': exc.detail}
-            return error_response(
-                message='Registration failed.',
-                details=details,
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            AuthService.send_verification_email(user)
-        except Exception as exc:
-            logger.warning('Verification email failed for %s: %s', user.email, exc)
-
-        access, refresh = _issue_tokens(user)
-        return success_response(
-            data={
-                'user': UserSerializer(user).data,
-                'tokens': {'access': access, 'refresh': refresh},
-            },
-            message='Registration successful.',
-            status_code=status.HTTP_201_CREATED
+        # Public self-registration is closed — users join via invitation only.
+        return error_response(
+            'Registration is closed — users join via invitation only.',
+            status_code=status.HTTP_403_FORBIDDEN,
         )
 
 

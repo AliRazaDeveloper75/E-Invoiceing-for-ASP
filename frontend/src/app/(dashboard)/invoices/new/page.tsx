@@ -385,7 +385,7 @@ function Section({ title, subtitle, icon, children }: {
 }) {
   return (
     <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-200 overflow-hidden">
-      <div className="px-4 sm:px-5 py-3 border-b border-gray-100 bg-gradient-to-r from-gray-900 via-blue-950 to-indigo-900 flex items-start gap-2.5 sm:gap-3 relative overflow-hidden">
+      <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-900 via-blue-950 to-indigo-900 flex items-start gap-3 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid opacity-[0.04] pointer-events-none" />
         <div className="absolute top-0 right-0 w-48 h-48 bg-blue-400/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-400/10 rounded-full blur-2xl pointer-events-none" />
@@ -396,10 +396,10 @@ function Section({ title, subtitle, icon, children }: {
         )}
         <div className="min-w-0 relative z-10">
           <p className="font-bold text-white text-sm tracking-tight">{title}</p>
-          {subtitle && <p className="text-xs text-blue-200/80 mt-0.5">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-blue-200/80 mt-1">{subtitle}</p>}
         </div>
       </div>
-      <div className="p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4">{children}</div>
+      <div className="p-4 sm:p-6 md:p-7 space-y-5">{children}</div>
     </div>
   );
 }
@@ -696,7 +696,7 @@ function ItemRow({ idx, register, control, errors, trigger, vatLocked, onRemove,
   }
 
   return (
-    <div className="rounded-xl border-2 border-gray-200 bg-white p-4 space-y-3 shadow-sm hover:shadow-md transition-shadow duration-200">
+    <div className="rounded-xl border-2 border-gray-200 bg-white p-4 sm:p-5 space-y-4 shadow-sm hover:shadow-md transition-shadow duration-200">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Item #{idx + 1}</span>
         {canRemove && (
@@ -711,7 +711,7 @@ function ItemRow({ idx, register, control, errors, trigger, vatLocked, onRemove,
         <CatalogPicker products={products} onSelect={applyProduct} />
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Item / Service Name" faf required
           error={errors.items?.[idx]?.item_name?.message}
           tooltip="Short name for this product or service. Max 5 words, 120 characters.">
@@ -752,7 +752,7 @@ function ItemRow({ idx, register, control, errors, trigger, vatLocked, onRemove,
         />
       </Field>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         <Field label="Quantity" required
           tooltip="Number of units supplied. Must be greater than 0."
           error={errors.items?.[idx]?.quantity?.message}>
@@ -762,7 +762,8 @@ function ItemRow({ idx, register, control, errors, trigger, vatLocked, onRemove,
               validate: (v) => (parseFloat(v) > 0) || 'Must be greater than 0',
             })} />
         </Field>
-        <Field label="Unit" required tooltip="Unit of measure.">
+        <Field label="Unit" required tooltip="Unit of measure."
+          error={errors.items?.[idx]?.unit?.message}>
           <Controller control={control} name={`items.${idx}.unit`} rules={{ required: 'Required' }}
             render={({ field }) => (
               <CustomSelect value={field.value} onChange={field.onChange}
@@ -1962,10 +1963,10 @@ export default function NewInvoicePage() {
 
       {/* Two-column layout: form + preview. On the Review step we go full-width
           and show the invoice as one professional document instead. */}
-      <div className={step === 5 ? '' : 'grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 items-start'}>
+      <div className={step === 5 ? '' : 'grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-8 items-start'}>
 
         {/* ── LEFT: Form ── */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4 min-w-0" noValidate>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6 min-w-0" noValidate>
 
           {/* STEP 0 — Your Info (seller) */}
           {step === 0 && (

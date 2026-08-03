@@ -6,6 +6,7 @@ import logging
 
 from django.contrib.auth import get_user_model
 
+from apps.common.constants import ROLE_BUYER
 from .models import Notification
 
 logger = logging.getLogger(__name__)
@@ -43,16 +44,46 @@ class NotificationService:
             except Exception as exc:
                 logger.warning('Admin notification create failed (%s): %s', event, exc)
 
+    @staticmethod
+    def notify_company_roles(company, *, roles, category, event, title, message='', link=''):
+        """Notify active members of a company whose membership role is in `roles`."""
+        if not company:
+            return
+        members = (
+            company.members
+            .filter(role__in=roles, user__is_active=True)
+            .select_related('user')
+        )
+        made = 0
+        for membership in members:
+            if NotificationService.notify(
+                membership.user, category=category, event=event,
+                title=title, message=message, link=link,
+            ):
+                made += 1
+        return made
+
     # ── Domain helpers ────────────────────────────────────────────────────────
 
     @staticmethod
     def invoice_event(invoice, *, event, title, message=''):
-        """Notify the user who created the invoice."""
+        """Notify the user who created the invoice.
+
+        The link points at the correct detail page for the recipient: buyers
+        (self-billed invoices) go to the Buyer Portal detail, everyone else to
+        the regular invoices detail.
+        """
+        creator = getattr(invoice, 'created_by', None)
+        link = (
+            f'/buyer/invoices/{invoice.id}'
+            if getattr(creator, 'role', '') == ROLE_BUYER
+            else f'/invoices/{invoice.id}'
+        )
         NotificationService.notify(
-            getattr(invoice, 'created_by', None),
+            creator,
             category=Notification.CAT_INVOICE,
             event=event, title=title, message=message,
-            link=f'/invoices/{invoice.id}',
+            link=link,
         )
 
     @staticmethod

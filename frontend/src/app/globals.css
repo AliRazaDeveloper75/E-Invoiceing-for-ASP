@@ -9,6 +9,13 @@
 }
 
 @layer utilities {
+  /* Keep numeric / Latin content LTR and isolated inside RTL layouts so
+     phone numbers, TRNs, emails, codes, and English text never flip. */
+  .ltr {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;
   }

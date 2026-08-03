@@ -25,7 +25,7 @@ const FEATURE_ICONS = [Network, ShieldCheck, Landmark];
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const { t } = useI18n();
+  const { t, dir } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const mfaExpired = searchParams.get('reason') === 'mfa_expired';
@@ -81,7 +81,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div dir={dir} className="min-h-screen flex">
 
       {/* ── Left panel — branding ───────────────────────────────────────── */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between

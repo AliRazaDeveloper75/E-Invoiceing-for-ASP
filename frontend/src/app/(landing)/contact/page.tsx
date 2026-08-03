@@ -102,7 +102,7 @@ export default function ContactPage() {
                 </p>
               </AnimatedSection>
               <AnimatedSection delay={450} direction="up">
-                <div className="flex flex-wrap gap-3 mt-8">
+                <div dir="ltr" className="flex flex-wrap gap-3 mt-8">
                   {['Email Support', 'Phone Support', 'Live Chat', '24/7 Help'].map((badge) => (
                     <span
                       key={badge}
@@ -117,7 +117,7 @@ export default function ContactPage() {
 
             {/* Right: Support hub mockup */}
             <AnimatedSection delay={300} direction="right" className="hidden lg:block">
-              <div className="relative">
+              <div dir="ltr" className="relative">
                 <div className="absolute -inset-8 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-cyan-500/20 blur-3xl rounded-3xl" />
 
                 <div className="relative bg-white/[0.04] backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-black/30 hover:shadow-blue-500/10 transition-shadow duration-500">
@@ -186,8 +186,8 @@ export default function ContactPage() {
                     {/* Quick contact channels */}
                     <div className="space-y-2">
                       {[
-                        { channel: 'Email Support', detail: 'support@e-numerak.com', icon: <Mail className="h-3.5 w-3.5" />, bg: 'bg-blue-500/10', dot: 'bg-blue-400' },
-                        { channel: 'Phone Line', detail: '+971 4 123 4567', icon: <Phone className="h-3.5 w-3.5" />, bg: 'bg-emerald-500/10', dot: 'bg-emerald-400' },
+                        { channel: 'Email Support', detail: 'info@e-numerak.com', icon: <Mail className="h-3.5 w-3.5" />, bg: 'bg-blue-500/10', dot: 'bg-blue-400' },
+                        { channel: 'Phone Line', detail: '+971 50 635 8421', icon: <Phone className="h-3.5 w-3.5" />, bg: 'bg-emerald-500/10', dot: 'bg-emerald-400' },
                         { channel: 'Live Chat', detail: 'Avg. response 2 minutes', icon: <MessageSquare className="h-3.5 w-3.5" />, bg: 'bg-amber-500/10', dot: 'bg-amber-400' },
                       ].map((c) => (
                         <div key={c.channel} className={`flex items-center justify-between ${c.bg} rounded-xl px-4 py-2.5 border border-white/[0.06] transition-all duration-200 hover:bg-white/10`}>
@@ -253,7 +253,7 @@ export default function ContactPage() {
                       </div>
                       <div>
                         <h2 className="font-bold text-gray-900 text-lg">{t('contact.formTitle')}</h2>
-                        <p className="text-xs text-gray-500 mt-0.5">We typically respond within 24 hours</p>
+                        <p dir="ltr" className="text-xs text-gray-500 mt-0.5">We typically respond within 24 hours</p>
                       </div>
                     </div>
 
@@ -354,13 +354,13 @@ export default function ContactPage() {
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                 </svg>
-                                Sending...
+                                <span dir="ltr">Sending...</span>
                               </span>
                             ) : (
                               <>{t('contact.send')} <Send className="h-4 w-4" /></>
                             )}
                           </button>
-                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                          <div dir="ltr" className="flex items-center gap-2 text-xs text-gray-400">
                             <Clock className="h-3.5 w-3.5 shrink-0" />
                             Average response: &lt; 24 hours
                           </div>
@@ -430,14 +430,14 @@ export default function ContactPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection direction="up" delay={0}>
             <div className="text-center mb-14">
-              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100/80 text-blue-700 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5">
+              <div dir="ltr" className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100/80 text-blue-700 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5">
                 <Sparkles className="h-3.5 w-3.5" />
                 FAQ
               </div>
               <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 tracking-tight leading-tight">
                 {t('contact.faqTitle')}
               </h2>
-              <p className="text-gray-500 text-[15px] leading-relaxed mt-4 max-w-lg mx-auto">
+              <p dir="ltr" className="text-gray-500 text-[15px] leading-relaxed mt-4 max-w-lg mx-auto">
                 Quick answers to the most common questions about our platform and compliance.
               </p>
             </div>

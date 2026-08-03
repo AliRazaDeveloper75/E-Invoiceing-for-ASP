@@ -14,10 +14,12 @@ export const dictionaries = {
       home: 'Home',
       about: 'About',
       services: 'Services',
+      pricing: 'Pricing',
+      blog: 'Blog',
       peppol: 'E-Invoice',
       contact: 'Contact',
       signIn: 'Sign In',
-      portal: 'E-Invoice Portal',
+      portal: 'Book a Free Demo',
       language: 'Language',
     },
     footer: {
@@ -279,7 +281,7 @@ export const dictionaries = {
         subtitle: "Navigate UAE's e-Invoicing regulations with confidence",
         body:
           'E-Numerak is an end-to-end compliance platform that centralizes invoicing across your business, giving you full control, visibility, and speed. From invoice creation to FTA Validation. Everything is unified into one intelligence system. Designed for the UAE\'s fast-growing digital Economy.',
-        cta1: 'Launch E-Invoice Portal',
+        cta1: 'Book a Free Demo',
         cta2: 'Explore Services',
         trust: ['FTA Certified', 'BIS 3.0', 'VAT & Excise Ready', 'Secure & Compliant'],
       },
@@ -415,7 +417,7 @@ export const dictionaries = {
           'The UAE is quickly progressing in adopting e-invoicing and some progressive companies have already migrated to paperless invoices.',
         p2:
           'E-Numerak offers a trusted, comprehensive platform to take that journey by combining technology, compliance, and performance. Start e-invoicing in full compliance with the FTA today.',
-        button: 'Launch E-Invoice Portal',
+        button: 'Book a Free Demo',
         foot: 'Implement e-invoicing, the right way.',
       },
       tagline: {
@@ -433,10 +435,12 @@ export const dictionaries = {
       home: 'الرئيسية',
       about: 'من نحن',
       services: 'الخدمات',
+      pricing: 'الأسعار',
+      blog: 'المدونة',
       peppol: 'الفوترة الإلكترونية',
       contact: 'تواصل معنا',
       signIn: 'تسجيل الدخول',
-      portal: 'بوابة الفوترة الإلكترونية',
+      portal: 'احجز نسخة تجريبية',
       language: 'اللغة',
     },
     footer: {
@@ -698,7 +702,7 @@ export const dictionaries = {
         subtitle: 'تعامَل مع أنظمة الفوترة الإلكترونية في الإمارات بثقة تامة',
         body:
           'E-Numerak منصة امتثال متكاملة تجمع عمليات الفوترة في مؤسستك في مكان واحد، لتمنحك تحكماً كاملاً ووضوحاً وسرعة. من إنشاء الفاتورة وحتى اعتمادها لدى الهيئة الاتحادية للضرائب — كل شيء موحَّد في نظام ذكي واحد، مصمَّم لاقتصاد الإمارات الرقمي سريع النمو.',
-        cta1: 'افتح بوابة الفوترة الإلكترونية',
+        cta1: 'احجز نسخة تجريبية',
         cta2: 'استكشف الخدمات',
         trust: ['معتمد من الهيئة الاتحادية للضرائب', 'معيار BIS 3.0', 'جاهز لضريبة القيمة المضافة والانتقائية', 'آمن ومتوافق'],
       },
@@ -831,7 +835,7 @@ export const dictionaries = {
           'تتقدم الإمارات بسرعة في تبنّي الفوترة الإلكترونية، وقد انتقلت بعض الشركات الرائدة بالفعل إلى الفواتير غير الورقية.',
         p2:
           'تقدّم E-Numerak منصة موثوقة وشاملة لخوض هذه الرحلة من خلال الجمع بين التقنية والامتثال والأداء. ابدأ الفوترة الإلكترونية بامتثال كامل للهيئة الاتحادية للضرائب اليوم.',
-        button: 'افتح بوابة الفوترة الإلكترونية',
+        button: 'احجز نسخة تجريبية',
         foot: 'طبّق الفوترة الإلكترونية بالطريقة الصحيحة.',
       },
       tagline: {

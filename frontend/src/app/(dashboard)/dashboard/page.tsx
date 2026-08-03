@@ -192,6 +192,7 @@ export default function DashboardPage() {
   );
 
   if (!activeId) {
+    const canCreate = user?.role === 'admin' || user?.role === 'supplier';
     return (
       <AnimatedSection>
         <div className="flex flex-col items-center justify-center py-24 text-center max-w-sm mx-auto">
@@ -199,13 +200,19 @@ export default function DashboardPage() {
             <Building2 className="h-8 w-8 text-white" />
           </div>
           <h2 className="text-lg font-bold text-gray-900">No company selected</h2>
-          <p className="mt-1.5 text-sm text-gray-500">Create or join a company to start managing your invoices.</p>
-          <a
-            href="/companies?new=1"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all"
-          >
-            <PlusCircle className="h-4 w-4" /> Create Company
-          </a>
+          <p className="mt-1.5 text-sm text-gray-500">
+            {canCreate
+              ? 'Create or join a company to start managing your invoices.'
+              : 'You are not a member of any company yet. Ask an admin or supplier to add you to their company.'}
+          </p>
+          {canCreate && (
+            <a
+              href="/companies?new=1"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all"
+            >
+              <PlusCircle className="h-4 w-4" /> Create Company
+            </a>
+          )}
         </div>
       </AnimatedSection>
     );

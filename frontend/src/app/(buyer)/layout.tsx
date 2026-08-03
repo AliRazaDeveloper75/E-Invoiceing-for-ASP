@@ -1,124 +1,47 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
-import {
-  LayoutDashboard,
-  FileText,
-  LogOut,
-  Menu,
-  X,
-  ChevronRight,
-} from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { clearTokens, getAccessToken } from '@/lib/api';
-import type { BuyerProfile } from '@/types';
+import { getAccessToken } from '@/lib/api';
 import { ChatWidget } from '@/components/chat/ChatWidget';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { Header } from '@/components/layout/Header';
+import { SidebarProvider, useSidebar } from '@/context/SidebarContext';
+import { CompanyProvider } from '@/hooks/useCompany';
 
-function BuyerSidebar({ profile, onClose }: { profile: BuyerProfile | null; onClose?: () => void }) {
-  const router = useRouter();
-  const pathname = usePathname();
-
-  const navItems = [
-    { href: '/buyer/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/buyer/invoices',  icon: FileText,        label: 'My Invoices' },
-  ];
-
-  async function handleLogout() {
-    try { await api.post('/auth/logout/', {}); } catch {}
-    clearTokens();
-    router.push('/login');
-  }
+function BuyerShell({ children }: { children: React.ReactNode }) {
+  const { collapsed } = useSidebar();
 
   return (
-    <aside className="flex flex-col h-full bg-gradient-to-b from-blue-950 to-indigo-950 text-white w-64 shrink-0 border-r border-white/[0.06] shadow-2xl">
-      {/* Logo */}
-      <div className="flex items-center justify-between px-5 py-5 border-b border-white/[0.08]">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-sm font-bold shadow-lg shadow-blue-600/20">
-            EN
+    <div dir="ltr" className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50/40 overflow-hidden">
+      <Sidebar />
+
+      {/* Main content */}
+      <div className={`flex flex-col flex-1 min-w-0 transition-all duration-300 ease-in-out ${collapsed ? 'sm:ml-[68px]' : 'sm:ml-64'}`}>
+        <Header />
+
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
+            {children}
           </div>
-          <div>
-            <div className="text-base font-bold tracking-tight">E-Numerak</div>
-            <div className="text-[10px] text-blue-200/60 mt-0.5 uppercase tracking-wider">Buyer Portal</div>
-          </div>
-        </div>
-        {onClose && (
-          <button onClick={onClose} className="text-blue-200/40 hover:text-white lg:hidden transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        )}
+        </main>
       </div>
 
-      {/* Company badge */}
-      {profile && (
-        <div className="mx-3 mt-4 px-3 py-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm group hover:bg-white/10 transition-all duration-300">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-sm font-bold shrink-0 shadow-lg shadow-blue-600/30">
-              {profile.customer_name.charAt(0).toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold truncate">{profile.customer_name}</div>
-              <div className="text-[11px] text-blue-200/50 truncate">{profile.email}</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map(({ href, icon: Icon, label }) => {
-          const active = pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onClose}
-              className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative ${
-                active
-                  ? 'bg-blue-500/20 text-white'
-                  : 'text-blue-200/60 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-blue-400 rounded-r-full animate-scale-in" />
-              )}
-              <Icon className={`w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110 ${
-                active ? 'text-blue-400' : ''
-              }`} />
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Footer */}
-      <div className="px-3 pb-4 border-t border-white/[0.08] pt-4">
-        <button
-          onClick={handleLogout}
-          className="group flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm text-blue-200/40 hover:bg-white/5 hover:text-white transition-all duration-200"
-        >
-          <LogOut className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:-translate-x-1" />
-          Sign out
-        </button>
-      </div>
-    </aside>
+      <ChatWidget />
+    </div>
   );
 }
 
 export default function BuyerLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [profile, setProfile] = useState<BuyerProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const token = getAccessToken();
     if (!token) { router.push('/login'); return; }
 
-    api.get<{ success: boolean; data: BuyerProfile }>('/buyer/me/')
-      .then(r => setProfile(r.data.data))
+    api.get<{ success: boolean; data: unknown }>('/buyer/me/')
       .catch(() => router.push('/login'))
       .finally(() => setLoading(false));
   }, [router]);
@@ -138,52 +61,10 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50/40 overflow-hidden">
-      {/* Desktop sidebar */}
-      <div className="hidden lg:flex lg:flex-col">
-        <BuyerSidebar profile={profile} />
-      </div>
-
-      {/* Mobile sidebar overlay */}
-      <div
-        className={`fixed inset-0 z-40 lg:hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? 'visible opacity-100' : 'invisible opacity-0'
-        }`}
-      >
-        <div
-          className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
-            sidebarOpen ? 'opacity-100' : 'opacity-0'
-          }`}
-          onClick={() => setSidebarOpen(false)}
-        />
-        <div
-          className={`relative z-50 h-full transition-transform duration-300 ease-out ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
-        >
-          <BuyerSidebar profile={profile} onClose={() => setSidebarOpen(false)} />
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top bar (mobile) */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white/80 backdrop-blur-md border-b border-gray-200 shrink-0">
-          <button onClick={() => setSidebarOpen(true)} className="text-gray-600 hover:text-gray-800 transition-colors p-1">
-            <Menu className="w-5 h-5" />
-          </button>
-          <span className="font-semibold text-gray-800">Buyer Portal</span>
-          <div className="w-5" />
-        </header>
-
-        <main className="flex-1 overflow-y-auto">
-          <div className="animate-fade-in">
-            {children}
-          </div>
-        </main>
-      </div>
-
-      <ChatWidget />
-    </div>
+    <CompanyProvider>
+      <SidebarProvider>
+        <BuyerShell>{children}</BuyerShell>
+      </SidebarProvider>
+    </CompanyProvider>
   );
 }

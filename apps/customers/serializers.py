@@ -86,9 +86,10 @@ class CustomerCreateSerializer(serializers.Serializer):
     # PEPPOL
     peppol_endpoint = serializers.CharField(max_length=255, required=False, default='', allow_blank=True)
 
-    # Documents — mandatory on create
+    # Documents — required on create for B2B/B2G, optional for B2C
     trn_document = serializers.FileField(
-        required=True,
+        required=False,
+        allow_null=True,
         validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png'])],
         error_messages={'required': 'TRN document (PDF/JPG/PNG) is required.'},
         help_text='TRN / tax registration certificate — PDF, JPG or PNG.'
@@ -145,6 +146,13 @@ class CustomerCreateSerializer(serializers.Serializer):
                 'trn': (
                     'UAE B2B and B2G customers must have a TRN. '
                     'The TIN (first 10 digits) is used as the B2B business identifier per UAE MoF.'
+                )
+            })
+
+        if is_b2b_or_b2g and not attrs.get('trn_document'):
+            raise serializers.ValidationError({
+                'trn_document': (
+                    'TRN document (PDF/JPG/PNG) is required for B2B/B2G customers.'
                 )
             })
 

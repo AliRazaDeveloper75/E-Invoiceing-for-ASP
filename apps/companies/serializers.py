@@ -92,6 +92,9 @@ class CompanyCreateSerializer(serializers.Serializer):
         allow_blank=True,
     )
 
+    # Branding
+    logo = serializers.ImageField(required=False, allow_null=True)
+
     def validate_trn(self, value: str) -> str:
         if not value.isdigit():
             raise serializers.ValidationError('TRN must contain digits only.')

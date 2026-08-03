@@ -24,13 +24,16 @@ from django.http import HttpResponse
 from decimal import Decimal
 
 from apps.common.utils import success_response, error_response, StandardResultsPagination
-from apps.common.constants import ROLE_BUYER
+from apps.common.constants import ROLE_ADMIN, ROLE_ACCOUNTANT, ROLE_BUYER
 from apps.customers.models import Customer
 from apps.invoices.models import Invoice
 from apps.invoices.serializers import InvoiceSerializer, InvoiceListSerializer
 
 from .models import BuyerProfile
-from .serializers import BuyerInviteSerializer, AcceptInviteSerializer, BuyerProfileSerializer
+from .serializers import (
+    BuyerInviteSerializer, AcceptInviteSerializer, BuyerProfileSerializer,
+    BuyerInvoiceCreateSerializer,
+)
 from .services import BuyerService
 
 logger = logging.getLogger(__name__)
@@ -175,7 +178,7 @@ class BuyerDashboardView(APIView):
 
 
 class BuyerInvoiceListView(APIView):
-    """GET /api/v1/buyer/invoices/ — paginated list of invoices for this buyer."""
+    """GET/POST /api/v1/buyer/invoices/ — paginated list + self-billed creation."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -201,6 +204,109 @@ class BuyerInvoiceListView(APIView):
         serializer = InvoiceListSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
 
+    def post(self, request):
+        """POST /api/v1/buyer/invoices/ — buyer creates a self-billed invoice.
+
+        The supplier company the buyer is linked to is the issuer (seller); the
+        buyer's own customer record is the recipient. The invoice is saved as a
+        DRAFT for the supplier to review and verify. The supplier then sends it
+        to the buyer for approval, and only after the buyer approves/e-signs is
+        it submitted to the ASP/FTA pipeline.
+        """
+        from apps.common.constants import INVOICE_STATUS_DRAFT
+        from apps.invoices.models import InvoiceItem
+        from apps.invoices.services import InvoiceNumberService, VATCalculationService
+
+        profile, err = _require_buyer(request)
+        if err:
+            return err
+
+        serializer = BuyerInvoiceCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return error_response('Invoice creation failed.', details=serializer.errors,
+                                  status_code=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        company = profile.customer.company
+
+        if not company.is_active:
+            return error_response(
+                f'The supplier company "{company.name}" is inactive. You cannot create invoices.',
+                status_code=403,
+            )
+
+        if not profile.customer.is_complete:
+            return error_response(
+                'Your account profile is missing required details: '
+                f"{', '.join(profile.customer.missing_fields)}. "
+                'Update your profile before creating invoices.',
+                details={'missing_fields': profile.customer.missing_fields},
+                status_code=400,
+            )
+
+        # Generate a sequential invoice number for the issuing company.
+        invoice_number, sequence = InvoiceNumberService.generate(company)
+
+        invoice = Invoice.objects.create(
+            company=company,
+            customer=profile.customer,
+            created_by=request.user,
+            invoice_number=invoice_number,
+            invoice_sequence=sequence,
+            invoice_type=data.get('invoice_type', 'tax_invoice'),
+            transaction_type=data.get('transaction_type', 'b2b'),
+            payment_means_code=data.get('payment_means_code', '30'),
+            supplier_location=data.get('supplier_location', ''),
+            accounts_type=data.get('accounts_type', ''),
+            issue_date=data.get('issue_date', timezone.localdate()),
+            due_date=data.get('due_date'),
+            supply_date=data.get('supply_date'),
+            currency=data.get('currency', 'AED'),
+            exchange_rate=data.get('exchange_rate'),
+            discount_amount=data.get('discount_amount'),
+            reference_number=data.get('reference_number', ''),
+            credit_note_reason_code=data.get('credit_note_reason_code', ''),
+            purchase_order_number=data.get('purchase_order_number', ''),
+            notes=data.get('notes', ''),
+            status=INVOICE_STATUS_DRAFT,
+        )
+
+        # Create line items and recalculate totals.
+        for index, item_data in enumerate(data.get('items', [])):
+            InvoiceItem.objects.create(
+                invoice=invoice,
+                item_name=(item_data.get('item_name') or '').strip(),
+                description=item_data['description'].strip(),
+                quantity=Decimal(str(item_data['quantity'])),
+                unit=(item_data.get('unit') or '').strip(),
+                unit_price=Decimal(str(item_data['unit_price'])),
+                vat_rate_type=item_data.get('vat_rate_type', 'standard'),
+                sort_order=index,
+            )
+        VATCalculationService.recalculate_invoice_totals(invoice)
+
+        # Notify the supplier's admin/accountant members to review the draft.
+        try:
+            from apps.notifications.models import Notification
+            from apps.notifications.services import NotificationService
+            NotificationService.notify_company_roles(
+                invoice.company,
+                roles=[ROLE_ADMIN, ROLE_ACCOUNTANT],
+                category=Notification.CAT_INVOICE,
+                event='buyer_created_invoice',
+                title=f'Buyer submitted a draft for review — {invoice.invoice_number}',
+                message=f'{request.user.full_name} created a self-billed invoice. Review it, then send it to the buyer for approval.',
+                link=f'/invoices/{invoice.id}',
+            )
+        except Exception:
+            pass
+
+        return success_response(
+            data=InvoiceSerializer(invoice).data,
+            message='Invoice saved as draft. The supplier will review it and send it to you for approval.',
+            status_code=status.HTTP_201_CREATED
+        )
+
 
 class BuyerInvoiceDetailView(APIView):
     """GET /api/v1/buyer/invoices/{id}/ — full invoice detail."""
@@ -225,12 +331,15 @@ class BuyerInvoiceDetailView(APIView):
             )
             invoice.buyer_viewed_at = timezone.now()
             # Notify the supplier who created the invoice that the buyer opened it.
-            from apps.notifications.services import NotificationService
-            NotificationService.invoice_event(
-                invoice, event='buyer_viewed',
-                title=f'Buyer viewed — {invoice.invoice_number}',
-                message='The buyer has opened this invoice.',
-            )
+            # For self-billed invoices (created_by is the buyer) no one needs
+            # to be told — the buyer already knows they opened it.
+            if getattr(invoice.created_by, 'role', None) != ROLE_BUYER:
+                from apps.notifications.services import NotificationService
+                NotificationService.invoice_event(
+                    invoice, event='buyer_viewed',
+                    title=f'Buyer viewed — {invoice.invoice_number}',
+                    message='The buyer has opened this invoice.',
+                )
 
         serializer = InvoiceSerializer(invoice)
         data = serializer.data
@@ -312,6 +421,27 @@ def _client_ip(request):
     return request.META.get('REMOTE_ADDR')
 
 
+def _run_pipeline_safe(invoice_id: str) -> None:
+    """Run process_invoice in background thread; revert to awaiting_approval on crash."""
+    import logging
+    _logger = logging.getLogger(__name__)
+    from apps.common.constants import INVOICE_STATUS_AWAITING_APPROVAL
+    from apps.invoices.models import Invoice
+    from tasks.invoice_tasks import process_invoice
+
+    try:
+        process_invoice.apply(args=[invoice_id])
+    except Exception as exc:
+        _logger.exception('Pipeline crashed for invoice %s; reverting.', invoice_id)
+        try:
+            inv = Invoice.objects.get(id=invoice_id, is_active=True)
+            inv.status = INVOICE_STATUS_AWAITING_APPROVAL
+            inv.buyer_approval_note = f'Submission failed: {exc}'
+            inv.save(update_fields=['status', 'buyer_approval_note', 'updated_at'])
+        except Invoice.DoesNotExist:
+            pass
+
+
 class BuyerInvoiceApproveView(APIView):
     """
     POST /api/v1/buyer/invoices/{id}/approve/
@@ -372,7 +502,7 @@ class BuyerInvoiceApproveView(APIView):
             except Exception:
                 import threading
                 t = threading.Thread(
-                    target=process_invoice,
+                    target=_run_pipeline_safe,
                     args=[str(invoice.id)],
                     daemon=True,
                 )

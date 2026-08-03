@@ -20,6 +20,7 @@ interface AdminPayment {
   invoice_id: string;
   invoice_number: string;
   invoice_status: string;
+  created_by_role?: string;
   company_name: string;
   customer_name: string;
   amount: string;
@@ -369,7 +370,7 @@ export default function AdminPaymentsPage() {
                 <div key={p.id} className="p-4 space-y-2.5">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <Link href={`/management/invoices/${p.invoice_id}`}
+                      <Link href={p.created_by_role === 'buyer' ? `/invoices/${p.invoice_id}` : `/management/invoices/${p.invoice_id}`}
                         className="font-semibold text-blue-600 hover:underline text-sm">
                         {p.invoice_number}
                       </Link>

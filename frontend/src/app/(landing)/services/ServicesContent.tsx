@@ -96,7 +96,7 @@ export function ServicesContent() {
                 </p>
               </AnimatedSection>
               <AnimatedSection delay={450} direction="up">
-                <div className="flex flex-wrap gap-3 mt-8">
+                <div dir="ltr" className="flex flex-wrap gap-3 mt-8">
                   {['Tax Invoice', 'Credit Note', 'Commercial', 'Continuous Supply'].map((badge) => (
                     <span
                       key={badge}
@@ -111,7 +111,7 @@ export function ServicesContent() {
 
             {/* Right: Service overview mockup */}
             <AnimatedSection delay={300} direction="right" className="hidden lg:block">
-              <div className="relative">
+              <div dir="ltr" className="relative">
                 <div className="absolute -inset-8 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-cyan-500/20 blur-3xl rounded-3xl" />
 
                 <div className="relative bg-white/[0.04] backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-black/30 hover:shadow-blue-500/10 transition-shadow duration-500">
@@ -230,14 +230,14 @@ export function ServicesContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection direction="up" delay={0}>
             <div className="max-w-2xl mb-14">
-              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100/80 text-blue-700 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5">
+              <div dir="ltr" className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100/80 text-blue-700 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5">
                 <Sparkles className="h-3.5 w-3.5" />
                 What We Offer
               </div>
-              <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 tracking-tight leading-tight">
+              <h2 dir="ltr" className="text-3xl lg:text-5xl font-bold text-gray-900 tracking-tight leading-tight">
                 Comprehensive E-Invoicing Services
               </h2>
-              <p className="text-gray-500 text-[15px] leading-relaxed mt-4 max-w-xl">
+              <p dir="ltr" className="text-gray-500 text-[15px] leading-relaxed mt-4 max-w-xl">
                 A complete suite of tools designed to handle every aspect of UAE e-invoicing
                 compliance — from creation to submission.
               </p>
@@ -284,14 +284,14 @@ export function ServicesContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection direction="up" delay={0}>
             <div className="max-w-2xl mb-14">
-              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-100/80 text-emerald-700 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5">
+              <div dir="ltr" className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-100/80 text-emerald-700 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5">
                 <ClipboardCheck className="h-3.5 w-3.5" />
                 Simple Process
               </div>
-              <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 tracking-tight leading-tight">
+              <h2 dir="ltr" className="text-3xl lg:text-5xl font-bold text-gray-900 tracking-tight leading-tight">
                 From Creation to Compliance
               </h2>
-              <p className="text-gray-500 text-[15px] leading-relaxed mt-4 max-w-xl">
+              <p dir="ltr" className="text-gray-500 text-[15px] leading-relaxed mt-4 max-w-xl">
                 A streamlined workflow that takes your invoice from draft to FTA submission
                 in just a few steps.
               </p>
@@ -325,8 +325,8 @@ export function ServicesContent() {
                   >
                     {step.step}
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
-                  <p className="text-[15px] text-gray-500 leading-relaxed max-w-xs grow">
+                  <h3 dir="ltr" className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
+                  <p dir="ltr" className="text-[15px] text-gray-500 leading-relaxed max-w-xs grow">
                     {step.desc}
                   </p>
                 </div>
@@ -357,7 +357,7 @@ export function ServicesContent() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection direction="up" delay={0}>
             <div className="max-w-2xl mb-12">
-              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-amber-500/15 border border-amber-400/20 text-amber-300 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5 backdrop-blur-sm">
+              <div dir="ltr" className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-amber-500/15 border border-amber-400/20 text-amber-300 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5 backdrop-blur-sm">
                 <ScrollText className="h-3.5 w-3.5" />
                 Audit Ready
               </div>
@@ -371,7 +371,7 @@ export function ServicesContent() {
           </AnimatedSection>
 
           <AnimatedSection delay={100} direction="up">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+            <div dir="ltr" className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
               {[
                 { value: `${vatFields.length + exciseFields.length}`, label: 'Total FAF Fields', gradient: 'from-blue-400 to-indigo-500' },
                 { value: `${vatFields.length}`, label: 'VAT Fields Covered', gradient: 'from-emerald-400 to-teal-500' },
@@ -421,12 +421,12 @@ export function ServicesContent() {
                       </div>
                       <div>
                         <div className="text-sm font-bold text-white">{group.title}</div>
-                        <div className="text-[10px] text-blue-300/60">{group.fields.length} fields covered</div>
+                        <div dir="ltr" className="text-[10px] text-blue-300/60">{group.fields.length} fields covered</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/20 shrink-0">
                       <ShieldCheck className="h-3 w-3 text-emerald-400" />
-                      <span className="text-[10px] font-semibold text-emerald-300">Verified</span>
+                      <span dir="ltr" className="text-[10px] font-semibold text-emerald-300">Verified</span>
                     </div>
                   </div>
                   <div className="relative flex flex-wrap content-start gap-2 flex-1">
@@ -442,8 +442,8 @@ export function ServicesContent() {
                   </div>
                   <div className="relative mt-6 pt-4 border-t border-white/[0.06] shrink-0">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[11px] text-blue-300/50 font-medium">Coverage</span>
-                      <span className="text-[11px] font-semibold text-emerald-300">{group.fields.length}/{group.fields.length} fields</span>
+                      <span dir="ltr" className="text-[11px] text-blue-300/50 font-medium">Coverage</span>
+                      <span dir="ltr" className="text-[11px] font-semibold text-emerald-300">{group.fields.length}/{group.fields.length} fields</span>
                     </div>
                     <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
                       <div
@@ -467,7 +467,7 @@ export function ServicesContent() {
         </div>
         <AnimatedSection direction="up">
           <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/10 border border-white/10 text-blue-200 text-[11px] font-semibold uppercase tracking-[0.12em] mb-6 backdrop-blur-sm">
+            <div dir="ltr" className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/10 border border-white/10 text-blue-200 text-[11px] font-semibold uppercase tracking-[0.12em] mb-6 backdrop-blur-sm">
               <Sparkles className="h-3.5 w-3.5" />
               Get Started
             </div>

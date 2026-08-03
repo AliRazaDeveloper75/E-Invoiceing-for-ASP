@@ -116,7 +116,7 @@ function Field({ label, error, touched, children, hint }: FieldProps) {
   return (
     <div className="space-y-1.5">
       <label className="block text-xs font-semibold tracking-wide text-stone-600 uppercase" style={{ letterSpacing: '0.06em', fontSize: '10px' }}>
-        {label} <span className="text-orange-500">*</span>
+        {label} <span className="text-blue-500">*</span>
       </label>
       {children}
       {hasError ? (
@@ -142,7 +142,7 @@ function StyledInput({ icon: Icon, hasError, suffix, className = '', ...props }:
     <div className={`relative flex items-center overflow-hidden rounded-xl border transition-all ${
       hasError
         ? 'border-rose-300 bg-rose-50 ring-2 ring-rose-100'
-        : 'border-stone-200 bg-white focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100'
+        : 'border-stone-200 bg-white focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100'
     }`}>
       <Icon className="pointer-events-none absolute left-3 h-4 w-4 text-stone-400 shrink-0" />
       <input
@@ -186,7 +186,7 @@ function UAEPhoneInput({ value, onChange, hasError, onKeyDown }: PhoneInputProps
     <div className={`flex overflow-hidden rounded-xl border transition-all ${
       hasError
         ? 'border-rose-300 ring-2 ring-rose-100'
-        : 'border-stone-200 focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100'
+        : 'border-stone-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100'
     }`}>
       {/* Dial code prefix */}
       <div className={`flex shrink-0 items-center gap-1.5 border-r px-3 py-2.5 ${
@@ -411,22 +411,22 @@ function ChatbotTab() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex min-h-[40px] flex-wrap items-center gap-1 border-b border-slate-100 px-4 py-2.5 text-xs text-slate-400">
+      <div className="flex min-h-[40px] flex-wrap items-center gap-1 border-b border-blue-100 px-4 py-2.5 text-xs text-slate-400">
         <button
           onClick={reset}
-          className="font-medium text-slate-500 transition-colors hover:text-slate-900"
+          className="font-medium text-slate-500 transition-colors hover:text-blue-600"
         >
           Help topics
         </button>
         {path.map((node, i) => (
           <span key={node.id} className="flex items-center gap-1">
-            <ChevronRight className="h-3 w-3 text-slate-300" />
+            <ChevronRight className="h-3 w-3 text-blue-200" />
             <button
               onClick={() => {
                 setPath(path.slice(0, i + 1));
                 setAnswer(node.answer ?? null);
               }}
-              className="max-w-[110px] truncate transition-colors hover:text-slate-900"
+              className="max-w-[110px] truncate transition-colors hover:text-blue-600"
             >
               {node.text}
             </button>
@@ -437,20 +437,20 @@ function ChatbotTab() {
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {answer ? (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-[13px] leading-relaxed text-slate-700 shadow-sm">
+            <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 text-[13px] leading-relaxed text-slate-700 shadow-sm">
               <p className="whitespace-pre-line">{answer}</p>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={goBack}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900"
+                className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 px-3 py-1.5 text-xs font-medium text-blue-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
                 Back
               </button>
               <button
                 onClick={reset}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900"
+                className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 px-3 py-1.5 text-xs font-medium text-blue-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 All topics
@@ -459,7 +459,7 @@ function ChatbotTab() {
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="mb-3 px-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+            <p className="mb-3 px-1 text-[11px] font-medium uppercase tracking-wide text-blue-400/80">
               {path.length === 0 ? 'Browse by category' : 'Choose a topic'}
             </p>
             {currentMenu.map((node) => {
@@ -468,19 +468,19 @@ function ChatbotTab() {
                 <button
                   key={node.id}
                   onClick={() => select(node)}
-                  className="group flex w-full items-center justify-between gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3 text-left text-sm shadow-sm transition-all hover:border-slate-900/10 hover:bg-slate-50 hover:shadow-md"
+                  className="group flex w-full items-center justify-between gap-3 rounded-xl border border-blue-100 bg-white px-4 py-3 text-left text-sm shadow-sm transition-all hover:border-blue-300/70 hover:bg-blue-50/40 hover:shadow-md"
                 >
                   <span className="flex items-center gap-3">
                     {Icon && (
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900/5 text-slate-500 transition-colors group-hover:bg-slate-900 group-hover:text-white">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500 transition-colors group-hover:bg-gradient-to-br group-hover:from-blue-500 group-hover:to-blue-600 group-hover:text-white">
                         <Icon className="h-4 w-4" />
                       </span>
                     )}
-                    <span className="font-medium text-slate-700 group-hover:text-slate-900">
+                    <span className="font-medium text-slate-700 group-hover:text-blue-900">
                       {node.text}
                     </span>
                   </span>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-500" />
+                  <ChevronRight className="h-4 w-4 shrink-0 text-blue-200 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-500" />
                 </button>
               );
             })}
@@ -755,11 +755,11 @@ function AgentTab({ onClose }: AgentTabProps) {
     return (
       <div
         className="relative flex h-full flex-col justify-center overflow-y-auto px-6 py-6 [justify-content:safe_center]"
-        style={{ background: 'linear-gradient(180deg, #FBF7F2 0%, #FFFFFF 60%)' }}
+        style={{ background: 'linear-gradient(180deg, #EFF6FF 0%, #FFFFFF 60%)' }}
       >
         <button
           onClick={onClose}
-          className="absolute right-3 top-3 rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+          className="absolute right-3 top-3 rounded-full p-1.5 text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
           title="Close"
         >
           <X className="h-4 w-4" />
@@ -788,7 +788,7 @@ function AgentTab({ onClose }: AgentTabProps) {
                 className={`w-full rounded-xl border px-3.5 py-2.5 pl-9 text-sm text-stone-800 outline-none transition-all placeholder:text-stone-400 ${
                   touched.name && !nameValidation.valid
                     ? 'border-rose-300 bg-rose-50 ring-2 ring-rose-100'
-                    : 'border-stone-200 bg-white focus:border-orange-300 focus:ring-2 focus:ring-orange-100'
+                    : 'border-stone-200 bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100'
                 }`}
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium tabular-nums text-stone-300 select-none">
@@ -818,7 +818,7 @@ function AgentTab({ onClose }: AgentTabProps) {
                 className={`w-full rounded-xl border px-3.5 py-2.5 pl-9 pr-16 text-sm text-stone-800 outline-none transition-all placeholder:text-stone-400 ${
                   touched.email && !emailValidation.valid
                     ? 'border-rose-300 bg-rose-50 ring-2 ring-rose-100'
-                    : 'border-stone-200 bg-white focus:border-orange-300 focus:ring-2 focus:ring-orange-100'
+                    : 'border-stone-200 bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100'
                 }`}
               />
             </div>
@@ -854,11 +854,11 @@ function AgentTab({ onClose }: AgentTabProps) {
           <button
             onClick={register}
             disabled={regLoading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:cursor-not-allowed disabled:opacity-50"
-            style={{
-              background: allFieldsValid && !regLoading ? '#1C1917' : '#78716c',
-              transition: 'background 0.2s',
-            }}
+            className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+              allFieldsValid && !regLoading
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-blue-500/25'
+                : 'bg-slate-300'
+            }`}
           >
             {regLoading ? (
               <>
@@ -880,15 +880,15 @@ function AgentTab({ onClose }: AgentTabProps) {
   // ── Chat view ──
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-stone-100 px-3 py-2">
-        <span className="px-2 text-xs font-medium text-stone-400">
-          Signed in as <span className="text-stone-600">{userName}</span>
+      <div className="flex items-center justify-between border-b border-blue-100 px-3 py-2">
+        <span className="px-2 text-xs font-medium text-blue-400">
+          Signed in as <span className="text-blue-700">{userName}</span>
         </span>
 
         <button
           onClick={newChat}
           title="New chat"
-          className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 px-2.5 py-1 text-xs font-medium text-stone-500 transition-colors hover:border-stone-400 hover:text-stone-900"
+          className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 px-2.5 py-1 text-xs font-medium text-blue-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
         >
           <RotateCcw className="h-3 w-3" />
           New chat
@@ -899,10 +899,7 @@ function AgentTab({ onClose }: AgentTabProps) {
         {messages.length === 0 && (
           <div className="flex flex-col gap-4 py-2">
             <div className="flex items-center gap-2.5">
-              <span
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-white"
-                style={{ background: '#C2410C' }}
-              >
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
                 <ENumerakLogo className="h-5 w-5" />
               </span>
               <div>
@@ -918,7 +915,7 @@ function AgentTab({ onClose }: AgentTabProps) {
                 <button
                   key={q}
                   onClick={() => send(q)}
-                  className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:border-orange-300 hover:bg-orange-50 hover:text-orange-900"
+                  className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-900"
                 >
                   {q}
                 </button>
@@ -941,17 +938,16 @@ function AgentTab({ onClose }: AgentTabProps) {
                 <div
                   className={`max-w-[88%] rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed shadow-sm ${
                     msg.role === 'user'
-                      ? 'rounded-br-md text-white'
-                      : 'rounded-bl-md border border-stone-100 bg-stone-50 text-stone-700'
+                      ? 'rounded-br-md bg-gradient-to-r from-blue-500 to-blue-600 text-white'
+                      : 'rounded-bl-md border border-blue-100 bg-blue-50/50 text-slate-700'
                   }`}
-                  style={msg.role === 'user' ? { background: '#1C1917' } : undefined}
                 >
                   {msg.role === 'assistant' ? (
                     showTyping ? (
                       <span className="flex h-4 items-center gap-1">
-                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-stone-400" />
-                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-stone-400 [animation-delay:0.15s]" />
-                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-stone-400 [animation-delay:0.3s]" />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-400" />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-400 [animation-delay:0.15s]" />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-400 [animation-delay:0.3s]" />
                       </span>
                     ) : (
                       <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-headings:text-stone-900 prose-strong:text-stone-900">
@@ -970,7 +966,7 @@ function AgentTab({ onClose }: AgentTabProps) {
                       aria-label="Good response"
                       title="Good response"
                       className={`rounded-md p-1 transition-colors ${
-                        msg.feedback === 'like' ? 'text-emerald-600' : 'text-stone-300 hover:text-stone-500'
+                        msg.feedback === 'like' ? 'text-emerald-600' : 'text-slate-300 hover:text-blue-500'
                       }`}
                     >
                       <ThumbsUp className="h-3.5 w-3.5" fill={msg.feedback === 'like' ? 'currentColor' : 'none'} />
@@ -980,7 +976,7 @@ function AgentTab({ onClose }: AgentTabProps) {
                       aria-label="Bad response"
                       title="Bad response"
                       className={`rounded-md p-1 transition-colors ${
-                        msg.feedback === 'dislike' ? 'text-rose-500' : 'text-stone-300 hover:text-stone-500'
+                        msg.feedback === 'dislike' ? 'text-rose-500' : 'text-slate-300 hover:text-blue-500'
                       }`}
                     >
                       <ThumbsDown className="h-3.5 w-3.5" fill={msg.feedback === 'dislike' ? 'currentColor' : 'none'} />
@@ -1004,7 +1000,7 @@ function AgentTab({ onClose }: AgentTabProps) {
               <button
                 key={q}
                 onClick={() => send(q)}
-                className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:border-orange-300 hover:bg-orange-50 hover:text-orange-900"
+                className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-900"
               >
                 {q}
               </button>
@@ -1021,8 +1017,8 @@ function AgentTab({ onClose }: AgentTabProps) {
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-t border-stone-100 bg-white p-3">
-        <div className="flex items-end gap-2 rounded-2xl border border-stone-200 bg-stone-50 p-1.5 transition-colors focus-within:border-orange-200 focus-within:bg-white">
+      <div className="border-t border-blue-100 bg-white p-3">
+        <div className="flex items-end gap-2 rounded-2xl border border-blue-200 bg-blue-50/40 p-1.5 transition-colors focus-within:border-blue-300 focus-within:bg-white">
           <textarea
             ref={textareaRef}
             rows={1}
@@ -1036,8 +1032,7 @@ function AgentTab({ onClose }: AgentTabProps) {
           <button
             onClick={() => send()}
             disabled={!input.trim() || loading}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white transition-colors disabled:cursor-not-allowed disabled:opacity-30"
-            style={{ background: '#1C1917' }}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm shadow-blue-500/30 transition-colors hover:from-blue-400 hover:to-blue-500 disabled:cursor-not-allowed disabled:opacity-30"
             aria-label="Send message"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -1061,7 +1056,7 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
 
   return (
     <>
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-3">
+      <div dir="ltr" className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-3">
         <a
           href="https://wa.me/971506358421"
           target="_blank"
@@ -1075,8 +1070,7 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
         <button
           onClick={() => setOpen((o) => !o)}
           aria-label={open ? 'Close chat' : 'Open chat'}
-          className="flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-all hover:scale-105 active:scale-95"
-          style={{ background: '#1C1917', boxShadow: '0 10px 25px -5px rgba(28, 25, 23, 0.35)' }}
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-600/30 transition-all hover:scale-105 hover:from-blue-400 hover:to-blue-500 active:scale-95"
         >
           {open ? <X className="h-6 w-6" /> : <ENumerakLogo className="h-7 w-7" />}
         </button>
@@ -1084,27 +1078,25 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
 
       {open && (
         <div
-          className="fixed bottom-24 right-6 z-50 flex h-[min(640px,calc(100dvh_-_7rem))] w-[min(400px,calc(100vw_-_2rem))] flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl shadow-stone-900/10"
+          className="fixed bottom-24 right-6 z-50 flex h-[min(640px,calc(100dvh_-_7rem))] w-[min(400px,calc(100vw_-_2rem))] flex-col overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-2xl shadow-blue-900/15"
+          dir="ltr"
           role="dialog"
           aria-label="Chat support"
         >
           {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3.5 text-white" style={{ background: '#1C1917' }}>
-            <span
-              className="flex h-9 w-9 items-center justify-center rounded-xl"
-              style={{ background: 'rgba(194, 65, 12, 0.25)' }}
-            >
+          <div className="flex items-center gap-3 bg-gradient-to-r from-slate-950 via-blue-950 to-indigo-950 px-4 py-3.5 text-white">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
               <ENumerakLogo className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
               <h1 className="truncate text-sm font-semibold tracking-tight text-white">
                 E-Numerak Support
               </h1>
-              <p className="text-[11px] text-stone-400">Compliance & Tax Assistant</p>
+              <p className="text-[11px] text-blue-200/70">Compliance & Tax Assistant</p>
             </div>
             <button
               onClick={() => setOpen(false)}
-              className="rounded-lg p-1 text-stone-400 transition-colors hover:bg-white/10 hover:text-white"
+              className="rounded-lg p-1 text-blue-200/70 transition-colors hover:bg-white/10 hover:text-white"
               aria-label="Minimize chat"
             >
               <X className="h-4 w-4" />
@@ -1112,15 +1104,15 @@ export function ChatWidget(_props: ChatWidgetProps = {}) {
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex border-b border-stone-100 bg-stone-50 p-1">
+          <div className="flex border-b border-blue-100 bg-blue-50/60 p-1">
             {tabs.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 className={`flex-1 rounded-xl py-1.5 text-center text-xs font-semibold transition-all ${
                   tab === t.id
-                    ? 'bg-white text-stone-900 shadow-sm'
-                    : 'text-stone-500 hover:bg-stone-100 hover:text-stone-900'
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm'
+                    : 'text-slate-500 hover:bg-white/70 hover:text-blue-700'
                 }`}
               >
                 {t.label}

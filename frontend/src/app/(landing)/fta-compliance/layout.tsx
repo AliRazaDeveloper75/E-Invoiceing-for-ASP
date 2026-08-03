@@ -21,5 +21,5 @@ export const metadata: Metadata = {
 };
 
 export default function FtaComplianceLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return <div dir="ltr">{children}</div>;
 }

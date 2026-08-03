@@ -2,6 +2,34 @@ from django.db import models
 from apps.common.models import BaseModel
 
 
+class DemoRequest(BaseModel):
+    STATUS_NEW = 'new'
+    STATUS_CONTACTED = 'contacted'
+    STATUS_SCHEDULED = 'scheduled'
+    STATUS_COMPLETED = 'completed'
+    STATUS_CHOICES = [
+        (STATUS_NEW,       'New'),
+        (STATUS_CONTACTED, 'Contacted'),
+        (STATUS_SCHEDULED, 'Scheduled'),
+        (STATUS_COMPLETED, 'Completed'),
+    ]
+
+    full_name = models.CharField(max_length=200)
+    email = models.EmailField()
+    phone = models.CharField(max_length=30, blank=True)
+    company = models.CharField(max_length=200)
+    message = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_NEW)
+    admin_note = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'demo_requests'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.full_name} <{self.email}> — {self.company}"
+
+
 class ContactMessage(BaseModel):
     STATUS_NEW = 'new'
     STATUS_READ = 'read'

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   FileText, CheckCircle2, Clock, AlertTriangle,
   TrendingUp, ArrowRight, Calendar, DollarSign,
-  Receipt, Activity, ArrowUpRight,
+  Receipt, Activity, ArrowUpRight, Plus,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { BuyerDashboard, InvoiceListItem } from '@/types';
@@ -18,7 +18,7 @@ function SkeletonBlock({ className }: { className?: string }) {
 
 function DashboardSkeleton() {
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-4 sm:space-y-6">
+    <div className="space-y-6">
       <div className="space-y-2.5 sm:space-y-3">
         <SkeletonBlock className="h-7 sm:h-8 w-52" />
         <SkeletonBlock className="h-4 sm:h-5 w-64 sm:w-80" />
@@ -116,25 +116,25 @@ function StatCard({
 }) {
   return (
     <div
-      className="group relative bg-gradient-to-br from-blue-950 to-indigo-950 rounded-xl border border-white/10 p-3 sm:p-5 transition-all duration-300 animate-fade-in hover:shadow-lg hover:-translate-y-0.5 overflow-hidden"
+      className="group relative bg-gradient-to-br from-blue-950 to-indigo-950 rounded-xl border border-white/10 p-4 sm:p-6 transition-all duration-300 animate-fade-in hover:shadow-lg hover:-translate-y-0.5 overflow-hidden"
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className={`absolute top-2.5 right-2.5 sm:static sm:shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center ${color} transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg`}>
+      <div className={`absolute top-2.5 right-2.5 sm:static sm:shrink-0 w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center ${color} transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg`}>
         <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
       </div>
-      <div className="relative space-y-1 sm:space-y-1.5 sm:space-y-2 pr-9 sm:pr-0 min-w-0">
-        <p className="text-[10px] sm:text-sm text-blue-200/70 font-medium truncate">{label}</p>
-        <p className="text-xs sm:text-xl lg:text-2xl font-bold text-white leading-tight truncate">
+      <div className="relative space-y-1.5 sm:space-y-2 pr-10 sm:pr-0 min-w-0">
+        <p className="text-xs sm:text-sm text-blue-200/70 font-medium truncate">{label}</p>
+        <p className="text-sm sm:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
           {value}
         </p>
         {sub && (
-          <p className="text-[10px] sm:text-xs text-blue-300/60 flex items-center gap-1 min-w-0">
+          <p className="text-[11px] sm:text-xs text-blue-300/60 flex items-center gap-1 min-w-0">
             <TrendingUp className="w-3 h-3 shrink-0" />
             <span className="truncate">{sub}</span>
           </p>
         )}
       </div>
-      <div className="mt-2.5 sm:mt-4 h-1 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 transition-all duration-500 scale-x-0 group-hover:scale-x-100 origin-left" />
+      <div className="mt-3 sm:mt-4 h-1 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 transition-all duration-500 scale-x-0 group-hover:scale-x-100 origin-left" />
     </div>
   );
 }
@@ -231,16 +231,25 @@ export default function BuyerDashboardPage() {
   ];
 
   return (
-    <div className="p-3.5 sm:p-6 max-w-6xl mx-auto space-y-4 sm:space-y-6">
+    <div className="space-y-6">
       {/* ── Header ────────────────────────────────────────────────────── */}
       <div className="animate-fade-in">
         <div className="flex items-center gap-2 sm:gap-3 mb-1">
-          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-500 animate-pulse-soft" />
-          <span className="text-[10px] sm:text-xs font-medium text-blue-600 uppercase tracking-wider">Dashboard</span>
+          <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-blue-500 animate-pulse-soft" />
+          <span className="text-xs sm:text-sm font-medium text-blue-600 uppercase tracking-wider">Dashboard</span>
         </div>
-        <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
-          Welcome back
-        </h1>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+            Welcome back
+          </h1>
+          <Link
+            href="/buyer/invoices/new"
+            className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-md shadow-blue-500/25 hover:shadow-lg transition-all duration-200"
+          >
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            Create Invoice
+          </Link>
+        </div>
         <p className="text-gray-500 mt-1 text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5 flex-wrap">
           <span>Viewing invoices for</span>
           <span className="font-semibold text-gray-700 bg-gray-100 px-1.5 sm:px-2 py-0.5 rounded-md text-xs sm:text-sm">

@@ -15,7 +15,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const { collapsed } = useSidebar();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 to-blue-50/40">
+    <div dir="ltr" className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 to-blue-50/40">
       <Sidebar />
       <div
         className={`flex flex-col flex-1 min-w-0 transition-all duration-300 ease-in-out ${collapsed ? 'sm:ml-[68px]' : 'sm:ml-64'}`}
@@ -45,7 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.replace('/verify-email');
     } else if (user?.role === 'inbound_supplier' && window.location.pathname === '/dashboard') {
       router.replace('/supplier-portal');
-    } else if (user?.role === 'buyer') {
+    } else if (user?.role === 'buyer' && window.location.pathname === '/dashboard') {
       router.replace('/buyer/dashboard');
     }
   }, [isAuthenticated, isLoading, user, router]);

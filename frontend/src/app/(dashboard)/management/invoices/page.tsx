@@ -34,6 +34,7 @@ interface AdminInvoice {
   fta_status: string | null;
   asp_submission_id: string | null;
   created_by_name: string;
+  created_by_role?: string;
   created_at: string;
 }
 
@@ -266,7 +267,7 @@ export default function AdminInvoicesPage() {
                     <span className="text-[10px] text-teal-600 font-medium">FTA reported</span>
                   )}
                   <div className="flex items-center gap-2 pt-1">
-                    <Link href={`/management/invoices/${inv.id}`}
+                    <Link href={inv.created_by_role === 'buyer' ? `/invoices/${inv.id}` : `/management/invoices/${inv.id}`}
                       className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-sm transition-all">
                       <Eye className="h-3 w-3" /> View
                     </Link>

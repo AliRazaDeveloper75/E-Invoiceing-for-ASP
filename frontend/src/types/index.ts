@@ -220,6 +220,7 @@ export interface InvoiceListItem {
   has_xml: boolean;
   buyer_viewed_at: string | null;
   created_at: string;
+  created_by_role?: string;
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
@@ -299,9 +300,22 @@ export interface BuyerProfile {
   id: string;
   email: string;
   full_name: string;
+  created_at: string;
   customer_id: string;
   customer_name: string;
-  created_at: string;
+  customer_legal_name: string;
+  customer_type: string;
+  customer_trn: string;
+  customer_address: string;
+  customer_email: string;
+  customer_phone: string;
+  company_id: string;
+  company_name: string;
+  company_legal_name: string;
+  company_trn: string;
+  company_address: string;
+  company_email: string;
+  company_phone: string;
 }
 
 export interface BuyerDashboard {

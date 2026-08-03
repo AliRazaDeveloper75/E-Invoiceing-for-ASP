@@ -83,6 +83,7 @@ interface AdminInvoiceItem {
   has_xml?: boolean;
   asp_submission_id: string | null;
   created_by_name: string;
+  created_by_role?: string;
 }
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
@@ -357,7 +358,7 @@ export default function InvoicesPage() {
                 >
                     <div className="flex items-start justify-between mb-3">
                     <Link
-                      href={isAdmin ? `/management/invoices/${inv.id}` : `/invoices/${inv.id}`}
+                      href={isAdmin && inv.created_by_role !== 'buyer' ? `/management/invoices/${inv.id}` : `/invoices/${inv.id}`}
                       className="font-semibold text-indigo-600 hover:text-indigo-700 text-sm flex items-center gap-1 transition-colors"
                     >
                       {inv.invoice_number}
@@ -467,7 +468,7 @@ export default function InvoicesPage() {
                       >
                         <td className="px-5 py-4">
                           <Link
-                            href={isAdmin ? `/management/invoices/${inv.id}` : `/invoices/${inv.id}`}
+                            href={isAdmin && inv.created_by_role !== 'buyer' ? `/management/invoices/${inv.id}` : `/invoices/${inv.id}`}
                             className="font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
                           >
                             {inv.invoice_number}

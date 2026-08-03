@@ -10,6 +10,7 @@ Covers:
 """
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework import status
 
@@ -31,7 +32,7 @@ class UserModelTest(TestCase):
         self.assertEqual(user.full_name, 'Ahmed Al Mansoori')
         self.assertTrue(user.is_active)
         self.assertFalse(user.is_staff)
-        self.assertEqual(user.role, 'viewer')   # Default role
+        self.assertEqual(user.role, 'supplier')   # Default role
 
     def test_create_superuser(self):
         admin = User.objects.create_superuser(
@@ -44,9 +45,9 @@ class UserModelTest(TestCase):
         self.assertTrue(admin.is_superuser)
         self.assertEqual(admin.role, 'admin')
 
-    def test_email_normalized_to_lowercase(self):
+    def test_email_domain_normalized_to_lowercase(self):
         user = User.objects.create_user(
-            email='TEST@EXAMPLE.COM',
+            email='test@EXAMPLE.COM',
             password='Pass123!',
             first_name='Test',
             last_name='User',
@@ -70,6 +71,7 @@ class UserModelTest(TestCase):
 # ─── Registration API Tests ───────────────────────────────────────────────────
 
 class RegisterAPITest(TestCase):
+    """Public self-registration is closed — users join via invitation only."""
 
     def setUp(self):
         self.client = APIClient()
@@ -80,30 +82,70 @@ class RegisterAPITest(TestCase):
             'confirm_password': 'StrongPass123!',
             'first_name': 'Ahmed',
             'last_name': 'Al Rashid',
-            'role': 'accountant',
+            'role': 'admin',
         }
 
-    def test_successful_registration_returns_201(self):
+    def test_registration_is_closed_403(self):
         response = self.client.post(self.url, self.valid_payload, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn('tokens', response.data['data'])
-        self.assertIn('user', response.data['data'])
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_duplicate_email_returns_400(self):
+    def test_no_user_created(self):
         self.client.post(self.url, self.valid_payload, format='json')
+        self.assertEqual(User.objects.count(), 0)
+
+    def test_admin_role_in_payload_still_rejected(self):
         response = self.client.post(self.url, self.valid_payload, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(User.objects.filter(role='admin').exists())
 
-    def test_password_mismatch_returns_400(self):
-        payload = {**self.valid_payload, 'confirm_password': 'WrongPass!'}
-        response = self.client.post(self.url, payload, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    def test_registration_is_closed_without_any_payload(self):
+        response = self.client.post(self.url, {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_missing_email_returns_400(self):
-        payload = {**self.valid_payload}
-        del payload['email']
-        response = self.client.post(self.url, payload, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+class AdminUserCreationTest(TestCase):
+    """Admin panel is the only way to create platform admins — it must keep working."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = User.objects.create_user(
+            email='root@test.com', password='StrongPass123!',
+            first_name='Root', last_name='Admin', role='admin',
+        )
+
+    def test_admin_can_create_admin_via_admin_panel(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post('/api/v1/admin/users/', {
+            'email': 'newadmin@test.com', 'password': 'StrongPass123!',
+            'first_name': 'New', 'last_name': 'Admin', 'role': 'admin',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(User.objects.filter(email='newadmin@test.com', role='admin').exists())
+
+    def test_admin_can_change_role_via_admin_panel(self):
+        user = User.objects.create_user(
+            email='member@test.com', password='StrongPass123!',
+            first_name='M', last_name='R', role='viewer',
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(f'/api/v1/admin/users/{user.id}/', {
+            'role': 'admin',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user.refresh_from_db()
+        self.assertEqual(user.role, 'admin')
+
+    def test_non_admin_cannot_create_user(self):
+        user = User.objects.create_user(
+            email='buyer@test.com', password='StrongPass123!',
+            first_name='B', last_name='U', role='buyer',
+        )
+        self.client.force_authenticate(user=user)
+        response = self.client.post('/api/v1/admin/users/', {
+            'email': 'x@test.com', 'password': 'StrongPass123!',
+            'first_name': 'X', 'last_name': 'Y', 'role': 'admin',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
 # ─── Login / JWT Tests ────────────────────────────────────────────────────────
@@ -119,6 +161,9 @@ class LoginAPITest(TestCase):
             first_name='Fatima',
             last_name='Al Zaabi',
             role='accountant',
+            email_verified=True,
+            mfa_enabled=True,
+            mfa_verified_at=timezone.now(),
         )
 
     def test_login_returns_tokens(self):
@@ -127,8 +172,8 @@ class LoginAPITest(TestCase):
             'password': 'StrongPass123!',
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('access', response.data)
-        self.assertIn('refresh', response.data)
+        self.assertIn('access', response.data['data'])
+        self.assertIn('refresh', response.data['data'])
 
     def test_login_with_wrong_password_returns_401(self):
         response = self.client.post(self.url, {

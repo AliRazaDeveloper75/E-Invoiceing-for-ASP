@@ -12,6 +12,8 @@ const NAV_LINKS = [
   { key: 'nav.home',     href: '/' },
   { key: 'nav.about',    href: '/about' },
   { key: 'nav.services', href: '/services' },
+  { key: 'nav.pricing',  href: '/pricing' },
+  { key: 'nav.blog',     href: '/blog' },
   { key: 'nav.peppol',   href: '/e-invoice' },
   { key: 'nav.contact',  href: '/contact' },
 ];
@@ -89,7 +91,7 @@ function Navbar() {
               {t('nav.signIn')}
             </Link>
             <Link
-              href="/dashboard"
+              href="/book-demo"
               className="
                 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold
                 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500
@@ -179,7 +181,7 @@ function Navbar() {
               {t('nav.signIn')}
             </Link>
             <Link
-              href="/dashboard"
+              href="/book-demo"
               onClick={() => setMenuOpen(false)}
               className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg hover:from-blue-400 hover:to-blue-500 transition-all"
             >
@@ -318,19 +320,19 @@ function Footer() {
                 <span className="flex items-center justify-center w-5 h-5 rounded-md bg-white/[0.06] border border-white/[0.06] shrink-0 mt-0.5">
                   <Mail className="h-3 w-3" />
                 </span>
-                <span className="leading-relaxed">info@enumerak.com</span>
+                <a href="mailto:info@e-numerak.com" className="ltr leading-relaxed hover:underline">info@e-numerak.com</a>
               </li>
               <li className="flex items-start gap-3 text-xs text-blue-200/60">
                 <span className="flex items-center justify-center w-5 h-5 rounded-md bg-white/[0.06] border border-white/[0.06] shrink-0 mt-0.5">
                   <MapPin className="h-3 w-3" />
                 </span>
-                <span className="leading-relaxed">Dubai, United Arab Emirates</span>
+                <span className="ltr leading-relaxed">Dubai, United Arab Emirates</span>
               </li>
               <li className="flex items-start gap-3 text-xs text-blue-200/60">
                 <span className="flex items-center justify-center w-5 h-5 rounded-md bg-white/[0.06] border border-white/[0.06] shrink-0 mt-0.5">
                   <Phone className="h-3 w-3" />
                 </span>
-                <a href="https://wa.me/971506358421" target="_blank" rel="noopener noreferrer" className="leading-relaxed hover:text-white transition-colors">
+                <a href="https://wa.me/971506358421" target="_blank" rel="noopener noreferrer" className="ltr leading-relaxed hover:text-white transition-colors">
                   +971 50 635 8421
                 </a>
               </li>
@@ -339,7 +341,7 @@ function Footer() {
         </div>
 
         <div className="py-5 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-blue-200/50">
-          <span>&copy; {new Date().getFullYear()} {t('footer.rights')}</span>
+          <span><span className="ltr">&copy; {new Date().getFullYear()}</span> {t('footer.rights')}</span>
           <span className="flex items-center gap-1.5">
             {t('footer.certified')}
           </span>
@@ -357,8 +359,10 @@ function Footer() {
 }
 
 export default function LandingLayout({ children }: { children: React.ReactNode }) {
+  const { dir, locale } = useI18n();
+
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div dir={dir} lang={locale} className="min-h-screen flex flex-col bg-white">
       <Navbar />
       <main className="flex-1 pt-16 md:pt-20">
         {children}

@@ -9,8 +9,11 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import validate_email
 from django.core.mail import send_mail
 from rest_framework.exceptions import ValidationError, PermissionDenied
+
+from apps.common.constants import USER_ROLE_CHOICES
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -40,9 +43,20 @@ class AuthService:
         """
         email = email.strip().lower()
 
+        # Guard: email must be a valid address
+        try:
+            validate_email(email)
+        except DjangoValidationError:
+            raise ValidationError({'email': 'Enter a valid email address.'})
+
         # Guard: email must be unique
         if User.objects.filter(email=email).exists():
             raise ValidationError({'email': 'A user with this email already exists.'})
+
+        # Guard: role must be a valid platform role
+        valid_roles = [c[0] for c in USER_ROLE_CHOICES]
+        if role not in valid_roles:
+            raise ValidationError({'role': f'Invalid role. Choices: {valid_roles}'})
 
         # Validate password strength against Django AUTH_PASSWORD_VALIDATORS
         try:

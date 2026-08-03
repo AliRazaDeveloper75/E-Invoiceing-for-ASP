@@ -36,12 +36,10 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Reflect locale on the <html> element (lang + dir) for RTL support.
-  useEffect(() => {
-    const dir: Dir = locale === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = locale;
-    document.documentElement.dir = dir;
-  }, [locale]);
+  // Locale is applied per-layout: only translated route groups (landing,
+  // login) set dir/lang on their own wrappers. English-only sections
+  // (dashboard, buyer portal, admin) must stay LTR so numbers and English
+  // text never flip.
 
   const setLocale = useCallback((l: Locale) => {
     setLocaleState(l);

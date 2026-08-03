@@ -28,6 +28,9 @@ class CompanyService:
         Uses atomic transaction: company + membership are created together,
         or neither is created (prevents orphaned companies with no admin).
         """
+        if requesting_user.role not in ('admin', 'supplier'):
+            raise PermissionDenied('Only admin and supplier roles can create companies.')
+
         trn = data.get('trn', '').strip()
 
         if Company.objects.filter(trn=trn).exists():
@@ -48,6 +51,7 @@ class CompanyService:
             phone=data.get('phone', '').strip(),
             email=data.get('email', '').strip(),
             website=data.get('website', '').strip(),
+            logo=data.get('logo'),
         )
 
         # Creator automatically becomes company admin

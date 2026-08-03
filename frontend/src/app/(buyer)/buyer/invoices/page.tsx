@@ -5,12 +5,13 @@ export const dynamic = 'force-dynamic';
 import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { FileText, ArrowRight, ChevronLeft, ChevronRight, Inbox, ShieldCheck } from 'lucide-react';
+import { FileText, ArrowRight, ChevronLeft, ChevronRight, Inbox, ShieldCheck, Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { InvoiceListItem, APIPaginated, InvoiceStatus } from '@/types';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: '',                  label: 'All' },
+  { value: 'draft',             label: 'Draft' },
   { value: 'awaiting_approval', label: 'Needs Approval' },
   { value: 'validated',         label: 'Unpaid' },
   { value: 'submitted',         label: 'Submitted' },
@@ -97,14 +98,23 @@ export default function BuyerInvoiceListPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-5">
+    <div className="space-y-5">
       {/* ── Header ─────────────────────────────────────────────── */}
       <div className="animate-fade-in">
         <div className="flex items-center gap-3 mb-1">
           <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse-soft" />
           <span className="text-xs font-medium text-blue-600 uppercase tracking-wider">Invoices</span>
         </div>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Invoices</h1>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Invoices</h1>
+          <Link
+            href="/buyer/invoices/new"
+            className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-md shadow-blue-500/25 hover:shadow-lg transition-all duration-200"
+          >
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            Create Invoice
+          </Link>
+        </div>
         <p className="text-gray-500 mt-1 text-sm sm:text-base">
           {pagination.count} invoice{pagination.count !== 1 ? 's' : ''}
           {statusFilter && <span className="text-gray-400"> &middot; filtered</span>}

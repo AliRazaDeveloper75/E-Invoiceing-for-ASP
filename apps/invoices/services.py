@@ -15,6 +15,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 
 from apps.companies.models import Company, CompanyMember
+from apps.common.constants import ROLE_BUYER
 from apps.customers.models import Customer
 from .models import Invoice, InvoiceItem, InvoiceAuditLog, VAT_RATE_MAP
 
@@ -735,7 +736,9 @@ class InvoiceService:
         qs = Invoice.objects.filter(company=company, is_active=True).select_related('customer')
 
         if created_by is not None:
-            qs = qs.filter(created_by=created_by)
+            qs = qs.filter(
+                Q(created_by=created_by) | Q(created_by__role=ROLE_BUYER)
+            )
 
         if status:
             qs = qs.filter(status=status)
@@ -774,11 +777,13 @@ class InvoiceService:
         Aggregate counts and totals for the dashboard.
         Pass created_by=request.user for per-user isolation.
         """
-        from django.db.models import Count, Sum
+        from django.db.models import Count, Sum, Q
 
         qs = Invoice.objects.filter(company=company, is_active=True)
         if created_by is not None:
-            qs = qs.filter(created_by=created_by)
+            qs = qs.filter(
+                Q(created_by=created_by) | Q(created_by__role=ROLE_BUYER)
+            )
 
         status_counts = dict(
             qs.values('status')

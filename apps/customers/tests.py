@@ -11,6 +11,7 @@ Covers:
 """
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 from rest_framework import status
 
@@ -41,6 +42,18 @@ def make_customer(company, name='Al Futtaim LLC', trn='200000000000001'):
         company=company, name=name, customer_type='b2b',
         trn=trn, country='AE',
     )
+
+
+def make_logo():
+    import io
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.new('RGB', (1, 1), color=(255, 255, 255)).save(buf, format='PNG')
+    return SimpleUploadedFile('logo.png', buf.getvalue(), content_type='image/png')
+
+
+def make_trn_document():
+    return SimpleUploadedFile('trn.pdf', b'fake-pdf-content', content_type='application/pdf')
 
 
 # ─── Model Tests ──────────────────────────────────────────────────────────────
@@ -177,6 +190,39 @@ class CustomerCreateAPITest(TestCase):
         self.client.post(self.url, self.valid_payload, format='json')
         response = self.client.post(self.url, self.valid_payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_b2c_can_be_created_without_trn_document(self):
+        self.client.force_authenticate(user=self.admin)
+        payload = {
+            **self.valid_payload,
+            'customer_type': 'b2c',
+            'trn': '',
+            'logo': make_logo(),
+        }
+        response = self.client.post(self.url, payload, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['data']['customer_type'], 'b2c')
+        self.assertIsNone(response.data['data']['trn_document'])
+
+    def test_b2b_requires_trn_document(self):
+        self.client.force_authenticate(user=self.admin)
+        payload = {**self.valid_payload, 'logo': make_logo()}
+        response = self.client.post(self.url, payload, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('trn_document', response.data['error']['details'])
+
+    def test_b2c_with_trn_document_is_accepted(self):
+        self.client.force_authenticate(user=self.admin)
+        payload = {
+            **self.valid_payload,
+            'customer_type': 'b2c',
+            'trn': '',
+            'logo': make_logo(),
+            'trn_document': make_trn_document(),
+        }
+        response = self.client.post(self.url, payload, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNotNone(response.data['data']['trn_document'])
 
 
 # ─── Detail / Update / Delete Tests ──────────────────────────────────────────

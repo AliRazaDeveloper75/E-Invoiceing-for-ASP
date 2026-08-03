@@ -599,7 +599,7 @@ function useStripeSuccessHandler(invoiceId: string, mutate: () => void, mutatePa
 
 function LoadingSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+    <div className="space-y-6">
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <div className="h-1 bg-slate-100" />
         <div className="p-4 sm:p-6 lg:p-8">
@@ -784,7 +784,7 @@ export default function BuyerInvoiceDetailPage() {
   const payments = paymentData?.payments ?? [];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+    <div className="space-y-6">
 
       {/* Stripe result banner */}
       {stripeMsg && (

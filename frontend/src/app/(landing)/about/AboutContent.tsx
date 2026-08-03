@@ -121,7 +121,7 @@ export function AboutContent() {
                 </p>
               </AnimatedSection>
               <AnimatedSection delay={450} direction="up">
-                <div className="flex flex-wrap gap-3 mt-8">
+                <div dir="ltr" className="flex flex-wrap gap-3 mt-8">
                   {['FTA Certified', 'BIS 3.0', 'UBL 2.1', 'VAT Compliant'].map((badge) => (
                     <span
                       key={badge}
@@ -136,7 +136,7 @@ export function AboutContent() {
 
             {/* Right: Company profile mockup */}
             <AnimatedSection delay={300} direction="right" className="hidden lg:block">
-              <div className="relative">
+              <div dir="ltr" className="relative">
                 <div className="absolute -inset-8 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-cyan-500/20 blur-3xl rounded-3xl" />
 
                 <div className="relative bg-white/[0.04] backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-black/30 hover:shadow-blue-500/10 transition-shadow duration-500">
@@ -264,7 +264,7 @@ export function AboutContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection direction="up" delay={0}>
             <div className="max-w-2xl mb-14">
-              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100/80 text-blue-700 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5">
+              <div dir="ltr" className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100/80 text-blue-700 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5">
                 <Sparkles className="h-3.5 w-3.5" />
                 Why E-Numerak
               </div>
@@ -299,14 +299,14 @@ export function AboutContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection direction="up" delay={0}>
             <div className="max-w-2xl mb-14">
-              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-100/80 text-emerald-700 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5">
+              <div dir="ltr" className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-100/80 text-emerald-700 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5">
                 <Sparkles className="h-3.5 w-3.5" />
                 Platform Capabilities
               </div>
-              <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 tracking-tight leading-tight">
+              <h2 dir="ltr" className="text-3xl lg:text-5xl font-bold text-gray-900 tracking-tight leading-tight">
                 Engineered for Excellence
               </h2>
-              <p className="text-gray-500 text-[15px] leading-relaxed mt-4 max-w-xl">
+              <p dir="ltr" className="text-gray-500 text-[15px] leading-relaxed mt-4 max-w-xl">
                 Every feature is built from the ground up to meet UAE regulatory standards while
                 delivering a seamless user experience.
               </p>
@@ -319,8 +319,8 @@ export function AboutContent() {
                   <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-brand-50 to-blue-50 text-brand-600 mb-4 transition-all duration-300 group-hover:scale-110 group-hover:from-brand-500 group-hover:to-brand-600 group-hover:text-white">
                     {item.icon}
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-1.5">{item.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
+                  <h3 dir="ltr" className="font-bold text-gray-900 mb-1.5">{item.title}</h3>
+                  <p dir="ltr" className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
                 </div>
               </AnimatedSection>
             ))}
@@ -333,7 +333,7 @@ export function AboutContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection direction="up" delay={0}>
             <div className="max-w-2xl mb-14">
-              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-purple-50 border border-purple-100/80 text-purple-700 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5">
+              <div dir="ltr" className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-purple-50 border border-purple-100/80 text-purple-700 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5">
                 <ScrollText className="h-3.5 w-3.5" />
                 Regulatory Journey
               </div>
@@ -391,7 +391,7 @@ export function AboutContent() {
         </div>
         <AnimatedSection direction="up">
           <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/10 border border-white/10 text-blue-200 text-[11px] font-semibold uppercase tracking-[0.12em] mb-6 backdrop-blur-sm">
+            <div dir="ltr" className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/10 border border-white/10 text-blue-200 text-[11px] font-semibold uppercase tracking-[0.12em] mb-6 backdrop-blur-sm">
               <Sparkles className="h-3.5 w-3.5" />
               Get Started
             </div>

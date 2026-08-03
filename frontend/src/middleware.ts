@@ -3,8 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 // Exact-match public paths (landing pages — no auth required)
 const PUBLIC_EXACT = new Set([
   '/', '/about', '/e-invoice', '/services', '/contact',
+  '/pricing', '/blog',
   '/privacy-policy', '/terms', '/fta-compliance',
-  '/bot-admin',  // ← add this
+  '/bot-admin', '/book-demo',
 ]);
 // Always public — accessible whether logged in or not (no redirect either way)
 const ALWAYS_PUBLIC = ['/activate', '/verify-email', '/buyer/accept-invite', '/accept-invite'];
@@ -29,7 +30,8 @@ export function middleware(request: NextRequest) {
   const isPublic =
     PUBLIC_EXACT.has(pathname) ||
     ALWAYS_PUBLIC.some((p) => pathname.startsWith(p)) ||
-    GUEST_ONLY.some((p) => pathname.startsWith(p));
+    GUEST_ONLY.some((p) => pathname.startsWith(p)) ||
+    pathname.startsWith('/blog/');
 
   // Unauthenticated user hitting a protected route → send to login
   if (!isPublic && !access) {

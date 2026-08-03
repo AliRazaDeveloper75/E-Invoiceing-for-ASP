@@ -11,7 +11,7 @@ import {
   XCircle, Clock, RefreshCw,
   Send, Landmark, ShieldCheck, ArrowRight, CreditCard, Eye,
   Truck, UserCheck, MessageSquare, UserPlus, X, Loader2, Mail,
-  ClipboardList, TrendingUp,
+  ClipboardList, TrendingUp, Calendar,
 } from 'lucide-react';
 import CustomSelect from '@/components/ui/CustomSelect';
 
@@ -38,6 +38,9 @@ interface AdminStats {
     total_amount: string;
   };
   contact_messages: {
+    new: number;
+  };
+  demo_requests: {
     new: number;
   };
 }
@@ -619,6 +622,14 @@ export default function ManagementPage() {
                   count={stats?.payments.total_count ?? 0}
                   href="/management/payments"
                   icon={CreditCard}
+                />
+                <QueueCard
+                  title="Demo Requests"
+                  subtitle="People who booked a free demo — reach out and schedule"
+                  count={stats?.demo_requests?.new ?? 0}
+                  urgent
+                  href="/demo-requests"
+                  icon={Calendar}
                 />
                 <QueueCard
                   title="Contact Messages"

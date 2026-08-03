@@ -15,11 +15,15 @@ Endpoints:
   GET  /api/v1/admin/invoices/                       — all invoices (all companies)
   POST /api/v1/admin/invoices/<uuid>/submit/         — admin triggers ASP submission
   POST /api/v1/admin/invoices/<uuid>/report-fta/     — admin triggers FTA reporting
+  POST /api/v1/demo/                                 — public demo request submission
+  GET  /api/v1/admin/demo-requests/                  — list all demo requests (admin)
+  PUT  /api/v1/admin/demo-requests/<uuid>/           — update status/note (admin)
   POST /api/v1/contact/                              — public contact form submission
   GET  /api/v1/admin/contact-messages/               — list all contact messages (admin)
   PUT  /api/v1/admin/contact-messages/<uuid>/        — update status/note (admin)
 """
 import logging
+import re
 from django.contrib.auth import get_user_model
 from django.db.models import Q, Count
 from django.shortcuts import get_object_or_404
@@ -95,6 +99,9 @@ class AdminStatsView(APIView):
         contact_qs = ContactMessage.objects.filter(is_active=True)
         contact_new = contact_qs.filter(status=ContactMessage.STATUS_NEW).count()
 
+        # Demo request stats
+        demo_new = DemoRequest.objects.filter(is_active=True, status=DemoRequest.STATUS_NEW).count()
+
         return success_response(data={
             'users': {
                 'total':    total_users,
@@ -118,6 +125,9 @@ class AdminStatsView(APIView):
             },
             'contact_messages': {
                 'new': contact_new,
+            },
+            'demo_requests': {
+                'new': demo_new,
             },
         })
 
@@ -555,6 +565,7 @@ class AdminInvoiceSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display',     read_only=True)
     type_display   = serializers.CharField(source='get_invoice_type_display', read_only=True)
     created_by_name = serializers.SerializerMethodField()
+    created_by_role = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
@@ -565,12 +576,17 @@ class AdminInvoiceSerializer(serializers.ModelSerializer):
             'issue_date', 'currency',
             'subtotal', 'total_vat', 'total_amount',
             'fta_status', 'asp_submission_id',
-            'created_by_name', 'created_at',
+            'created_by_name', 'created_by_role', 'created_at',
         ]
 
     def get_created_by_name(self, obj) -> str:
         if obj.created_by:
             return obj.created_by.full_name
+        return ''
+
+    def get_created_by_role(self, obj) -> str:
+        if obj.created_by:
+            return obj.created_by.role or ''
         return ''
 
 
@@ -626,6 +642,7 @@ class AdminPaymentListView(APIView):
                 'invoice_id':     str(p.invoice_id),
                 'invoice_number': p.invoice.invoice_number,
                 'invoice_status': p.invoice.status,
+                'created_by_role': p.invoice.created_by.role if p.invoice.created_by else '',
                 'company_name':   p.invoice.company.name,
                 'customer_name':  p.invoice.customer.name,
                 'amount':         str(p.amount),
@@ -698,6 +715,193 @@ class AdminPaymentVoidView(APIView):
             message=f'Payment voided. Invoice {invoice.invoice_number} status updated to {new_status}.',
             data={'invoice_status': new_status},
         )
+
+
+# ─── Demo Requests ────────────────────────────────────────────────────────────
+
+from .models import DemoRequest
+
+# Mirrors frontend EMAIL_REGEX (strict RFC 5322 shape, requires TLD)
+DEMO_EMAIL_REGEX = re.compile(
+    r'^[a-zA-Z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?'
+    r'(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$'
+)
+
+DEMO_DISPOSABLE_DOMAINS = frozenset([
+    'mailinator.com', 'guerrillamail.com', 'guerrillamail.info', 'guerrillamail.biz',
+    'guerrillamail.de', 'guerrillamail.net', 'guerrillamail.org', 'tempmail.com',
+    '10minutemail.com', 'throwaway.email', 'yopmail.com', 'trashmail.com',
+    'fakeinbox.com', 'sharklasers.com', 'spam4.me', 'tempr.email',
+    'discard.email', 'mailnull.com', 'maildrop.cc', 'discardmail.com',
+    'spamgourmet.com', 'mailmetrash.com', 'spamspot.com', 'throwam.com',
+    'dispostable.com', 'getairmail.com', 'meltmail.com', 'spambox.us',
+    'mytrashmail.com', 'trashmailer.com', 'wegwerfmail.de', 'spamfree24.org',
+    'fakemailgenerator.com', 'mailnesia.com', 'mintemail.com', 'mt2015.com',
+    'spamgourmet.net', 'tempemail.com', 'crazymailing.com',
+    'getnada.com', 'spamthisplease.com', 'inboxkitten.com',
+])
+
+
+class DemoRequestSubmitView(APIView):
+    """
+    POST /api/v1/demo/
+    Public endpoint — no authentication required.
+    """
+    permission_classes = []
+    authentication_classes = []
+
+    def post(self, request):
+        data = request.data or {}
+        errors = {}
+
+        full_name = str(data.get('full_name', '')).strip()
+        email = str(data.get('email', '')).strip()
+        phone = str(data.get('phone', '')).strip()
+        company = str(data.get('company', '')).strip()
+        message = str(data.get('message', '')).strip()
+
+        if not full_name:
+            errors['full_name'] = 'Full name is required.'
+        elif len(full_name) > 200:
+            errors['full_name'] = 'Full name must be 200 characters or fewer.'
+
+        if not email:
+            errors['email'] = 'Email is required.'
+        elif len(email) > 254:
+            errors['email'] = 'Email must be 254 characters or fewer.'
+        elif not DEMO_EMAIL_REGEX.match(email):
+            errors['email'] = 'Enter a valid email address (e.g. name@company.ae).'
+        elif email.lower().split('@')[-1] in DEMO_DISPOSABLE_DOMAINS:
+            errors['email'] = 'Disposable email addresses are not accepted.'
+
+        if phone:
+            if len(phone) > 30:
+                errors['phone'] = 'Phone number is too long (maximum 30 characters).'
+            else:
+                digits = re.sub(r'[\s\-().+]', '', phone)
+                if not digits.isdigit():
+                    errors['phone'] = 'Phone number must contain only digits, spaces, hyphens, or parentheses.'
+                elif len(digits) < 7 or len(digits) > 15:
+                    errors['phone'] = 'Phone number must be between 7 and 15 digits.'
+
+        if not company:
+            errors['company'] = 'Company name is required.'
+        elif len(company) > 200:
+            errors['company'] = 'Company name must be 200 characters or fewer.'
+
+        if message and len(message) > 1000:
+            errors['message'] = 'Message must be 1000 characters or fewer.'
+
+        if errors:
+            return error_response(
+                message='Please fix the highlighted fields and try again.',
+                details=errors,
+                status_code=400,
+            )
+
+        DemoRequest.objects.create(
+            full_name=full_name,
+            email=email,
+            phone=phone,
+            company=company,
+            message=message,
+        )
+        return success_response(message='Demo request received. We will contact you within 24 hours.')
+
+
+class AdminDemoRequestListView(APIView):
+    """
+    GET /api/v1/admin/demo-requests/
+    List all demo requests — admin only.
+    """
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        qs = DemoRequest.objects.filter(is_active=True)
+
+        status_filter = request.query_params.get('status', '').strip()
+        search = request.query_params.get('search', '').strip()
+
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        if search:
+            qs = qs.filter(
+                Q(full_name__icontains=search) |
+                Q(email__icontains=search) |
+                Q(company__icontains=search) |
+                Q(phone__icontains=search) |
+                Q(message__icontains=search)
+            )
+
+        paginator = StandardResultsPagination()
+        page = paginator.paginate_queryset(qs, request)
+
+        data = [{
+            'id':         str(m.id),
+            'full_name':  m.full_name,
+            'email':      m.email,
+            'phone':      m.phone,
+            'company':    m.company,
+            'message':    m.message,
+            'status':     m.status,
+            'admin_note': m.admin_note,
+            'created_at': m.created_at.isoformat(),
+        } for m in page]
+
+        return success_response(data={
+            'results': data,
+            'counts': {
+                'new':       DemoRequest.objects.filter(is_active=True, status='new').count(),
+                'contacted': DemoRequest.objects.filter(is_active=True, status='contacted').count(),
+                'scheduled': DemoRequest.objects.filter(is_active=True, status='scheduled').count(),
+                'completed': DemoRequest.objects.filter(is_active=True, status='completed').count(),
+            },
+            'pagination': {
+                'count':    paginator.page.paginator.count,
+                'next':     paginator.get_next_link(),
+                'previous': paginator.get_previous_link(),
+            },
+        })
+
+
+class AdminDemoRequestDetailView(APIView):
+    """
+    GET    /api/v1/admin/demo-requests/<uuid>/  → detail
+    PUT    /api/v1/admin/demo-requests/<uuid>/  → update
+    DELETE /api/v1/admin/demo-requests/<uuid>/  → soft-delete
+    """
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request, pk):
+        req = get_object_or_404(DemoRequest, id=pk, is_active=True)
+        return success_response(data={
+            'id':         str(req.id),
+            'full_name':  req.full_name,
+            'email':      req.email,
+            'phone':      req.phone,
+            'company':    req.company,
+            'message':    req.message,
+            'status':     req.status,
+            'admin_note': req.admin_note,
+            'created_at': req.created_at.isoformat(),
+        })
+
+    def put(self, request, pk):
+        req = get_object_or_404(DemoRequest, id=pk, is_active=True)
+        allowed = {'new', 'contacted', 'scheduled', 'completed'}
+        new_status = request.data.get('status', req.status)
+        if new_status not in allowed:
+            return error_response('Invalid status.', status_code=400)
+        req.status = new_status
+        req.admin_note = request.data.get('admin_note', req.admin_note)
+        req.save(update_fields=['status', 'admin_note', 'updated_at'])
+        return success_response(message='Updated.')
+
+    def delete(self, request, pk):
+        req = get_object_or_404(DemoRequest, id=pk, is_active=True)
+        req.is_active = False
+        req.save(update_fields=['is_active', 'updated_at'])
+        return success_response(message='Demo request deleted.')
 
 
 # ─── Contact Messages ─────────────────────────────────────────────────────────

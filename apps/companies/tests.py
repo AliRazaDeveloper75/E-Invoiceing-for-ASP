@@ -9,6 +9,7 @@ Covers:
 """
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 from rest_framework import status
 
@@ -29,6 +30,13 @@ def make_company(trn='100000000000001', name='Test Co'):
         name=name, legal_name=name, trn=trn,
         street_address='123 Main St', city='Dubai', emirate='dubai',
     )
+
+def make_logo():
+    import io
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.new('RGB', (1, 1), color=(255, 255, 255)).save(buf, format='PNG')
+    return SimpleUploadedFile('logo.png', buf.getvalue(), content_type='image/png')
 
 
 # ─── Model Tests ──────────────────────────────────────────────────────────────
@@ -85,6 +93,8 @@ class CompanyCreateAPITest(TestCase):
             'name': 'Alpha Trading LLC',
             'legal_name': 'Alpha Trading LLC',
             'trn': '100000000000001',
+            'trn_issue_date': '2023-01-01',
+            'trn_expiry_date': '2028-01-01',
             'street_address': 'Sheikh Zayed Road, Tower A',
             'city': 'Dubai',
             'emirate': 'dubai',
@@ -104,6 +114,14 @@ class CompanyCreateAPITest(TestCase):
         membership = CompanyMember.objects.get(company=company, user=self.user)
         self.assertEqual(membership.role, 'admin')
 
+    def test_create_company_with_logo(self):
+        payload = {**self.valid_payload, 'logo': make_logo()}
+        response = self.client.post(self.url, payload, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        company = Company.objects.get(trn='100000000000001')
+        self.assertTrue(company.logo)
+        self.assertIsNotNone(response.data['data']['logo_url'])
+
     def test_duplicate_trn_returns_400(self):
         self.client.post(self.url, self.valid_payload, format='json')
         response = self.client.post(self.url, self.valid_payload, format='json')
@@ -118,6 +136,34 @@ class CompanyCreateAPITest(TestCase):
         self.client.force_authenticate(user=None)
         response = self.client.post(self.url, self.valid_payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_supplier_can_create_company(self):
+        supplier = make_user(email='supplier@test.com', role='supplier')
+        self.client.force_authenticate(user=supplier)
+        response = self.client.post(self.url, self.valid_payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_buyer_cannot_create_company(self):
+        buyer = make_user(email='buyer@test.com', role='buyer')
+        self.client.force_authenticate(user=buyer)
+        response = self.client.post(self.url, self.valid_payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_viewer_cannot_create_company(self):
+        viewer = make_user(email='viewer@test.com', role='viewer')
+        self.client.force_authenticate(user=viewer)
+        response = self.client.post(self.url, self.valid_payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_buyer_can_still_list_companies(self):
+        buyer = make_user(email='buyer@test.com', role='buyer')
+        company = make_company()
+        CompanyMember.objects.create(company=company, user=buyer, role='viewer')
+        self.client.force_authenticate(user=buyer)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        ids = [c['id'] for c in response.data['data']]
+        self.assertIn(str(company.id), ids)
 
 
 class CompanyDetailAPITest(TestCase):

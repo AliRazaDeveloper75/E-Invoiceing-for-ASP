@@ -103,7 +103,7 @@ export function PeppolContent() {
                 </p>
               </AnimatedSection>
               <AnimatedSection delay={450} direction="up">
-                <div className="flex flex-wrap gap-3 mt-8">
+                <div dir="ltr" className="flex flex-wrap gap-3 mt-8">
                   {['5-Corner Model', 'BIS 3.0', 'UBL 2.1', 'FTA Network'].map((badge) => (
                     <span
                       key={badge}
@@ -118,7 +118,7 @@ export function PeppolContent() {
 
             {/* Right: Network transmission mockup */}
             <AnimatedSection delay={300} direction="right" className="hidden lg:block">
-              <div className="relative">
+              <div dir="ltr" className="relative">
                 <div className="absolute -inset-8 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-cyan-500/20 blur-3xl rounded-3xl" />
 
                 <div className="relative bg-white/[0.04] backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-black/30 hover:shadow-blue-500/10 transition-shadow duration-500">
@@ -243,7 +243,7 @@ export function PeppolContent() {
                 <Network className="h-3.5 w-3.5" />
                 {t('peppol.cornersTitle')}
               </div>
-              <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 tracking-tight leading-tight">
+              <h2 dir="ltr" className="text-3xl lg:text-5xl font-bold text-gray-900 tracking-tight leading-tight">
                 How the 5 Corners Work
               </h2>
               <p className="text-gray-500 text-[15px] leading-relaxed mt-4 max-w-xl">
@@ -320,7 +320,7 @@ export function PeppolContent() {
                 />
               </div>
               <div className="relative">
-                <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-blue-200 text-[10px] font-semibold uppercase tracking-[0.12em] mb-4">
+                <div dir="ltr" className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-blue-200 text-[10px] font-semibold uppercase tracking-[0.12em] mb-4">
                   <Sparkles className="h-3 w-3" />
                   Platform Position
                 </div>
@@ -357,7 +357,7 @@ export function PeppolContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection direction="up" delay={0}>
             <div className="max-w-2xl mb-14">
-              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-100/80 text-emerald-700 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5">
+              <div dir="ltr" className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-100/80 text-emerald-700 text-[11px] font-semibold uppercase tracking-[0.12em] mb-5">
                 <FileCode2 className="h-3.5 w-3.5" />
                 Technical Specification
               </div>
@@ -406,17 +406,17 @@ export function PeppolContent() {
             <div className="mt-8 flex flex-wrap items-center gap-4 p-5 bg-blue-50 rounded-2xl border border-blue-100">
               <div className="flex items-center gap-2 text-sm text-blue-800">
                 <CheckCircle2 className="h-5 w-5 text-blue-600 shrink-0" />
-                <span className="font-medium">BIS Billing 3.0 compliant</span>
+                <span dir="ltr" className="font-medium">BIS Billing 3.0 compliant</span>
               </div>
               <div className="hidden sm:block w-px h-4 bg-blue-200" />
               <div className="flex items-center gap-2 text-sm text-blue-800">
                 <CheckCircle2 className="h-5 w-5 text-blue-600 shrink-0" />
-                <span className="font-medium">UBL 2.1 XML auto-generated</span>
+                <span dir="ltr" className="font-medium">UBL 2.1 XML auto-generated</span>
               </div>
               <div className="hidden sm:block w-px h-4 bg-blue-200" />
               <div className="flex items-center gap-2 text-sm text-blue-800">
                 <CheckCircle2 className="h-5 w-5 text-blue-600 shrink-0" />
-                <span className="font-medium">FTA compliant formatting</span>
+                <span dir="ltr" className="font-medium">FTA compliant formatting</span>
               </div>
             </div>
           </AnimatedSection>
@@ -431,7 +431,7 @@ export function PeppolContent() {
         </div>
         <AnimatedSection direction="up">
           <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/10 border border-white/10 text-blue-200 text-[11px] font-semibold uppercase tracking-[0.12em] mb-6 backdrop-blur-sm">
+            <div dir="ltr" className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/10 border border-white/10 text-blue-200 text-[11px] font-semibold uppercase tracking-[0.12em] mb-6 backdrop-blur-sm">
               <Sparkles className="h-3.5 w-3.5" />
               Get Started
             </div>

@@ -27,7 +27,12 @@ from .serializers import (
     ChangeMemberRoleSerializer,
 )
 from .services import CompanyService
-from .permissions import IsCompanyMember, IsCompanyAdmin, IsCompanyAdminOrReadOnly
+from .permissions import (
+    IsCompanyMember,
+    IsCompanyAdmin,
+    IsCompanyAdminOrReadOnly,
+    CanCreateCompany,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,9 +62,9 @@ def _get_company_and_membership(request, company_id: str):
 class CompanyListCreateView(APIView):
     """
     GET  /api/v1/companies/  — List all companies the user is a member of
-    POST /api/v1/companies/  — Create a new company (user becomes admin automatically)
+    POST /api/v1/companies/  — Create a new company (admin & supplier only; user becomes admin automatically)
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, CanCreateCompany]
 
     def get(self, request):
         # Admins see ALL active companies on the platform

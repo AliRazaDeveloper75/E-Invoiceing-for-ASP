@@ -200,7 +200,7 @@ export function HomeContent() {
             {/* ── Left: Text content ──────────────────────────────────────────── */}
             <div className="max-w-xl">
               <AnimatedSection delay={0} direction="up">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/10 text-blue-200 text-xs font-medium mb-6">
+                <div dir="ltr" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/10 text-blue-200 text-xs font-medium mb-6">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   UAE FTA-Certified Platform
                 </div>
@@ -230,7 +230,7 @@ export function HomeContent() {
               <AnimatedSection delay={400} direction="up">
                 <div className="flex flex-wrap gap-4">
                   <Link
-                    href="/dashboard"
+                    href="/book-demo"
                     className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-semibold text-sm shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] group"
                   >
                     {t('home.hero.cta1')}
@@ -262,7 +262,7 @@ export function HomeContent() {
 
             {/* ── Right: Dashboard mockup ─────────────────────────────────────── */}
             <AnimatedSection delay={300} direction="right" className="hidden lg:block">
-              <div className="relative">
+              <div dir="ltr" className="relative">
                 {/* Glow behind mockup */}
                 <div className="absolute -inset-8 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-cyan-500/20 blur-3xl rounded-3xl" />
 
@@ -477,7 +477,7 @@ export function HomeContent() {
                   </p>
 
                   {/* Capability icons row */}
-                  <div className="flex items-center gap-4 mb-8">
+                  <div dir="ltr" className="flex items-center gap-4 mb-8">
                     {[
                       { icon: <ShieldCheck className="h-4 w-4" />, label: 'FTA Compliant' },
                       { icon: <FileText className="h-4 w-4" />, label: 'UBL 2.1' },
@@ -488,7 +488,7 @@ export function HomeContent() {
                         <div className="h-10 w-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-blue-200/70 group-hover/cap:bg-white/20 group-hover/cap:text-white transition-all duration-200">
                           {item.icon}
                         </div>
-                        <span className="text-[10px] text-blue-300/50 font-medium">{item.label}</span>
+                        <span dir="ltr" className="text-[10px] text-blue-300/50 font-medium">{item.label}</span>
                       </div>
                     ))}
                   </div>
@@ -498,7 +498,7 @@ export function HomeContent() {
                     href="/about"
                     className="inline-flex items-center gap-2 text-sm font-semibold text-blue-300 hover:text-white transition-colors group"
                   >
-                    Learn more about E-Numerak
+                    <span dir="ltr">Learn more about E-Numerak</span>
                     <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                   </Link>
                 </div>
@@ -805,7 +805,7 @@ export function HomeContent() {
               <p>{t('home.cta.p2')}</p>
             </div>
             <Link
-              href="/dashboard"
+              href="/book-demo"
               className="group inline-flex items-center gap-2 px-10 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-bold text-base shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all hover:scale-[1.04] active:scale-[0.98]"
             >
               {t('home.cta.button')} <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />

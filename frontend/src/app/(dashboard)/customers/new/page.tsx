@@ -509,7 +509,7 @@ export default function NewCustomerPage() {
           <SectionCard
             icon={FileText}
             title="Documents"
-            description="Required files to register this customer"
+            description="Supporting files for this customer"
             accentColor="bg-gradient-to-br from-violet-500 to-violet-600"
             bgTint="bg-gradient-to-br from-violet-50/50 via-white to-white"
           >
@@ -517,7 +517,7 @@ export default function NewCustomerPage() {
               {/* TRN certificate */}
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-gray-700">
-                  TRN Certificate <span className="text-red-500">*</span>
+                  TRN Certificate {needsTRN && <span className="text-red-500">*</span>}
                 </label>
                 <input
                   type="file"
@@ -526,10 +526,10 @@ export default function NewCustomerPage() {
                              file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-medium
                              file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
                   {...register('trn_document', {
-                    required: isEdit ? false : 'TRN certificate is required',
+                    required: isEdit ? false : (needsTRN ? 'TRN certificate is required' : false),
                     validate: (f) => {
                       const file = f?.[0];
-                      if (!file) return isEdit ? true : 'TRN certificate is required';
+                      if (!file) return isEdit || !needsTRN ? true : 'TRN certificate is required';
                       if (!/\.(pdf|jpg|jpeg|png)$/i.test(file.name))
                         return 'Only PDF, JPG or PNG files are allowed';
                       if (file.size > 5 * 1024 * 1024) return 'File must be 5MB or smaller';
@@ -537,7 +537,9 @@ export default function NewCustomerPage() {
                     },
                   })}
                 />
-                <p className="text-[11px] text-gray-400">PDF, JPG or PNG — max 5MB</p>
+                <p className="text-[11px] text-gray-400">
+                  PDF, JPG or PNG — max 5MB{needsTRN ? ' (required)' : ' (optional for B2C)'}
+                </p>
                 {trnDoc?.[0] && (
                   <p className="text-[11px] text-green-600 truncate">✓ {trnDoc[0].name}</p>
                 )}
