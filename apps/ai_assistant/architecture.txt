@@ -1,0 +1,282 @@
+================================================================================
+E-NUMERAK — AI ASSISTANT AGENT (PRODUCTION ARCHITECTURE)
+================================================================================
+Scope   : New role-aware, agentic AI Assistant embedded inside the existing
+          E-Invoiceing-for-ASP (E-Numerak) platform.
+Backend : Django (new app inside the existing project — NOT the standalone
+          FastAPI chatbot; that one stays untouched for public/general chat).
+Frontend: Next.js (existing frontend project — new route/components).
+Auth    : Reuses existing E-Numerak JWT session. No separate login/register.
+Access  : Role-based — Admin view vs Supplier view are structurally different,
+          not just hidden/shown UI. Each role gets its own component tree and
+          its own scoped tool-set on the backend.
+
+================================================================================
+1. HIGH-LEVEL FLOW
+================================================================================
+
+  Next.js (logged-in user, JWT in memory/cookie)
+        │
+        │  POST /api/v1/ai-assistant/chat/   (Authorization: Bearer <JWT>)
+        ▼
+  Django REST endpoint
+        │
+        │  1. Authenticate JWT → request.user, request.user's CompanyMember
+        │  2. Resolve role (admin / accountant / supplier / viewer)
+        │  3. Load ONLY the tool-set allowed for that role
+        │  4. Run agent loop (LLM decides which tool(s) to call)
+        │  5. Every tool internally re-filters by company_id — never trusts
+        │     the model's arguments for scoping, only for intent
+        │  6. Write-type tools return a PREVIEW, not a committed action
+        │  7. User confirms → second request executes the committed action
+        │  8. Every action (preview + commit) written to AIAssistantAuditLog
+        ▼
+  Streamed response back to Next.js (SSE or chunked, like existing chatbot)
+
+
+================================================================================
+2. DJANGO BACKEND — NEW APP: apps/ai_assistant/
+================================================================================
+
+apps/ai_assistant/
+│
+├── __init__.py
+├── apps.py           --done             # AppConfig — registers app, signal hooks
+├── admin.py    --done                   # Django admin registration (audit log
+│                                   #   read-only viewing for platform admins)
+│
+├── models.py --done
+│   ├── AIConversation             # id, user, company, role_snapshot,
+│   │                              #   started_at, last_active_at, is_active
+│   ├── AIMessage                  # conversation FK, role(user/assistant/
+│   │                              #   tool), content, tool_calls_json,
+│   │                              #   created_at
+│   ├── AIToolCallLog              # message FK, tool_name, arguments_json,
+│   │                              #   result_json, status(preview/confirmed/
+│   │                              #   rejected/error), company_id (denorm),
+│   │                              #   user_id (denorm), ip_address,
+│   │                              #   created_at
+│   └── AIPendingAction            # id, user, company, action_type,
+│                                   #   payload_json, expires_at, status
+│                                   #   (pending/confirmed/expired/cancelled)
+│                                   #   — the "draft" a write-tool creates
+│                                   #   before the user confirms it
+│
+├── permissions.py --done                 # IsAIAssistantUser, role resolution
+│                                   #   helper: get_user_role(user, company)
+│                                   #   → 'admin' | 'accountant' | 'supplier'
+│                                   #   | 'viewer'
+│
+├── serializers.py                 # ChatRequestSerializer, --done
+│                                   #   ChatResponseSerializer,  --done
+│                                   #   ConfirmActionSerializer
+│
+├── views.py                       # AIAssistantChatView (POST, streaming) --done
+│                                   #   AIAssistantConfirmView (POST)
+│                                   #   AIAssistantHistoryView (GET)
+│                                   #   AIAssistantNewConversationView (POST)
+│
+├── urls.py    --done                    # router → /api/v1/ai-assistant/*
+│
+├── agent/                         # ── Orchestration layer ──────────────
+│   ├── __init__.py
+│   ├── orchestrator.py      --done      # Core agent loop: build system prompt,
+│   │                              #   call LLM w/ tool schema, dispatch
+│   │                              #   tool calls, loop until final answer
+│   ├── llm_client.py      --done        # Thin wrapper around OpenAI/Groq client
+│   │                              #   (mirrors chatbot/utils but Django-
+│   │                              #   native, uses django-environ config)
+│   ├── prompts.py       --done          # System prompts — SEPARATE prompt per
+│   │                              #   role (admin_system_prompt.py logic,
+│   │                              #   supplier_system_prompt.py logic)
+│   └── context_builder.py  --done       # Builds conversation history + relevant
+│                                   #   company context to feed the model
+│
+├── tools/                         # ── Tool definitions ─────────────────
+│   ├── __init__.py
+│   ├── base.py                    # BaseTool class: name, description,
+│   │                              #   json_schema, requires_confirmation
+│   │                              #   (bool), allowed_roles (list),
+│   │                              #   execute(user, company, **kwargs)
+│   │                              #   — execute() ALWAYS re-derives
+│   │                              #   company_id from the authenticated
+│   │                              #   request context, never from kwargs
+│   │
+│   ├── registry.py                # TOOL_REGISTRY dict + get_tools_for_role()
+│   │                              #   — single source of truth for which
+│   │                              #   tools each role can see
+│   │
+│   ├── read/                      # Read-only tools (safe, no confirmation)
+│   │   ├── invoice_lookup.py      # get_invoice_status, list_invoices
+│   │   ├── customer_lookup.py     # search_customers
+│   │   ├── vat_calculator.py      # calculate_vat (pure function, no DB)
+│   │   ├── overdue_report.py      # list_overdue_invoices
+│   │   └── company_info.py        # get_company_profile
+│   │
+│   ├── write/                     # Write tools — ALWAYS go through
+│   │   │                          #   AIPendingAction preview/confirm flow
+│   │   ├── draft_invoice.py       # propose_invoice_draft →
+│   │   │                          #   commit_invoice_draft
+│   │   ├── add_customer.py        # propose_add_customer →
+│   │   │                          #   commit_add_customer
+│   │   └── mark_paid.py           # propose_mark_paid → commit_mark_paid
+│   │
+│   └── admin_only/                # Tools visible ONLY to admin role
+│       ├── user_management.py     # list_company_users, invite lookup
+│       └── company_settings.py    # get_onboarding_status
+│
+├── migrations/                    # Standard Django migrations
+│
+└── tests/
+    ├── test_permissions.py        # Role resolution correctness
+    ├── test_tool_scoping.py       # CRITICAL: proves a supplier tool call
+    │                              #   can NEVER return another company's
+    │                              #   data even if company_id is spoofed
+    │                              #   in the arguments
+    ├── test_confirmation_flow.py  # Preview → confirm → commit integrity
+    └── test_agent_orchestrator.py
+
+--------------------------------------------------------------------------------
+2.1 KEY DESIGN RULE (do not relax this)
+--------------------------------------------------------------------------------
+Every tool's execute() method signature looks like:
+
+    def execute(self, *, user, company, **model_provided_args):
+
+`user` and `company` come from the AUTHENTICATED REQUEST, injected by the
+orchestrator — never from the LLM's tool-call arguments. If the model's
+arguments contain a "company_id" or "customer_id" that doesn't belong to
+`company`, the tool raises PermissionDenied and logs an AIToolCallLog with
+status="error". The model is only ever trusted to express INTENT
+("show invoice INV-2026-0012"), never SCOPE (which company that invoice
+must belong to).
+
+================================================================================
+3. NEXT.JS FRONTEND — NEW MODULE
+================================================================================
+
+frontend/src/
+│
+├── app/
+│   └── (dashboard)/
+│       └── ai-assistant/
+│           └── page.tsx                    # Route: /ai-assistant
+│                                            #   Server component — reads
+│                                            #   session role, renders the
+│                                            #   correct client tree below
+│
+├── components/
+│   └── ai-assistant/
+│       ├── AIAssistantButton.tsx            # Entry button shown in the
+│       │                                    #   main dashboard nav/header
+│       │                                    #   (role-aware label/icon)
+│       │
+│       ├── AIAssistantShell.tsx             # Shared shell: message list,
+│       │                                    #   input box, streaming logic
+│       │                                    #   — role-agnostic plumbing
+│       │
+│       ├── admin/
+│       │   ├── AdminAssistantView.tsx       # Full admin layout: extra
+│       │   │                                #   panels (user mgmt shortcuts,
+│       │   │                                #   company-wide reports)
+│       │   ├── AdminSuggestedPrompts.tsx    # "List overdue invoices across
+│       │   │                                #   all customers", etc.
+│       │   └── AdminActionCard.tsx          # Renders admin-only tool
+│       │                                    #   results (e.g. user list)
+│       │
+│       ├── supplier/
+│       │   ├── SupplierAssistantView.tsx    # Focused layout: invoice
+│       │   │                                #   creation helper front and
+│       │   │                                #   center
+│       │   ├── SupplierSuggestedPrompts.tsx # "Create an invoice for
+│       │   │                                #   [customer]", "Check VAT on
+│       │   │                                #   5000 AED"
+│       │   └── InvoiceDraftPreviewCard.tsx  # Renders a pending invoice
+│       │                                    #   draft with Confirm/Cancel
+│       │                                    #   buttons — THE confirmation
+│       │                                    #   UI for write actions
+│       │
+│       └── shared/
+│           ├── ChatMessageBubble.tsx
+│           ├── ToolResultRenderer.tsx       # Dispatches tool result JSON
+│           │                                #   to the right visual card
+│           │                                #   (invoice card, customer
+│           │                                #   card, VAT result, etc.)
+│           ├── PendingActionBanner.tsx      # "You have 1 unconfirmed
+│           │                                #   action" sticky banner
+│           └── useAIAssistantChat.ts        # Hook: streaming fetch to
+│                                            #   /api/v1/ai-assistant/chat/,
+│                                            #   auto-attaches JWT
+│
+└── lib/
+    └── ai-assistant/
+        ├── types.ts                         # Shared TS types mirroring
+        │                                    #   Django serializers
+        └── roleConfig.ts                    # Maps role → which view
+                                              #   component + prompts to use
+
+--------------------------------------------------------------------------------
+3.1 ROLE SEPARATION AT THE UI LAYER
+--------------------------------------------------------------------------------
+`page.tsx` reads the user's role from the existing auth/session context
+(already available today for the rest of the dashboard) and renders either
+<AdminAssistantView /> or <SupplierAssistantView /> — these are genuinely
+separate component trees, not one component with a bunch of if/else. This
+keeps future role-specific features from tangling together, and it means a
+supplier's bundle never even references admin-only components.
+
+================================================================================
+4. AUTH INTEGRATION (no new login system)
+================================================================================
+
+- Frontend: reuses the existing JWT access token already stored for the
+  main app (same axios/fetch instance + interceptor used elsewhere).
+- Backend: reuses existing DRF JWT authentication class already configured
+  for the rest of the API (rest_framework_simplejwt) — no new auth backend.
+- Role resolution: apps/ai_assistant/permissions.py::get_user_role() reads
+  from the existing CompanyMember model (already has `role` field per
+  companies/models.py) — no new role system invented.
+
+================================================================================
+5. WHERE THIS PLUGS INTO THE EXISTING PROJECT
+================================================================================
+
+- config/settings/base.py     → add "apps.ai_assistant" to INSTALLED_APPS
+- config/urls.py              → include apps/ai_assistant/urls.py under
+                                 /api/v1/ai-assistant/
+- requirements/base.txt       → already has openai / groq / anthropic —
+                                 no new AI SDK dependency needed
+- docker-compose.prod.yml     → NO new service required — this runs inside
+                                 the existing `backend` (gunicorn) container,
+                                 unlike the standalone FastAPI chatbot
+- Nginx                       → NO new route needed — falls under the
+                                 existing /api/ location block on
+                                 api.e-numerak.com
+
+================================================================================
+6. BUILD ORDER (recommended)
+================================================================================
+
+  Phase 1 — Skeleton
+    1. Django app scaffold (models, migrations, urls, empty views)
+    2. Role resolution + permission tests passing
+    3. Next.js route + button wired to existing nav, empty shell UI
+
+  Phase 2 — Read-only tools only
+    4. Implement read/ tools (invoice lookup, customer lookup, VAT calc)
+    5. Orchestrator + LLM client wired, streaming works end-to-end
+    6. Admin view + Supplier view both functional for READ-ONLY chat
+
+  Phase 3 — Write tools with confirmation
+    7. AIPendingAction model + preview/confirm endpoints
+    8. draft_invoice / add_customer tools
+    9. InvoiceDraftPreviewCard + confirm flow in UI
+
+  Phase 4 — Hardening
+    10. Full audit log review, rate limiting per tool, load testing
+    11. Security review of test_tool_scoping.py against real spoofing
+        attempts before enabling write tools in production
+
+================================================================================
+END OF DOCUMENT
+================================================================================

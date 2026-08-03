@@ -143,8 +143,8 @@ class CustomerListCreateView(APIView):
 class CustomerDetailView(APIView):
     """
     GET    /api/v1/customers/{id}/  — retrieve customer
-    PUT    /api/v1/customers/{id}/  — update customer
-    DELETE /api/v1/customers/{id}/  — soft delete
+    PUT    /api/v1/customers/{id}/  — update customer only for admin
+    DELETE /api/v1/customers/{id}/  — soft delete only for admin
     """
     permission_classes = [IsAuthenticated]
 
@@ -186,11 +186,18 @@ class CustomerDetailView(APIView):
         if err:
             return err
 
+        if not membership.is_admin:
+            return error_response(
+                message='Only company admins can update customers.',
+                status_code=status.HTTP_403_FORBIDDEN
+            )
+
         serializer = CustomerUpdateSerializer(data=request.data)
         if not serializer.is_valid():
             return error_response(
                 message='Customer update failed.',
-                details=serializer.errors
+                details=serializer.errors,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
 
         customer = CustomerService.update_customer(
@@ -207,6 +214,12 @@ class CustomerDetailView(APIView):
         customer, membership, err = self._resolve(request, customer_id)
         if err:
             return err
+
+        if not membership.is_admin:
+            return error_response(
+                message='Only company admins can deactivate customers.',
+                status_code=status.HTTP_403_FORBIDDEN
+            )
 
         CustomerService.deactivate_customer(customer, membership)
         return success_response(message='Customer deactivated successfully.')

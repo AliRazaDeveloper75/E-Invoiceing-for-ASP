@@ -108,7 +108,10 @@ class CompanyDetailView(APIView):
     parser_classes     = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request, company_id):
-        company, _ = _get_company_and_membership(request, company_id)
+        if request.user.role == 'admin':
+            company = get_object_or_404(Company, id=company_id, is_active=True)
+        else:
+            company, _ = _get_company_and_membership(request, company_id)
         return success_response(data=CompanySerializer(company, context={'request': request}).data)
 
     def put(self, request, company_id):
@@ -162,7 +165,10 @@ class CompanyMemberListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, company_id):
-        company, _ = _get_company_and_membership(request, company_id)
+        if request.user.role == 'admin':
+            company = get_object_or_404(Company, id=company_id, is_active=True)
+        else:
+            company, _ = _get_company_and_membership(request, company_id)
         members = company.members.filter(is_active=True).select_related('user')
         serializer = CompanyMemberSerializer(members, many=True)
         return success_response(data=serializer.data)
@@ -170,14 +176,20 @@ class CompanyMemberListView(APIView):
     def post(self, request, company_id):
         company, membership = _get_company_and_membership(request, company_id)
 
+        if not membership.is_admin:
+            return error_response(
+                message='Only company admins can add members.',
+                status_code=status.HTTP_403_FORBIDDEN
+            )
+
         serializer = AddMemberSerializer(data=request.data)
         if not serializer.is_valid():
             return error_response(
                 message='Add member failed.',
-                details=serializer.errors
+                details=serializer.errors,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
 
-        # Note: validate_user_email already resolved email → User instance
         target_user = serializer.validated_data['user_email']
         role = serializer.validated_data['role']
 
@@ -193,13 +205,12 @@ class CompanyMemberListView(APIView):
             status_code=status.HTTP_201_CREATED
         )
 
-
 # ─── Member Detail / Role Change / Remove ────────────────────────────────────
 
 class CompanyMemberDetailView(APIView):
     """
-    PUT    /api/v1/companies/{id}/members/{member_id}/  — Change member role
-    DELETE /api/v1/companies/{id}/members/{member_id}/  — Remove member
+    PUT    /api/v1/companies/{id}/members/{member_id}/  — Change member role  only admin
+    DELETE /api/v1/companies/{id}/members/{member_id}/  — Remove member  only admin
     """
     permission_classes = [IsAuthenticated]
 
@@ -212,7 +223,15 @@ class CompanyMemberDetailView(APIView):
         )
 
     def put(self, request, company_id, member_id):
+        
         company, membership = _get_company_and_membership(request, company_id)
+        
+        if not membership.is_admin:
+            return error_response(
+            message='Only company admins can manage members.',
+            status_code=status.HTTP_403_FORBIDDEN
+        )
+        
         target = self._get_target_membership(company, member_id)
 
         serializer = ChangeMemberRoleSerializer(data=request.data)
@@ -227,13 +246,20 @@ class CompanyMemberDetailView(APIView):
             target_membership=target,
             new_role=serializer.validated_data['role'],
         )
-        return success_response(
-            data=CompanyMemberSerializer(updated).data,
-            message='Member role updated.'
-        )
+        return error_response(
+            message='Role change failed.',
+            details=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST
+    )
 
     def delete(self, request, company_id, member_id):
         company, membership = _get_company_and_membership(request, company_id)
+        if not membership.is_admin:
+            return error_response(
+            message='Only company admins can remove members.',
+            status_code=status.HTTP_403_FORBIDDEN
+        )
+
         target = self._get_target_membership(company, member_id)
 
         CompanyService.remove_member(

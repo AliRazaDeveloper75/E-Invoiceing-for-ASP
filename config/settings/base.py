@@ -53,6 +53,7 @@ LOCAL_APPS = [
     'apps.ai_ocr',
     'apps.onboarding',
     'apps.notifications',
+    'apps.ai_assistant'
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -164,7 +165,6 @@ REST_FRAMEWORK = {
         'register':       '5/hour',
     },
 }
-
 # ─── JWT (SimpleJWT) ──────────────────────────────────────────────────────────
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(

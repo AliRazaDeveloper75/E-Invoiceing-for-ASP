@@ -82,6 +82,7 @@ class CheckEmailView(APIView):
     No authentication required.
     """
     authentication_classes = []   # skip JWT auth — stale cookies must not cause 401
+# allow the admin endpoint only and make 
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -515,6 +516,7 @@ class MFAResetVerifyView(APIView):
 # ─── MFA — login-time setup (forced first-time setup) ────────────────────────
 
 class MFASetupLoginView(APIView):
+    # allow admin endpoint only and make sure that admin 
     """
     POST /api/v1/auth/mfa/setup-login/  { setup_token }
 
@@ -593,7 +595,6 @@ class MFAEnableLoginView(APIView):
 
 
 # ─── MFA — account settings (manage existing MFA) ────────────────────────────
-
 class MFASetupView(APIView):
     """POST /api/v1/auth/mfa/setup/ — Regenerate TOTP secret from settings."""
     permission_classes = [IsAuthenticated]

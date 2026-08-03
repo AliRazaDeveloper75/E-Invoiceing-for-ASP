@@ -6,13 +6,17 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-
+from drf_spectacular.views import SpectacularAPIView,SpectacularSwaggerView,SpectacularRedocView
 from apps.common.health_views import HealthCheckView, ReadinessCheckView
 
 urlpatterns = [
     # ── Health / Readiness probes (no auth — used by load balancers, k8s) ───
     path('health/', HealthCheckView.as_view(), name='health'),
     path('ready/',  ReadinessCheckView.as_view(), name='readiness'),
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    
 
     # Django admin
     path('admin/', admin.site.urls),
@@ -40,10 +44,20 @@ urlpatterns = [
     path('api/v1/onboarding/',   include('apps.onboarding.urls',    namespace='onboarding')),
     # In-app notifications
     path('api/v1/notifications/', include('apps.notifications.urls', namespace='notifications')),
+
+    # AI Assistant
+    path("api/v1/ai-assistant/", include("apps.ai_assistant.urls", namespace='ai_assistant')),
+
 ]
 
 # Serve media files in development only
 if settings.DEBUG:
+    urlpatterns += [
+        path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+        path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+        path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    ]
+
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
     try:
