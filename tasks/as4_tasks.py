@@ -161,8 +161,20 @@ def transmit_invoice_via_as4(self, invoice_id: str, receiver_participant_id: str
         logger.info('AS4 sandbox capture: invoice=%s', invoice.invoice_number)
         return {'success': True, 'sandbox': True, **result}
 
-    # Real AS4 transmission
-    transport = AS4Transport()
+    # Real AS4 transmission — resolve the receiver's AS4 endpoint via SMP first;
+    # AS4Transport is fixed to a single endpoint_url at construction time.
+    from services.smp_client import SMPClient, PEPPOL_INVOICE_DOCTYPE
+    endpoint = SMPClient().lookup(receiver_participant_id, PEPPOL_INVOICE_DOCTYPE)
+    if not endpoint:
+        logger.error(
+            'transmit_invoice_via_as4: SMP lookup failed for receiver %s (invoice %s)',
+            receiver_participant_id, invoice_id,
+        )
+        _update_peppol_message_failed(peppol_msg, 'SMP lookup failed — receiver endpoint not found.')
+        backoff = _backoff(self.request.retries)
+        raise self.retry(exc=RuntimeError('SMP lookup failed'), countdown=backoff)
+
+    transport = AS4Transport(sender_participant_id=sender_id, endpoint_url=endpoint.transport_url)
     try:
         result = transport.send(
             receiver_participant_id=receiver_participant_id,
@@ -186,6 +198,25 @@ def transmit_invoice_via_as4(self, invoice_id: str, receiver_participant_id: str
             'AS4 transmission success: invoice=%s message_id=%s duration=%dms',
             invoice.invoice_number, result.message_id, result.duration_ms,
         )
+
+        # Sender-side Corner 5 reporting — UAE 5-corner model requires BOTH the
+        # sender and receiver of an invoice to independently report a TDD to the
+        # Tax Authority. Best-effort: a TDD failure must not fail/retry the
+        # invoice transmission itself (the invoice has already been delivered).
+        try:
+            from services.peppol.tdd import submit_tdd_for_sent
+            tdd_result = submit_tdd_for_sent(
+                invoice_xml, sender=sender_id, transport_header_id=result.message_id,
+            )
+            if tdd_result:
+                logger.info('Sender-side AE TDD submitted for invoice %s -> %s',
+                           invoice.invoice_number, tdd_result.receiver)
+            else:
+                logger.warning('Sender-side AE TDD submission incomplete for invoice %s: %s',
+                              invoice.invoice_number, tdd_result.errors)
+        except Exception:
+            logger.exception('Sender-side AE TDD submission crashed for invoice %s', invoice.invoice_number)
+
         return {
             'success':    True,
             'message_id': result.message_id,
@@ -282,8 +313,8 @@ def _resolve_receiver_id(invoice) -> str:
     customer = getattr(invoice, 'customer', None)
     if not customer:
         return ''
-    # Check for explicit peppol_id field
-    pid = getattr(customer, 'peppol_id', '') or ''
+    # Check for explicit peppol_endpoint field (e.g. '9922:OPTBCNTRLP1004')
+    pid = getattr(customer, 'peppol_endpoint', '') or ''
     if pid:
         return pid
     # Derive from TRN using UAE scheme 0235

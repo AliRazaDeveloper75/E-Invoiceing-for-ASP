@@ -94,10 +94,10 @@ class Supplier(BaseModel):
     """
     name          = models.CharField(max_length=255)
     trn           = models.CharField(
-        max_length=15, unique=True, db_index=True,
+        max_length=15, db_index=True,
         help_text='UAE Tax Registration Number (15 digits).'
     )
-    email         = models.EmailField(unique=True, help_text='Contact email for observations.')
+    email         = models.EmailField(help_text='Contact email for observations.')
     phone         = models.CharField(max_length=30, blank=True, default='')
     address       = models.TextField(blank=True, default='')
 
@@ -144,6 +144,16 @@ class Supplier(BaseModel):
         verbose_name = 'Supplier'
         verbose_name_plural = 'Suppliers'
         ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['trn', 'receiving_company'],
+                name='inbound_supplier_unique_trn_per_company',
+            ),
+            models.UniqueConstraint(
+                fields=['email', 'receiving_company'],
+                name='inbound_supplier_unique_email_per_company',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.name} (TRN: {self.trn})'

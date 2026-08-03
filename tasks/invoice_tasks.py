@@ -78,10 +78,17 @@ def process_invoice(self, invoice_id: str) -> dict:
     try:
         with db_transaction.atomic():
             try:
+                # NOTE: 'customer' is a nullable FK — select_related('customer')
+                # would LEFT OUTER JOIN it, and PostgreSQL forbids FOR UPDATE on
+                # the nullable side of an outer join ("FOR UPDATE cannot be
+                # applied to the nullable side of an outer join"). Only
+                # select_related the non-nullable 'company' FK here; Django
+                # will lazily fetch invoice.customer with a separate query
+                # the first time it's accessed.
                 invoice = (
                     Invoice.objects
                     .select_for_update(skip_locked=True)
-                    .select_related('company', 'customer')
+                    .select_related('company')
                     .get(id=invoice_id, status='pending')
                 )
             except Invoice.DoesNotExist:

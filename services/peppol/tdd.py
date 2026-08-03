@@ -548,3 +548,153 @@ def submit_tdd_for_received(sbd_bytes: bytes, *,
     except Exception:
         pass
     return res
+
+
+def submit_tdd_for_sent(invoice_xml: bytes, *,
+                        sender: str,
+                        transport_header_id: str = '',
+                        c5_receiver: str = '',
+                        document_scope: str = TDD_SCOPE_DOMESTIC) -> TddSubmitResult:
+    """
+    Generate an AE TDD for an invoice WE just sent (as Corner 1/2) and submit
+    it to the Tax Authority (C5) over AS4 — the sender-side counterpart of
+    ``submit_tdd_for_received``. In the UAE 5-corner model, both the sender
+    and the receiver of a PINT-AE invoice independently report a TDD.
+
+    Args:
+        invoice_xml:          the bare signed UBL Invoice/CreditNote bytes we sent
+                              (not an SBD — sender is passed explicitly instead
+                              of being derived from an SBDH we don't have).
+        sender:               our own PEPPOL participant id ('0235:...').
+        transport_header_id:  identifier for the sent message (e.g. the AS4
+                              message id or PEPPOLMessage id) — referenced by
+                              the TDD's TransportHeaderID. Falls back to the
+                              invoice's own cbc:ID if not given.
+    """
+    from django.conf import settings as _settings
+    res = TddSubmitResult()
+    c5_receiver = c5_receiver or getattr(_settings, 'PEPPOL_TDD_RECEIVER', '') or DEFAULT_C5_RECEIVER
+
+    if not sender:
+        res.errors.append('Cannot determine reporter — sender participant id required.')
+        return res
+
+    # Our SP representative SPID (scheme 0242), derived from the signing-cert CN.
+    import re as _re
+    from services.as4.signing import AS4MessageSigner
+    from cryptography.x509.oid import NameOID
+    signer = AS4MessageSigner()
+    signer._load_credentials()
+    if signer._cert is None or signer._key is None:
+        res.errors.append('Signing credentials not configured (keystore).')
+        return res
+    try:
+        cert_cn = signer._cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
+    except Exception:
+        cert_cn = ''
+    m = _re.match(r'^[A-Za-z]{2,4}(\d{4,}.*)$', (cert_cn or '').strip())
+    representative = (f'0242:{m.group(1)}' if m
+                     else getattr(_settings, 'PEPPOL_SP_ID', '') or '0242:000000')
+
+    # A sent invoice is — by construction — the one we just validated/signed,
+    # so it is always well-formed and PINT-AE valid; report as Submit ('S').
+    doc_type_code = TDD_TYPE_SUBMIT
+    if not transport_header_id:
+        try:
+            root = etree.fromstring(invoice_xml)
+            transport_header_id = root.findtext(f'{{{NS_CBC}}}ID') or ''
+        except Exception:
+            transport_header_id = ''
+
+    # 1. Build the TDD / TDS.
+    try:
+        tdd = build_tdd(invoice_xml, reporter=sender, receiver=c5_receiver,
+                        representative=representative, reporter_role=TDD_ROLE_SENDER,
+                        document_scope=document_scope, document_type_code=doc_type_code,
+                        include_reported_document=True,
+                        transport_header_id=transport_header_id)
+    except Exception as exc:
+        res.errors.append(f'TDD build failed: {exc}')
+        return res
+    res.built = True
+    res.tdd_bytes = tdd
+
+    # 2. Validate the TDD (do NOT submit an invalid one).
+    vd = validate_tdd(tdd)
+    if vd.ran and not vd.is_valid:
+        res.errors.append(f'TDD failed AE TDD schematron ({len(vd.errors)} error(s)): '
+                          + '; '.join(f"{e['id']}:{e['text'][:80]}" for e in vd.errors[:5]))
+        return res
+    res.valid = True
+
+    # 3. Wrap the TDD in an SBDH addressed to C5.
+    from services.peppol.mls import wrap_in_sbd
+    sbd = wrap_in_sbd(
+        business_doc=tdd, sender=sender, receiver=c5_receiver,
+        doctype_value=TDD_DOCTYPE.split('::', 1)[1], doctype_scheme=TDD_DOCTYPE.split('::', 1)[0],
+        process_value=TDD_PROCESS, process_scheme=TDD_PROCESS_SCHEME,
+        standard=NS_PXS, type_name='TaxData', type_version='1.0',
+        country_c1='AE', mls_type='ALWAYS_SEND', mls_to=representative,
+    )
+
+    # 4. SMP-resolve C5 for the TDD doctype.
+    from services.smp_client import SMPClient
+    try:
+        ep = SMPClient().lookup(c5_receiver, TDD_DOCTYPE)
+    except Exception as exc:
+        res.errors.append(f'SMP lookup failed for {c5_receiver}: {exc}')
+        return res
+    if ep is None or not ep.transport_url:
+        res.errors.append(f'No TDD receiving capability in SMP for {c5_receiver}.')
+        return res
+    res.endpoint = ep.transport_url
+    res.receiver = c5_receiver
+
+    import base64
+    from cryptography import x509
+    from cryptography.hazmat.backends import default_backend
+    recipient_cert = None
+    if ep.certificate_uid:
+        try:
+            recipient_cert = x509.load_der_x509_certificate(
+                base64.b64decode(ep.certificate_uid), default_backend())
+        except Exception:
+            recipient_cert = None
+    if recipient_cert is None:
+        res.errors.append('SMP returned no recipient certificate for C5.')
+        return res
+    try:
+        recipient_ap_id = recipient_cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
+    except Exception:
+        recipient_ap_id = ''
+
+    # 5. Build + send the AS4 message.
+    from services.as4 import sender as as4sender
+    try:
+        body, content_type = as4sender.build_message(
+            payload_xml=sbd, sender_ap_id=cert_cn, recipient_ap_id=recipient_ap_id,
+            original_sender=sender, final_recipient=c5_receiver,
+            doc_type=TDD_DOCTYPE, process_id=TDD_PROCESS,
+            agreement_ref=_AGREEMENT_REF,
+            signing_cert=signer._cert, signing_key=signer._key, recipient_cert=recipient_cert,
+        )
+        resp = as4sender.send(ep.transport_url, body, content_type)
+    except Exception as exc:
+        res.errors.append(f'AS4 send failed: {exc}')
+        return res
+    res.sent = True
+
+    # 6. Parse the response (Receipt vs ebMS Error).
+    rb = resp.content or b''
+    try:
+        for el in etree.fromstring(rb).iter():
+            ln = etree.QName(el).localname
+            if ln == 'Receipt':
+                res.receipt = True
+            elif ln == 'Error':
+                res.errors.append(el.get('shortDescription') or el.get('errorCode') or 'ebMS error')
+            elif ln in ('Description', 'ErrorDetail') and (el.text or '').strip():
+                res.errors.append(el.text.strip()[:300])
+    except Exception:
+        pass
+    return res
