@@ -355,3 +355,54 @@ class BuyerProfileTest(TestCase):
         self.client.force_authenticate(user=supplier)
         response = self.client.get('/api/v1/buyer/me/')
         self.assertEqual(response.status_code, 403)
+
+
+class BuyerInviteValidationTest(TestCase):
+    """One email = one role: invite must be rejected when the email already owns an account."""
+
+    def setUp(self):
+        self.company = make_company()
+        self.customer = make_customer(self.company)
+        self.admin = make_user(email='admin@co.com', role='admin')
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.admin)
+        self.url = '/api/v1/buyers/invite/'
+        self.payload = {'customer_id': str(self.customer.id), 'email': 'invitee@example.com'}
+
+    def test_invite_rejected_when_email_owned_by_other_role(self):
+        make_user(email='invitee@example.com', role='supplier')
+        response = self.client.post(self.url, self.payload)
+        self.assertEqual(response.status_code, 400, response.data)
+        self.assertIn('role', response.data['error']['message'].lower())
+
+    def test_invite_rejected_when_buyer_account_already_exists(self):
+        make_user(email='invitee@example.com', role=ROLE_BUYER)
+        response = self.client.post(self.url, self.payload)
+        self.assertEqual(response.status_code, 400, response.data)
+        self.assertIn('buyer account', response.data['error']['message'].lower())
+
+    def test_duplicate_active_invite_rejected(self):
+        from django.utils import timezone
+        from .models import BuyerInvite
+        BuyerInvite.objects.create(
+            customer=self.customer, email='invitee@example.com',
+            invited_by=self.admin,
+            expires_at=timezone.now() + timezone.timedelta(days=3),
+        )
+        response = self.client.post(self.url, self.payload)
+        self.assertEqual(response.status_code, 400, response.data)
+        self.assertIn('active invitation', response.data['error']['message'].lower())
+
+    def test_duplicate_expired_invite_allows_new_one(self):
+        from django.utils import timezone
+        from unittest.mock import patch
+        from .models import BuyerInvite
+        BuyerInvite.objects.create(
+            customer=self.customer, email='invitee@example.com',
+            invited_by=self.admin,
+            expires_at=timezone.now() - timezone.timedelta(hours=1),
+        )
+        with patch('services.emails.send_branded_email'):
+            response = self.client.post(self.url, self.payload)
+        self.assertEqual(response.status_code, 200, response.data)
+

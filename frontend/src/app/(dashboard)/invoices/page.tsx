@@ -226,7 +226,7 @@ export default function InvoicesPage() {
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Search by invoice number or customer..."
+                  placeholder="Search by invoice number or buyer..."
                   value={searchQuery}
                   onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
                   className="w-full rounded-xl border border-gray-300 bg-white pl-10 pr-9 py-2.5 text-sm
@@ -368,7 +368,7 @@ export default function InvoicesPage() {
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Customer</span>
+                      <span className="text-gray-400">Buyer</span>
                       <span className="font-medium text-gray-800">{inv.customer_name}</span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -448,7 +448,7 @@ export default function InvoicesPage() {
                       {isAdmin && (
                         <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Company</th>
                       )}
-                      <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
+                      <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Buyer</th>
                       <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Type</th>
                       <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Date</th>
                       <th className="px-5 py-4 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Amount</th>

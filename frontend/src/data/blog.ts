@@ -46,7 +46,7 @@ Business-to-consumer (B2C) invoices are not included in the current phase and wi
 
 ## Why It Matters Beyond Compliance
 
-It's not just a regulatory tick. Structured and automated invoicing will reduce the cost of invoicing by about 66–80%, and near real-time reporting will enhance fraud detection, audit preparedness and cash flow visibility. For businesses that are still using paper or PDF invoices, it is also a natural catalyst to clean up master data — TRNs, addresses, customers and years of minor inconsistencies.
+It's not just a regulatory tick. Structured and automated invoicing will reduce the cost of invoicing by about 66–80%, and near real-time reporting will enhance fraud detection, audit preparedness and cash flow visibility. For businesses that are still using paper or PDF invoices, it is also a natural catalyst to clean up master data — TRNs, addresses, buyers and years of minor inconsistencies.
 
 ## What Do You Need to Do Now?
 

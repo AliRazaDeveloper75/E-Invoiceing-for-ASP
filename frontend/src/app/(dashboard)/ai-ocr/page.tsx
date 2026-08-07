@@ -112,7 +112,7 @@ function OCRResultModal({ doc, onClose }: { doc: OCRDocument; onClose: () => voi
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-blue-200/60 before:to-transparent">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-blue-100/60 sticky top-0 bg-white rounded-t-2xl">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-blue-100/60 sticky top-0 bg-white rounded-t-2xl">
           <div className="flex items-center gap-3 min-w-0">
             <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
               <ScanLine className="h-4 w-4 text-white" />
@@ -127,13 +127,13 @@ function OCRResultModal({ doc, onClose }: { doc: OCRDocument; onClose: () => voi
           </button>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="p-5 sm:p-6 space-y-5">
           {/* Confidence */}
-          <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-xl border border-blue-100/40 p-4 grid grid-cols-4 gap-3">
+          <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-xl border border-blue-100/40 p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
             {([
               ['Overall', r.confidence.overall],
               ['Supplier TRN', r.confidence.supplier_trn],
-              ['Customer TRN', r.confidence.customer_trn],
+              ['Buyer TRN', r.confidence.customer_trn],
               ['Amounts', r.confidence.amounts],
             ] as const).map(([label, val]) => (
               <div key={label} className="text-center">
@@ -168,7 +168,7 @@ function OCRResultModal({ doc, onClose }: { doc: OCRDocument; onClose: () => voi
               {r.supplier_trn && <p className="text-xs text-gray-500 mt-1 font-mono">TRN: {r.supplier_trn}</p>}
             </div>
             <div className="rounded-xl bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 border border-emerald-200/60 p-4">
-              <h3 className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider mb-2">Customer</h3>
+              <h3 className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider mb-2">Buyer</h3>
               <p className="text-sm font-semibold text-gray-900">{r.customer_name || '—'}</p>
               {r.customer_trn && <p className="text-xs text-gray-500 mt-1 font-mono">TRN: {r.customer_trn}</p>}
             </div>
@@ -233,39 +233,41 @@ function DocRow({ doc, onRetry, onView }: {
   const StatusIcon = cfg.icon;
 
   return (
-    <div className="flex items-center gap-4 px-5 py-4 hover:bg-blue-50/40 transition-colors border-b border-blue-100/40 last:border-0 group">
-      <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center shrink-0">
-        <FileText className="h-5 w-5 text-blue-600" />
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-gray-900 truncate">{doc.original_name}</p>
-          {doc.result?.needs_review && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded-md shrink-0">
-              <AlertTriangle className="h-2.5 w-2.5" /> Review
-            </span>
-          )}
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4 hover:bg-blue-50/40 transition-colors border-b border-blue-100/40 last:border-0 group">
+      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center shrink-0">
+          <FileText className="h-5 w-5 text-blue-600" />
         </div>
-        <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-          <span className="text-xs text-gray-400">{formatBytes(doc.file_size_bytes)}</span>
-          <span className="text-xs text-gray-300">·</span>
-          <span className="text-xs text-gray-400">{new Date(doc.created_at).toLocaleDateString()}</span>
-          {doc.result && (
-            <>
-              <span className="text-xs text-gray-300">·</span>
-              <span className="text-xs text-gray-400 flex items-center gap-1">
-                Confidence: <ConfidenceBadge score={doc.result.confidence.overall} />
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-gray-900 truncate">{doc.original_name}</p>
+            {doc.result?.needs_review && (
+              <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded-md shrink-0">
+                <AlertTriangle className="h-2.5 w-2.5" /> Review
               </span>
-            </>
+            )}
+          </div>
+          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+            <span className="text-xs text-gray-400">{formatBytes(doc.file_size_bytes)}</span>
+            <span className="text-xs text-gray-300">·</span>
+            <span className="text-xs text-gray-400">{new Date(doc.created_at).toLocaleDateString()}</span>
+            {doc.result && (
+              <>
+                <span className="text-xs text-gray-300">·</span>
+                <span className="text-xs text-gray-400 flex items-center gap-1">
+                  Confidence: <ConfidenceBadge score={doc.result.confidence.overall} />
+                </span>
+              </>
+            )}
+          </div>
+          {doc.error_detail && (
+            <p className="text-xs text-red-500 mt-1 truncate">{doc.error_detail}</p>
           )}
         </div>
-        {doc.error_detail && (
-          <p className="text-xs text-red-500 mt-1 truncate">{doc.error_detail}</p>
-        )}
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-2 ml-12 sm:ml-0">
         <span className={clsx(
           'inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border',
           cfg.bg, cfg.color, cfg.border,
@@ -314,7 +316,7 @@ function UploadZone({ onUpload }: { onUpload: (file: File) => void }) {
       onDragLeave={() => setDragging(false)}
       onClick={() => inputRef.current?.click()}
       className={clsx(
-        'cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition-all duration-200',
+        'cursor-pointer rounded-2xl border-2 border-dashed p-8 sm:p-10 text-center transition-all duration-200',
         dragging
           ? 'border-blue-400 bg-blue-50/60 shadow-[0_0_20px_-8px_rgba(59,130,246,0.3)]'
           : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/20',
@@ -394,7 +396,7 @@ export default function AIocrPage() {
     <div className="space-y-6 animate-fade-in">
 
       {/* ── Header ───────────────────────────────────────────── */}
-      <div className="bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 rounded-2xl p-6 shadow-lg relative overflow-hidden">
+      <div className="bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 rounded-2xl p-5 sm:p-6 shadow-lg relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.15),transparent_50%)] pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(99,102,241,0.1),transparent_50%)] pointer-events-none" />
         <div className="relative z-10 flex items-center gap-3">
@@ -408,7 +410,7 @@ export default function AIocrPage() {
             </div>
             <h1 className="text-xl font-bold text-white tracking-tight">AI Document Scanner</h1>
             <p className="text-sm text-blue-200/60 mt-0.5">
-              Upload PDF or image invoices — AI extracts supplier, customer, amounts, and line items automatically.
+              Upload PDF or image invoices — AI extracts supplier, buyer, amounts, and line items automatically.
             </p>
           </div>
         </div>
@@ -433,10 +435,10 @@ export default function AIocrPage() {
                 </p>
               </div>
               <div className={clsx(
-                'h-11 w-11 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 shadow-lg',
+                'h-9 w-9 sm:h-11 sm:w-11 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 shadow-lg',
                 STAT_GRADIENTS[card.color], STAT_SHADOWS[card.color],
               )}>
-                <card.icon className="h-5 w-5 text-white" />
+                <card.icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
             </div>
             <div className={clsx(
@@ -448,7 +450,7 @@ export default function AIocrPage() {
       </div>
 
       {/* ── Upload Card ──────────────────────────────────────── */}
-      <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-6 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
+      <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 p-5 sm:p-6 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
         <div className="flex items-center gap-3 mb-4">
           <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20">
             <Upload className="h-4 w-4 text-white" />
@@ -477,7 +479,7 @@ export default function AIocrPage() {
 
       {/* ── Document List ────────────────────────────────────── */}
       <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-2xl border border-blue-100/70 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.12),0_1px_3px_-1px_rgba(0,0,0,0.04)] overflow-hidden relative before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent">
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-blue-100/60">
+        <div className="flex items-center gap-3 px-4 sm:px-5 py-4 border-b border-blue-100/60">
           <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20">
             <FileText className="h-4 w-4 text-white" />
           </div>

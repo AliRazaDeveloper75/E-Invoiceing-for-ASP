@@ -7,6 +7,8 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { useCompany } from '@/hooks/useCompany';
 import { AnimatedSection } from '@/app/(landing)/AnimatedSection';
+import { EmailInput } from '@/components/ui/EmailInput';
+import { isValidEmailFormat, isDisposableEmail } from '@/lib/validation';
 import {
   Plus, Building2, Mail, X, Loader2, CheckCircle2, Search, Eye,
   ChevronLeft, ChevronRight, FilterX, Users, Globe,
@@ -44,6 +46,7 @@ function InviteBuyerModal({
   onClose: () => void;
 }) {
   const [email, setEmail] = useState(customer.email || '');
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
@@ -52,6 +55,11 @@ function InviteBuyerModal({
     e.preventDefault();
     setSaving(true);
     setError('');
+    if (emailAvailable === false && isValidEmailFormat(email) && !isDisposableEmail(email)) {
+      setError('This email is already registered to another account. A single email can only have one role, so it cannot be invited as a buyer.');
+      setSaving(false);
+      return;
+    }
     try {
       await api.post('/buyers/invite/', { customer_id: customer.id, email });
       setSent(true);
@@ -103,19 +111,15 @@ function InviteBuyerModal({
               <strong className="text-gray-700">{customer.name}</strong>.
             </p>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Buyer Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-                placeholder="buyer@company.com"
-              />
-            </div>
+            <EmailInput
+              label="Buyer Email *"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              checkDuplicate
+              onAvailabilityChange={setEmailAvailable}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+              placeholder="buyer@company.com"
+            />
 
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
@@ -197,7 +201,7 @@ function CustomerDetailModal({ customer, onClose }: { customer: Customer; onClos
             {!done && missing.length > 0 && (
               <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
                 <p className="text-xs text-amber-700">Missing: {missing.join(', ')}</p>
-                <Link href={`/customers/${customer.id}/edit`}
+                <Link href={`/buyers/new?edit=${customer.id}`}
                   className="text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 px-3 py-1.5 rounded-lg transition-colors shadow-sm">
                   Complete profile
                 </Link>
@@ -287,18 +291,18 @@ export default function CustomersPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                  {isAdmin ? 'All Customers' : 'Your Customers'}
+                  {isAdmin ? 'All Buyers' : 'Your Buyers'}
                 </h1>
                 <p className="text-sm text-blue-200/70 mt-1">
-                  {totalCount > 0 ? `${totalCount} total` : 'Manage your customers'}
+                  {totalCount > 0 ? `${totalCount} total` : 'Manage your buyers'}
                   {isAdmin ? ' across all companies' : ''}
                 </p>
               </div>
               <Link
-                href="/customers/new"
+                href="/buyers/new"
                 className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2.5 text-sm font-semibold shadow-sm transition-all shrink-0 self-start sm:self-auto"
               >
-                <UserPlus className="h-4 w-4" /> New Customer
+                <UserPlus className="h-4 w-4" /> New Buyer
               </Link>
             </div>
 
@@ -336,7 +340,7 @@ export default function CustomersPage() {
             type="text"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder={isAdmin ? 'Search customers by name, TRN, or email\u2026' : 'Search by name, TRN, or email\u2026'}
+            placeholder={isAdmin ? 'Search buyers by name, TRN, or email\u2026' : 'Search by name, TRN, or email\u2026'}
             className="w-full rounded-xl border-2 border-gray-200 bg-white pl-10 pr-10 py-2.5 text-sm
                        placeholder:text-gray-400
                        focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400
@@ -366,21 +370,21 @@ export default function CustomersPage() {
                 <Users className="h-8 w-8 text-blue-400" />
               </div>
               <p className="text-base font-semibold text-gray-900">
-                {hasSearch ? 'No matching customers' : 'No customers yet'}
+                {hasSearch ? 'No matching buyers' : 'No buyers yet'}
               </p>
               <p className="text-sm text-gray-500 mt-1 max-w-xs mx-auto">
                 {hasSearch
                   ? 'Try adjusting your search criteria.'
                   : isAdmin
-                    ? 'No customers exist on the platform yet.'
-                    : 'Add your first customer to start issuing invoices.'}
+                    ? 'No buyers exist on the platform yet.'
+                    : 'Add your first buyer to start issuing invoices.'}
               </p>
               {!hasSearch && (
                 <Link
-                  href="/customers/new"
+                  href="/buyers/new"
                   className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all"
                 >
-                  <Plus className="h-4 w-4" /> New Customer
+                  <Plus className="h-4 w-4" /> New Buyer
                 </Link>
               )}
             </div>
@@ -527,7 +531,7 @@ export default function CustomersPage() {
                             <button
                               onClick={() => setViewTarget(c)}
                               className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
-                              title="View customer details"
+                              title="View buyer details"
                             >
                               <Eye className="w-4 h-4" />
                             </button>

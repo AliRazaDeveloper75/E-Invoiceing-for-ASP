@@ -53,7 +53,8 @@ def make_logo():
 
 
 def make_trn_document():
-    return SimpleUploadedFile('trn.pdf', b'fake-pdf-content', content_type='application/pdf')
+    pdf = b'%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n%%EOF'
+    return SimpleUploadedFile('trn.pdf', pdf, content_type='application/pdf')
 
 
 # ─── Model Tests ──────────────────────────────────────────────────────────────
@@ -169,27 +170,54 @@ class CustomerCreateAPITest(TestCase):
 
     def test_admin_creates_customer(self):
         self.client.force_authenticate(user=self.admin)
-        response = self.client.post(self.url, self.valid_payload, format='json')
+        payload = {
+            **self.valid_payload,
+            'logo': make_logo(),
+            'trn_document': make_trn_document(),
+        }
+        response = self.client.post(self.url, payload, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['data']['tin'], '2000000000')
 
     def test_viewer_cannot_create_customer(self):
         self.client.force_authenticate(user=self.viewer)
-        response = self.client.post(self.url, self.valid_payload, format='json')
+        payload = {
+            **self.valid_payload,
+            'logo': make_logo(),
+            'trn_document': make_trn_document(),
+        }
+        response = self.client.post(self.url, payload, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_uae_b2b_without_trn_returns_400(self):
         self.client.force_authenticate(user=self.admin)
-        payload = {**self.valid_payload, 'trn': '', 'country': 'AE'}
-        response = self.client.post(self.url, payload, format='json')
+        payload = {
+            **self.valid_payload,
+            'trn': '',
+            'country': 'AE',
+            'logo': make_logo(),
+            'trn_document': make_trn_document(),
+        }
+        response = self.client.post(self.url, payload, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('trn', response.data['error']['details'])
 
     def test_duplicate_trn_returns_400(self):
         self.client.force_authenticate(user=self.admin)
-        self.client.post(self.url, self.valid_payload, format='json')
-        response = self.client.post(self.url, self.valid_payload, format='json')
+        payload = {
+            **self.valid_payload,
+            'logo': make_logo(),
+            'trn_document': make_trn_document(),
+        }
+        self.client.post(self.url, payload, format='multipart')
+        duplicate = {
+            **self.valid_payload,
+            'logo': make_logo(),
+            'trn_document': make_trn_document(),
+        }
+        response = self.client.post(self.url, duplicate, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('trn', response.data['error']['details'])
 
     def test_b2c_can_be_created_without_trn_document(self):
         self.client.force_authenticate(user=self.admin)
@@ -223,6 +251,125 @@ class CustomerCreateAPITest(TestCase):
         response = self.client.post(self.url, payload, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIsNotNone(response.data['data']['trn_document'])
+
+    def test_disguised_logo_rejected(self):
+        """A non-image renamed to .png must be rejected by magic-byte check."""
+        self.client.force_authenticate(user=self.admin)
+        fake_logo = SimpleUploadedFile('logo.png', b'not-a-real-png', content_type='image/png')
+        payload = {
+            **self.valid_payload,
+            'customer_type': 'b2c',
+            'trn': '',
+            'logo': fake_logo,
+            'trn_document': make_trn_document(),
+        }
+        response = self.client.post(self.url, payload, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('logo', response.data['error']['details'])
+
+    def test_pdf_rejected_as_logo(self):
+        self.client.force_authenticate(user=self.admin)
+        pdf_as_logo = SimpleUploadedFile('logo.png', b'%PDF-1.4\nfake', content_type='application/pdf')
+        payload = {
+            **self.valid_payload,
+            'customer_type': 'b2c',
+            'trn': '',
+            'logo': pdf_as_logo,
+            'trn_document': make_trn_document(),
+        }
+        response = self.client.post(self.url, payload, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('logo', response.data['error']['details'])
+
+    def test_disguised_trn_document_rejected(self):
+        self.client.force_authenticate(user=self.admin)
+        fake_doc = SimpleUploadedFile('trn.pdf', b'just-some-text', content_type='application/pdf')
+        payload = {
+            **self.valid_payload,
+            'customer_type': 'b2c',
+            'trn': '',
+            'logo': make_logo(),
+            'trn_document': fake_doc,
+        }
+        response = self.client.post(self.url, payload, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('trn_document', response.data['error']['details'])
+
+
+# ─── One Email = One Role Tests ──────────────────────────────────────────────
+
+class CustomerOneRoleTest(TestCase):
+    """
+    A single email = a single role. Customer contact emails must not reuse a
+    platform account email (supplier / buyer / admin / etc.), matching the
+    guards already in place for buyers, onboarding, admin panel, and inbound.
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        self.supplier = make_user('supplier@t.com', role='supplier')
+        self.buyer = make_user('buyer@t.com', role='buyer')
+        self.company = make_company()
+        make_membership(self.company, self.supplier, 'admin')
+        self.url = '/api/v1/customers/'
+        self.valid_payload = {
+            'company_id': str(self.company.id),
+            'name': 'Emaar Properties',
+            'customer_type': 'b2b',
+            'trn': '200000000000004',
+            'country': 'AE',
+            'email': 'ap@emaar.ae',
+            'logo': make_logo(),
+            'trn_document': make_trn_document(),
+        }
+
+    def test_supplier_email_cannot_be_used_as_customer_email(self):
+        """The logged-in supplier's own email cannot also be a buyer's contact."""
+        self.client.force_authenticate(user=self.supplier)
+        payload = {**self.valid_payload, 'email': self.supplier.email}
+        response = self.client.post(self.url, payload, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data['error']['details'])
+        self.assertIn('Supplier account', str(response.data['error']['details']['email']))
+
+    def test_buyer_email_cannot_be_used_as_customer_email(self):
+        self.client.force_authenticate(user=self.supplier)
+        payload = {**self.valid_payload, 'email': self.buyer.email}
+        response = self.client.post(self.url, payload, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data['error']['details'])
+        self.assertIn('buyer account', str(response.data['error']['details']['email']).lower())
+
+    def test_unregistered_email_creates_customer(self):
+        self.client.force_authenticate(user=self.supplier)
+        response = self.client.post(self.url, self.valid_payload, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_update_to_platform_account_email_rejected(self):
+        customer = make_customer(self.company, 'Alpha LLC', '200000000000001')
+        self.client.force_authenticate(user=self.supplier)
+        response = self.client.put(
+            f'/api/v1/customers/{customer.id}/',
+            {'email': self.supplier.email},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data['error']['details'])
+
+    def test_update_unchanged_email_not_locked_out(self):
+        """Editing a customer whose email matches a platform account (e.g. legacy
+        data) must succeed as long as the email itself isn't being changed."""
+        customer = make_customer(self.company, 'Alpha LLC', '200000000000001')
+        customer.email = self.supplier.email
+        customer.save(update_fields=['email'])
+        self.client.force_authenticate(user=self.supplier)
+        response = self.client.put(
+            f'/api/v1/customers/{customer.id}/',
+            {'name': 'Alpha LLC Updated'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data']['name'], 'Alpha LLC Updated')
 
 
 # ─── Detail / Update / Delete Tests ──────────────────────────────────────────

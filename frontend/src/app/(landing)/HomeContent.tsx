@@ -340,7 +340,7 @@ export function HomeContent() {
                     <div className="bg-white/[0.04] rounded-xl border border-white/[0.06] overflow-hidden">
                       <div className="grid grid-cols-5 gap-2 px-4 py-2.5 border-b border-white/[0.06] text-[10px] text-blue-200/50 font-medium">
                         <span>Invoice</span>
-                        <span>Customer</span>
+                        <span>Buyer</span>
                         <span>Date</span>
                         <span className="text-right">Amount</span>
                         <span className="text-center">Status</span>

@@ -21,7 +21,7 @@ const NAV: {
 }[] = [
   { href: '/dashboard',                label: 'Dashboard',      icon: LayoutDashboard, roles: ['admin', 'supplier', 'accountant', 'viewer'] },
   { href: '/invoices',                  label: 'Invoices',       icon: FileText,        roles: ['admin', 'supplier', 'accountant', 'viewer'] },
-  { href: '/customers',                 label: 'Customers',      icon: Users,           roles: ['admin', 'supplier', 'accountant', 'viewer'] },
+  { href: '/buyers',                   label: 'Buyers',        icon: Users,           roles: ['admin', 'supplier', 'accountant', 'viewer'] },
   { href: '/receivables',               label: 'Receivables',    icon: Wallet,          roles: ['admin', 'supplier', 'accountant', 'viewer'] },
   { href: '/catalog',                   label: 'Catalog',        icon: Package,         roles: ['admin', 'supplier', 'accountant'] },
   { href: '/companies',                 label: 'Companies',      icon: Building2,       roles: ['admin', 'supplier', 'accountant', 'viewer'] },

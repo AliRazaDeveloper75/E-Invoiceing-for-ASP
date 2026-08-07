@@ -135,6 +135,18 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'    # XML files, PDFs stored here
 
+# ─── Upload safety (magic bytes + ClamAV) ─────────────────────────────────────
+# All user-uploaded files are checked against real file signatures. When
+# VIRUS_SCAN_ENABLED=True they are also streamed to the ClamAV daemon before
+# being stored. If clamd is unreachable the upload is rejected (fail-closed)
+# unless VIRUS_SCAN_FAIL_OPEN=True.
+MAX_UPLOAD_SIZE_MB    = env('MAX_UPLOAD_SIZE_MB',    default=5)
+VIRUS_SCAN_ENABLED    = env.bool('VIRUS_SCAN_ENABLED', default=False)
+VIRUS_SCAN_FAIL_OPEN  = env.bool('VIRUS_SCAN_FAIL_OPEN', default=False)
+CLAMAV_HOST           = env('CLAMAV_HOST',           default='127.0.0.1')
+CLAMAV_PORT           = env.int('CLAMAV_PORT',       default=3310)
+CLAMAV_TIMEOUT        = env.int('CLAMAV_TIMEOUT',    default=10)
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ─── Django REST Framework ────────────────────────────────────────────────────

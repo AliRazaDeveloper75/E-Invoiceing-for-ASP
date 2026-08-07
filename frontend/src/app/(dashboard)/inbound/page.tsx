@@ -514,10 +514,10 @@ export default function InboundPage() {
           >
             <div className="flex items-center gap-3">
               <div className={clsx(
-                'h-9 w-9 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 shadow-md',
+                'h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 shadow-md',
                 STAT_GRADIENTS[card.color], STAT_SHADOWS[card.color],
               )}>
-                <card.icon className="h-4 w-4 text-white" />
+                <card.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
               </div>
               <div className="min-w-0">
                 <p className={clsx('text-lg font-bold tracking-tight', STAT_TEXT[card.color])}>

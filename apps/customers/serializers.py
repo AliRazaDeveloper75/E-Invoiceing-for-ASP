@@ -6,6 +6,7 @@ Input validation only. No business logic.
 from django.core.validators import FileExtensionValidator
 from rest_framework import serializers
 from apps.common.constants import TRANSACTION_TYPE_CHOICES
+from apps.common.files import validate_uploaded_file
 from .models import Customer
 
 
@@ -101,6 +102,12 @@ class CustomerCreateSerializer(serializers.Serializer):
         help_text='Customer company logo — JPG or PNG.'
     )
 
+    def validate_logo(self, value):
+        return validate_uploaded_file(value, ['png', 'jpg', 'jpeg'], 'Customer logo')
+
+    def validate_trn_document(self, value):
+        return validate_uploaded_file(value, ['pdf', 'jpg', 'jpeg', 'png'], 'TRN document')
+
     # Address
     street_address = serializers.CharField(max_length=500, required=False, default='', allow_blank=True)
     city = serializers.CharField(max_length=100, required=False, default='', allow_blank=True)
@@ -190,6 +197,14 @@ class CustomerUpdateSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, allow_blank=True)
     phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
     notes = serializers.CharField(required=False, allow_blank=True)
+    trn_document = serializers.FileField(required=False, allow_null=True)
+    logo = serializers.ImageField(required=False, allow_null=True)
+
+    def validate_logo(self, value):
+        return validate_uploaded_file(value, ['png', 'jpg', 'jpeg'], 'Customer logo')
+
+    def validate_trn_document(self, value):
+        return validate_uploaded_file(value, ['pdf', 'jpg', 'jpeg', 'png'], 'TRN document')
 
     def validate_trn(self, value: str) -> str:
         if value and (not value.isdigit() or len(value) != 15):

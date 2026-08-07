@@ -111,7 +111,7 @@ const SALES_TYPES: CardType[] = [
   },
   {
     value: 'export_zero', title: 'Exports', subtitle: 'Zero-rated supplies (0%)',
-    hint: 'Export of goods or services to customers outside the UAE or GCC — zero-rated for VAT.',
+    hint: 'Export of goods or services to buyers outside the UAE or GCC — zero-rated for VAT.',
     vatRate: 'zero', vatLabel: '0%', boxRef: 'Box 2', reqRef: 'Req 1.5',
     color: 'emerald', icon: <Globe className="h-6 w-6" />, docType: 'tax_invoice',
   },
@@ -1304,7 +1304,7 @@ function InvoicePreview({ card, companyName, customerName, issueDate, dueDate, c
             ) : (
               <div className="flex items-center gap-1.5 mt-0.5">
                 <div className="w-3 h-3 rounded-full bg-gray-100 border border-gray-200 shrink-0" />
-                <p className="text-gray-300 text-[10px] italic">Select customer…</p>
+                <p className="text-gray-300 text-[10px] italic">Select buyer…</p>
               </div>
             )}
           </div>
@@ -1698,7 +1698,7 @@ export default function NewInvoicePage() {
     }
     if (step === 1 && selectedCustomer?.customer_type &&
         getValues('transaction_type') !== selectedCustomer.customer_type) {
-      setServerError('Transaction type does not match the selected customer type. Please correct this before continuing.');
+      setServerError('Transaction type does not match the selected buyer type. Please correct this before continuing.');
       return;
     }
     if (step === 2 && !hasItems) {
@@ -1724,7 +1724,7 @@ export default function NewInvoicePage() {
     },
     {
       label: 'Buyer',
-      sub:   'Select the customer',
+      sub:   'Select the buyer',
       icon:  <Building2 className="h-4 w-4" />,
       done:  hasCustomer,
     },
@@ -1779,7 +1779,7 @@ export default function NewInvoicePage() {
         data.permit_number     ? `Permit: ${data.permit_number}`             : '',
         data.transaction_id    ? `Txn ID: ${data.transaction_id}`            : '',
         data.is_reverse_charge ? 'Reverse Charge: YES'                       : '',
-        data.customer_location ? `Customer: ${data.customer_location}`       : '',
+        data.customer_location ? `Buyer: ${data.customer_location}`       : '',
         data.tax_payment_date  ? `Tax Payment Date: ${data.tax_payment_date}`: '',
       ].filter(Boolean).join(' | ');
 
@@ -2003,8 +2003,8 @@ export default function NewInvoicePage() {
           {/* STEP 1 — Buyer */}
           {step === 1 && (
             <AnimatedSection delay={100}>
-            <Section title="Buyer" icon={<Building2 className="h-4 w-4" />} subtitle="Select the customer being invoiced">
-              <Controller control={control} name="customer_id" rules={{ required: 'Customer is required' }}
+            <Section title="Buyer" icon={<Building2 className="h-4 w-4" />} subtitle="Select the buyer being invoiced">
+              <Controller control={control} name="customer_id" rules={{ required: 'Buyer is required' }}
                 render={({ field }) => {
                   if (selectedCustomer) {
                     return (
@@ -2152,19 +2152,19 @@ export default function NewInvoicePage() {
                           );
                         })}
 
-                        <button type="button" onClick={() => router.push('/customers/new')}
+                          <button type="button" onClick={() => router.push('/buyers/new')}
                           className="rounded-xl border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all flex flex-col items-center justify-center gap-1 min-h-[110px] group">
                           <div className="h-8 w-8 rounded-lg bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
                             <Plus className="h-4 w-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
                           </div>
-                          <span className="text-[11px] font-medium text-gray-400 group-hover:text-blue-600 transition-colors">Add Customer</span>
+                          <span className="text-[11px] font-medium text-gray-400 group-hover:text-blue-600 transition-colors">Add Buyer</span>
                         </button>
                       </div>
 
                       {customers.length > 0 && filteredCustomers.length === 0 && (
                         <div className="text-center py-10 bg-gray-50 rounded-xl">
                           <Search className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                          <p className="text-sm font-medium text-gray-500">No customers match</p>
+                          <p className="text-sm font-medium text-gray-500">No buyers match</p>
                           <p className="text-xs text-gray-400 mt-1">Try a different search or filter.</p>
                           <div className="flex items-center justify-center gap-3 mt-3">
                             {buyerSearch && (
@@ -2186,11 +2186,11 @@ export default function NewInvoicePage() {
                       {customers.length === 0 && (
                         <div className="text-center py-10 bg-gray-50 rounded-xl">
                           <Users className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                          <p className="text-sm font-medium text-gray-500">No customers yet</p>
-                          <p className="text-xs text-gray-400 mt-1">Create your first customer to get started.</p>
-                          <button type="button" onClick={() => router.push('/customers/new')}
+                          <p className="text-sm font-medium text-gray-500">No buyers yet</p>
+                          <p className="text-xs text-gray-400 mt-1">Create your first buyer to get started.</p>
+                        <button type="button" onClick={() => router.push('/buyers/new')}
                             className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors shadow-sm">
-                            <Plus className="h-3.5 w-3.5" /> Add New Customer
+                            <Plus className="h-3.5 w-3.5" /> Add New Buyer
                           </button>
                         </div>
                       )}
@@ -2209,20 +2209,20 @@ export default function NewInvoicePage() {
                 </div>
               )}
 
-              <Field label="Customer Location" required
-                tooltip="Location of the customer. E.g. Riyadh, Saudi Arabia"
+              <Field label="Buyer Location" required
+                tooltip="Location of the buyer. E.g. Riyadh, Saudi Arabia"
                 error={errors.customer_location?.message}>
                 <input placeholder="e.g. Riyadh, Saudi Arabia" maxLength={120}
                   className={inputCls(errors.customer_location?.message)}
                   {...register('customer_location', {
-                    required: 'Customer location is required',
-                    validate: (v) => limitWords(v, 'Customer location'),
+                    required: 'Buyer location is required',
+                    validate: (v) => limitWords(v, 'Buyer location'),
                     onChange: () => { setTimeout(() => trigger('customer_location'), 0); },
                   })} />
               </Field>
 
               <Field label="Transaction Type"
-                tooltip="Auto-detected from the selected customer type. You can override if needed.">
+                tooltip="Auto-detected from the selected buyer type. You can override if needed.">
                 <Controller control={control} name="transaction_type"
                   render={({ field: txField }) => {
                     const txOptions = [
@@ -2260,7 +2260,7 @@ export default function NewInvoicePage() {
                watch('transaction_type') !== selectedCustomer.customer_type && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-xs flex items-start gap-2.5">
                   <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                  <span>Transaction type <strong>{watch('transaction_type')?.toUpperCase()}</strong> does not match this customer&apos;s type <strong>{selectedCustomer.customer_type.toUpperCase()}</strong>. Select the matching type to continue.</span>
+                  <span>Transaction type <strong>{watch('transaction_type')?.toUpperCase()}</strong> does not match this buyer&apos;s type <strong>{selectedCustomer.customer_type.toUpperCase()}</strong>. Select the matching type to continue.</span>
                 </div>
               )}
             </Section>

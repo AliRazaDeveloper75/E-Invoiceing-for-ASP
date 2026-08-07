@@ -1,5 +1,6 @@
 """Onboarding serializers."""
 from rest_framework import serializers
+from apps.common.files import validate_uploaded_file
 from apps.companies.models import Company
 from .models import CompanyInvitation, InvitationEmailLog, OnboardingDocument
 
@@ -95,6 +96,12 @@ class AcceptInvitationSerializer(serializers.Serializer):
     contact_person_name  = serializers.CharField(max_length=255, required=False, allow_blank=True)
     contact_person_email = serializers.EmailField(required=False, allow_blank=True)
     contact_person_phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
+
+    # ── Branding ──────────────────────────────────────────────────────────────
+    logo = serializers.ImageField(required=False, allow_null=True)
+
+    def validate_logo(self, value):
+        return validate_uploaded_file(value, ['png', 'jpg', 'jpeg'], 'Company logo')
 
     def validate(self, attrs):
         if attrs['password'] != attrs['confirm_password']:

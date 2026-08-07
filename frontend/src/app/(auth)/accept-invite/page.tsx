@@ -11,7 +11,7 @@ import { AxiosError } from 'axios';
 import {
   Building2, User, MapPin, FileText, CheckCircle2,
   Eye, EyeOff, Upload, X, ChevronRight, ChevronLeft,
-  Loader2, ShieldCheck, ArrowRight,
+  Loader2, ShieldCheck, ArrowRight, ExternalLink,
 } from 'lucide-react';
 import { FieldTooltip } from '@/components/ui/FieldTooltip';
 import {
@@ -19,6 +19,7 @@ import {
   firstNameValidators, lastNameValidators,
   numericOnlyKeyDown, alphaOnlyKeyDown,
 } from '@/lib/validation';
+import { validateUploadedFile } from '@/lib/fileValidation';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -38,6 +39,7 @@ interface UploadedDoc {
   document_type: string;
   notes: string;
   preview?: string;
+  is_pdf: boolean;
 }
 
 const EMIRATE_CHOICES = [
@@ -161,15 +163,26 @@ function AcceptInviteContent() {
   // Logo
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState('');
+  const [logoError, setLogoError] = useState('');
   const logoRef = useRef<HTMLInputElement>(null);
+  const logoUrlRef = useRef<string | null>(null);
 
   // Documents
   const [docs, setDocs] = useState<UploadedDoc[]>([]);
+  const [docError, setDocError] = useState('');
   const docRef = useRef<HTMLInputElement>(null);
 
   // Password visibility
   const [showPw, setShowPw] = useState(false);
   const [showCpw, setShowCpw] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (logoUrlRef.current) URL.revokeObjectURL(logoUrlRef.current);
+      docs.forEach(d => { if (d.preview) URL.revokeObjectURL(d.preview); });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { register, handleSubmit, watch, setValue, trigger, formState: { errors } } = useForm({
     defaultValues: {
@@ -218,20 +231,57 @@ function AcceptInviteContent() {
   // ── Logo handling ────────────────────────────────────────────────────────
   const handleLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (!f) return;
-    setLogoFile(f);
-    setLogoPreview(URL.createObjectURL(f));
+    if (!f) {
+      setLogoError('');
+      setLogoPreview('');
+      return;
+    }
+    void validateUploadedFile(f, ['png', 'jpg', 'jpeg'], 'Logo', 2).then((res) => {
+      if (!res.ok) {
+        setLogoError(res.error);
+        setLogoFile(null);
+        if (logoUrlRef.current) URL.revokeObjectURL(logoUrlRef.current);
+        logoUrlRef.current = null;
+        setLogoPreview('');
+        e.target.value = '';
+        return;
+      }
+      setLogoError('');
+      setLogoFile(f);
+      if (logoUrlRef.current) URL.revokeObjectURL(logoUrlRef.current);
+      logoUrlRef.current = URL.createObjectURL(f);
+      setLogoPreview(logoUrlRef.current);
+    });
   };
 
   // ── Document handling ────────────────────────────────────────────────────
   const addDoc = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const newDocs = files.map(f => ({ file: f, document_type: 'other', notes: '' }));
-    setDocs(prev => [...prev, ...newDocs]);
+    setDocError('');
+    const added: UploadedDoc[] = [];
+    let rejected = 0;
+    void Promise.all(files.map((f) =>
+      validateUploadedFile(f, ['pdf', 'jpg', 'jpeg', 'png'], 'Document', 5).then((res) => {
+        if (!res.ok) {
+          rejected++;
+          return null;
+        }
+        const isPdf = f.type === 'application/pdf';
+        return { file: f, document_type: 'other', notes: '', is_pdf: isPdf, preview: URL.createObjectURL(f) };
+      }),
+    )).then((results) => {
+      results.forEach((r) => { if (r) added.push(r); });
+      if (added.length) setDocs(prev => [...prev, ...added]);
+      if (rejected > 0) setDocError(`Skipped ${rejected} file${rejected > 1 ? 's' : ''} — only PDF, JPG or PNG files up to 5 MB are allowed.`);
+    });
     e.target.value = '';
   };
 
-  const removeDoc = (i: number) => setDocs(prev => prev.filter((_, idx) => idx !== i));
+  const removeDoc = (i: number) => setDocs(prev => {
+    const removed = prev[i];
+    if (removed?.preview) URL.revokeObjectURL(removed.preview);
+    return prev.filter((_, idx) => idx !== i);
+  });
   const updateDocType = (i: number, v: string) =>
     setDocs(prev => prev.map((d, idx) => idx === i ? { ...d, document_type: v } : d));
 
@@ -500,8 +550,11 @@ function AcceptInviteContent() {
                           {logoPreview ? 'Change logo' : 'Upload logo'}
                         </button>
                         <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 2 MB</p>
+                        {logoError && (
+                          <p className="text-xs text-red-600 mt-1">⚠ {logoError}</p>
+                        )}
                       </div>
-                      <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogo} />
+                      <input ref={logoRef} type="file" accept=".png,.jpg,.jpeg" className="hidden" onChange={handleLogo} />
                     </div>
                   </div>
 
@@ -690,37 +743,65 @@ function AcceptInviteContent() {
                     <Upload className="h-8 w-8 text-gray-400 group-hover:text-brand-500 transition-colors" />
                     <div className="text-center">
                       <p className="text-sm font-semibold text-gray-700">Click to upload documents</p>
-                      <p className="text-xs text-gray-400 mt-1">PDF, PNG, JPG up to 10 MB each</p>
+                      <p className="text-xs text-gray-400 mt-1">PDF, JPG or PNG up to 5 MB each</p>
                     </div>
                   </button>
                   <input ref={docRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg" className="hidden" onChange={addDoc} />
 
+                  {docError && (
+                    <p className="text-xs text-red-600">⚠ {docError}</p>
+                  )}
+
                   {/* Document list */}
                   {docs.length > 0 && (
-                    <div className="space-y-3">
+                    <div className="max-w-md space-y-2">
                       {docs.map((doc, i) => (
                         <div key={i}
-                          className="flex items-center gap-3 p-3.5 border border-gray-200 rounded-xl bg-gray-50">
-                          <div className="h-9 w-9 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0">
-                            <FileText className="h-4 w-4 text-gray-500" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-800 truncate">{doc.file.name}</p>
-                            <p className="text-xs text-gray-400">{(doc.file.size / 1024).toFixed(0)} KB</p>
+                          className="p-2.5 border border-gray-200 rounded-lg bg-gray-50">
+                          <div className="flex items-center gap-2.5">
+                            <div className="shrink-0">
+                              {doc.is_pdf ? (
+                                <iframe
+                                  src={doc.preview}
+                                  title={`${doc.file.name} preview`}
+                                  className="h-10 w-14 rounded-md border border-gray-200 bg-white"
+                                />
+                              ) : (
+                                <img
+                                  src={doc.preview}
+                                  alt={`${doc.file.name} preview`}
+                                  className="h-10 w-14 rounded-md border border-gray-200 bg-white object-contain"
+                                />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-gray-800 truncate">{doc.file.name}</p>
+                              <p className="text-[11px] text-gray-400">{(doc.file.size / 1024).toFixed(0)} KB</p>
+                            </div>
+                            <a
+                              href={doc.preview}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-1 rounded-md hover:bg-white text-gray-400 hover:text-brand-600 transition-colors shrink-0"
+                              title="Open document"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                            <button type="button" onClick={() => removeDoc(i)}
+                              className="p-1 rounded-md hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors shrink-0"
+                              title="Remove document">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
                           </div>
                           <select
                             value={doc.document_type}
                             onChange={e => updateDocType(i, e.target.value)}
-                            className="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white focus:outline-none"
+                            className="mt-2 w-full text-[11px] border border-gray-300 rounded-md px-1.5 py-1 bg-white focus:outline-none lg:w-28"
                           >
                             {DOC_TYPES.map(t => (
                               <option key={t.value} value={t.value}>{t.label}</option>
                             ))}
                           </select>
-                          <button type="button" onClick={() => removeDoc(i)}
-                            className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
-                            <X className="h-4 w-4" />
-                          </button>
                         </div>
                       ))}
                     </div>

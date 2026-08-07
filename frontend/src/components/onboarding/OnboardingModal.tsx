@@ -35,15 +35,15 @@ const STEPS = [
     iconBg: 'bg-purple-100',
     iconColor: 'text-purple-600',
     badge: 'bg-purple-600',
-    title: 'Add your first customer',
+    title: 'Add your first buyer',
     description:
-      'Add the businesses or individuals you invoice. For UAE B2B and B2G customers you will need their TRN to generate compliant invoices.',
+      'Add the businesses or individuals you invoice. For UAE B2B and B2G buyers you will need their TRN to generate compliant invoices.',
     checklist: [
       'B2B — Business buyers (TRN required)',
       'B2G — Government entities (TRN required)',
       'B2C — Individual consumers (no TRN needed)',
     ],
-    action: { label: 'Add Customer →', href: '/customers/new' },
+    action: { label: 'Add Buyer →', href: '/buyers/new' },
   },
   {
     step: '3rd step',
@@ -53,7 +53,7 @@ const STEPS = [
     badge: 'bg-emerald-600',
     title: 'Create your first invoice',
     description:
-      'Generate a BIS 3.0 tax invoice. Choose the document type, select a customer, add line items, and submit — the platform handles XML generation, digital signing, and FTA reporting.',
+      'Generate a BIS 3.0 tax invoice. Choose the document type, select a buyer, add line items, and submit — the platform handles XML generation, digital signing, and FTA reporting.',
     checklist: [
       'Tax Invoice, Credit Note, or Debit Note',
       'VAT and Excise calculations included',
@@ -171,7 +171,7 @@ export function OnboardingModal() {
               <ul className="space-y-2.5 text-left">
                 {[
                   { icon: Building2,    text: 'Set up your company & TRN' },
-                  { icon: Users,        text: 'Add your first customer' },
+                  { icon: Users,        text: 'Add your first buyer' },
                   { icon: FileText,     text: 'Create a E-Invoice invoice' },
                 ].map(({ icon: Icon, text }) => (
                   <li key={text} className="flex items-center gap-3 text-sm text-gray-700">

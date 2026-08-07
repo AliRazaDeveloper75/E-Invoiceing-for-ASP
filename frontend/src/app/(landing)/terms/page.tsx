@@ -21,7 +21,7 @@ const SECTIONS: { heading: string; body: string[] }[] = [
   {
     heading: 'Your Responsibilities',
     body: [
-      'You are responsible for the accuracy of the data you enter, including TRNs, customer details, and invoice amounts.',
+      'You are responsible for the accuracy of the data you enter, including TRNs, buyer details, and invoice amounts.',
       'You must keep your account credentials confidential and are responsible for all activity under your account.',
       'You agree to use the Service only for lawful purposes and in compliance with UAE tax law.',
     ],

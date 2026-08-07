@@ -461,7 +461,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="space-y-1.5 text-xs">
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Customer</span>
+                        <span className="text-gray-400">Buyer</span>
                         <span className="text-gray-700 font-medium">{inv.customer_name}</span>
                       </div>
                       <div className="flex justify-between">
@@ -484,7 +484,7 @@ export default function DashboardPage() {
                   <thead>
                     <tr className="bg-gray-50/80">
                       <th className="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Invoice</th>
-                      <th className="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
+                      <th className="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Buyer</th>
                       <th className="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Date</th>
                       <th className="px-6 py-3.5 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
                       <th className="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Status</th>

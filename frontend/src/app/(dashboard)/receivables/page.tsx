@@ -129,7 +129,7 @@ export default function ReceivablesPage() {
               </div>
               <h1 className="text-xl font-bold text-white tracking-tight">Accounts Receivable</h1>
               <p className="text-sm text-blue-200/60 mt-0.5">
-                Outstanding invoices, aging and per-customer balances
+                Outstanding invoices, aging and per-buyer balances
               </p>
             </div>
             {isLoading && (
@@ -383,9 +383,9 @@ export default function ReceivablesPage() {
                 <Users className="h-5 w-5 text-blue-300" />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-blue-100">Outstanding by Customer</h2>
+                <h2 className="text-sm font-semibold text-blue-100">Outstanding by Buyer</h2>
                 <p className="text-xs text-blue-300/50">
-                  {byCust ? `${byCust.customers.length} customer${byCust.customers.length !== 1 ? 's' : ''}` : 'Loading...'}
+                  {byCust ? `${byCust.customers.length} buyer${byCust.customers.length !== 1 ? 's' : ''}` : 'Loading...'}
                 </p>
               </div>
             </div>
@@ -399,7 +399,7 @@ export default function ReceivablesPage() {
                   <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
                     <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
                   </div>
-                  <p className="text-sm text-gray-400">Loading customers...</p>
+                  <p className="text-sm text-gray-400">Loading buyers...</p>
                 </div>
               </div>
             ) : byCust.customers.length === 0 ? (

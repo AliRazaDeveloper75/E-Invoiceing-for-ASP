@@ -26,7 +26,7 @@ export default function robots(): MetadataRoute.Robots {
           '/mfa-setup',
           '/dashboard',
           '/invoices',
-          '/customers',
+          '/buyers',
           '/companies',
           '/settings',
           '/management',

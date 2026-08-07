@@ -501,7 +501,7 @@ function BuyerPicker({ activeId, selectedCustomer, onSelect, onClear }: {
           </div>
           <button onClick={onClear}
             className="p-2 rounded-xl text-emerald-500 hover:bg-emerald-100 hover:text-emerald-700 transition-all shrink-0"
-            title="Change customer">
+            title="Change buyer">
             <RotateCcw className="h-4 w-4" />
           </button>
         </div>
@@ -594,7 +594,7 @@ function BuyerPicker({ activeId, selectedCustomer, onSelect, onClear }: {
       {/* Result count */}
       {(query || typeFilter !== 'all') && filtered.length > 0 && (
         <p className="text-[11px] text-gray-400 font-medium mb-2.5">
-          {filtered.length} customer{filtered.length !== 1 ? 's' : ''} found
+          {filtered.length} buyer{filtered.length !== 1 ? 's' : ''} found
           {typeFilter !== 'all' && <span> in <strong className="text-gray-500">{typeFilter.toUpperCase()}</strong></span>}
         </p>
       )}
@@ -637,14 +637,14 @@ function BuyerPicker({ activeId, selectedCustomer, onSelect, onClear }: {
           </button>
         ))}
 
-        <button onClick={() => window.open('/customers/new', '_blank')}
+          <button onClick={() => window.open('/buyers/new', '_blank')}
           className="rounded-xl border-2 border-dashed border-gray-200
                      hover:border-blue-300 hover:bg-blue-50/30 transition-all
                      flex flex-col items-center justify-center gap-1 min-h-[110px] group">
           <div className="h-8 w-8 rounded-lg bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
             <Plus className="h-4 w-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
           </div>
-          <span className="text-[11px] font-medium text-gray-400 group-hover:text-blue-600 transition-colors">Add Customer</span>
+          <span className="text-[11px] font-medium text-gray-400 group-hover:text-blue-600 transition-colors">Add Buyer</span>
         </button>
       </div>
 
@@ -652,7 +652,7 @@ function BuyerPicker({ activeId, selectedCustomer, onSelect, onClear }: {
       {customers.length > 0 && filtered.length === 0 && (
         <div className="text-center py-10 bg-gray-50 rounded-xl mt-3">
           <Search className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-          <p className="text-sm font-medium text-gray-500">No customers match</p>
+          <p className="text-sm font-medium text-gray-500">No buyers match</p>
           <p className="text-xs text-gray-400 mt-1">Try a different search or filter.</p>
           <div className="flex items-center justify-center gap-3 mt-3">
             {query && (
@@ -674,11 +674,11 @@ function BuyerPicker({ activeId, selectedCustomer, onSelect, onClear }: {
       {customers.length === 0 && (
         <div className="text-center py-10 bg-gray-50 rounded-xl mt-3">
           <Users className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-          <p className="text-sm font-medium text-gray-500">No customers yet</p>
-          <p className="text-xs text-gray-400 mt-1">Create your first customer to get started.</p>
-          <button onClick={() => window.open('/customers/new', '_blank')}
+          <p className="text-sm font-medium text-gray-500">No buyers yet</p>
+          <p className="text-xs text-gray-400 mt-1">Create your first buyer to get started.</p>
+        <button onClick={() => window.open('/buyers/new', '_blank')}
             className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors shadow-sm">
-            <Plus className="h-3.5 w-3.5" /> Add New Customer
+            <Plus className="h-3.5 w-3.5" /> Add New Buyer
           </button>
         </div>
       )}
@@ -1024,10 +1024,10 @@ function ReviewStep({ values, lineItems, hasBuyer, onSubmit, isSubmitting, submi
         <div className="rounded-2xl bg-amber-50 border border-amber-200 px-5 py-4 flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-amber-800">Buyer not linked to a customer record</p>
+            <p className="text-sm font-semibold text-amber-800">Buyer not linked to a buyer record</p>
             <p className="text-xs text-amber-600 mt-1">
-              Go back to <strong>Step 3 (Buyer)</strong> and use the search to select an existing customer.
-              The invoice cannot be submitted without a linked customer.
+              Go back to <strong>Step 3 (Buyer)</strong> and use the search to select an existing buyer.
+              The invoice cannot be submitted without a linked buyer.
             </p>
           </div>
         </div>
@@ -1535,7 +1535,7 @@ export default function PintCreatePage() {
       return;
     }
     if (!selectedBuyer) {
-      setSubmitError('No buyer selected. Go back to Step 3 and search for a customer to link.');
+      setSubmitError('No buyer selected. Go back to Step 3 and search for a buyer to link.');
       return;
     }
 

@@ -4,9 +4,11 @@ Customer service layer.
 All business logic lives here. Views are thin wrappers around services.
 """
 import logging
+from django.contrib.auth import get_user_model
 from django.db import models as django_models
 from django.core.exceptions import ValidationError, PermissionDenied
 
+from apps.common.constants import ROLE_BUYER
 from apps.companies.models import Company, CompanyMember
 from .models import Customer
 
@@ -15,6 +17,28 @@ logger = logging.getLogger(__name__)
 
 class CustomerService:
     """Handles customer creation, updates, search, and soft deletion."""
+
+    @staticmethod
+    def _ensure_email_not_platform_account(email: str) -> None:
+        """
+        One email = one role. A single email address can only ever be used for
+        one platform account, so it cannot also be used as a customer contact.
+        """
+        if not email:
+            return
+        existing = get_user_model().objects.filter(email__iexact=email).first()
+        if existing is None:
+            return
+        if existing.role == ROLE_BUYER:
+            raise ValidationError({
+                'email': 'A buyer account already exists for this email. '
+                         'Ask the buyer to sign in to the buyer portal.'
+            })
+        raise ValidationError({
+            'email': f'This email is already registered as a {existing.get_role_display()} account. '
+                     'A single email can only have one role, so it cannot be used as a buyer email.'
+        })
+
 
     # ── CRUD ──────────────────────────────────────────────────────────────────
 
@@ -42,6 +66,8 @@ class CustomerService:
             raise ValidationError({
                 'email': f'A customer with email "{email}" already exists in this company.'
             })
+
+        CustomerService._ensure_email_not_platform_account(email)
 
         customer = Customer(
             company=company,
@@ -111,6 +137,11 @@ class CustomerService:
                     'email': f'A customer with email "{new_email}" already exists in this company.'
                 })
 
+        # Guard: new email must not be an existing platform account (one email = one role).
+        # Skipped when unchanged so editing a customer never locks itself out.
+        if new_email and new_email != customer.email:
+            CustomerService._ensure_email_not_platform_account(new_email)
+
         changed = []
         for field in updatable_fields:
             if field in data:
@@ -120,6 +151,12 @@ class CustomerService:
                     if field == 'country':
                         value = value.upper()
                 setattr(customer, field, value)
+                changed.append(field)
+
+        # Files (already magic-byte + ClamAV validated in the serializer)
+        for field in ('logo', 'trn_document'):
+            if field in data and data[field] is not None:
+                setattr(customer, field, data[field])
                 changed.append(field)
 
         if changed:

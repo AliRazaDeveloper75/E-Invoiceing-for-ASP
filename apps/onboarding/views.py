@@ -16,10 +16,12 @@ Admin (IsAuthenticated + role=admin):
 import logging
 from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
+from apps.common.files import validate_uploaded_file
 from apps.common.utils import success_response, error_response
 from apps.companies.models import Company
 from .models import CompanyInvitation, OnboardingDocument
@@ -122,19 +124,34 @@ class AcceptInviteView(APIView):
             'contact_person_name':   d.get('contact_person_name', ''),
             'contact_person_email':  d.get('contact_person_email', ''),
             'contact_person_phone':  d.get('contact_person_phone', ''),
-            'logo':                  request.FILES.get('logo'),
+            'logo':                  d.get('logo'),
         }
 
-        # Collect uploaded documents (doc_0_file, doc_1_file, …)
+        # Collect uploaded documents (doc_0_file, doc_1_file, …). Each file is
+        # checked (size + real file signature + ClamAV) before it is stored.
         documents = []
+        doc_errors = {}
         i = 0
         while f'doc_{i}_file' in request.FILES:
+            doc_file = request.FILES[f'doc_{i}_file']
+            try:
+                validate_uploaded_file(doc_file, ['pdf', 'jpg', 'jpeg', 'png'], 'Verification document')
+            except ValidationError as exc:
+                detail = exc.detail if isinstance(exc.detail, (list, tuple)) else [str(exc.detail)]
+                doc_errors[f'doc_{i}_file'] = list(detail)
             documents.append({
-                'file':          request.FILES[f'doc_{i}_file'],
+                'file':          doc_file,
                 'document_type': request.data.get(f'doc_{i}_type', 'other'),
                 'notes':         request.data.get(f'doc_{i}_notes', ''),
             })
             i += 1
+
+        if doc_errors:
+            return error_response(
+                message='Registration failed.',
+                details=doc_errors,
+                status_code=400,
+            )
 
         # At least one verification document is mandatory — a profile must not be
         # created without supporting documents (Trade License, TRN certificate, …).
@@ -199,15 +216,18 @@ class InvitationListCreateView(APIView):
         if not serializer.is_valid():
             return error_response('Invalid data.', details=serializer.errors, status_code=400)
         d = serializer.validated_data
-        invitation = InvitationService.create(
-            email=d['email'],
-            invited_by=request.user,
-            first_name=d.get('first_name', ''),
-            last_name=d.get('last_name', ''),
-            company_name_hint=d.get('company_name_hint', ''),
-            role=d.get('role', 'supplier'),
-            message=d.get('message', ''),
-        )
+        try:
+            invitation = InvitationService.create(
+                email=d['email'],
+                invited_by=request.user,
+                first_name=d.get('first_name', ''),
+                last_name=d.get('last_name', ''),
+                company_name_hint=d.get('company_name_hint', ''),
+                role=d.get('role', 'supplier'),
+                message=d.get('message', ''),
+            )
+        except ValueError as exc:
+            return error_response(str(exc), status_code=400)
         return success_response(
             data=CompanyInvitationSerializer(invitation).data,
             message='Invitation sent successfully.',
@@ -248,6 +268,8 @@ class ResendInvitationView(APIView):
             return error_response('Cannot resend a revoked invitation.', status_code=400)
         try:
             invitation = InvitationService.resend(invitation)
+        except ValueError as exc:
+            return error_response(str(exc), status_code=400)
         except Exception as exc:
             return error_response(f'Failed to send email: {exc}', status_code=500)
         return success_response(

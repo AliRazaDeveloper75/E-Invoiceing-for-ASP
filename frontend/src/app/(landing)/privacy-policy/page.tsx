@@ -9,7 +9,7 @@ const SECTIONS: { heading: string; body: string[] }[] = [
     heading: 'Information We Collect',
     body: [
       'Account information: name, email address, phone number, and company details you provide when registering or being invited to the platform.',
-      'Business data: company Tax Registration Number (TRN), customer records, invoices, line items, and supporting documents you upload (such as TRN certificates and logos).',
+      'Business data: company Tax Registration Number (TRN), buyer records, invoices, line items, and supporting documents you upload (such as TRN certificates and logos).',
       'Technical data: IP address, browser type, device information, and usage logs collected automatically to operate and secure the service.',
     ],
   },

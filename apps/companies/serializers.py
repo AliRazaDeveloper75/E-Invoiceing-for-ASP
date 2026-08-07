@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from apps.common.constants import USER_ROLE_CHOICES, LEGAL_REG_TYPE_CHOICES
+from apps.common.files import validate_uploaded_file
 from .models import Company, CompanyMember, EMIRATE_CHOICES
 
 User = get_user_model()
@@ -95,6 +96,9 @@ class CompanyCreateSerializer(serializers.Serializer):
     # Branding
     logo = serializers.ImageField(required=False, allow_null=True)
 
+    def validate_logo(self, value):
+        return validate_uploaded_file(value, ['png', 'jpg', 'jpeg', 'webp'], 'Company logo')
+
     def validate_trn(self, value: str) -> str:
         if not value.isdigit():
             raise serializers.ValidationError('TRN must contain digits only.')
@@ -142,6 +146,9 @@ class CompanyUpdateSerializer(serializers.Serializer):
     trn_issue_date  = serializers.DateField(required=False)
     trn_expiry_date = serializers.DateField(required=False)
     logo            = serializers.ImageField(required=False, allow_null=True)
+
+    def validate_logo(self, value):
+        return validate_uploaded_file(value, ['png', 'jpg', 'jpeg', 'webp'], 'Company logo')
 
     def validate(self, attrs):
         if not attrs:

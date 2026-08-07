@@ -62,7 +62,7 @@ const ROUTE_LABELS: Record<string, string> = {
   dashboard:  'Dashboard',
   invoices:   'Invoices',
   inbound:    'Inbound',
-  customers:  'Customers',
+  customers:  'Buyers',
   companies:  'Companies',
   new:        'New',
   settings:   'Settings',
@@ -152,7 +152,7 @@ function NotificationBell() {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-80 rounded-xl border border-blue-100/60 bg-white shadow-lg shadow-blue-500/5 z-50">
+        <div className="fixed inset-x-3 top-16 z-50 rounded-xl border border-blue-100/60 bg-white shadow-lg shadow-blue-500/5 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80">
           <div className="px-4 py-3 border-b border-blue-50 flex items-center justify-between">
             <p className="text-sm font-semibold text-gray-900">Notifications</p>
             {unread > 0 && (
@@ -171,7 +171,7 @@ function NotificationBell() {
               <p className="text-xs text-gray-400 mt-0.5">No new notifications</p>
             </div>
           ) : (
-            <div className="max-h-96 overflow-y-auto">
+            <div className="max-h-[60vh] sm:max-h-96 overflow-y-auto">
               {items.map((n) => {
                 const Icon = NOTIF_ICON[n.category] ?? Bell;
                 return (

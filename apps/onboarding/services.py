@@ -32,7 +32,26 @@ class InvitationService:
         message: str = '',
     ) -> CompanyInvitation:
         """Create a CompanyInvitation and send the invitation email."""
-        CompanyInvitation.objects.filter(email=email, status='pending').update(status='expired')
+        email = email.strip().lower()
+
+        # One email = one role. An email that already owns a platform account
+        # can never be invited to create a second account with a different role.
+        if User.objects.filter(email=email).exists():
+            raise ValueError(
+                'This email already has a platform account. A single email can '
+                'only have one role, so it cannot be invited again with a different role.'
+            )
+
+        # Re-inviting the same email with the SAME role just expires the old
+        # pending invite and sends a fresh one. But a conflicting-role pending
+        # invite must be resolved (used, expired or revoked) first.
+        pending = CompanyInvitation.objects.filter(email=email, status='pending')
+        if pending.exclude(role=role).exists():
+            raise ValueError(
+                'This email already has a pending invitation with a different role. '
+                'Wait for it to be used, expired, or revoked before sending a new one.'
+            )
+        pending.update(status='expired')
 
         invite = CompanyInvitation.objects.create(
             email=email,
@@ -49,6 +68,10 @@ class InvitationService:
     @staticmethod
     def resend(invite: CompanyInvitation) -> CompanyInvitation:
         """Resend invitation email and reset expiry to now + 1 hour."""
+        if User.objects.filter(email=invite.email).exists():
+            raise ValueError(
+                'This email now has a platform account, so the invitation can no longer be used.'
+            )
         invite.expires_at = timezone.now() + timedelta(hours=1)
         if invite.status == 'expired':
             invite.status = 'pending'

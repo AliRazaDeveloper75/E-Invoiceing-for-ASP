@@ -7,6 +7,8 @@ import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { RoleGuard } from '@/components/guards/RoleGuard';
+import { EmailInput } from '@/components/ui/EmailInput';
+import { isValidEmailFormat, isDisposableEmail } from '@/lib/validation';
 import {
   Users, Plus, Search, RefreshCw, Shield,
   CheckCircle2, XCircle, Edit2, UserCheck, UserX, Eye, Trash2, X,
@@ -421,6 +423,7 @@ function DeleteUserModal({ user, onClose, onDeleted }: { user: AdminUser; onClos
 
 function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [form, setForm] = useState({ email: '', password: '', first_name: '', last_name: '', role: 'supplier' });
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -429,6 +432,10 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    if (emailAvailable === false && isValidEmailFormat(form.email) && !isDisposableEmail(form.email)) {
+      setError('This email is already registered to another account. A single email can only have one role.');
+      return;
+    }
     setLoading(true);
     try {
       await api.post('/admin/users/', form);
@@ -510,19 +517,15 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
             </div>
 
             {/* Email */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Email Address <span className="text-red-500">*</span>
-              </label>
-              <input
-                required
-                type="email"
-                value={form.email}
-                onChange={set('email')}
-                placeholder="john.doe@company.com"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
-              />
-            </div>
+            <EmailInput
+              label="Email Address *"
+              value={form.email}
+              onChange={set('email')}
+              checkDuplicate
+              onAvailabilityChange={setEmailAvailable}
+              placeholder="john.doe@company.com"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+            />
 
             {/* Password */}
             <div>

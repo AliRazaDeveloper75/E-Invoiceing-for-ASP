@@ -76,13 +76,13 @@ export default function CustomerStatementPage() {
               <div>
                 <div className="flex items-center gap-2.5 mb-1.5">
                   <div className="h-2 w-2 rounded-full bg-blue-400" />
-                  <span className="text-[11px] font-semibold text-blue-200/60 uppercase tracking-[0.12em]">Customer Statement</span>
+                  <span className="text-[11px] font-semibold text-blue-200/60 uppercase tracking-[0.12em]">Buyer Statement</span>
                 </div>
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">
                   {data?.customer_name ?? '...'}
                 </h1>
                 <p className="text-xs sm:text-sm text-blue-200/50 mt-1.5">
-                  Outstanding balance for this customer
+                  Outstanding balance for this buyer
                 </p>
               </div>
 
@@ -279,7 +279,7 @@ export default function CustomerStatementPage() {
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-gray-900">All cleared</p>
-                          <p className="text-xs text-gray-500 mt-0.5">No outstanding invoices for this customer</p>
+                          <p className="text-xs text-gray-500 mt-0.5">No outstanding invoices for this buyer</p>
                         </div>
                       </div>
                     </td>

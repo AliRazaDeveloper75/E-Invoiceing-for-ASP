@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm, Controller } from 'react-hook-form';
@@ -14,7 +14,7 @@ import { PhoneInput } from '@/components/ui/PhoneInput';
 import { useCountryForm } from '@/hooks/useCountryForm';
 import {
   ArrowLeft, UserPlus, Building2, FileText, Receipt,
-  MapPin, XCircle, Save, Loader2, Pencil,
+  MapPin, XCircle, Save, Loader2, Pencil, ExternalLink,
 } from 'lucide-react';
 import { AxiosError } from 'axios';
 import {
@@ -24,6 +24,7 @@ import {
   alphaOnlyKeyDown,
   validatePhoneNumber,
 } from '@/lib/validation';
+import { validateUploadedFile } from '@/lib/fileValidation';
 
 interface CustomerForm {
   name: string;
@@ -91,6 +92,31 @@ export default function NewCustomerPage() {
   const router = useRouter();
   const { activeId } = useCompany();
   const [serverError, setServerError] = useState<Record<string, string>>({});
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [trnPreview, setTrnPreview] = useState<string | null>(null);
+  const [trnPreviewIsPdf, setTrnPreviewIsPdf] = useState(false);
+  const logoUrlRef = useRef<string | null>(null);
+  const trnUrlRef = useRef<string | null>(null);
+  const fileSeqRef = useRef<{ logo: number; trn_document: number }>({ logo: 0, trn_document: 0 });
+
+  const setLogoPreviewLocal = (url: string | null) => {
+    if (logoUrlRef.current) URL.revokeObjectURL(logoUrlRef.current);
+    logoUrlRef.current = url;
+    setLogoPreview(url);
+  };
+
+  const setTrnPreviewLocal = (url: string | null) => {
+    if (trnUrlRef.current) URL.revokeObjectURL(trnUrlRef.current);
+    trnUrlRef.current = url;
+    setTrnPreview(url);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (logoUrlRef.current) URL.revokeObjectURL(logoUrlRef.current);
+      if (trnUrlRef.current) URL.revokeObjectURL(trnUrlRef.current);
+    };
+  }, []);
 
   const countryForm = useCountryForm('AE');
 
@@ -105,6 +131,8 @@ export default function NewCustomerPage() {
     setValue,
     reset,
     control,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<CustomerForm>({
     defaultValues: {
@@ -125,7 +153,12 @@ export default function NewCustomerPage() {
         street_address: c.street_address ?? '', city: c.city ?? '',
         country: c.country ?? 'AE', email: c.email ?? '', notes: c.notes ?? '',
       });
-    }).catch(() => setServerError({ general: 'Failed to load customer.' }));
+      if (c.logo) setLogoPreview(c.logo);
+      if (c.trn_document) {
+        setTrnPreview(c.trn_document);
+        setTrnPreviewIsPdf(/\.pdf$/i.test(String(c.trn_document)));
+      }
+    }).catch(() => setServerError({ general: 'Failed to load buyer.' }));
   }, [editId, reset]);
 
   const customerType = watch('customer_type');
@@ -136,6 +169,29 @@ export default function NewCustomerPage() {
   const needsTRN = customerType === 'b2b' || customerType === 'b2g';
   const needsVAT = false;
   const [vatSameAsTrn, setVatSameAsTrn] = useState(false);
+
+  const trnField = register('trn_document', {
+    required: isEdit ? false : (needsTRN ? 'TRN certificate is required' : false),
+    validate: (f) => {
+      const file = f?.[0];
+      if (!file) return isEdit || !needsTRN ? true : 'TRN certificate is required';
+      if (!/\.(pdf|jpg|jpeg|png)$/i.test(file.name))
+        return 'Only PDF, JPG or PNG files are allowed';
+      if (file.size > 5 * 1024 * 1024) return 'File must be 5MB or smaller';
+      return true;
+    },
+  });
+  const logoField = register('logo', {
+    required: isEdit ? false : 'Buyer logo is required',
+    validate: (f) => {
+      const file = f?.[0];
+      if (!file) return isEdit ? true : 'Buyer logo is required';
+      if (!/\.(jpg|jpeg|png)$/i.test(file.name))
+        return 'Only JPG or PNG images are allowed';
+      if (file.size > 5 * 1024 * 1024) return 'Image must be 5MB or smaller';
+      return true;
+    },
+  });
 
   useEffect(() => {
     if (vatSameAsTrn) setValue('vat_number', watchedTrn ?? '', { shouldValidate: true });
@@ -175,7 +231,7 @@ export default function NewCustomerPage() {
           headers: { 'Content-Type': undefined },
         });
       }
-      router.push('/customers');
+      router.push('/buyers');
     } catch (err) {
       const e = err as AxiosError<{ error?: { message?: string; details?: Record<string, string[]> } }>;
       const details = e.response?.data?.error?.details;
@@ -184,9 +240,59 @@ export default function NewCustomerPage() {
         Object.entries(details).forEach(([k, v]) => { mapped[k] = v[0]; });
         setServerError(mapped);
       } else {
-        setServerError({ general: e.response?.data?.error?.message ?? 'Failed to create customer.' });
+        setServerError({ general: e.response?.data?.error?.message ?? 'Failed to create buyer.' });
       }
     }
+  };
+
+  const handleFileSelection = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    field: 'logo' | 'trn_document',
+    allowed: string[],
+    label: string,
+  ) => {
+    const input = event.target;
+    const files = input.files;
+    const file = files?.[0];
+    const setPreview = field === 'logo' ? setLogoPreviewLocal : setTrnPreviewLocal;
+    const isPdf = field === 'trn_document' && file?.type === 'application/pdf';
+    const seq = ++fileSeqRef.current[field];
+
+    const reject = (message: string) => {
+      setError(field, { type: 'manual', message });
+      setValue(field, undefined as unknown as FileList, { shouldDirty: true });
+      input.value = '';
+      setPreview(null);
+      if (field === 'trn_document') setTrnPreviewIsPdf(false);
+    };
+
+    if (!file) {
+      clearErrors(field);
+      setPreview(null);
+      return;
+    }
+
+    // RHF's own register onChange (chained in the JSX) has already stored the
+    // live `input.files` FileList and run validation — it does NOT clear the
+    // input, so the DOM `input.value` keeps its fake-path and `required`
+    // validation passes. Only preview + magic-byte checking happen here.
+    setPreview(URL.createObjectURL(file));
+    if (field === 'trn_document') setTrnPreviewIsPdf(!!isPdf);
+
+    void validateUploadedFile(file, allowed, label, 5).then((res) => {
+      if (seq !== fileSeqRef.current[field]) return;
+      if (!res.ok) {
+        reject(res.error);
+        return;
+      }
+      clearErrors(field);
+      setServerError((prev) => {
+        if (!prev[field]) return prev;
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    });
   };
 
   return (
@@ -196,8 +302,8 @@ export default function NewCustomerPage() {
         <div className="absolute inset-0 bg-grid opacity-[0.04] pointer-events-none" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10">
-          <Link href="/customers" className="inline-flex items-center gap-1.5 text-sm text-blue-200/70 hover:text-white mb-4 transition-colors">
-            <ArrowLeft className="h-4 w-4" /> Customers
+          <Link href="/buyers" className="inline-flex items-center gap-1.5 text-sm text-blue-200/70 hover:text-white mb-4 transition-colors">
+            <ArrowLeft className="h-4 w-4" /> Buyers
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div className="flex items-start gap-4">
@@ -210,13 +316,13 @@ export default function NewCustomerPage() {
               <div>
                 <div className="flex items-center gap-2.5 mb-1">
                   <div className="h-2 w-2 rounded-full bg-blue-400" />
-                  <span className="text-[11px] font-semibold text-blue-200/70 uppercase tracking-[0.12em]">Customers</span>
+                  <span className="text-[11px] font-semibold text-blue-200/70 uppercase tracking-[0.12em]">Buyers</span>
                 </div>
                 <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                  {isEdit ? 'Edit Customer' : 'New Customer'}
+                  {isEdit ? 'Edit Buyer' : 'New Buyer'}
                 </h1>
                 <p className="text-sm text-blue-200/60 mt-0.5">
-                  {isEdit ? 'Update customer details and documents' : 'Add a new customer to your address book'}
+                  {isEdit ? 'Update buyer details and documents' : 'Add a new buyer to your address book'}
                 </p>
               </div>
             </div>
@@ -251,15 +357,15 @@ export default function NewCustomerPage() {
       <form
         noValidate
         onSubmit={handleSubmit(onSubmit, () => {
-          setServerError({ general: 'Please fill in all required (*) fields before creating the customer.' });
+          setServerError({ general: 'Please fill in all required (*) fields before creating the buyer.' });
         })}
         className="flex flex-col flex-1"
       >
         <div className="space-y-5 flex-1">
-          {/* Customer Details */}
+          {/* Buyer Details */}
           <SectionCard
             icon={Building2}
-            title="Customer Details"
+            title="Buyer Details"
             description="Basic identity and classification"
             accentColor="bg-gradient-to-br from-blue-500 to-blue-600"
             bgTint="bg-gradient-to-br from-blue-50/50 via-white to-white"
@@ -268,7 +374,7 @@ export default function NewCustomerPage() {
               <Input
                 label="Trading Name"
                 required
-                tooltip="The name this customer trades under — shown on invoices"
+                tooltip="The name this buyer trades under — shown on invoices"
                 placeholder="Acme LLC"
                 error={errors.name?.message || serverError.name}
                 onKeyDown={alphaOnlyKeyDown}
@@ -290,10 +396,10 @@ export default function NewCustomerPage() {
               <Controller
                 name="customer_type"
                 control={control}
-                rules={{ required: 'Customer type is required' }}
+                rules={{ required: 'Buyer type is required' }}
                 render={({ field, fieldState }) => (
                   <Select
-                    label="Customer Type"
+                    label="Buyer Type"
                     required
                     tooltip="B2B — business buyer. B2G — government entity. B2C — individual consumer."
                     value={field.value ?? ''}
@@ -336,7 +442,7 @@ export default function NewCustomerPage() {
               <Input
                 label="VAT Number (optional)"
                 required={needsVAT}
-                tooltip="Optional VAT / tax number for international customers"
+                tooltip="Optional VAT / tax number for international buyers"
                 placeholder="123456789012345"
                 hint="15-digit international VAT number"
                 error={errors.vat_number?.message || serverError.vat_number}
@@ -346,7 +452,7 @@ export default function NewCustomerPage() {
                 onKeyDown={numericOnlyKeyDown}
                 {...register('vat_number', {
                   validate: (v) => {
-                    if (!v?.trim()) return needsVAT ? 'VAT number is required for international customers' : true;
+                    if (!v?.trim()) return needsVAT ? 'VAT number is required for international buyers' : true;
                     if (!/^\d+$/.test(v)) return 'VAT number must contain digits only';
                     if (v.length !== 15) return `VAT number must be exactly 15 digits (you entered ${v.length})`;
                     return true;
@@ -407,7 +513,7 @@ export default function NewCustomerPage() {
                   <CountrySelect
                     label="Country"
                     required
-                    tooltip="Country where this customer is registered or based"
+                    tooltip="Country where this buyer is registered or based"
                     value={field.value ?? ''}
                     onChange={(val) => {
                       field.onChange(val);
@@ -427,7 +533,7 @@ export default function NewCustomerPage() {
                   <CitySelect
                     label="City"
                     required
-                    tooltip="Customer's city — options update based on the selected country"
+                    tooltip="Buyer's city — options update based on the selected country"
                     countryCode={watchedCountry}
                     value={field.value ?? ''}
                     onChange={(val) => field.onChange(val)}
@@ -440,7 +546,7 @@ export default function NewCustomerPage() {
                 type="email"
                 required
                 tooltip="Billing email — used to deliver invoices"
-                placeholder="billing@customer.ae"
+                placeholder="billing@buyer.ae"
                 error={errors.email?.message || serverError.email}
                 {...register('email', {
                   required: 'Email is required',
@@ -509,7 +615,7 @@ export default function NewCustomerPage() {
           <SectionCard
             icon={FileText}
             title="Documents"
-            description="Supporting files for this customer"
+            description="Supporting files for this buyer"
             accentColor="bg-gradient-to-br from-violet-500 to-violet-600"
             bgTint="bg-gradient-to-br from-violet-50/50 via-white to-white"
           >
@@ -525,23 +631,48 @@ export default function NewCustomerPage() {
                   className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0
                              file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-medium
                              file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                  {...register('trn_document', {
-                    required: isEdit ? false : (needsTRN ? 'TRN certificate is required' : false),
-                    validate: (f) => {
-                      const file = f?.[0];
-                      if (!file) return isEdit || !needsTRN ? true : 'TRN certificate is required';
-                      if (!/\.(pdf|jpg|jpeg|png)$/i.test(file.name))
-                        return 'Only PDF, JPG or PNG files are allowed';
-                      if (file.size > 5 * 1024 * 1024) return 'File must be 5MB or smaller';
-                      return true;
-                    },
-                  })}
+                  {...trnField}
+                  onChange={(e) => {
+                    void trnField.onChange(e);
+                    handleFileSelection(e, 'trn_document', ['pdf', 'jpg', 'jpeg', 'png'], 'TRN document');
+                  }}
                 />
                 <p className="text-[11px] text-gray-400">
                   PDF, JPG or PNG — max 5MB{needsTRN ? ' (required)' : ' (optional for B2C)'}
                 </p>
-                {trnDoc?.[0] && (
-                  <p className="text-[11px] text-green-600 truncate">✓ {trnDoc[0].name}</p>
+                {trnPreview && (
+                  <div className="mt-2">
+                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white lg:max-w-xs">
+                      {trnPreviewIsPdf ? (
+                        <iframe
+                          src={trnPreview}
+                          title="TRN certificate preview"
+                          className="h-20 w-full bg-gray-50 sm:h-24"
+                        />
+                      ) : (
+                        <div className="flex h-20 items-center justify-center bg-white sm:h-24">
+                          <img
+                            src={trnPreview}
+                            alt="TRN certificate preview"
+                            className="max-h-full max-w-full object-contain"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                      <p className="min-w-0 text-[11px] text-green-600 truncate">
+                        ✓ {trnDoc?.[0]?.name ?? 'Current document'}
+                      </p>
+                      <a
+                        href={trnPreview}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" /> View
+                      </a>
+                    </div>
+                  </div>
                 )}
                 {(errors.trn_document?.message || serverError.trn_document) && (
                   <p className="text-xs text-red-600">⚠ {errors.trn_document?.message || serverError.trn_document}</p>
@@ -549,9 +680,9 @@ export default function NewCustomerPage() {
               </div>
 
               {/* Logo */}
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 lg:max-w-xs">
                 <label className="text-sm font-medium text-gray-700">
-                  Customer Logo <span className="text-red-500">*</span>
+                  Buyer Logo <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="file"
@@ -559,21 +690,26 @@ export default function NewCustomerPage() {
                   className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0
                              file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-medium
                              file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                  {...register('logo', {
-                    required: isEdit ? false : 'Customer logo is required',
-                    validate: (f) => {
-                      const file = f?.[0];
-                      if (!file) return isEdit ? true : 'Customer logo is required';
-                      if (!/\.(jpg|jpeg|png)$/i.test(file.name))
-                        return 'Only JPG or PNG images are allowed';
-                      if (file.size > 5 * 1024 * 1024) return 'Image must be 5MB or smaller';
-                      return true;
-                    },
-                  })}
+                  {...logoField}
+                  onChange={(e) => {
+                    void logoField.onChange(e);
+                    handleFileSelection(e, 'logo', ['jpg', 'jpeg', 'png'], 'Buyer logo');
+                  }}
                 />
                 <p className="text-[11px] text-gray-400">JPG or PNG — max 5MB</p>
-                {logoFile?.[0] && (
-                  <p className="text-[11px] text-green-600 truncate">✓ {logoFile[0].name}</p>
+                {logoPreview && (
+                  <div className="mt-2">
+                    <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-white sm:h-24 sm:w-24">
+                      <img
+                        src={logoPreview}
+                        alt="Buyer logo preview"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                    <p className="mt-1.5 min-w-0 text-[11px] text-green-600 truncate">
+                      ✓ {logoFile?.[0]?.name ?? 'Current logo'}
+                    </p>
+                  </div>
                 )}
                 {(errors.logo?.message || serverError.logo) && (
                   <p className="text-xs text-red-600">⚠ {errors.logo?.message || serverError.logo}</p>
@@ -606,7 +742,7 @@ export default function NewCustomerPage() {
               )}
               {isSubmitting
                 ? (isEdit ? 'Saving…' : 'Creating…')
-                : (isEdit ? 'Save Changes' : 'Create Customer')
+                : (isEdit ? 'Save Changes' : 'Create Buyer')
               }
             </button>
           </div>

@@ -43,6 +43,26 @@ services:
       timeout: 5s
       retries: 5
 
+  # ── ClamAV (virus scanning for uploads) ───────────────────────────────────────
+  clamav:
+    image: clamav/clamav:stable
+    restart: unless-stopped
+    environment:
+      CLAMAV_NO_FRESHCLAMD: "false"
+    volumes:
+      - clamav_db:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
   # ── Django API ────────────────────────────────────────────────────────────────
   backend:
     build:
@@ -64,6 +84,8 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      clamav:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
@@ -99,6 +121,8 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      clamav:
         condition: service_healthy
     logging:
       driver: "json-file"
@@ -201,6 +225,8 @@ volumes:
   static_files:
     driver: local
   media_files:
+    driver: local
+  clamav_db:
     driver: local
   certbot_www:
     driver: local

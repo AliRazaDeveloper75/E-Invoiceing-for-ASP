@@ -21,6 +21,7 @@ from rest_framework import status
 from django.utils import timezone
 from django.template.loader import render_to_string
 from django.http import HttpResponse
+from django.contrib.auth import get_user_model
 from decimal import Decimal
 
 from apps.common.utils import success_response, error_response, StandardResultsPagination
@@ -29,7 +30,9 @@ from apps.customers.models import Customer
 from apps.invoices.models import Invoice
 from apps.invoices.serializers import InvoiceSerializer, InvoiceListSerializer
 
-from .models import BuyerProfile
+from .models import BuyerProfile, BuyerInvite
+
+User = get_user_model()
 from .serializers import (
     BuyerInviteSerializer, AcceptInviteSerializer, BuyerProfileSerializer,
     BuyerInvoiceCreateSerializer,
@@ -68,7 +71,7 @@ class BuyerInviteView(APIView):
                                   details=serializer.errors)
 
         customer_id = serializer.validated_data['customer_id']
-        email = serializer.validated_data['email']
+        email = serializer.validated_data['email'].strip().lower()
 
         try:
             customer = Customer.objects.select_related('company').get(
@@ -76,6 +79,32 @@ class BuyerInviteView(APIView):
             )
         except Customer.DoesNotExist:
             return error_response('Customer not found.', status_code=404)
+
+        # One email = one role. A single email address can only ever be used for
+        # one platform account, so it cannot be invited with a different role.
+        existing = User.objects.filter(email=email).first()
+        if existing:
+            if existing.role != ROLE_BUYER:
+                return error_response(
+                    f'This email is already registered as a {existing.get_role_display()} account. '
+                    'A single email can only have one role, so it cannot be invited as a buyer.',
+                    status_code=400,
+                )
+            return error_response(
+                'A buyer account already exists for this email. '
+                'Ask the buyer to sign in to the buyer portal.',
+                status_code=400,
+            )
+
+        # Block duplicate active invitations to the same email.
+        if BuyerInvite.objects.filter(
+            email=email, is_used=False, expires_at__gt=timezone.now()
+        ).exists():
+            return error_response(
+                'An active invitation has already been sent to this email. '
+                'Wait for it to be used or to expire before sending a new one.',
+                status_code=400,
+            )
 
         try:
             BuyerService.send_invite(customer, email, request.user)

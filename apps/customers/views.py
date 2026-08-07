@@ -186,9 +186,9 @@ class CustomerDetailView(APIView):
         if err:
             return err
 
-        if not membership.is_admin:
+        if not membership.is_admin and not membership.is_accountant:
             return error_response(
-                message='Only company admins can update customers.',
+                message='Only company admins and accountants can update customers.',
                 status_code=status.HTTP_403_FORBIDDEN
             )
 
@@ -200,11 +200,21 @@ class CustomerDetailView(APIView):
                 status_code=status.HTTP_400_BAD_REQUEST
             )
 
-        customer = CustomerService.update_customer(
-            customer=customer,
-            membership=membership,
-            data=serializer.validated_data,
-        )
+        try:
+            customer = CustomerService.update_customer(
+                customer=customer,
+                membership=membership,
+                data=serializer.validated_data,
+            )
+        except DjangoPermissionDenied as exc:
+            return error_response(str(exc), status_code=status.HTTP_403_FORBIDDEN)
+        except DjangoValidationError as exc:
+            messages = exc.message_dict if hasattr(exc, 'message_dict') else {'detail': exc.messages}
+            return error_response('Customer update failed.', status_code=status.HTTP_400_BAD_REQUEST, details=messages)
+        except Exception as exc:
+            logger.exception('Unexpected error updating customer')
+            return error_response('An unexpected error occurred.', status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         return success_response(
             data=CustomerSerializer(customer).data,
             message='Customer updated successfully.'

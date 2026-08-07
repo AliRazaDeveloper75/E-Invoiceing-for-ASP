@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import CustomSelect from '@/components/ui/CustomSelect';
 import { RoleGuard } from '@/components/guards/RoleGuard';
+import { EmailInput } from '@/components/ui/EmailInput';
+import { isValidEmailFormat, isDisposableEmail } from '@/lib/validation';
 
 interface EmailLog {
   id: string;
@@ -172,11 +174,16 @@ function CreateInviteModal({ onClose, onCreated }: { onClose: () => void; onCrea
     email: '', first_name: '', last_name: '', company_name_hint: '',
     role: 'supplier', message: '',
   });
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
 
   const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
 
   const send = async () => {
     if (!form.email) { setError('Email is required.'); return; }
+    if (emailAvailable === false && isValidEmailFormat(form.email) && !isDisposableEmail(form.email)) {
+      setError('This email is already registered to another account. A single email can only have one role, so it cannot be invited again with a different role.');
+      return;
+    }
     setLoading(true); setError('');
     try {
       await api.post('/onboarding/invitations/', form);
@@ -206,12 +213,15 @@ function CreateInviteModal({ onClose, onCreated }: { onClose: () => void; onCrea
         </div>
         <div className="p-4 sm:p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Email address <span className="text-red-500">*</span>
-            </label>
-            <input type="email" value={form.email} onChange={e => set('email', e.target.value)}
+            <EmailInput
+              label="Email address *"
+              value={form.email}
+              onChange={e => set('email', e.target.value)}
+              checkDuplicate
+              onAvailabilityChange={setEmailAvailable}
               placeholder="supplier@company.ae"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+            />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>

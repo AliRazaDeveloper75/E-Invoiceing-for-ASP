@@ -5,6 +5,8 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { RoleGuard } from '@/components/guards/RoleGuard';
+import { EmailInput } from '@/components/ui/EmailInput';
+import { isValidEmailFormat, isDisposableEmail } from '@/lib/validation';
 import { AxiosError } from 'axios';
 import {
   Users, FileText, Building2, CheckCircle2,
@@ -159,6 +161,7 @@ function SendInviteModal({
   onSent: () => void;
 }) {
   const [form, setForm] = useState<InviteForm>(EMPTY_FORM);
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -171,6 +174,10 @@ function SendInviteModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.email.trim()) { setError('Email is required.'); return; }
+    if (emailAvailable === false && isValidEmailFormat(form.email) && !isDisposableEmail(form.email)) {
+      setError('This email is already registered to another account. A single email can only have one role, so it cannot be invited again with a different role.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -232,18 +239,15 @@ function SendInviteModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-5 space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Email Address <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={e => set('email', e.target.value)}
-                placeholder="company@example.com"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
-              />
-            </div>
+            <EmailInput
+              label="Email Address *"
+              value={form.email}
+              onChange={e => set('email', e.target.value)}
+              checkDuplicate
+              onAvailabilityChange={setEmailAvailable}
+              placeholder="company@example.com"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+            />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>

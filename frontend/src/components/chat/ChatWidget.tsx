@@ -325,7 +325,7 @@ const CHATBOT_TREE: ChatbotNode[] = [
   },
   {
     id: 'company',
-    text: 'Company & Customers',
+    text: 'Company & Buyers',
     children: [
       {
         id: 'add_company',
@@ -335,9 +335,9 @@ const CHATBOT_TREE: ChatbotNode[] = [
       },
       {
         id: 'add_customer',
-        text: 'How do I add a customer?',
+        text: 'How do I add a buyer?',
         answer:
-          'Go to Customers → Add Customer. Fill in the buyer name, TRN (required for B2B), address, and contact. Once saved, the customer appears in the Buyer picker when creating invoices.',
+          'Go to Buyers → Add Buyer. Fill in the buyer name, TRN (required for B2B), address, and contact. Once saved, the buyer appears in the Buyer picker when creating invoices.',
       },
     ],
   },
@@ -373,7 +373,7 @@ const CHATBOT_TREE: ChatbotNode[] = [
         id: 'pricing',
         text: 'How can I get started?',
         answer:
-          'Sign up at the E-Invoice Portal, register your company TRN, add your customers, and create your first invoice. Our onboarding wizard guides you through each step.',
+          'Sign up at the E-Invoice Portal, register your company TRN, add your buyers, and create your first invoice. Our onboarding wizard guides you through each step.',
       },
     ],
   },

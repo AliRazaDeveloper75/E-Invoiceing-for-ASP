@@ -122,6 +122,14 @@ class CompanyCreateAPITest(TestCase):
         self.assertTrue(company.logo)
         self.assertIsNotNone(response.data['data']['logo_url'])
 
+    def test_disguised_logo_rejected(self):
+        """A non-image renamed to .png must be rejected by magic-byte check."""
+        fake_logo = SimpleUploadedFile('logo.png', b'not-a-real-png', content_type='image/png')
+        payload = {**self.valid_payload, 'logo': fake_logo}
+        response = self.client.post(self.url, payload, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('logo', response.data['error']['details'])
+
     def test_duplicate_trn_returns_400(self):
         self.client.post(self.url, self.valid_payload, format='json')
         response = self.client.post(self.url, self.valid_payload, format='json')
