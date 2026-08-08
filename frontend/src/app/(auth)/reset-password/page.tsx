@@ -6,7 +6,7 @@ import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { FileText, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
+import { FileText, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { AxiosError } from 'axios';
 
 function ResetPasswordForm() {
@@ -215,7 +215,19 @@ export default function ResetPasswordPage() {
       </div>
 
       {/* Right — form */}
-      <div className="flex-1 flex items-center justify-center bg-gray-50 px-6 py-12">
+      <div className="flex-1 flex items-center justify-center bg-gray-50 px-6 py-12 relative overflow-hidden">
+        {/* Back to sign in */}
+        <div className="absolute top-6 start-6 z-10">
+          <div className="bg-white/60 backdrop-blur-sm rounded-lg shadow-sm border border-gray-100/50 p-0.5">
+            <Link
+              href="/login"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to sign in
+            </Link>
+          </div>
+        </div>
+
         <div className="w-full max-w-md">
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-2xl font-bold text-brand-900">E-Numerak</h1>

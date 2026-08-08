@@ -79,6 +79,9 @@ export default function ForgotPasswordPage() {
         <div className="w-full max-w-md">
 
           <div className="lg:hidden text-center mb-8">
+            <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-brand-600 to-indigo-600 shadow-lg shadow-brand-500/20 mb-3 mx-auto">
+              <FileText className="h-6 w-6 text-white" />
+            </div>
             <h1 className="text-2xl font-bold text-brand-900">E-Numerak</h1>
             <p className="text-gray-500 mt-1 text-sm">E-Invoicing Platform</p>
           </div>

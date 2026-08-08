@@ -246,6 +246,7 @@ export const dictionaries = {
     },
     login: {
       brandSub: '5-Corner Platform',
+      back: 'Back',
       heroTitle: "The UAE's compliant e-invoicing platform",
       heroBody:
         'Issue, validate, and report tax invoices in full compliance with the UAE FTA mandate — powered by the BIS 3.0 standard.',
@@ -667,6 +668,7 @@ export const dictionaries = {
     },
     login: {
       brandSub: 'منصة الأطراف الخمسة',
+      back: 'رجوع',
       heroTitle: 'منصة الفوترة الإلكترونية المتوافقة في الإمارات',
       heroBody:
         'أصدِر الفواتير الضريبية وتحقق منها وأبلِغ عنها بامتثال كامل لتفويض الهيئة الاتحادية للضرائب — مدعومة بمعيار BIS 3.0.',

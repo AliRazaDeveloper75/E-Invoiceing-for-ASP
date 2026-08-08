@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { AxiosError } from 'axios';
 import {
-  ShieldCheck, FileText, Network, Landmark, CheckCircle2, ArrowRight, MailWarning,
+  ShieldCheck, FileText, Network, Landmark, CheckCircle2, ArrowRight, ArrowLeft, MailWarning,
 } from 'lucide-react';
 
 interface LoginForm {
@@ -162,6 +162,18 @@ export default function LoginPage() {
         <div className="absolute top-6 end-6 z-10">
           <div className="bg-white/60 backdrop-blur-sm rounded-lg shadow-sm border border-gray-100/50 p-0.5">
             <LanguageSwitcher variant="light" />
+          </div>
+        </div>
+
+        {/* Back */}
+        <div className="absolute top-6 start-6 z-10">
+          <div className="bg-white/60 backdrop-blur-sm rounded-lg shadow-sm border border-gray-100/50 p-0.5">
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" /> {t('login.back')}
+            </Link>
           </div>
         </div>
 
