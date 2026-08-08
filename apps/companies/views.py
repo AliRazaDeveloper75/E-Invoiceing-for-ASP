@@ -56,7 +56,6 @@ def _get_company_and_membership(request, company_id: str):
     request.company_membership = membership
     return company, membership
 
-
 # ─── Company List / Create ────────────────────────────────────────────────────
 
 class CompanyListCreateView(APIView):
@@ -94,7 +93,6 @@ class CompanyListCreateView(APIView):
             message='Company created successfully.',
             status_code=status.HTTP_201_CREATED
         )
-
 
 # ─── Company Detail / Update / Deactivate ────────────────────────────────────
 
@@ -153,8 +151,6 @@ class CompanyDetailView(APIView):
 
         CompanyService.deactivate_company(company)
         return success_response(message='Company deactivated successfully.')
-
-
 # ─── Member List / Add ────────────────────────────────────────────────────────
 
 class CompanyMemberListView(APIView):
